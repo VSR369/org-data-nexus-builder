@@ -25,7 +25,6 @@ interface PricingConfig {
   marketplaceFee: number;
   aggregatorFee: number;
   internalPaasPricing: CountryPricing[];
-  externalPaasPricing: CountryPricing[];
   version: number;
   createdAt: string;
 }
@@ -41,10 +40,6 @@ const PricingConfig = () => {
         { id: '1', country: 'India', currency: 'INR', quarterlyPrice: 50000, halfYearlyPrice: 90000, annualPrice: 150000 },
         { id: '2', country: 'United States of America', currency: 'USD', quarterlyPrice: 600, halfYearlyPrice: 1080, annualPrice: 1800 },
       ],
-      externalPaasPricing: [
-        { id: '1', country: 'India', currency: 'INR', quarterlyPrice: 75000, halfYearlyPrice: 135000, annualPrice: 225000 },
-        { id: '2', country: 'United States of America', currency: 'USD', quarterlyPrice: 900, halfYearlyPrice: 1620, annualPrice: 2700 },
-      ],
       version: 1,
       createdAt: '2024-01-01',
     },
@@ -55,13 +50,12 @@ const PricingConfig = () => {
     marketplaceFee: 30,
     aggregatorFee: 15,
     internalPaasPricing: [],
-    externalPaasPricing: [],
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [newCountryPricing, setNewCountryPricing] = useState<Partial<CountryPricing>>({});
-  const [editingPricingType, setEditingPricingType] = useState<'internal' | 'external' | null>(null);
+  const [editingPricingType, setEditingPricingType] = useState<'internal' | null>(null);
 
   const { toast } = useToast();
 
@@ -108,7 +102,7 @@ const PricingConfig = () => {
     resetForm();
   };
 
-  const handleCountryPricingSubmit = (type: 'internal' | 'external') => {
+  const handleCountryPricingSubmit = () => {
     if (!newCountryPricing.country || !newCountryPricing.currency) {
       toast({
         title: "Error",
@@ -123,39 +117,25 @@ const PricingConfig = () => {
       id: Date.now().toString(),
     } as CountryPricing;
 
-    if (type === 'internal') {
-      setCurrentConfig(prev => ({
-        ...prev,
-        internalPaasPricing: [...(prev.internalPaasPricing || []), pricingEntry],
-      }));
-    } else {
-      setCurrentConfig(prev => ({
-        ...prev,
-        externalPaasPricing: [...(prev.externalPaasPricing || []), pricingEntry],
-      }));
-    }
+    setCurrentConfig(prev => ({
+      ...prev,
+      internalPaasPricing: [...(prev.internalPaasPricing || []), pricingEntry],
+    }));
 
     setNewCountryPricing({});
     setEditingPricingType(null);
     
     toast({
       title: "Success",
-      description: `${type === 'internal' ? 'Internal' : 'External'} PaaS pricing added successfully.`,
+      description: "Internal PaaS pricing added successfully.",
     });
   };
 
-  const handleDeleteCountryPricing = (id: string, type: 'internal' | 'external') => {
-    if (type === 'internal') {
-      setCurrentConfig(prev => ({
-        ...prev,
-        internalPaasPricing: prev.internalPaasPricing?.filter(item => item.id !== id) || [],
-      }));
-    } else {
-      setCurrentConfig(prev => ({
-        ...prev,
-        externalPaasPricing: prev.externalPaasPricing?.filter(item => item.id !== id) || [],
-      }));
-    }
+  const handleDeleteCountryPricing = (id: string) => {
+    setCurrentConfig(prev => ({
+      ...prev,
+      internalPaasPricing: prev.internalPaasPricing?.filter(item => item.id !== id) || [],
+    }));
     
     toast({
       title: "Success",
@@ -183,7 +163,6 @@ const PricingConfig = () => {
       marketplaceFee: 30,
       aggregatorFee: 15,
       internalPaasPricing: [],
-      externalPaasPricing: [],
     });
     setIsEditing(false);
     setActiveTab('general');
@@ -210,7 +189,7 @@ const PricingConfig = () => {
         <CardContent>
           {/* Tab Navigation */}
           <div className="flex space-x-1 mb-6 border-b">
-            {['general', 'internal-paas', 'external-paas'].map((tab) => (
+            {['general', 'internal-paas'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -222,7 +201,6 @@ const PricingConfig = () => {
               >
                 {tab === 'general' && 'General Config'}
                 {tab === 'internal-paas' && 'Internal PaaS'}
-                {tab === 'external-paas' && 'External PaaS'}
               </button>
             ))}
           </div>
@@ -277,16 +255,14 @@ const PricingConfig = () => {
               </div>
             )}
 
-            {(activeTab === 'internal-paas' || activeTab === 'external-paas') && (
+            {activeTab === 'internal-paas' && (
               <div className="space-y-6">
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium">
-                      {activeTab === 'internal-paas' ? 'Internal PaaS Pricing' : 'External PaaS Pricing'}
-                    </h3>
+                    <h3 className="text-lg font-medium">Internal PaaS Pricing</h3>
                     <Button
                       type="button"
-                      onClick={() => setEditingPricingType(activeTab === 'internal-paas' ? 'internal' : 'external')}
+                      onClick={() => setEditingPricingType('internal')}
                       size="sm"
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -294,7 +270,7 @@ const PricingConfig = () => {
                     </Button>
                   </div>
 
-                  {editingPricingType === (activeTab === 'internal-paas' ? 'internal' : 'external') && (
+                  {editingPricingType === 'internal' && (
                     <div className="mb-4 p-4 border rounded-lg bg-muted/50">
                       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                         <div>
@@ -366,7 +342,7 @@ const PricingConfig = () => {
                       <div className="flex gap-2">
                         <Button
                           type="button"
-                          onClick={() => handleCountryPricingSubmit(activeTab === 'internal-paas' ? 'internal' : 'external')}
+                          onClick={handleCountryPricingSubmit}
                           size="sm"
                         >
                           Add Pricing
@@ -398,7 +374,7 @@ const PricingConfig = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(activeTab === 'internal-paas' ? currentConfig.internalPaasPricing : currentConfig.externalPaasPricing)?.map((pricing) => (
+                      {currentConfig.internalPaasPricing?.map((pricing) => (
                         <TableRow key={pricing.id}>
                           <TableCell>{pricing.country}</TableCell>
                           <TableCell>
@@ -411,7 +387,7 @@ const PricingConfig = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteCountryPricing(pricing.id, activeTab === 'internal-paas' ? 'internal' : 'external')}
+                              onClick={() => handleDeleteCountryPricing(pricing.id)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -463,7 +439,7 @@ const PricingConfig = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Marketplace Fee:</span>
                     <p>{config.marketplaceFee}%</p>
@@ -475,10 +451,6 @@ const PricingConfig = () => {
                   <div>
                     <span className="font-medium">Internal PaaS Countries:</span>
                     <p>{config.internalPaasPricing.length}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">External PaaS Countries:</span>
-                    <p>{config.externalPaasPricing.length}</p>
                   </div>
                 </div>
               </div>
