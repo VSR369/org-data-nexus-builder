@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from 'lucide-react';
 import { DomainGroup, CompetencyCapability, CompetencyAssessment } from './types';
 import DomainGroupSection from './DomainGroupSection';
 
@@ -27,9 +29,12 @@ const CompetencyAssessmentContent: React.FC<CompetencyAssessmentContentProps> = 
     <Card>
       <CardHeader>
         <CardTitle>Competency Assessment Parameters</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Assess your capability level for each competency area. Default level is set to Advanced - you can modify as needed.
-        </p>
+        <Alert className="mt-4">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Important:</strong> All competency areas are pre-set to "Advanced" level by default. Please review each area carefully and select your actual capability level to ensure accurate assessment. This helps us match you with the most suitable opportunities and ensures transparent expectations with potential clients.
+          </AlertDescription>
+        </Alert>
       </CardHeader>
       <CardContent>
         {filteredDomainGroups.length === 0 ? (

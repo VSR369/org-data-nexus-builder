@@ -97,13 +97,18 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
 
   const updateCapability = (groupId: string, categoryId: string, subCategoryId: string, capability: string) => {
     const key = `${groupId}-${categoryId}-${subCategoryId}`;
-    setCompetencyAssessments(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        capability: capability
-      }
-    }));
+    console.log('Updating capability:', { key, capability });
+    setCompetencyAssessments(prev => {
+      const updated = {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          capability: capability
+        }
+      };
+      console.log('Updated assessments:', updated);
+      return updated;
+    });
   };
 
   const getCapabilityBadgeColor = (capabilityName: string) => {
@@ -123,7 +128,20 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     );
   }
 
-  const isCompetencyComplete = Object.keys(competencyAssessments).length > 0;
+  // Check if competency is truly complete (all assessments exist and are not default)
+  const totalExpectedAssessments = filteredDomainGroups.reduce((total, group) => {
+    return total + group.categories.reduce((catTotal, category) => {
+      return catTotal + category.subCategories.length;
+    }, 0);
+  }, 0);
+
+  const isCompetencyComplete = Object.keys(competencyAssessments).length === totalExpectedAssessments && totalExpectedAssessments > 0;
+
+  console.log('Competency completion check:', {
+    totalExpected: totalExpectedAssessments,
+    actualAssessments: Object.keys(competencyAssessments).length,
+    isComplete: isCompetencyComplete
+  });
 
   return (
     <div className="space-y-6">
@@ -164,7 +182,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
           {(!isSubmitEnabled || !isCompetencyComplete) && (
             <p className="text-sm text-muted-foreground mt-2 text-center">
               {!isSubmitEnabled && "Complete Basic Details & Information first. "}
-              {!isCompetencyComplete && "Complete Competency Assessment to submit enrollment."}
+              {!isCompetencyComplete && "Please review and confirm your capability levels for all competency areas before submitting."}
             </p>
           )}
         </CardContent>
