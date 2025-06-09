@@ -18,12 +18,19 @@ const SelfEnrollmentForm = () => {
   const [providerType, setProviderType] = useState('');
   const [selectedIndustrySegment, setSelectedIndustrySegment] = useState('');
 
+  console.log('SelfEnrollmentForm - selectedIndustrySegment:', selectedIndustrySegment);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
       title: "Success",
       description: "Solution Provider enrollment submitted successfully",
     });
+  };
+
+  const handleIndustrySegmentChange = (value: string) => {
+    console.log('Industry segment changed to:', value);
+    setSelectedIndustrySegment(value);
   };
 
   return (
@@ -47,7 +54,7 @@ const SelfEnrollmentForm = () => {
                 {/* Industry Segment */}
                 <div className="space-y-2">
                   <Label htmlFor="industry-segment">Industry Segment *</Label>
-                  <Select value={selectedIndustrySegment} onValueChange={setSelectedIndustrySegment}>
+                  <Select value={selectedIndustrySegment} onValueChange={handleIndustrySegmentChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Industry Segment" />
                     </SelectTrigger>
@@ -62,6 +69,11 @@ const SelfEnrollmentForm = () => {
                       <SelectItem value="logistics">Logistics & Supply Chain</SelectItem>
                     </SelectContent>
                   </Select>
+                  {selectedIndustrySegment && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedIndustrySegment}
+                    </p>
+                  )}
                 </div>
 
                 <Separator />

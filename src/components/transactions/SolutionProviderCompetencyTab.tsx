@@ -15,29 +15,47 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
 }) => {
   const [competencyAssessments, setCompetencyAssessments] = useState<Record<string, CompetencyAssessment>>({});
 
+  console.log('SolutionProviderCompetencyTab - Received selectedIndustrySegment:', selectedIndustrySegment);
+  console.log('SolutionProviderCompetencyTab - masterDomainGroups:', masterDomainGroups);
+
   const getIndustrySegmentName = (value: string) => {
-    switch (value) {
-      case 'bfsi': return 'Banking, Financial Services & Insurance (BFSI)';
-      case 'retail': return 'Retail & E-Commerce';
-      case 'healthcare': return 'Healthcare & Life Sciences';
-      case 'it': return 'Information Technology & Software Services';
-      case 'telecom': return 'Telecommunications';
-      case 'education': return 'Education & EdTech';
-      case 'manufacturing': return 'Manufacturing';
-      case 'logistics': return 'Logistics & Supply Chain';
-      default: return value;
-    }
+    const mapping = {
+      'bfsi': 'Banking, Financial Services & Insurance (BFSI)',
+      'retail': 'Retail & E-Commerce',
+      'healthcare': 'Healthcare & Life Sciences',
+      'it': 'Information Technology & Software Services',
+      'telecom': 'Telecommunications',
+      'education': 'Education & EdTech',
+      'manufacturing': 'Manufacturing',
+      'logistics': 'Logistics & Supply Chain'
+    };
+    return mapping[value as keyof typeof mapping] || value;
   };
+
+  const industrySegmentName = getIndustrySegmentName(selectedIndustrySegment);
+  console.log('Industry segment name:', industrySegmentName);
 
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
     ? masterDomainGroups 
-    : masterDomainGroups.filter(group => group.industrySegment === getIndustrySegmentName(selectedIndustrySegment));
+    : masterDomainGroups.filter(group => {
+        console.log('Checking group:', group.name, 'industrySegment:', group.industrySegment);
+        return group.industrySegment === industrySegmentName;
+      });
+
+  console.log('Filtered domain groups:', filteredDomainGroups);
 
   const activeCapabilities = competencyCapabilities
     .filter(cap => cap.isActive)
     .sort((a, b) => a.order - b.order);
 
   useEffect(() => {
+    console.log('useEffect triggered with selectedIndustrySegment:', selectedIndustrySegment);
+    
+    if (!selectedIndustrySegment || selectedIndustrySegment === 'all') {
+      setCompetencyAssessments({});
+      return;
+    }
+
     const initialAssessments: Record<string, CompetencyAssessment> = {};
     
     filteredDomainGroups.forEach(group => {
@@ -54,8 +72,9 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       });
     });
     
+    console.log('Setting initial assessments:', initialAssessments);
     setCompetencyAssessments(initialAssessments);
-  }, [selectedIndustrySegment]);
+  }, [selectedIndustrySegment, filteredDomainGroups]);
 
   const updateCapability = (groupId: string, categoryId: string, subCategoryId: string, capability: string) => {
     const key = `${groupId}-${categoryId}-${subCategoryId}`;
@@ -84,10 +103,6 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       </Card>
     );
   }
-
-  console.log('Selected Industry Segment:', selectedIndustrySegment);
-  console.log('Filtered Domain Groups:', filteredDomainGroups);
-  console.log('Competency Assessments:', competencyAssessments);
 
   return (
     <div className="space-y-6">
