@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -184,7 +183,7 @@ const MasterDataStructureConfig = () => {
       
       toast({
         title: "Success",
-        description: "Group added successfully",
+        description: "Domain Group added successfully",
       });
     }
   };
@@ -213,7 +212,7 @@ const MasterDataStructureConfig = () => {
       
       toast({
         title: "Success",
-        description: "Group updated successfully",
+        description: "Domain Group updated successfully",
       });
     }
   };
@@ -226,7 +225,7 @@ const MasterDataStructureConfig = () => {
     
     toast({
       title: "Success",
-      description: "Group deleted successfully",
+      description: "Domain Group deleted successfully",
     });
   };
 
@@ -400,15 +399,15 @@ const MasterDataStructureConfig = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Master Data Structure Configuration</CardTitle>
+        <CardTitle>Domain Groups Configuration</CardTitle>
         <CardDescription>
-          Configure groups, categories, and sub-categories for the assessment framework
+          Configure domain groups, categories, and sub-categories for the assessment framework
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="groups">Groups</TabsTrigger>
+            <TabsTrigger value="groups">Domain Groups</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="subcategories">Sub-Categories</TabsTrigger>
           </TabsList>
@@ -416,26 +415,26 @@ const MasterDataStructureConfig = () => {
           <TabsContent value="groups" className="mt-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Assessment Groups</h3>
+                <h3 className="text-lg font-medium">Assessment Domain Groups</h3>
                 <Button 
                   onClick={() => setIsAddingGroup(true)} 
                   disabled={isAddingGroup}
                   className="flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Group
+                  Add Domain Group
                 </Button>
               </div>
 
               {isAddingGroup && (
                 <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
                   <div>
-                    <Label htmlFor="new-group-name">Group Name</Label>
+                    <Label htmlFor="new-group-name">Domain Group Name</Label>
                     <Input
                       id="new-group-name"
                       value={newGroup.name}
                       onChange={(e) => setNewGroup(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter group name"
+                      placeholder="Enter domain group name"
                       className="mt-1"
                     />
                   </div>
@@ -445,7 +444,7 @@ const MasterDataStructureConfig = () => {
                       id="new-group-description"
                       value={newGroup.description}
                       onChange={(e) => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Enter group description"
+                      placeholder="Enter domain group description"
                       className="mt-1"
                     />
                   </div>
@@ -469,7 +468,7 @@ const MasterDataStructureConfig = () => {
                       {editingGroup === group.id ? (
                         <div className="space-y-3">
                           <div>
-                            <Label>Group Name</Label>
+                            <Label>Domain Group Name</Label>
                             <Input
                               value={editValues.name}
                               onChange={(e) => setEditValues(prev => ({ ...prev, name: e.target.value }))}
@@ -499,7 +498,7 @@ const MasterDataStructureConfig = () => {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <Badge variant="secondary">GROUP {masterData.groups.indexOf(group) + 1}</Badge>
+                              <Badge variant="secondary">DOMAIN GROUP {masterData.groups.indexOf(group) + 1}</Badge>
                               <h4 className="font-semibold text-lg">{group.name}</h4>
                               <Badge variant="outline" className="text-xs">
                                 {group.categories.length} categories
@@ -535,7 +534,7 @@ const MasterDataStructureConfig = () => {
           <TabsContent value="categories" className="mt-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Categories by Group</h3>
+                <h3 className="text-lg font-medium">Categories by Domain Group</h3>
                 <Button 
                   onClick={() => setIsAddingCategory(true)} 
                   disabled={isAddingCategory}

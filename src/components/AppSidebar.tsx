@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database } from 'lucide-react';
 import {
@@ -31,7 +30,7 @@ const menuItems = [
   },
   {
     id: 'master-data-structure',
-    title: 'Master Data Structure',
+    title: 'Domain Groups',
     icon: Database,
   },
   {
