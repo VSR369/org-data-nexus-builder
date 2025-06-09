@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserPlus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -104,6 +105,22 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         </div>
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="w-full justify-start">
+                  <Link to="/register" className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    <span className="font-medium">Organization Registration</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
         <SidebarGroup>
           <SidebarGroupLabel>Organization Setup</SidebarGroupLabel>
           <SidebarGroupContent>
