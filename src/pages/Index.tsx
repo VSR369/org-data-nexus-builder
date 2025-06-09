@@ -6,6 +6,10 @@ import IndustrySegmentConfig from '../components/master-data/IndustrySegmentConf
 import OrganizationTypeConfig from '../components/master-data/OrganizationTypeConfig';
 import EntityTypeConfig from '../components/master-data/EntityTypeConfig';
 import DepartmentConfig from '../components/master-data/DepartmentConfig';
+import RewardTypeConfig from '../components/master-data/RewardTypeConfig';
+import CurrencyConfig from '../components/master-data/CurrencyConfig';
+import CountryConfig from '../components/master-data/CountryConfig';
+import CommunicationTypeConfig from '../components/master-data/CommunicationTypeConfig';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('industry-segments');
@@ -20,6 +24,14 @@ const Index = () => {
         return <EntityTypeConfig />;
       case 'departments':
         return <DepartmentConfig />;
+      case 'reward-types':
+        return <RewardTypeConfig />;
+      case 'currencies':
+        return <CurrencyConfig />;
+      case 'countries':
+        return <CountryConfig />;
+      case 'communication-types':
+        return <CommunicationTypeConfig />;
       default:
         return <IndustrySegmentConfig />;
     }

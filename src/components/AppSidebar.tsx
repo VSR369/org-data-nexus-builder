@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Settings, Database } from 'lucide-react';
+import { Briefcase, Building2, Users, Settings, Database, Gift, DollarSign, Globe, MessageSquare } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +38,26 @@ const menuItems = [
     id: 'departments',
     title: 'Departments',
     icon: Users,
+  },
+  {
+    id: 'reward-types',
+    title: 'Reward Types',
+    icon: Gift,
+  },
+  {
+    id: 'currencies',
+    title: 'Currencies',
+    icon: DollarSign,
+  },
+  {
+    id: 'countries',
+    title: 'Countries',
+    icon: Globe,
+  },
+  {
+    id: 'communication-types',
+    title: 'Communication & Content Types',
+    icon: MessageSquare,
   },
 ];
 
