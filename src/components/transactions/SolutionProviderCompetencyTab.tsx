@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SubCategory {
   id: string;
@@ -25,11 +26,20 @@ interface DomainGroup {
   categories: Category[];
 }
 
+interface CompetencyCapability {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  order: number;
+  isActive: boolean;
+}
+
 interface CompetencyAssessment {
   groupId: string;
   categoryId: string;
   subCategoryId: string;
-  capability: 'basic' | 'advanced' | 'guru' | 'not-applicable';
+  capability: string;
 }
 
 interface SolutionProviderCompetencyTabProps {
@@ -40,8 +50,10 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   selectedIndustrySegment 
 }) => {
   const [competencyAssessments, setCompetencyAssessments] = useState<Record<string, CompetencyAssessment>>({});
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Master data - this would normally come from your master data structure
+  // Master data for Domain Groups - this should eventually come from your actual master data store
   const masterDomainGroups: DomainGroup[] = [
     {
       id: '1',
@@ -52,20 +64,20 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
           id: '101',
           name: 'Strategic Vision & Business Planning',
           subCategories: [
-            { id: '101-1', name: 'Vision, Mission, and Goals Alignment' },
-            { id: '101-2', name: 'Strategic Planning Frameworks' },
-            { id: '101-3', name: 'Competitive Positioning' },
-            { id: '101-4', name: 'Long-Term Scenario Thinking' },
+            { id: '101-1', name: 'Vision, Mission, and Goals Alignment', description: 'Ability to align organizational vision with strategic goals' },
+            { id: '101-2', name: 'Strategic Planning Frameworks', description: 'Expertise in strategic planning methodologies and frameworks' },
+            { id: '101-3', name: 'Competitive Positioning', description: 'Skills in market analysis and competitive positioning' },
+            { id: '101-4', name: 'Long-Term Scenario Thinking', description: 'Capability for long-term strategic scenario planning' },
           ],
         },
         {
           id: '102',
           name: 'Business Model & Value Proposition Design',
           subCategories: [
-            { id: '102-1', name: 'Revenue Models & Monetization' },
-            { id: '102-2', name: 'Customer Segments & Value Mapping' },
-            { id: '102-3', name: 'Partner Ecosystem Design' },
-            { id: '102-4', name: 'Business Sustainability Models' },
+            { id: '102-1', name: 'Revenue Models & Monetization', description: 'Expertise in designing revenue models and monetization strategies' },
+            { id: '102-2', name: 'Customer Segments & Value Mapping', description: 'Skills in customer segmentation and value proposition mapping' },
+            { id: '102-3', name: 'Partner Ecosystem Design', description: 'Ability to design and manage partner ecosystems' },
+            { id: '102-4', name: 'Business Sustainability Models', description: 'Knowledge of sustainable business model design' },
           ],
         },
       ],
@@ -79,10 +91,19 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
           id: '201',
           name: 'Product & Systems Development Excellence',
           subCategories: [
-            { id: '201-1', name: 'Requirement Analysis & Specification' },
-            { id: '201-2', name: 'System Design Architecture' },
-            { id: '201-3', name: 'Prototyping & Iterative Development' },
-            { id: '201-4', name: 'Quality & Reliability Engineering' },
+            { id: '201-1', name: 'Requirement Analysis & Specification', description: 'Skills in analyzing and documenting system requirements' },
+            { id: '201-2', name: 'System Design Architecture', description: 'Expertise in designing scalable system architectures' },
+            { id: '201-3', name: 'Prototyping & Iterative Development', description: 'Capability for agile prototyping and iterative development' },
+            { id: '201-4', name: 'Quality & Reliability Engineering', description: 'Knowledge of quality assurance and reliability engineering' },
+          ],
+        },
+        {
+          id: '202',
+          name: 'Risk Management & Compliance',
+          subCategories: [
+            { id: '202-1', name: 'Regulatory Compliance Management', description: 'Expertise in managing regulatory compliance requirements' },
+            { id: '202-2', name: 'Risk Assessment & Mitigation', description: 'Skills in risk assessment and mitigation strategies' },
+            { id: '202-3', name: 'Internal Controls & Audit', description: 'Knowledge of internal controls and audit processes' },
           ],
         },
       ],
@@ -94,15 +115,67 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       categories: [
         {
           id: '301',
-          name: 'Technology & Digital Transformation',
+          name: 'Digital Architecture & Infrastructure',
           subCategories: [
-            { id: '301-1', name: 'Enterprise Architecture' },
-            { id: '301-2', name: 'Cloud & Edge Infrastructure' },
-            { id: '301-3', name: 'API & Integration Frameworks' },
-            { id: '301-4', name: 'DevSecOps & Cybersecurity' },
+            { id: '301-1', name: 'Enterprise Architecture', description: 'Expertise in enterprise architecture design and implementation' },
+            { id: '301-2', name: 'Cloud & Edge Infrastructure', description: 'Skills in cloud and edge computing infrastructure' },
+            { id: '301-3', name: 'API & Integration Frameworks', description: 'Knowledge of API design and integration frameworks' },
+            { id: '301-4', name: 'DevSecOps & Cybersecurity', description: 'Expertise in DevSecOps practices and cybersecurity' },
           ],
         },
       ],
+    },
+    {
+      id: '4',
+      name: 'Customer Experience & Digital Marketing',
+      industrySegment: 'Retail & E-Commerce',
+      categories: [
+        {
+          id: '401',
+          name: 'Customer Journey & Experience Design',
+          subCategories: [
+            { id: '401-1', name: 'Customer Journey Mapping', description: 'Skills in mapping and optimizing customer journeys' },
+            { id: '401-2', name: 'User Experience (UX) Design', description: 'Expertise in UX design principles and practices' },
+            { id: '401-3', name: 'Customer Feedback & Analytics', description: 'Knowledge of customer feedback analysis and actionable insights' },
+          ],
+        },
+      ],
+    },
+  ];
+
+  // Competency Capabilities from master data
+  const competencyCapabilities: CompetencyCapability[] = [
+    {
+      id: '1',
+      name: 'Guru',
+      description: 'Expert level with deep knowledge and ability to guide others',
+      color: 'bg-purple-100 text-purple-800 border-purple-300',
+      order: 1,
+      isActive: true,
+    },
+    {
+      id: '2',
+      name: 'Advanced',
+      description: 'High proficiency with comprehensive understanding',
+      color: 'bg-blue-100 text-blue-800 border-blue-300',
+      order: 2,
+      isActive: true,
+    },
+    {
+      id: '3',
+      name: 'Basic',
+      description: 'Fundamental knowledge and basic competency',
+      color: 'bg-green-100 text-green-800 border-green-300',
+      order: 3,
+      isActive: true,
+    },
+    {
+      id: '4',
+      name: 'Not Applicable',
+      description: 'This competency area is not relevant or applicable',
+      color: 'bg-gray-100 text-gray-800 border-gray-300',
+      order: 4,
+      isActive: true,
     },
   ];
 
@@ -124,8 +197,12 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     ? masterDomainGroups 
     : masterDomainGroups.filter(group => group.industrySegment === getIndustrySegmentName(selectedIndustrySegment));
 
+  const activeCapabilities = competencyCapabilities
+    .filter(cap => cap.isActive)
+    .sort((a, b) => a.order - b.order);
+
   useEffect(() => {
-    // Initialize all assessments with 'advanced' as default
+    // Initialize all assessments with 'Advanced' as default
     const initialAssessments: Record<string, CompetencyAssessment> = {};
     
     filteredDomainGroups.forEach(group => {
@@ -136,13 +213,24 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
             groupId: group.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
-            capability: 'advanced'
+            capability: 'Advanced'
           };
         });
       });
     });
     
     setCompetencyAssessments(initialAssessments);
+
+    // Expand all groups and categories by default to show data
+    const allGroupIds = new Set(filteredDomainGroups.map(group => group.id));
+    const allCategoryIds = new Set(
+      filteredDomainGroups.flatMap(group => 
+        group.categories.map(category => `${group.id}-${category.id}`)
+      )
+    );
+    
+    setExpandedGroups(allGroupIds);
+    setExpandedCategories(allCategoryIds);
   }, [selectedIndustrySegment]);
 
   const updateCapability = (groupId: string, categoryId: string, subCategoryId: string, capability: string) => {
@@ -151,19 +239,39 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       ...prev,
       [key]: {
         ...prev[key],
-        capability: capability as 'basic' | 'advanced' | 'guru' | 'not-applicable'
+        capability: capability
       }
     }));
   };
 
-  const getCapabilityBadgeVariant = (capability: string) => {
-    switch (capability) {
-      case 'guru': return 'default';
-      case 'advanced': return 'secondary';
-      case 'basic': return 'outline';
-      case 'not-applicable': return 'destructive';
-      default: return 'outline';
-    }
+  const getCapabilityBadgeColor = (capabilityName: string) => {
+    const capability = competencyCapabilities.find(cap => cap.name === capabilityName);
+    return capability ? capability.color : 'bg-gray-100 text-gray-800 border-gray-300';
+  };
+
+  const toggleGroupExpansion = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleCategoryExpansion = (groupId: string, categoryId: string) => {
+    const key = `${groupId}-${categoryId}`;
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
   };
 
   if (!selectedIndustrySegment || selectedIndustrySegment === 'all') {
@@ -180,6 +288,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
 
   console.log('Selected Industry Segment:', selectedIndustrySegment);
   console.log('Filtered Domain Groups:', filteredDomainGroups);
+  console.log('Competency Assessments:', competencyAssessments);
 
   return (
     <div className="space-y-6">
@@ -212,81 +321,103 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
               </p>
             </div>
           ) : (
-            <Accordion type="multiple" className="space-y-4" defaultValue={filteredDomainGroups.map(g => g.id)}>
+            <div className="space-y-4">
               {filteredDomainGroups.map((group) => (
-                <AccordionItem key={group.id} value={group.id} className="border rounded-lg">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                    <div className="text-left">
-                      <div className="text-lg font-semibold">{group.name}</div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {group.categories.length} categories • {group.categories.reduce((total, cat) => total + cat.subCategories.length, 0)} sub-categories
+                <div key={group.id} className="border rounded-lg">
+                  <Collapsible 
+                    open={expandedGroups.has(group.id)} 
+                    onOpenChange={() => toggleGroupExpansion(group.id)}
+                  >
+                    <CollapsibleTrigger className="w-full px-6 py-4 text-left hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-lg font-semibold">{group.name}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {group.categories.length} categories • {group.categories.reduce((total, cat) => total + cat.subCategories.length, 0)} sub-categories
+                          </div>
+                        </div>
+                        {expandedGroups.has(group.id) ? 
+                          <ChevronDown className="w-5 h-5" /> : 
+                          <ChevronRight className="w-5 h-5" />
+                        }
                       </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-4">
-                    <Accordion type="multiple" className="space-y-3" defaultValue={group.categories.map(c => c.id)}>
-                      {group.categories.map((category) => (
-                        <AccordionItem key={category.id} value={category.id} className="border rounded-md">
-                          <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                            <div className="text-left">
-                              <div className="text-base font-medium">{category.name}</div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {category.subCategories.length} sub-categories
-                              </div>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-3">
-                            <div className="space-y-3">
-                              {category.subCategories.map((subCategory) => {
-                                const assessmentKey = `${group.id}-${category.id}-${subCategory.id}`;
-                                const currentCapability = competencyAssessments[assessmentKey]?.capability || 'advanced';
-                                
-                                return (
-                                  <div key={subCategory.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md border">
-                                    <div className="flex-1">
-                                      <div className="text-sm font-medium mb-1">
-                                        {subCategory.name}
-                                      </div>
-                                      {subCategory.description && (
-                                        <div className="text-xs text-muted-foreground">
-                                          {subCategory.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-3 ml-4">
-                                      <Label className="text-xs font-medium">Capability:</Label>
-                                      <Select
-                                        value={currentCapability}
-                                        onValueChange={(value) => updateCapability(group.id, category.id, subCategory.id, value)}
-                                      >
-                                        <SelectTrigger className="w-36">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="basic">Basic</SelectItem>
-                                          <SelectItem value="advanced">Advanced</SelectItem>
-                                          <SelectItem value="guru">Guru</SelectItem>
-                                          <SelectItem value="not-applicable">Not Applicable</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                      <Badge variant={getCapabilityBadgeVariant(currentCapability)} className="min-w-[90px] justify-center text-xs">
-                                        {currentCapability === 'not-applicable' ? 'Not Applicable' : 
-                                         currentCapability.charAt(0).toUpperCase() + currentCapability.slice(1)}
-                                      </Badge>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-6 pb-4">
+                      <div className="space-y-3">
+                        {group.categories.map((category) => (
+                          <div key={category.id} className="border rounded-md">
+                            <Collapsible 
+                              open={expandedCategories.has(`${group.id}-${category.id}`)} 
+                              onOpenChange={() => toggleCategoryExpansion(group.id, category.id)}
+                            >
+                              <CollapsibleTrigger className="w-full px-4 py-3 text-left hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-base font-medium">{category.name}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {category.subCategories.length} sub-categories
                                     </div>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </AccordionContent>
-                </AccordionItem>
+                                  {expandedCategories.has(`${group.id}-${category.id}`) ? 
+                                    <ChevronDown className="w-4 h-4" /> : 
+                                    <ChevronRight className="w-4 h-4" />
+                                  }
+                                </div>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="px-4 pb-3">
+                                <div className="space-y-3">
+                                  {category.subCategories.map((subCategory) => {
+                                    const assessmentKey = `${group.id}-${category.id}-${subCategory.id}`;
+                                    const currentCapability = competencyAssessments[assessmentKey]?.capability || 'Advanced';
+                                    
+                                    return (
+                                      <div key={subCategory.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md border">
+                                        <div className="flex-1">
+                                          <div className="text-sm font-medium mb-1">
+                                            {subCategory.name}
+                                          </div>
+                                          {subCategory.description && (
+                                            <div className="text-xs text-muted-foreground">
+                                              {subCategory.description}
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3 ml-4">
+                                          <Label className="text-xs font-medium">Capability:</Label>
+                                          <Select
+                                            value={currentCapability}
+                                            onValueChange={(value) => updateCapability(group.id, category.id, subCategory.id, value)}
+                                          >
+                                            <SelectTrigger className="w-36">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {activeCapabilities.map((capability) => (
+                                                <SelectItem key={capability.id} value={capability.name}>
+                                                  {capability.name}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <Badge className={`min-w-[90px] justify-center text-xs ${getCapabilityBadgeColor(currentCapability)}`}>
+                                            {currentCapability}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
               ))}
-            </Accordion>
+            </div>
           )}
         </CardContent>
       </Card>
