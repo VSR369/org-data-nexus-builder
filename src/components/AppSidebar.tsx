@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -77,6 +77,11 @@ const challengeMenuItems = [
     id: 'solution-status',
     title: 'Solution Statuses',
     icon: Award,
+  },
+  {
+    id: 'competency-capability',
+    title: 'Competency Capability',
+    icon: Brain,
   },
 ];
 
