@@ -31,11 +31,12 @@ const SubCategoryItem: React.FC<SubCategoryItemProps> = ({
     subCategory: subCategory.name,
     assessmentKey,
     currentCapability,
-    assessment: competencyAssessments[assessmentKey]
+    assessment: competencyAssessments[assessmentKey],
+    allAssessments: Object.keys(competencyAssessments)
   });
 
   const handleCapabilityChange = (value: string) => {
-    console.log('Capability changed:', { groupId, categoryId, subCategoryId: subCategory.id, value });
+    console.log('Capability change triggered:', { groupId, categoryId, subCategoryId: subCategory.id, value });
     onUpdateCapability(groupId, categoryId, subCategory.id, value);
   };
 
@@ -70,7 +71,7 @@ const SubCategoryItem: React.FC<SubCategoryItemProps> = ({
               >
                 <div className="flex flex-col py-1">
                   <span className="font-medium">{capability.name}</span>
-                  <span className="text-xs text-muted-foreground leading-tight max-w-[200px]">
+                  <span className="text-xs text-muted-foreground leading-tight block whitespace-normal break-words max-w-[180px]">
                     {capability.description}
                   </span>
                 </div>

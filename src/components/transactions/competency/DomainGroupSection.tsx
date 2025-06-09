@@ -20,7 +20,7 @@ const DomainGroupSection: React.FC<DomainGroupSectionProps> = ({
   getCapabilityBadgeColor
 }) => {
   return (
-    <Accordion type="single" collapsible className="w-full" defaultValue={`group-${group.id}`}>
+    <Accordion type="single" collapsible className="w-full">
       <AccordionItem value={`group-${group.id}`} className="border rounded-lg">
         <AccordionTrigger className="px-6 py-4 text-left hover:bg-muted/50">
           <div>

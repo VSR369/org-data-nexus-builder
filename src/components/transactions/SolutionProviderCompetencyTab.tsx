@@ -44,12 +44,18 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   const industrySegmentName = getIndustrySegmentName(selectedIndustrySegment);
   console.log('Industry segment name:', industrySegmentName);
 
+  // Fix the filtering logic to show all groups for BFSI (both BFSI and IT groups)
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
     ? masterDomainGroups 
-    : masterDomainGroups.filter(group => {
-        console.log('Checking group:', group.name, 'industrySegment:', group.industrySegment);
-        return group.industrySegment === industrySegmentName;
-      });
+    : selectedIndustrySegment === 'bfsi' 
+      ? masterDomainGroups.filter(group => 
+          group.industrySegment === 'Banking, Financial Services & Insurance (BFSI)' || 
+          group.industrySegment === 'Information Technology & Software Services'
+        )
+      : masterDomainGroups.filter(group => {
+          console.log('Checking group:', group.name, 'industrySegment:', group.industrySegment);
+          return group.industrySegment === industrySegmentName;
+        });
 
   console.log('Filtered domain groups:', filteredDomainGroups);
 
@@ -103,6 +109,9 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
         ...prev,
         [key]: {
           ...prev[key],
+          groupId,
+          categoryId,
+          subCategoryId,
           capability: capability
         }
       };
