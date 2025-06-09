@@ -33,3 +33,11 @@ export interface FormValidationProps {
   providerType: string;
   selectedIndustrySegment: string;
 }
+
+export interface SavedDraftData {
+  formData: FormData;
+  providerType: string;
+  selectedIndustrySegment: string;
+  activeTab: string;
+  lastSaved: string;
+}

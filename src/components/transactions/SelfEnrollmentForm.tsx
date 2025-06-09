@@ -18,6 +18,8 @@ import AdditionalInfoSection from './enrollment/AdditionalInfoSection';
 import { FormData } from './enrollment/types';
 import { validateRequiredFields } from './enrollment/utils/formValidation';
 
+const STORAGE_KEY = 'solution-provider-enrollment-draft';
+
 const SelfEnrollmentForm = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('basic-details');
@@ -62,6 +64,57 @@ const SelfEnrollmentForm = () => {
   console.log('SelfEnrollmentForm - providerType:', providerType);
   console.log('SelfEnrollmentForm - isBasicDetailsComplete:', isBasicDetailsComplete);
 
+  // Load saved data on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        console.log('Loading saved draft data:', parsedData);
+        
+        if (parsedData.formData) {
+          setFormData(parsedData.formData);
+        }
+        if (parsedData.providerType) {
+          setProviderType(parsedData.providerType);
+        }
+        if (parsedData.selectedIndustrySegment) {
+          setSelectedIndustrySegment(parsedData.selectedIndustrySegment);
+        }
+        if (parsedData.activeTab) {
+          setActiveTab(parsedData.activeTab);
+        }
+        
+        toast({
+          title: "Draft Restored",
+          description: "Your previously saved draft has been restored.",
+        });
+      } catch (error) {
+        console.error('Error loading saved data:', error);
+      }
+    }
+  }, [toast]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    const saveData = {
+      formData,
+      providerType,
+      selectedIndustrySegment,
+      activeTab,
+      lastSaved: new Date().toISOString()
+    };
+    
+    // Only save if there's some meaningful data
+    const hasData = providerType || selectedIndustrySegment || 
+      Object.values(formData).some(value => value.trim() !== '');
+    
+    if (hasData) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+      console.log('Auto-saved draft data');
+    }
+  }, [formData, providerType, selectedIndustrySegment, activeTab]);
+
   // Check validation whenever form data, provider type, or industry segment changes
   useEffect(() => {
     const isValid = validateRequiredFields(formData, providerType, selectedIndustrySegment);
@@ -92,6 +145,11 @@ const SelfEnrollmentForm = () => {
     setActiveTab(value);
   };
 
+  const clearDraft = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('Draft cleared from storage');
+  };
+
   const handleSubmitEnrollment = () => {
     if (!isBasicDetailsComplete) {
       toast({
@@ -111,6 +169,9 @@ const SelfEnrollmentForm = () => {
       return;
     }
 
+    // Clear draft after successful submission
+    clearDraft();
+    
     toast({
       title: "Success",
       description: "Solution Provider enrollment submitted successfully",
@@ -118,6 +179,17 @@ const SelfEnrollmentForm = () => {
   };
 
   const handleSaveDraft = () => {
+    // Manual save with confirmation
+    const saveData = {
+      formData,
+      providerType,
+      selectedIndustrySegment,
+      activeTab,
+      lastSaved: new Date().toISOString()
+    };
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+    
     toast({
       title: "Draft Saved",
       description: "Your enrollment has been saved as a draft",
