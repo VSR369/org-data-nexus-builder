@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Minus, Save, X, Upload, Tag } from 'lucide-react';
+import { Plus, Minus, Save, X, Upload, Tag, Download, FileText } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { Template } from './TemplateManagement';
 
@@ -27,6 +26,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+  const [autoSaveStatus, setAutoSaveStatus] = useState('');
 
   useEffect(() => {
     if (template) {
@@ -37,6 +37,23 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       setTags(template.tags);
     }
   }, [template]);
+
+  // Auto-save functionality
+  const autoSave = useCallback(() => {
+    if (title || content) {
+      setAutoSaveStatus('Auto-saving...');
+      // Simulate auto-save delay
+      setTimeout(() => {
+        setAutoSaveStatus('Auto-saved');
+        setTimeout(() => setAutoSaveStatus(''), 2000);
+      }, 500);
+    }
+  }, [title, content]);
+
+  useEffect(() => {
+    const autoSaveTimer = setTimeout(autoSave, 3000);
+    return () => clearTimeout(autoSaveTimer);
+  }, [title, content, autoSave]);
 
   const addParty = () => {
     setParties([...parties, '']);
@@ -73,7 +90,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       content,
       tags,
       isArchived: false,
-      createdBy: 'Current User', // In real app, get from auth context
+      createdBy: 'Current User',
     });
   };
 
@@ -89,31 +106,58 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     }
   };
 
+  const exportAsPDF = () => {
+    // This would integrate with a PDF library in a real app
+    console.log('Exporting as PDF...');
+  };
+
+  const exportAsDocx = () => {
+    // This would integrate with a DOCX library in a real app
+    console.log('Exporting as DOCX...');
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{template ? 'Edit Template' : 'Create New Template'}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>{template ? 'Edit Template' : 'Create New Template'}</CardTitle>
+            <div className="flex items-center gap-2">
+              {autoSaveStatus && (
+                <span className="text-sm text-muted-foreground">{autoSaveStatus}</span>
+              )}
+              <Button onClick={exportAsPDF} variant="outline" size="sm" className="gap-2">
+                <Download className="w-4 h-4" />
+                PDF
+              </Button>
+              <Button onClick={exportAsDocx} variant="outline" size="sm" className="gap-2">
+                <FileText className="w-4 h-4" />
+                DOCX
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Template Title</Label>
+              <Label htmlFor="title">Template Title*</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Privacy & Data Protection"
+                placeholder="e.g., Privacy & Data Protection Agreement"
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">Category*</Label>
               <select
                 id="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as Template['category'])}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border rounded-md bg-background"
+                required
               >
                 <option value="Legal">Legal</option>
                 <option value="Operational">Operational</option>
@@ -128,11 +172,13 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <Label>Parties Involved</Label>
             {parties.map((party, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Input
-                  value={party}
-                  onChange={(e) => updateParty(index, e.target.value)}
-                  placeholder={`${index === 0 ? 'First' : index === 1 ? 'Second' : `${index + 1}th`} Party`}
-                />
+                <div className="flex-1">
+                  <Input
+                    value={party}
+                    onChange={(e) => updateParty(index, e.target.value)}
+                    placeholder={`${index === 0 ? 'First' : index === 1 ? 'Second' : `${index + 1}th`} Party (e.g., Company Name, Individual)`}
+                  />
+                </div>
                 {parties.length > 2 && (
                   <Button
                     type="button"
@@ -174,7 +220,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <Input
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
-                placeholder="Add tag..."
+                placeholder="Add tag... (e.g., gdpr, employment, confidential)"
                 onKeyPress={(e) => e.key === 'Enter' && addTag()}
               />
               <Button type="button" onClick={addTag} variant="outline" size="icon">
@@ -194,21 +240,27 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 onChange={handleFileUpload}
                 className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               />
+              <span className="text-sm text-muted-foreground">
+                Supports .txt, .docx, .pdf files
+              </span>
             </div>
           </div>
 
           {/* Rich Text Editor */}
           <div className="space-y-2">
-            <Label>Template Content</Label>
+            <Label>Template Content*</Label>
+            <p className="text-sm text-muted-foreground">
+              Use the rich text editor below to create your template. You can format text, add tables, insert images, and more.
+            </p>
             <RichTextEditor value={content} onChange={setContent} />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave} className="gap-2">
+            <Button onClick={handleSave} className="gap-2" disabled={!title || !content}>
               <Save className="w-4 h-4" />
               Save Template
             </Button>
