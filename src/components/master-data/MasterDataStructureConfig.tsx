@@ -244,13 +244,6 @@ const MasterDataStructureConfig = () => {
   const [selectedGroupForSubCategory, setSelectedGroupForSubCategory] = useState<string>('');
   const [selectedCategoryForSubCategory, setSelectedCategoryForSubCategory] = useState<string>('');
 
-  const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [editingSubCategory, setEditingSubCategory] = useState<string | null>(null);
-  const [editingGroupName, setEditingGroupName] = useState('');
-  const [editingCategoryName, setEditingCategoryName] = useState('');
-  const [editingSubCategoryName, setEditingSubCategoryName] = useState('');
-
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
   const showMessage = (msg: string) => {
@@ -341,120 +334,6 @@ const MasterDataStructureConfig = () => {
     showMessage('Sub-Category added successfully.');
   };
 
-  const handleEditGroup = (id: string, name: string) => {
-    setEditingGroup(id);
-    setEditingGroupName(name);
-  };
-
-  const handleSaveGroup = (id: string) => {
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === id ? { ...group, name: editingGroupName } : group
-    );
-    setDomainGroups(updatedGroups);
-    setEditingGroup(null);
-    setMessage('Domain Group updated.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleDeleteGroup = (id: string) => {
-    const updatedGroups = domainGroups.filter((group) => group.id !== id);
-    setDomainGroups(updatedGroups);
-    setMessage('Domain Group deleted.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleEditCategory = (id: string, name: string) => {
-    setEditingCategory(id);
-    setEditingCategoryName(name);
-  };
-
-  const handleSaveCategory = (groupId: string, categoryId: string) => {
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === groupId
-        ? {
-          ...group,
-          categories: group.categories.map((category) =>
-            category.id === categoryId ? { ...category, name: editingCategoryName } : category
-          ),
-        }
-        : group
-    );
-    setDomainGroups(updatedGroups);
-    setEditingCategory(null);
-    setMessage('Category updated.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleDeleteCategory = (groupId: string, categoryId: string) => {
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === groupId
-        ? {
-          ...group,
-          categories: group.categories.filter((category) => category.id !== categoryId),
-        }
-        : group
-    );
-    setDomainGroups(updatedGroups);
-    setMessage('Category deleted.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleEditSubCategory = (id: string, name: string) => {
-    setEditingSubCategory(id);
-    setEditingSubCategoryName(name);
-  };
-
-  const handleSaveSubCategory = (groupId: string, categoryId: string, subCategoryId: string) => {
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === groupId
-        ? {
-          ...group,
-          categories: group.categories.map((category) =>
-            category.id === categoryId
-              ? {
-                ...category,
-                subCategories: category.subCategories.map((subCategory) =>
-                  subCategory.id === subCategoryId ? { ...subCategory, name: editingSubCategoryName } : subCategory
-                ),
-              }
-              : category
-          ),
-        }
-        : group
-    );
-    setDomainGroups(updatedGroups);
-    setEditingSubCategory(null);
-    setMessage('Sub-Category updated.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleDeleteSubCategory = (groupId: string, categoryId: string, subCategoryId: string) => {
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === groupId
-        ? {
-          ...group,
-          categories: group.categories.map((category) =>
-            category.id === categoryId
-              ? {
-                ...category,
-                subCategories: category.subCategories.filter((subCategory) => subCategory.id !== subCategoryId),
-              }
-              : category
-          ),
-        }
-        : group
-    );
-    setDomainGroups(updatedGroups);
-    setMessage('Sub-Category deleted.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingGroup(null);
-    setEditingCategory(null);
-    setEditingSubCategory(null);
-  };
-
   const toggleGroupExpansion = (groupId: string) => {
     const newExpandedGroups = new Set(expandedGroups);
     if (newExpandedGroups.has(groupId)) {
@@ -478,8 +357,8 @@ const MasterDataStructureConfig = () => {
   return (
     <div className="space-y-6">
       <div className="text-left">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Domain Groups Configuration</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-3xl font-bold text-foreground mb-2">Domain Groups Configuration</h2>
+        <p className="text-lg text-muted-foreground">
           Configure the hierarchical structure of Domain Groups, Categories, and Sub-Categories
         </p>
       </div>
@@ -487,7 +366,7 @@ const MasterDataStructureConfig = () => {
       {/* Industry Segment Filter */}
       <Card>
         <CardHeader>
-          <CardTitle>Filter by Industry Segment</CardTitle>
+          <CardTitle className="text-xl">Filter by Industry Segment</CardTitle>
         </CardHeader>
         <CardContent>
           <Select value={selectedIndustrySegment} onValueChange={setSelectedIndustrySegment}>
@@ -506,54 +385,58 @@ const MasterDataStructureConfig = () => {
 
       {message && (
         <Alert>
-          <AlertDescription className="text-left">{message}</AlertDescription>
+          <AlertDescription className="text-left text-base">{message}</AlertDescription>
         </Alert>
       )}
 
       <Card>
         <CardHeader className="text-left">
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between text-2xl">
             <span>Domain Groups Structure</span>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Dialog open={showAddGroupDialog} onOpenChange={setShowAddGroupDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm">
+                  <Button size="lg" className="text-sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Domain Group
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Domain Group</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-xl">Add New Domain Group</DialogTitle>
+                    <DialogDescription className="text-base">
                       Create a new domain group with an industry segment.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="groupName">Group Name</Label>
+                  <div className="space-y-6 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="groupName" className="text-base font-medium">Group Name *</Label>
                       <Input
                         id="groupName"
                         value={newGroupName}
                         onChange={(e) => setNewGroupName(e.target.value)}
                         placeholder="Enter group name"
+                        className="text-base"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="industrySegment">Industry Segment</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="industrySegment" className="text-base font-medium">Industry Segment *</Label>
                       <Select value={newGroupIndustrySegment} onValueChange={setNewGroupIndustrySegment}>
-                        <SelectTrigger>
+                        <SelectTrigger className="text-base">
                           <SelectValue placeholder="Select industry segment" />
                         </SelectTrigger>
                         <SelectContent>
                           {industrySegments.map((segment) => (
-                            <SelectItem key={segment} value={segment}>{segment}</SelectItem>
+                            <SelectItem key={segment} value={segment} className="text-sm">{segment}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAddGroupDialog(false)}>
+                      Cancel
+                    </Button>
                     <Button onClick={handleAddGroup}>Add Group</Button>
                   </DialogFooter>
                 </DialogContent>
@@ -561,43 +444,47 @@ const MasterDataStructureConfig = () => {
 
               <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
+                  <Button size="lg" variant="outline" className="text-sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Category
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Category</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-xl">Add New Category</DialogTitle>
+                    <DialogDescription className="text-base">
                       Add a category to an existing domain group.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="categoryGroup">Select Domain Group</Label>
+                  <div className="space-y-6 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryGroup" className="text-base font-medium">Select Domain Group *</Label>
                       <Select value={selectedGroupForCategory} onValueChange={setSelectedGroupForCategory}>
-                        <SelectTrigger>
+                        <SelectTrigger className="text-base">
                           <SelectValue placeholder="Select a domain group" />
                         </SelectTrigger>
                         <SelectContent>
                           {domainGroups.map((group) => (
-                            <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                            <SelectItem key={group.id} value={group.id} className="text-sm">{group.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="categoryName">Category Name</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryName" className="text-base font-medium">Category Name *</Label>
                       <Input
                         id="categoryName"
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         placeholder="Enter category name"
+                        className="text-base"
                       />
                     </div>
                   </div>
                   <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAddCategoryDialog(false)}>
+                      Cancel
+                    </Button>
                     <Button onClick={handleAddCategory}>Add Category</Button>
                   </DialogFooter>
                 </DialogContent>
@@ -605,40 +492,40 @@ const MasterDataStructureConfig = () => {
 
               <Dialog open={showAddSubCategoryDialog} onOpenChange={setShowAddSubCategoryDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
+                  <Button size="lg" variant="outline" className="text-sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Sub-Category
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Sub-Category</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-xl">Add New Sub-Category</DialogTitle>
+                    <DialogDescription className="text-base">
                       Add a sub-category to an existing category.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="subCategoryGroup">Select Domain Group</Label>
+                  <div className="space-y-6 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="subCategoryGroup" className="text-base font-medium">Select Domain Group *</Label>
                       <Select value={selectedGroupForSubCategory} onValueChange={setSelectedGroupForSubCategory}>
-                        <SelectTrigger>
+                        <SelectTrigger className="text-base">
                           <SelectValue placeholder="Select a domain group" />
                         </SelectTrigger>
                         <SelectContent>
                           {domainGroups.map((group) => (
-                            <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                            <SelectItem key={group.id} value={group.id} className="text-sm">{group.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="subCategoryCategory">Select Category</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="subCategoryCategory" className="text-base font-medium">Select Category *</Label>
                       <Select 
                         value={selectedCategoryForSubCategory} 
                         onValueChange={setSelectedCategoryForSubCategory}
                         disabled={!selectedGroupForSubCategory}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="text-base">
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -646,32 +533,37 @@ const MasterDataStructureConfig = () => {
                             domainGroups
                               .find(g => g.id === selectedGroupForSubCategory)
                               ?.categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                <SelectItem key={category.id} value={category.id} className="text-sm">{category.name}</SelectItem>
                               ))
                           }
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="subCategoryName">Sub-Category Name</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="subCategoryName" className="text-base font-medium">Sub-Category Name *</Label>
                       <Input
                         id="subCategoryName"
                         value={newSubCategoryName}
                         onChange={(e) => setNewSubCategoryName(e.target.value)}
                         placeholder="Enter sub-category name"
+                        className="text-base"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="subCategoryDescription">Description (Optional)</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="subCategoryDescription" className="text-base font-medium">Description (Optional)</Label>
                       <Textarea
                         id="subCategoryDescription"
                         value={newSubCategoryDescription}
                         onChange={(e) => setNewSubCategoryDescription(e.target.value)}
                         placeholder="Enter sub-category description"
+                        className="text-base min-h-[80px]"
                       />
                     </div>
                   </div>
                   <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAddSubCategoryDialog(false)}>
+                      Cancel
+                    </Button>
                     <Button onClick={handleAddSubCategory}>Add Sub-Category</Button>
                   </DialogFooter>
                 </DialogContent>
@@ -680,172 +572,77 @@ const MasterDataStructureConfig = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
+          <div className="space-y-8">
             {filteredDomainGroups.map((group, groupIndex) => (
-              <div key={group.id} className={`p-4 rounded-lg border-2 ${groupColors[groupIndex % groupColors.length]}`}>
+              <div key={group.id} className={`p-6 rounded-xl border-2 ${groupColors[groupIndex % groupColors.length]} shadow-sm`}>
                 {/* Domain Group Header */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-4 mb-6">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleGroupExpansion(group.id)}
-                    className="p-1 h-auto"
+                    className="p-2 h-auto hover:bg-white/60"
                   >
                     {expandedGroups.has(group.id) ? (
-                      <ChevronDown className="h-5 w-5" />
+                      <ChevronDown className="h-6 w-6" />
                     ) : (
-                      <ChevronRight className="h-5 w-5" />
+                      <ChevronRight className="h-6 w-6" />
                     )}
                   </Button>
                   
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="text-green-600 text-lg font-bold">✅</span>
+                  <div className="flex items-center gap-4 flex-1">
+                    <span className="text-green-600 text-2xl">✅</span>
                     <div className="flex-1">
-                      <div className="text-xl font-bold text-foreground mb-1">
+                      <div className="text-2xl font-bold text-foreground mb-2">
                         GROUP {groupIndex + 1}: {group.name}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingGroup(group.id);
-                          setEditingGroupName(group.name);
-                        }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          const updatedGroups = domainGroups.filter((g) => g.id !== group.id);
-                          setDomainGroups(updatedGroups);
-                          showMessage('Domain Group deleted.');
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Badge variant="secondary" className="text-sm px-3 py-1">
+                        {group.industrySegment}
+                      </Badge>
                     </div>
                   </div>
                 </div>
 
                 {/* Categories */}
                 {expandedGroups.has(group.id) && (
-                  <div className="ml-8 space-y-4">
+                  <div className="ml-12 space-y-6">
                     {group.categories.map((category) => (
-                      <div key={category.id} className="border-l-2 border-secondary pl-4">
+                      <div key={category.id} className="border-l-4 border-secondary pl-6 bg-white/30 rounded-r-lg py-4">
                         {/* Category Header */}
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-4 mb-4">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleCategoryExpansion(category.id)}
-                            className="p-1 h-auto"
+                            className="p-2 h-auto hover:bg-white/60"
                           >
                             {expandedCategories.has(category.id) ? (
-                              <ChevronDown className="h-4 w-4" />
+                              <ChevronDown className="h-5 w-5" />
                             ) : (
-                              <ChevronRight className="h-4 w-4" />
+                              <ChevronRight className="h-5 w-5" />
                             )}
                           </Button>
                           
-                          <div className="flex items-center gap-3 flex-1 justify-between">
-                            <div className="flex-1">
-                              <div className="text-lg font-semibold text-foreground">
-                                Category: {category.name}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingCategory(category.id);
-                                  setEditingCategoryName(category.name);
-                                }}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  const updatedGroups = domainGroups.map((g) =>
-                                    g.id === group.id
-                                      ? {
-                                          ...g,
-                                          categories: g.categories.filter((c) => c.id !== category.id),
-                                        }
-                                      : g
-                                  );
-                                  setDomainGroups(updatedGroups);
-                                  showMessage('Category deleted.');
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                          <div className="flex-1">
+                            <div className="text-xl font-semibold text-foreground">
+                              {category.name}
                             </div>
                           </div>
                         </div>
 
                         {/* Sub-Categories */}
                         {expandedCategories.has(category.id) && (
-                          <div className="ml-6 space-y-3">
+                          <div className="ml-10 space-y-4">
                             {category.subCategories.map((subCategory) => (
-                              <div key={subCategory.id} className="border-l border-muted pl-4">
-                                <div className="flex items-start gap-3 justify-between">
-                                  <div className="flex-1">
-                                    <div className="text-base font-medium text-foreground mb-1">
-                                      Sub-Category: {subCategory.name}
-                                    </div>
-                                    {subCategory.description && (
-                                      <div className="text-sm text-muted-foreground">
-                                        {subCategory.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setEditingSubCategory(subCategory.id);
-                                        setEditingSubCategoryName(subCategory.name);
-                                      }}
-                                    >
-                                      <Edit2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        const updatedGroups = domainGroups.map((g) =>
-                                          g.id === group.id
-                                            ? {
-                                                ...g,
-                                                categories: g.categories.map((c) =>
-                                                  c.id === category.id
-                                                    ? {
-                                                        ...c,
-                                                        subCategories: c.subCategories.filter(
-                                                          (sc) => sc.id !== subCategory.id
-                                                        ),
-                                                      }
-                                                    : c
-                                                ),
-                                              }
-                                            : g
-                                        );
-                                        setDomainGroups(updatedGroups);
-                                        showMessage('Sub-Category deleted.');
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                              <div key={subCategory.id} className="border-l-2 border-muted pl-6 py-3 bg-white/20 rounded-r-md">
+                                <div className="text-lg font-medium text-foreground mb-2">
+                                  {subCategory.name}
                                 </div>
+                                {subCategory.description && (
+                                  <div className="text-base text-muted-foreground leading-relaxed">
+                                    {subCategory.description}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
