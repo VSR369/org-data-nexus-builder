@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserPlus } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -112,12 +112,13 @@ const transactionMenuItems = [
 
 export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isOnRegistrationPage = location.pathname === '/register';
 
   const handleMasterDataClick = (sectionId: string) => {
     if (isOnRegistrationPage) {
-      // Navigate to home page with the section
-      window.location.href = `/?section=${sectionId}`;
+      // Navigate to home page with the section using React Router
+      navigate(`/?section=${sectionId}`);
     } else {
       // Just set the active section on the current page
       setActiveSection(sectionId);
