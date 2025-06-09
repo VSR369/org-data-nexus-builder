@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -16,6 +17,7 @@ import CurrencyConfig from '../components/master-data/CurrencyConfig';
 import CountryConfig from '../components/master-data/CountryConfig';
 import CommunicationTypeConfig from '../components/master-data/CommunicationTypeConfig';
 import PricingConfig from '../components/master-data/PricingConfig';
+import SelfEnrollmentForm from '../components/transactions/SelfEnrollmentForm';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -30,6 +32,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'self-enrollment':
+        return <SelfEnrollmentForm />;
       case 'events-calendar':
         return <EventsCalendar />;
       case 'voting-assessment':
