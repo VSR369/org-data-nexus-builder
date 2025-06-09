@@ -178,6 +178,9 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     );
   }
 
+  console.log('Selected Industry Segment:', selectedIndustrySegment);
+  console.log('Filtered Domain Groups:', filteredDomainGroups);
+
   return (
     <div className="space-y-6">
       {/* Selected Industry Segment Display */}
@@ -202,75 +205,89 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
           </p>
         </CardHeader>
         <CardContent>
-          <Accordion type="multiple" className="space-y-4">
-            {filteredDomainGroups.map((group) => (
-              <AccordionItem key={group.id} value={group.id} className="border rounded-lg">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="text-left">
-                    <div className="text-lg font-semibold">{group.name}</div>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4">
-                  <Accordion type="multiple" className="space-y-3">
-                    {group.categories.map((category) => (
-                      <AccordionItem key={category.id} value={category.id} className="border rounded-md">
-                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                          <div className="text-left">
-                            <div className="text-base font-medium">{category.name}</div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-3">
-                          <div className="space-y-3">
-                            {category.subCategories.map((subCategory) => {
-                              const assessmentKey = `${group.id}-${category.id}-${subCategory.id}`;
-                              const currentCapability = competencyAssessments[assessmentKey]?.capability || 'advanced';
-                              
-                              return (
-                                <div key={subCategory.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md border">
-                                  <div className="flex-1">
-                                    <div className="text-sm font-medium mb-1">
-                                      {subCategory.name}
-                                    </div>
-                                    {subCategory.description && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {subCategory.description}
+          {filteredDomainGroups.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                No domain groups found for the selected industry segment: {getIndustrySegmentName(selectedIndustrySegment)}
+              </p>
+            </div>
+          ) : (
+            <Accordion type="multiple" className="space-y-4" defaultValue={filteredDomainGroups.map(g => g.id)}>
+              {filteredDomainGroups.map((group) => (
+                <AccordionItem key={group.id} value={group.id} className="border rounded-lg">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <div className="text-left">
+                      <div className="text-lg font-semibold">{group.name}</div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {group.categories.length} categories • {group.categories.reduce((total, cat) => total + cat.subCategories.length, 0)} sub-categories
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-4">
+                    <Accordion type="multiple" className="space-y-3" defaultValue={group.categories.map(c => c.id)}>
+                      {group.categories.map((category) => (
+                        <AccordionItem key={category.id} value={category.id} className="border rounded-md">
+                          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                            <div className="text-left">
+                              <div className="text-base font-medium">{category.name}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {category.subCategories.length} sub-categories
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-3">
+                            <div className="space-y-3">
+                              {category.subCategories.map((subCategory) => {
+                                const assessmentKey = `${group.id}-${category.id}-${subCategory.id}`;
+                                const currentCapability = competencyAssessments[assessmentKey]?.capability || 'advanced';
+                                
+                                return (
+                                  <div key={subCategory.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md border">
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium mb-1">
+                                        {subCategory.name}
                                       </div>
-                                    )}
+                                      {subCategory.description && (
+                                        <div className="text-xs text-muted-foreground">
+                                          {subCategory.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3 ml-4">
+                                      <Label className="text-xs font-medium">Capability:</Label>
+                                      <Select
+                                        value={currentCapability}
+                                        onValueChange={(value) => updateCapability(group.id, category.id, subCategory.id, value)}
+                                      >
+                                        <SelectTrigger className="w-36">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="basic">Basic</SelectItem>
+                                          <SelectItem value="advanced">Advanced</SelectItem>
+                                          <SelectItem value="guru">Guru</SelectItem>
+                                          <SelectItem value="not-applicable">Not Applicable</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Badge variant={getCapabilityBadgeVariant(currentCapability)} className="min-w-[90px] justify-center text-xs">
+                                        {currentCapability === 'not-applicable' ? 'Not Applicable' : 
+                                         currentCapability.charAt(0).toUpperCase() + currentCapability.slice(1)}
+                                      </Badge>
+                                    </div>
                                   </div>
-                                  
-                                  <div className="flex items-center gap-3 ml-4">
-                                    <Label className="text-xs font-medium">Capability:</Label>
-                                    <Select
-                                      value={currentCapability}
-                                      onValueChange={(value) => updateCapability(group.id, category.id, subCategory.id, value)}
-                                    >
-                                      <SelectTrigger className="w-36">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="basic">Basic</SelectItem>
-                                        <SelectItem value="advanced">Advanced</SelectItem>
-                                        <SelectItem value="guru">Guru</SelectItem>
-                                        <SelectItem value="not-applicable">Not Applicable</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <Badge variant={getCapabilityBadgeVariant(currentCapability)} className="min-w-[90px] justify-center text-xs">
-                                      {currentCapability === 'not-applicable' ? 'Not Applicable' : 
-                                       currentCapability.charAt(0).toUpperCase() + currentCapability.slice(1)}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                                );
+                              })}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
         </CardContent>
       </Card>
     </div>
