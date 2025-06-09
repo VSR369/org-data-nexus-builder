@@ -23,25 +23,21 @@ const menuItems = [
     id: 'industry-segments',
     title: 'Industry Segments',
     icon: Briefcase,
-    description: 'Business sector classifications'
   },
   {
     id: 'organization-types',
     title: 'Organization Types',
     icon: Building2,
-    description: 'Company size and structure types'
   },
   {
     id: 'entity-types',
     title: 'Entity Types',
     icon: Building2,
-    description: 'Legal entity classifications'
   },
   {
     id: 'departments',
     title: 'Departments',
     icon: Users,
-    description: 'Department categories and subcategories'
   },
 ];
 
@@ -70,10 +66,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                     className="w-full justify-start"
                   >
                     <item.icon className="w-4 h-4" />
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{item.title}</span>
-                      <span className="text-xs text-muted-foreground">{item.description}</span>
-                    </div>
+                    <span className="font-medium">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

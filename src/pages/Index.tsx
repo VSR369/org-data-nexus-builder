@@ -1,13 +1,11 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
 import IndustrySegmentConfig from '../components/master-data/IndustrySegmentConfig';
 import OrganizationTypeConfig from '../components/master-data/OrganizationTypeConfig';
 import EntityTypeConfig from '../components/master-data/EntityTypeConfig';
 import DepartmentConfig from '../components/master-data/DepartmentConfig';
-import { Settings } from 'lucide-react';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('industry-segments');
@@ -27,36 +25,6 @@ const Index = () => {
     }
   };
 
-  const getSectionTitle = () => {
-    switch (activeSection) {
-      case 'industry-segments':
-        return 'Industry Segments';
-      case 'organization-types':
-        return 'Organization Types';
-      case 'entity-types':
-        return 'Entity Types';
-      case 'departments':
-        return 'Departments';
-      default:
-        return 'Industry Segments';
-    }
-  };
-
-  const getSectionDescription = () => {
-    switch (activeSection) {
-      case 'industry-segments':
-        return 'Configure and manage industry segment classifications';
-      case 'organization-types':
-        return 'Set up organization type categories for different business entities';
-      case 'entity-types':
-        return 'Configure organization entity types for legal classification';
-      case 'departments':
-        return 'Manage department categories and subcategories';
-      default:
-        return 'Configure and manage industry segment classifications';
-    }
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -71,20 +39,9 @@ const Index = () => {
               </div>
             </div>
 
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  {getSectionTitle()}
-                </CardTitle>
-                <CardDescription>
-                  {getSectionDescription()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {renderContent()}
-              </CardContent>
-            </Card>
+            <div className="w-full">
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>
