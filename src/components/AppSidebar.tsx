@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +28,11 @@ const menuItems = [
     id: 'voting-assessment',
     title: 'Voting & Assessment Config',
     icon: Target,
+  },
+  {
+    id: 'pricing-config',
+    title: 'Pricing Configuration',
+    icon: CreditCard,
   },
   {
     id: 'master-data-structure',
