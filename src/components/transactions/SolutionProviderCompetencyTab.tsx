@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CompetencyAssessment } from './competency/types';
 import { masterDomainGroups, competencyCapabilities } from './competency/masterData';
 import IndustrySegmentDisplay from './competency/IndustrySegmentDisplay';
@@ -8,10 +9,18 @@ import CompetencyAssessmentContent from './competency/CompetencyAssessmentConten
 
 interface SolutionProviderCompetencyTabProps {
   selectedIndustrySegment: string;
+  onCompetencyComplete: (isComplete: boolean) => void;
+  onSubmitEnrollment: () => void;
+  onSaveDraft: () => void;
+  isSubmitEnabled: boolean;
 }
 
 const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps> = ({ 
-  selectedIndustrySegment 
+  selectedIndustrySegment,
+  onCompetencyComplete,
+  onSubmitEnrollment,
+  onSaveDraft,
+  isSubmitEnabled
 }) => {
   const [competencyAssessments, setCompetencyAssessments] = useState<Record<string, CompetencyAssessment>>({});
 
@@ -53,6 +62,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     
     if (!selectedIndustrySegment || selectedIndustrySegment === 'all') {
       setCompetencyAssessments({});
+      onCompetencyComplete(false);
       return;
     }
 
@@ -74,7 +84,16 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     
     console.log('Setting initial assessments:', initialAssessments);
     setCompetencyAssessments(initialAssessments);
-  }, [selectedIndustrySegment, filteredDomainGroups]);
+    
+    // Consider competency complete if all subcategories have assessments
+    const totalSubCategories = filteredDomainGroups.reduce((total, group) => {
+      return total + group.categories.reduce((catTotal, category) => {
+        return catTotal + category.subCategories.length;
+      }, 0);
+    }, 0);
+    
+    onCompetencyComplete(Object.keys(initialAssessments).length === totalSubCategories && totalSubCategories > 0);
+  }, [selectedIndustrySegment, filteredDomainGroups, onCompetencyComplete]);
 
   const updateCapability = (groupId: string, categoryId: string, subCategoryId: string, capability: string) => {
     const key = `${groupId}-${categoryId}-${subCategoryId}`;
@@ -104,6 +123,8 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     );
   }
 
+  const isCompetencyComplete = Object.keys(competencyAssessments).length > 0;
+
   return (
     <div className="space-y-6">
       <IndustrySegmentDisplay 
@@ -120,6 +141,34 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
         getIndustrySegmentName={getIndustrySegmentName}
         selectedIndustrySegment={selectedIndustrySegment}
       />
+
+      {/* Action Buttons */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-4">
+            <Button 
+              onClick={onSubmitEnrollment}
+              className="flex-1"
+              disabled={!isSubmitEnabled || !isCompetencyComplete}
+            >
+              Submit Enrollment
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={onSaveDraft}
+              className="flex-1"
+            >
+              Save as Draft
+            </Button>
+          </div>
+          {(!isSubmitEnabled || !isCompetencyComplete) && (
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              {!isSubmitEnabled && "Complete Basic Details & Information first. "}
+              {!isCompetencyComplete && "Complete Competency Assessment to submit enrollment."}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
