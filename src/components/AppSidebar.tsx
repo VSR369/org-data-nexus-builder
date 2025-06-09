@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Settings, Database, Gift, DollarSign, Globe, MessageSquare, Calendar } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -71,7 +71,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
     <Sidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-2">
-          <Database className="w-6 h-6" />
+          <Calendar className="w-6 h-6" />
           <div>
             <h2 className="font-semibold">Master Data</h2>
             <p className="text-sm text-muted-foreground">Configuration Hub</p>
