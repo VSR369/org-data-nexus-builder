@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
@@ -6,6 +5,7 @@ import EventsCalendar from '../components/EventsCalendar';
 import SolutionVotingAssessmentConfig from '../components/voting-assessment/SolutionVotingAssessmentConfig';
 import MasterDataStructureConfig from '../components/master-data/MasterDataStructureConfig';
 import ChallengeStatusConfig from '../components/master-data/ChallengeStatusConfig';
+import SolutionStatusConfig from '../components/master-data/SolutionStatusConfig';
 import IndustrySegmentConfig from '../components/master-data/IndustrySegmentConfig';
 import OrganizationTypeConfig from '../components/master-data/OrganizationTypeConfig';
 import EntityTypeConfig from '../components/master-data/EntityTypeConfig';
@@ -28,6 +28,8 @@ const Index = () => {
         return <MasterDataStructureConfig />;
       case 'challenge-status':
         return <ChallengeStatusConfig />;
+      case 'solution-status':
+        return <SolutionStatusConfig />;
       case 'industry-segments':
         return <IndustrySegmentConfig />;
       case 'organization-types':

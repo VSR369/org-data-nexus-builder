@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +37,11 @@ const menuItems = [
     id: 'challenge-status',
     title: 'Challenge Status',
     icon: CheckCircle,
+  },
+  {
+    id: 'solution-status',
+    title: 'Solution Statuses',
+    icon: Award,
   },
   {
     id: 'industry-segments',
