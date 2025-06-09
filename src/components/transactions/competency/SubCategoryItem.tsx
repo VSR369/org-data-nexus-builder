@@ -52,14 +52,20 @@ const SubCategoryItem: React.FC<SubCategoryItemProps> = ({
           onValueChange={handleCapabilityChange}
         >
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Select capability" />
+            <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50">
             {activeCapabilities.map((capability) => (
-              <SelectItem key={capability.id} value={capability.name}>
-                <div className="flex flex-col">
-                  <span>{capability.name}</span>
-                  <span className="text-xs text-muted-foreground">{capability.description}</span>
+              <SelectItem 
+                key={capability.id} 
+                value={capability.name}
+                className="cursor-pointer"
+              >
+                <div className="flex flex-col py-1">
+                  <span className="font-medium">{capability.name}</span>
+                  <span className="text-xs text-muted-foreground leading-tight whitespace-normal">
+                    {capability.description}
+                  </span>
                 </div>
               </SelectItem>
             ))}
