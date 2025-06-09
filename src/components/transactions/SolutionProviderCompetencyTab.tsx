@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface SubCategory {
   id: string;
@@ -40,8 +39,6 @@ interface SolutionProviderCompetencyTabProps {
 const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps> = ({ 
   selectedIndustrySegment 
 }) => {
-  const [expandedGroups, setExpandedGroups] = useState(new Set<string>());
-  const [expandedCategories, setExpandedCategories] = useState(new Set<string>());
   const [competencyAssessments, setCompetencyAssessments] = useState<Record<string, CompetencyAssessment>>({});
 
   // Master data - this would normally come from your master data structure
@@ -109,18 +106,23 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     },
   ];
 
+  const getIndustrySegmentName = (value: string) => {
+    switch (value) {
+      case 'bfsi': return 'Banking, Financial Services & Insurance (BFSI)';
+      case 'retail': return 'Retail & E-Commerce';
+      case 'healthcare': return 'Healthcare & Life Sciences';
+      case 'it': return 'Information Technology & Software Services';
+      case 'telecom': return 'Telecommunications';
+      case 'education': return 'Education & EdTech';
+      case 'manufacturing': return 'Manufacturing';
+      case 'logistics': return 'Logistics & Supply Chain';
+      default: return value;
+    }
+  };
+
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
     ? masterDomainGroups 
-    : masterDomainGroups.filter(group => group.industrySegment === selectedIndustrySegment);
-
-  const groupColors = [
-    'bg-blue-50 border-blue-200',
-    'bg-green-50 border-green-200',
-    'bg-purple-50 border-purple-200',
-    'bg-orange-50 border-orange-200',
-    'bg-teal-50 border-teal-200',
-    'bg-pink-50 border-pink-200'
-  ];
+    : masterDomainGroups.filter(group => group.industrySegment === getIndustrySegmentName(selectedIndustrySegment));
 
   useEffect(() => {
     // Initialize all assessments with 'advanced' as default
@@ -142,26 +144,6 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     
     setCompetencyAssessments(initialAssessments);
   }, [selectedIndustrySegment]);
-
-  const toggleGroupExpansion = (groupId: string) => {
-    const newExpandedGroups = new Set(expandedGroups);
-    if (newExpandedGroups.has(groupId)) {
-      newExpandedGroups.delete(groupId);
-    } else {
-      newExpandedGroups.add(groupId);
-    }
-    setExpandedGroups(newExpandedGroups);
-  };
-
-  const toggleCategoryExpansion = (categoryId: string) => {
-    const newExpandedCategories = new Set(expandedCategories);
-    if (newExpandedCategories.has(categoryId)) {
-      newExpandedCategories.delete(categoryId);
-    } else {
-      newExpandedCategories.add(categoryId);
-    }
-    setExpandedCategories(newExpandedCategories);
-  };
 
   const updateCapability = (groupId: string, categoryId: string, subCategoryId: string, capability: string) => {
     const key = `${groupId}-${categoryId}-${subCategoryId}`;
@@ -189,7 +171,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       <Card>
         <CardContent className="text-center py-8">
           <p className="text-muted-foreground">
-            Please select an industry segment to view competency assessment parameters.
+            Please select an industry segment in the Basic Details & Information tab to view competency assessment parameters.
           </p>
         </CardContent>
       </Card>
@@ -198,93 +180,71 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
 
   return (
     <div className="space-y-6">
+      {/* Selected Industry Segment Display */}
       <Card>
         <CardHeader>
-          <CardTitle>Solution Provider Competency Assessment Parameters</CardTitle>
+          <CardTitle>Selected Industry Segment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-base px-4 py-2">
+              {getIndustrySegmentName(selectedIndustrySegment)}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Competency Assessment Parameters</CardTitle>
           <p className="text-sm text-muted-foreground">
             Assess your capability level for each competency area. Default level is set to Advanced - you can modify as needed.
           </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {filteredDomainGroups.map((group, groupIndex) => (
-              <div key={group.id} className={`p-6 rounded-xl border-2 ${groupColors[groupIndex % groupColors.length]} shadow-sm`}>
-                {/* Domain Group Header */}
-                <div className="flex items-center gap-4 mb-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleGroupExpansion(group.id)}
-                    className="p-2 h-auto hover:bg-white/60"
-                  >
-                    {expandedGroups.has(group.id) ? (
-                      <ChevronDown className="h-5 w-5" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5" />
-                    )}
-                  </Button>
-                  
-                  <div className="flex-1">
-                    <div className="text-xl font-bold text-foreground">
-                      {group.name}
-                    </div>
+          <Accordion type="multiple" className="space-y-4">
+            {filteredDomainGroups.map((group) => (
+              <AccordionItem key={group.id} value={group.id} className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="text-left">
+                    <div className="text-lg font-semibold">{group.name}</div>
                   </div>
-                </div>
-
-                {/* Categories */}
-                {expandedGroups.has(group.id) && (
-                  <div className="ml-8 space-y-4">
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <Accordion type="multiple" className="space-y-3">
                     {group.categories.map((category) => (
-                      <div key={category.id} className="border-l-4 border-secondary pl-6 bg-white/30 rounded-r-lg py-4">
-                        {/* Category Header */}
-                        <div className="flex items-center gap-4 mb-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleCategoryExpansion(category.id)}
-                            className="p-2 h-auto hover:bg-white/60"
-                          >
-                            {expandedCategories.has(category.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                          
-                          <div className="flex-1">
-                            <div className="text-lg font-semibold text-foreground">
-                              {category.name}
-                            </div>
+                      <AccordionItem key={category.id} value={category.id} className="border rounded-md">
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                          <div className="text-left">
+                            <div className="text-base font-medium">{category.name}</div>
                           </div>
-                        </div>
-
-                        {/* Sub-Categories */}
-                        {expandedCategories.has(category.id) && (
-                          <div className="ml-8 space-y-3">
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-3">
+                          <div className="space-y-3">
                             {category.subCategories.map((subCategory) => {
                               const assessmentKey = `${group.id}-${category.id}-${subCategory.id}`;
                               const currentCapability = competencyAssessments[assessmentKey]?.capability || 'advanced';
                               
                               return (
-                                <div key={subCategory.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg border">
+                                <div key={subCategory.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md border">
                                   <div className="flex-1">
-                                    <div className="text-base font-medium text-foreground mb-1">
+                                    <div className="text-sm font-medium mb-1">
                                       {subCategory.name}
                                     </div>
                                     {subCategory.description && (
-                                      <div className="text-sm text-muted-foreground">
+                                      <div className="text-xs text-muted-foreground">
                                         {subCategory.description}
                                       </div>
                                     )}
                                   </div>
                                   
                                   <div className="flex items-center gap-3 ml-4">
-                                    <Label className="text-sm font-medium">Capability:</Label>
+                                    <Label className="text-xs font-medium">Capability:</Label>
                                     <Select
                                       value={currentCapability}
                                       onValueChange={(value) => updateCapability(group.id, category.id, subCategory.id, value)}
                                     >
-                                      <SelectTrigger className="w-40">
+                                      <SelectTrigger className="w-36">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -294,7 +254,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
                                         <SelectItem value="not-applicable">Not Applicable</SelectItem>
                                       </SelectContent>
                                     </Select>
-                                    <Badge variant={getCapabilityBadgeVariant(currentCapability)} className="min-w-[100px] justify-center">
+                                    <Badge variant={getCapabilityBadgeVariant(currentCapability)} className="min-w-[90px] justify-center text-xs">
                                       {currentCapability === 'not-applicable' ? 'Not Applicable' : 
                                        currentCapability.charAt(0).toUpperCase() + currentCapability.slice(1)}
                                     </Badge>
@@ -303,14 +263,14 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
                               );
                             })}
                           </div>
-                        )}
-                      </div>
+                        </AccordionContent>
+                      </AccordionItem>
                     ))}
-                  </div>
-                )}
-              </div>
+                  </Accordion>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </CardContent>
       </Card>
     </div>
