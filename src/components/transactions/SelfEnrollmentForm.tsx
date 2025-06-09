@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,8 +108,7 @@ const SelfEnrollmentForm = () => {
     setActiveTab(value);
   };
 
-  const handleSubmitEnrollment = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitEnrollment = () => {
     if (!validateRequiredFields()) {
       toast({
         title: "Required Fields Missing",
