@@ -57,70 +57,118 @@ const MasterDataStructureConfig = () => {
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-  // Initialize default data for all industry segments with original domain structure
+  // Initialize default data for all industry segments with the new domain structure
   useEffect(() => {
     const defaultData: IndustrySegmentData = {
       groups: [
-        { id: '1', name: 'Technology' },
-        { id: '2', name: 'Business Process' },
-        { id: '3', name: 'Finance & Accounting' },
-        { id: '4', name: 'Marketing & Sales' },
-        { id: '5', name: 'Operations' }
+        { id: '1', name: 'Strategy, Innovation & Growth' },
+        { id: '2', name: 'Operations, Delivery, Risk & Sustainability' },
+        { id: '3', name: 'People, Culture & Change' },
+        { id: '4', name: 'Technology & Digital Transformation' }
       ],
       categories: {
         '1': [
-          { id: '1-1', name: 'Software Development' },
-          { id: '1-2', name: 'Data Analytics' },
-          { id: '1-3', name: 'Cybersecurity' },
-          { id: '1-4', name: 'Cloud Computing' },
-          { id: '1-5', name: 'AI/ML' }
+          { id: '1-1', name: 'Strategic Vision & Business Planning' },
+          { id: '1-2', name: 'Business Model & Value Proposition Design' },
+          { id: '1-3', name: 'Outcome Measurement & Business Value Realization' }
         ],
         '2': [
-          { id: '2-1', name: 'Process Optimization' },
-          { id: '2-2', name: 'Quality Management' },
-          { id: '2-3', name: 'Compliance' }
+          { id: '2-1', name: 'Product & Systems Development Excellence' },
+          { id: '2-2', name: 'Service Design & Customer Experience' },
+          { id: '2-3', name: 'Process Excellence & Core Functions' },
+          { id: '2-4', name: 'Compliance, Risk & Regulatory Governance' },
+          { id: '2-5', name: 'ESG & Sustainability Strategy' },
+          { id: '2-6', name: 'Global / Regional Delivery Capability' }
         ],
         '3': [
-          { id: '3-1', name: 'Financial Planning' },
-          { id: '3-2', name: 'Risk Management' },
-          { id: '3-3', name: 'Audit & Compliance' }
+          { id: '3-1', name: 'Talent Management & Organizational Culture' },
+          { id: '3-2', name: 'Operating Model & Organizational Structure' },
+          { id: '3-3', name: 'Digital Workplace & Workforce Enablement' }
         ],
         '4': [
-          { id: '4-1', name: 'Digital Marketing' },
-          { id: '4-2', name: 'Sales Strategy' },
-          { id: '4-3', name: 'Customer Relationship Management' }
-        ],
-        '5': [
-          { id: '5-1', name: 'Supply Chain Management' },
-          { id: '5-2', name: 'Project Management' },
-          { id: '5-3', name: 'Resource Planning' }
+          { id: '4-1', name: 'Technology & Digital Transformation' },
+          { id: '4-2', name: 'Data Strategy & Decision Intelligence' }
         ]
       },
       subCategories: {
         '1-1': [
-          { id: '1-1-1', name: 'Web Development' },
-          { id: '1-1-2', name: 'Mobile Development' },
-          { id: '1-1-3', name: 'Backend Development' }
+          { id: '1-1-1', name: 'Vision, Mission, and Goals Alignment' },
+          { id: '1-1-2', name: 'Strategic Planning Frameworks' },
+          { id: '1-1-3', name: 'Competitive Positioning' },
+          { id: '1-1-4', name: 'Long-Term Scenario Thinking' }
         ],
         '1-2': [
-          { id: '1-2-1', name: 'Business Intelligence' },
-          { id: '1-2-2', name: 'Data Visualization' },
-          { id: '1-2-3', name: 'Predictive Analytics' }
+          { id: '1-2-1', name: 'Revenue Models & Monetization' },
+          { id: '1-2-2', name: 'Customer Segments & Value Mapping' },
+          { id: '1-2-3', name: 'Partner Ecosystem Design' },
+          { id: '1-2-4', name: 'Business Sustainability Models' }
         ],
         '1-3': [
-          { id: '1-3-1', name: 'Network Security' },
-          { id: '1-3-2', name: 'Application Security' },
-          { id: '1-3-3', name: 'Data Protection' }
+          { id: '1-3-1', name: 'ROI Analysis & Impact Metrics' },
+          { id: '1-3-2', name: 'Benefits Realization Management' },
+          { id: '1-3-3', name: 'Outcome-based Contracting' },
+          { id: '1-3-4', name: 'Value Assurance Reviews' }
         ],
         '2-1': [
-          { id: '2-1-1', name: 'Workflow Automation' },
-          { id: '2-1-2', name: 'Lean Methodology' },
-          { id: '2-1-3', name: 'Six Sigma' }
+          { id: '2-1-1', name: 'Requirement Analysis & Specification' },
+          { id: '2-1-2', name: 'System Design Architecture' },
+          { id: '2-1-3', name: 'Prototyping & Iterative Development' },
+          { id: '2-1-4', name: 'Quality & Reliability Engineering' }
+        ],
+        '2-2': [
+          { id: '2-2-1', name: 'Journey Mapping & Service Blueprinting' },
+          { id: '2-2-2', name: 'Omnichannel Experience Strategy' },
+          { id: '2-2-3', name: 'Customer Feedback Integration' },
+          { id: '2-2-4', name: 'Personalization & Accessibility' }
+        ],
+        '2-3': [
+          { id: '2-3-1', name: 'Sales, Marketing, Finance, HR, Ops, SCM' },
+          { id: '2-3-2', name: 'SOP Development' },
+          { id: '2-3-3', name: 'KPI/OKR Definition' },
+          { id: '2-3-4', name: 'Continuous Improvement (Lean, Six Sigma)' }
+        ],
+        '2-4': [
+          { id: '2-4-1', name: 'Stakeholder Engagement' }
+        ],
+        '2-5': [
+          { id: '2-5-1', name: 'Carbon Footprint & Green IT' },
+          { id: '2-5-2', name: 'Circular Economy Practices' },
+          { id: '2-5-3', name: 'Ethical Governance Frameworks' },
+          { id: '2-5-4', name: 'Social Responsibility Programs' }
+        ],
+        '2-6': [
+          { id: '2-6-1', name: 'Multi-Region Operations' },
+          { id: '2-6-2', name: 'Countries Worked' },
+          { id: '2-6-3', name: 'Regulatory & Localization Readiness' },
+          { id: '2-6-4', name: 'Delivery Center Strategy' },
+          { id: '2-6-5', name: 'Time Zone & Language Support' }
         ],
         '3-1': [
-          { id: '3-1-1', name: 'Budget Planning' },
-          { id: '3-1-2', name: 'Financial Forecasting' },
-          { id: '3-1-3', name: 'Investment Analysis' }
+          { id: '3-1-1', name: 'Stakeholder Engagement' },
+          { id: '3-1-2', name: 'Communication Planning' },
+          { id: '3-1-3', name: 'Cultural Assessment & Transformation' },
+          { id: '3-1-4', name: 'Adoption & Training Programs' }
+        ],
+        '3-2': [
+          { id: '3-2-1', name: 'Role Clarity & Governance Structure' },
+          { id: '3-2-2', name: 'Decision Rights Allocation' },
+          { id: '3-2-3', name: 'Centralization vs. Decentralization' },
+          { id: '3-2-4', name: 'Shared Services Design' }
+        ],
+        '3-3': [
+          { id: '3-3-1', name: 'Collaboration Tools & Digital Adoption' },
+          { id: '3-3-2', name: 'Hybrid/Remote Work Enablement' },
+          { id: '3-3-3', name: 'Workforce Productivity Solutions' },
+          { id: '3-3-4', name: 'Employee Experience Platforms' }
+        ],
+        '4-1': [
+          { id: '4-1-1', name: 'Enterprise Architecture' },
+          { id: '4-1-2', name: 'Cloud & Edge Infrastructure' },
+          { id: '4-1-3', name: 'API & Integration Frameworks' },
+          { id: '4-1-4', name: 'DevSecOps & Cybersecurity' }
+        ],
+        '4-2': [
+          { id: '4-2-1', name: 'KPI/OKR Definition' }
         ]
       }
     };
