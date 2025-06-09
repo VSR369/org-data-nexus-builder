@@ -1,10 +1,8 @@
 
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
 import EventsCalendar from '../components/EventsCalendar';
-import RichDocumentEditor from '../components/editor/RichDocumentEditor';
 import IndustrySegmentConfig from '../components/master-data/IndustrySegmentConfig';
 import OrganizationTypeConfig from '../components/master-data/OrganizationTypeConfig';
 import EntityTypeConfig from '../components/master-data/EntityTypeConfig';
@@ -21,8 +19,6 @@ const Index = () => {
     switch (activeSection) {
       case 'events-calendar':
         return <EventsCalendar />;
-      case 'rich-document-editor':
-        return <RichDocumentEditor />;
       case 'industry-segments':
         return <IndustrySegmentConfig />;
       case 'organization-types':

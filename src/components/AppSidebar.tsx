@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Settings, Database, Gift, DollarSign, Globe, MessageSquare, Calendar, FileText, Edit } from 'lucide-react';
+import { Briefcase, Building2, Users, Settings, Database, Gift, DollarSign, Globe, MessageSquare, Calendar } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -23,11 +23,6 @@ const menuItems = [
     id: 'events-calendar',
     title: 'Events Calendar',
     icon: Calendar,
-  },
-  {
-    id: 'rich-document-editor',
-    title: 'Rich Document Editor',
-    icon: Edit,
   },
   {
     id: 'industry-segments',
