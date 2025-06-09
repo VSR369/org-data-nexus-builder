@@ -95,6 +95,33 @@ const MasterDataStructureConfig = () => {
                 description: 'Integrating sustainable practices into business models for long-term viability.'
               }
             ]
+          },
+          {
+            id: 'cat-1-3',
+            name: 'Outcome Measurement & Business Value Realization',
+            description: 'Measuring and realizing business value from initiatives',
+            subCategories: [
+              {
+                id: 'sub-1-3-1',
+                name: 'ROI Analysis & Impact Metrics',
+                description: 'Measuring return on investments and defining key impact indicators.'
+              },
+              {
+                id: 'sub-1-3-2',
+                name: 'Benefits Realization Management',
+                description: 'Ensuring projects deliver intended benefits aligned with strategic goals.'
+              },
+              {
+                id: 'sub-1-3-3',
+                name: 'Outcome-based Contracting',
+                description: 'Structuring contracts based on outcome delivery rather than inputs or activities.'
+              },
+              {
+                id: 'sub-1-3-4',
+                name: 'Value Assurance Reviews',
+                description: 'Periodic reviews to ensure value creation throughout project or initiative lifecycles.'
+              }
+            ]
           }
         ]
       },
@@ -117,6 +144,275 @@ const MasterDataStructureConfig = () => {
                 id: 'sub-2-1-2',
                 name: 'System Design Architecture',
                 description: 'Designing scalable and robust systems architecture.'
+              },
+              {
+                id: 'sub-2-1-3',
+                name: 'Prototyping & Iterative Development',
+                description: 'Rapid design-build-test cycles to evolve solutions.'
+              },
+              {
+                id: 'sub-2-1-4',
+                name: 'Quality & Reliability Engineering',
+                description: 'Ensuring consistency, safety, and reliability of products/services.'
+              }
+            ]
+          },
+          {
+            id: 'cat-2-2',
+            name: 'Service Design & Customer Experience',
+            description: 'Customer experience and service design excellence',
+            subCategories: [
+              {
+                id: 'sub-2-2-1',
+                name: 'Journey Mapping & Service Blueprinting',
+                description: 'Visualizing customer interactions and backend systems to improve services.'
+              },
+              {
+                id: 'sub-2-2-2',
+                name: 'Omnichannel Experience Strategy',
+                description: 'Designing seamless experiences across physical and digital channels.'
+              },
+              {
+                id: 'sub-2-2-3',
+                name: 'Customer Feedback Integration',
+                description: 'Embedding user feedback loops into service refinement.'
+              },
+              {
+                id: 'sub-2-2-4',
+                name: 'Personalization & Accessibility',
+                description: 'Customizing experiences and ensuring inclusivity.'
+              }
+            ]
+          },
+          {
+            id: 'cat-2-3',
+            name: 'Process Excellence & Core Functions',
+            description: 'Core functional excellence and process optimization',
+            subCategories: [
+              {
+                id: 'sub-2-3-1',
+                name: 'Sales, Marketing, Finance, HR, Ops, SCM',
+                description: 'Functional performance across all core departments.'
+              },
+              {
+                id: 'sub-2-3-2',
+                name: 'SOP Development',
+                description: 'Creating standard operating procedures to ensure consistency.'
+              },
+              {
+                id: 'sub-2-3-3',
+                name: 'KPI/OKR Definition',
+                description: 'Setting Key Performance Indicators and Objectives & Key Results for teams.'
+              },
+              {
+                id: 'sub-2-3-4',
+                name: 'Continuous Improvement (Lean, Six Sigma)',
+                description: 'Using proven methodologies for process and performance improvement.'
+              }
+            ]
+          },
+          {
+            id: 'cat-2-4',
+            name: 'Compliance, Risk & Regulatory Governance',
+            description: 'Risk management and regulatory compliance',
+            subCategories: [
+              {
+                id: 'sub-2-4-1',
+                name: 'Stakeholder Engagement',
+                description: 'Involving and aligning internal and external stakeholders to mitigate risks.'
+              }
+            ]
+          },
+          {
+            id: 'cat-2-5',
+            name: 'ESG & Sustainability Strategy',
+            description: 'Environmental, social, and governance initiatives',
+            subCategories: [
+              {
+                id: 'sub-2-5-1',
+                name: 'Carbon Footprint & Green IT',
+                description: 'Reducing environmental impact through sustainable IT and operations.'
+              },
+              {
+                id: 'sub-2-5-2',
+                name: 'Circular Economy Practices',
+                description: 'Promoting reuse, recycling, and cradle-to-cradle design.'
+              },
+              {
+                id: 'sub-2-5-3',
+                name: 'Ethical Governance Frameworks',
+                description: 'Establishing values-driven, transparent decision-making systems.'
+              },
+              {
+                id: 'sub-2-5-4',
+                name: 'Social Responsibility Programs',
+                description: 'Designing and running initiatives for social impact.'
+              }
+            ]
+          },
+          {
+            id: 'cat-2-6',
+            name: 'Global / Regional Delivery Capability',
+            description: 'Global operations and delivery capabilities',
+            subCategories: [
+              {
+                id: 'sub-2-6-1',
+                name: 'Multi-Region Operations',
+                description: 'Managing operations across geographies with consistency.'
+              },
+              {
+                id: 'sub-2-6-2',
+                name: 'Countries Worked',
+                description: 'Select the applicable countries.'
+              },
+              {
+                id: 'sub-2-6-3',
+                name: 'Regulatory & Localization Readiness',
+                description: 'Ensuring compliance with regional regulations and local needs.'
+              },
+              {
+                id: 'sub-2-6-4',
+                name: 'Delivery Center Strategy',
+                description: 'Designing and operating efficient delivery hubs in different regions/countries.'
+              },
+              {
+                id: 'sub-2-6-5',
+                name: 'Time Zone & Language Support',
+                description: 'Supporting global teams and customers across languages and time zones.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'group-3',
+        name: 'People, Culture & Change',
+        description: 'Human resources, culture, and organizational change management',
+        categories: [
+          {
+            id: 'cat-3-1',
+            name: 'Talent Management & Organizational Culture',
+            description: 'Culture development and talent management',
+            subCategories: [
+              {
+                id: 'sub-3-1-1',
+                name: 'Stakeholder Engagement',
+                description: 'Engaging leadership, employees, and partners during change or growth.'
+              },
+              {
+                id: 'sub-3-1-2',
+                name: 'Communication Planning',
+                description: 'Crafting effective internal and external communication strategies.'
+              },
+              {
+                id: 'sub-3-1-3',
+                name: 'Cultural Assessment & Transformation',
+                description: 'Evaluating and evolving organizational values, beliefs, and behaviors.'
+              },
+              {
+                id: 'sub-3-1-4',
+                name: 'Adoption & Training Programs',
+                description: 'Preparing people to embrace new processes, tools, and mindsets.'
+              }
+            ]
+          },
+          {
+            id: 'cat-3-2',
+            name: 'Operating Model & Organizational Structure',
+            description: 'Organizational design and operating models',
+            subCategories: [
+              {
+                id: 'sub-3-2-1',
+                name: 'Role Clarity & Governance Structure',
+                description: 'Defining responsibilities and decision-making structures.'
+              },
+              {
+                id: 'sub-3-2-2',
+                name: 'Decision Rights Allocation',
+                description: 'Clarifying who decides what and at which level.'
+              },
+              {
+                id: 'sub-3-2-3',
+                name: 'Centralization vs. Decentralization',
+                description: 'Structuring operations to balance autonomy and control.'
+              },
+              {
+                id: 'sub-3-2-4',
+                name: 'Shared Services Design',
+                description: 'Creating internal service hubs for scale and efficiency.'
+              }
+            ]
+          },
+          {
+            id: 'cat-3-3',
+            name: 'Digital Workplace & Workforce Enablement',
+            description: 'Digital tools and workforce enablement',
+            subCategories: [
+              {
+                id: 'sub-3-3-1',
+                name: 'Collaboration Tools & Digital Adoption',
+                description: 'Using tools like Slack, Teams, Notion to boost team collaboration.'
+              },
+              {
+                id: 'sub-3-3-2',
+                name: 'Hybrid/Remote Work Enablement',
+                description: 'Supporting flexible work arrangements with appropriate systems.'
+              },
+              {
+                id: 'sub-3-3-3',
+                name: 'Workforce Productivity Solutions',
+                description: 'Enhancing employee output using automation, apps, and analytics.'
+              },
+              {
+                id: 'sub-3-3-4',
+                name: 'Employee Experience Platforms',
+                description: 'Tools and systems to improve engagement, well-being, and satisfaction.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'group-4',
+        name: 'Technology & Digital Transformation',
+        description: 'Technology infrastructure and digital transformation capabilities',
+        categories: [
+          {
+            id: 'cat-4-1',
+            name: 'Technology & Digital Transformation',
+            description: 'Core technology and digital transformation capabilities',
+            subCategories: [
+              {
+                id: 'sub-4-1-1',
+                name: 'Enterprise Architecture',
+                description: 'Designing IT infrastructure and digital systems aligned to business goals.'
+              },
+              {
+                id: 'sub-4-1-2',
+                name: 'Cloud & Edge Infrastructure',
+                description: 'Leveraging cloud and edge computing for scalability and efficiency.'
+              },
+              {
+                id: 'sub-4-1-3',
+                name: 'API & Integration Frameworks',
+                description: 'Enabling interoperability across systems via robust APIs.'
+              },
+              {
+                id: 'sub-4-1-4',
+                name: 'DevSecOps & Cybersecurity',
+                description: 'Embedding security into the software development lifecycle.'
+              }
+            ]
+          },
+          {
+            id: 'cat-4-2',
+            name: 'Data Strategy & Decision Intelligence',
+            description: 'Data-driven decision making and analytics',
+            subCategories: [
+              {
+                id: 'sub-4-2-1',
+                name: 'KPI/OKR Definition',
+                description: 'Leveraging performance metrics for data-driven decision making.'
               }
             ]
           }
