@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Save, X, Database } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Database, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface DomainItem {
@@ -56,6 +55,9 @@ const MasterDataStructureConfig = () => {
   const [newItemName, setNewItemName] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  // Navigation state for better UX
+  const [breadcrumb, setBreadcrumb] = useState<Array<{type: string, id: string, name: string}>>([]);
 
   // Initialize default data for all industry segments with the new domain structure
   useEffect(() => {
@@ -469,6 +471,33 @@ const MasterDataStructureConfig = () => {
 
   const currentData = getCurrentData();
 
+  // Helper function to get parent context
+  const getParentContext = (type: 'category' | 'subcategory', itemId: string) => {
+    if (type === 'category') {
+      const group = currentData.groups.find(g => 
+        currentData.categories[g.id]?.some(c => c.id === itemId)
+      );
+      return group ? `Domain Group: ${group.name}` : '';
+    } else {
+      // For subcategory, find the category
+      let parentCategory = null;
+      for (const categoryId in currentData.subCategories) {
+        if (currentData.subCategories[categoryId].some(sc => sc.id === itemId)) {
+          // Find the category name
+          for (const groupId in currentData.categories) {
+            const category = currentData.categories[groupId].find(c => c.id === categoryId);
+            if (category) {
+              parentCategory = category;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      return parentCategory ? `Category: ${parentCategory.name}` : '';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -566,6 +595,13 @@ const MasterDataStructureConfig = () => {
 
           <TabsContent value="categories">
             <div className="space-y-4">
+              {/* Breadcrumb for Categories */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <span>Domain Groups</span>
+                <ChevronRight className="w-4 h-4" />
+                <span className="font-medium text-foreground">Categories</span>
+              </div>
+
               <div className="space-y-2">
                 <Label>Select Domain Group</Label>
                 <Select value={selectedGroup} onValueChange={setSelectedGroup}>
@@ -584,6 +620,16 @@ const MasterDataStructureConfig = () => {
 
               {selectedGroup && (
                 <>
+                  {/* Show selected domain group context */}
+                  <div className="p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Domain Group</Badge>
+                      <span className="font-medium">
+                        {currentData.groups.find(g => g.id === selectedGroup)?.name}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2">
                     <Input
                       placeholder="Enter new category name"
@@ -642,24 +688,72 @@ const MasterDataStructureConfig = () => {
 
           <TabsContent value="subcategories">
             <div className="space-y-4">
+              {/* Breadcrumb for Sub-Categories */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <span>Domain Groups</span>
+                <ChevronRight className="w-4 h-4" />
+                <span>Categories</span>
+                <ChevronRight className="w-4 h-4" />
+                <span className="font-medium text-foreground">Sub-Categories</span>
+              </div>
+
               <div className="space-y-2">
-                <Label>Select Category</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Label>Select Domain Group</Label>
+                <Select value={selectedGroup} onValueChange={(value) => {
+                  setSelectedGroup(value);
+                  setSelectedCategory(''); // Reset category when group changes
+                }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select a domain group first" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedGroup && (currentData.categories[selectedGroup] || []).map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
+                    {currentData.groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {selectedGroup && (
+                <div className="space-y-2">
+                  <Label>Select Category</Label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(currentData.categories[selectedGroup] || []).map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {selectedCategory && (
                 <>
+                  {/* Show full context hierarchy */}
+                  <div className="space-y-2">
+                    <div className="p-3 bg-muted rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Domain Group</Badge>
+                        <span className="font-medium">
+                          {currentData.groups.find(g => g.id === selectedGroup)?.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Category</Badge>
+                        <span className="font-medium">
+                          {currentData.categories[selectedGroup]?.find(c => c.id === selectedCategory)?.name}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2">
                     <Input
                       placeholder="Enter new sub-category name"
