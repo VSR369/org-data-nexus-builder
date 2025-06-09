@@ -27,6 +27,13 @@ const SubCategoryItem: React.FC<SubCategoryItemProps> = ({
   const assessmentKey = `${groupId}-${categoryId}-${subCategory.id}`;
   const currentCapability = competencyAssessments[assessmentKey]?.capability || 'Advanced';
 
+  console.log('SubCategoryItem render:', {
+    subCategory: subCategory.name,
+    assessmentKey,
+    currentCapability,
+    assessment: competencyAssessments[assessmentKey]
+  });
+
   const handleCapabilityChange = (value: string) => {
     console.log('Capability changed:', { groupId, categoryId, subCategoryId: subCategory.id, value });
     onUpdateCapability(groupId, categoryId, subCategory.id, value);
@@ -52,7 +59,7 @@ const SubCategoryItem: React.FC<SubCategoryItemProps> = ({
           onValueChange={handleCapabilityChange}
         >
           <SelectTrigger className="w-36">
-            <SelectValue />
+            <SelectValue placeholder="Select capability" />
           </SelectTrigger>
           <SelectContent className="z-50">
             {activeCapabilities.map((capability) => (
@@ -63,7 +70,7 @@ const SubCategoryItem: React.FC<SubCategoryItemProps> = ({
               >
                 <div className="flex flex-col py-1">
                   <span className="font-medium">{capability.name}</span>
-                  <span className="text-xs text-muted-foreground leading-tight whitespace-normal">
+                  <span className="text-xs text-muted-foreground leading-tight max-w-[200px]">
                     {capability.description}
                   </span>
                 </div>
