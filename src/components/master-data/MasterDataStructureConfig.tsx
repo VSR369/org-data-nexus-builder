@@ -224,7 +224,7 @@ const initialDomainGroups: DomainGroup[] = [
 
 const MasterDataStructureConfig = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>(initialDomainGroups);
-  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
+  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('all');
   const [expandedGroups, setExpandedGroups] = useState(new Set<string>());
   const [expandedCategories, setExpandedCategories] = useState(new Set<string>());
   const [message, setMessage] = useState<string | null>(null);
@@ -258,9 +258,9 @@ const MasterDataStructureConfig = () => {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const filteredDomainGroups = selectedIndustrySegment 
-    ? domainGroups.filter(group => group.industrySegment === selectedIndustrySegment)
-    : domainGroups;
+  const filteredDomainGroups = selectedIndustrySegment === 'all' 
+    ? domainGroups 
+    : domainGroups.filter(group => group.industrySegment === selectedIndustrySegment);
 
   const handleAddGroup = () => {
     if (!newGroupName.trim() || !newGroupIndustrySegment) {
@@ -495,7 +495,7 @@ const MasterDataStructureConfig = () => {
               <SelectValue placeholder="Select an industry segment to filter (or show all)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Industry Segments</SelectItem>
+              <SelectItem value="all">All Industry Segments</SelectItem>
               {industrySegments.map((segment) => (
                 <SelectItem key={segment} value={segment}>{segment}</SelectItem>
               ))}
