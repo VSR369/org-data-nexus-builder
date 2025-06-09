@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +23,11 @@ const menuItems = [
     id: 'events-calendar',
     title: 'Events Calendar',
     icon: Calendar,
+  },
+  {
+    id: 'voting-assessment',
+    title: 'Voting & Assessment Config',
+    icon: Target,
   },
   {
     id: 'industry-segments',

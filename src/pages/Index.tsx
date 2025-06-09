@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
 import EventsCalendar from '../components/EventsCalendar';
+import SolutionVotingAssessmentConfig from '../components/voting-assessment/SolutionVotingAssessmentConfig';
 import IndustrySegmentConfig from '../components/master-data/IndustrySegmentConfig';
 import OrganizationTypeConfig from '../components/master-data/OrganizationTypeConfig';
 import EntityTypeConfig from '../components/master-data/EntityTypeConfig';
@@ -19,6 +20,8 @@ const Index = () => {
     switch (activeSection) {
       case 'events-calendar':
         return <EventsCalendar />;
+      case 'voting-assessment':
+        return <SolutionVotingAssessmentConfig />;
       case 'industry-segments':
         return <IndustrySegmentConfig />;
       case 'organization-types':
