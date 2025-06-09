@@ -5,6 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, Plus, Edit2, Save, X, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface SubCategory {
   id: string;
@@ -24,6 +28,33 @@ interface DomainGroup {
   industrySegment: string;
   categories: Category[];
 }
+
+const industrySegments = [
+  'Banking, Financial Services & Insurance (BFSI)',
+  'Retail & E-Commerce',
+  'Healthcare & Life Sciences',
+  'Information Technology & Software Services',
+  'Telecommunications',
+  'Education & EdTech',
+  'Manufacturing (Smart / Discrete / Process)',
+  'Logistics & Supply Chain',
+  'Media, Entertainment & OTT',
+  'Energy & Utilities (Power, Oil & Gas, Renewables)',
+  'Automotive & Mobility',
+  'Real Estate & Smart Infrastructure',
+  'Travel, Tourism & Hospitality',
+  'Agriculture & AgriTech',
+  'Public Sector & e-Governance'
+];
+
+const groupColors = [
+  'bg-blue-50 border-blue-200',
+  'bg-green-50 border-green-200',
+  'bg-purple-50 border-purple-200',
+  'bg-orange-50 border-orange-200',
+  'bg-teal-50 border-teal-200',
+  'bg-pink-50 border-pink-200'
+];
 
 const initialDomainGroups: DomainGroup[] = [
   {
@@ -193,28 +224,121 @@ const initialDomainGroups: DomainGroup[] = [
 
 const MasterDataStructureConfig = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>(initialDomainGroups);
+  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
+  const [expandedGroups, setExpandedGroups] = useState(new Set<string>());
+  const [expandedCategories, setExpandedCategories] = useState(new Set<string>());
+  const [message, setMessage] = useState<string | null>(null);
+
+  // Dialog states
+  const [showAddGroupDialog, setShowAddGroupDialog] = useState(false);
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [showAddSubCategoryDialog, setShowAddSubCategoryDialog] = useState(false);
+
+  // Form states
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupIndustrySegment, setNewGroupIndustrySegment] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newSubCategoryName, setNewSubCategoryName] = useState('');
+  const [newSubCategoryDescription, setNewSubCategoryDescription] = useState('');
+  const [selectedGroupForCategory, setSelectedGroupForCategory] = useState<string>('');
+  const [selectedGroupForSubCategory, setSelectedGroupForSubCategory] = useState<string>('');
+  const [selectedCategoryForSubCategory, setSelectedCategoryForSubCategory] = useState<string>('');
+
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editingSubCategory, setEditingSubCategory] = useState<string | null>(null);
   const [editingGroupName, setEditingGroupName] = useState('');
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [editingSubCategoryName, setEditingSubCategoryName] = useState('');
-  const [expandedGroups, setExpandedGroups] = useState(new Set<string>());
-  const [expandedCategories, setExpandedCategories] = useState(new Set<string>());
-  const [message, setMessage] = useState<string | null>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
+  const showMessage = (msg: string) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const filteredDomainGroups = selectedIndustrySegment 
+    ? domainGroups.filter(group => group.industrySegment === selectedIndustrySegment)
+    : domainGroups;
+
   const handleAddGroup = () => {
+    if (!newGroupName.trim() || !newGroupIndustrySegment) {
+      showMessage('Please fill in all required fields.');
+      return;
+    }
+
     const newGroup: DomainGroup = {
       id: generateId(),
-      name: 'New Domain Group',
-      industrySegment: 'Technology',
+      name: newGroupName.trim(),
+      industrySegment: newGroupIndustrySegment,
       categories: [],
     };
+
     setDomainGroups([...domainGroups, newGroup]);
-    setMessage('Domain Group added.');
-    setTimeout(() => setMessage(null), 3000);
+    setShowAddGroupDialog(false);
+    setNewGroupName('');
+    setNewGroupIndustrySegment('');
+    showMessage('Domain Group added successfully.');
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim() || !selectedGroupForCategory) {
+      showMessage('Please fill in all required fields.');
+      return;
+    }
+
+    const newCategory: Category = {
+      id: generateId(),
+      name: newCategoryName.trim(),
+      subCategories: [],
+    };
+
+    const updatedGroups = domainGroups.map((group) =>
+      group.id === selectedGroupForCategory
+        ? { ...group, categories: [...group.categories, newCategory] }
+        : group
+    );
+
+    setDomainGroups(updatedGroups);
+    setShowAddCategoryDialog(false);
+    setNewCategoryName('');
+    setSelectedGroupForCategory('');
+    showMessage('Category added successfully.');
+  };
+
+  const handleAddSubCategory = () => {
+    if (!newSubCategoryName.trim() || !selectedGroupForSubCategory || !selectedCategoryForSubCategory) {
+      showMessage('Please fill in all required fields.');
+      return;
+    }
+
+    const newSubCategory: SubCategory = {
+      id: generateId(),
+      name: newSubCategoryName.trim(),
+      description: newSubCategoryDescription.trim() || undefined,
+    };
+
+    const updatedGroups = domainGroups.map((group) =>
+      group.id === selectedGroupForSubCategory
+        ? {
+            ...group,
+            categories: group.categories.map((category) =>
+              category.id === selectedCategoryForSubCategory
+                ? { ...category, subCategories: [...category.subCategories, newSubCategory] }
+                : category
+            ),
+          }
+        : group
+    );
+
+    setDomainGroups(updatedGroups);
+    setShowAddSubCategoryDialog(false);
+    setNewSubCategoryName('');
+    setNewSubCategoryDescription('');
+    setSelectedGroupForSubCategory('');
+    setSelectedCategoryForSubCategory('');
+    showMessage('Sub-Category added successfully.');
   };
 
   const handleEditGroup = (id: string, name: string) => {
@@ -236,20 +360,6 @@ const MasterDataStructureConfig = () => {
     const updatedGroups = domainGroups.filter((group) => group.id !== id);
     setDomainGroups(updatedGroups);
     setMessage('Domain Group deleted.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleAddCategory = (groupId: string) => {
-    const newCategory: Category = {
-      id: generateId(),
-      name: 'New Category',
-      subCategories: [],
-    };
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === groupId ? { ...group, categories: [...group.categories, newCategory] } : group
-    );
-    setDomainGroups(updatedGroups);
-    setMessage('Category added.');
     setTimeout(() => setMessage(null), 3000);
   };
 
@@ -286,28 +396,6 @@ const MasterDataStructureConfig = () => {
     );
     setDomainGroups(updatedGroups);
     setMessage('Category deleted.');
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const handleAddSubCategory = (groupId: string, categoryId: string) => {
-    const newSubCategory: SubCategory = {
-      id: generateId(),
-      name: 'New Sub-Category',
-    };
-    const updatedGroups = domainGroups.map((group) =>
-      group.id === groupId
-        ? {
-          ...group,
-          categories: group.categories.map((category) =>
-            category.id === categoryId
-              ? { ...category, subCategories: [...category.subCategories, newSubCategory] }
-              : category
-          ),
-        }
-        : group
-    );
-    setDomainGroups(updatedGroups);
-    setMessage('Sub-Category added.');
     setTimeout(() => setMessage(null), 3000);
   };
 
@@ -396,6 +484,26 @@ const MasterDataStructureConfig = () => {
         </p>
       </div>
 
+      {/* Industry Segment Filter */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter by Industry Segment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={selectedIndustrySegment} onValueChange={setSelectedIndustrySegment}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an industry segment to filter (or show all)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Industry Segments</SelectItem>
+              {industrySegments.map((segment) => (
+                <SelectItem key={segment} value={segment}>{segment}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
       {message && (
         <Alert>
           <AlertDescription className="text-left">{message}</AlertDescription>
@@ -406,16 +514,175 @@ const MasterDataStructureConfig = () => {
         <CardHeader className="text-left">
           <CardTitle className="flex items-center justify-between">
             <span>Domain Groups Structure</span>
-            <Button onClick={handleAddGroup} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Domain Group
-            </Button>
+            <div className="flex gap-2">
+              <Dialog open={showAddGroupDialog} onOpenChange={setShowAddGroupDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Domain Group
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Domain Group</DialogTitle>
+                    <DialogDescription>
+                      Create a new domain group with an industry segment.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="groupName">Group Name</Label>
+                      <Input
+                        id="groupName"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        placeholder="Enter group name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="industrySegment">Industry Segment</Label>
+                      <Select value={newGroupIndustrySegment} onValueChange={setNewGroupIndustrySegment}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select industry segment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {industrySegments.map((segment) => (
+                            <SelectItem key={segment} value={segment}>{segment}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleAddGroup}>Add Group</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Category
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Category</DialogTitle>
+                    <DialogDescription>
+                      Add a category to an existing domain group.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="categoryGroup">Select Domain Group</Label>
+                      <Select value={selectedGroupForCategory} onValueChange={setSelectedGroupForCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a domain group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {domainGroups.map((group) => (
+                            <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="categoryName">Category Name</Label>
+                      <Input
+                        id="categoryName"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="Enter category name"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleAddCategory}>Add Category</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showAddSubCategoryDialog} onOpenChange={setShowAddSubCategoryDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Sub-Category
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Sub-Category</DialogTitle>
+                    <DialogDescription>
+                      Add a sub-category to an existing category.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="subCategoryGroup">Select Domain Group</Label>
+                      <Select value={selectedGroupForSubCategory} onValueChange={setSelectedGroupForSubCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a domain group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {domainGroups.map((group) => (
+                            <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="subCategoryCategory">Select Category</Label>
+                      <Select 
+                        value={selectedCategoryForSubCategory} 
+                        onValueChange={setSelectedCategoryForSubCategory}
+                        disabled={!selectedGroupForSubCategory}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedGroupForSubCategory && 
+                            domainGroups
+                              .find(g => g.id === selectedGroupForSubCategory)
+                              ?.categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                              ))
+                          }
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="subCategoryName">Sub-Category Name</Label>
+                      <Input
+                        id="subCategoryName"
+                        value={newSubCategoryName}
+                        onChange={(e) => setNewSubCategoryName(e.target.value)}
+                        placeholder="Enter sub-category name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="subCategoryDescription">Description (Optional)</Label>
+                      <Textarea
+                        id="subCategoryDescription"
+                        value={newSubCategoryDescription}
+                        onChange={(e) => setNewSubCategoryDescription(e.target.value)}
+                        placeholder="Enter sub-category description"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleAddSubCategory}>Add Sub-Category</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {domainGroups.map((group) => (
-              <div key={group.id} className="border-l-4 border-primary pl-4">
+            {filteredDomainGroups.map((group, groupIndex) => (
+              <div key={group.id} className={`p-4 rounded-lg border-2 ${groupColors[groupIndex % groupColors.length]}`}>
                 {/* Domain Group Header */}
                 <div className="flex items-center gap-3 mb-4">
                   <Button
@@ -435,33 +702,30 @@ const MasterDataStructureConfig = () => {
                     <span className="text-green-600 text-lg font-bold">✅</span>
                     <div className="flex-1">
                       <div className="text-xl font-bold text-foreground mb-1">
-                        GROUP {group.id}: {group.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Industry Segment: {group.industrySegment}
+                        GROUP {groupIndex + 1}: {group.name}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleEditGroup(group.id, group.name)}
+                        onClick={() => {
+                          setEditingGroup(group.id);
+                          setEditingGroupName(group.name);
+                        }}
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDeleteGroup(group.id)}
+                        onClick={() => {
+                          const updatedGroups = domainGroups.filter((g) => g.id !== group.id);
+                          setDomainGroups(updatedGroups);
+                          showMessage('Domain Group deleted.');
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddCategory(group.id)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Category
                       </Button>
                     </div>
                   </div>
@@ -497,23 +761,30 @@ const MasterDataStructureConfig = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleEditCategory(category.id, category.name)}
+                                onClick={() => {
+                                  setEditingCategory(category.id);
+                                  setEditingCategoryName(category.name);
+                                }}
                               >
                                 <Edit2 className="h-4 w-4" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleDeleteCategory(group.id, category.id)}
+                                onClick={() => {
+                                  const updatedGroups = domainGroups.map((g) =>
+                                    g.id === group.id
+                                      ? {
+                                          ...g,
+                                          categories: g.categories.filter((c) => c.id !== category.id),
+                                        }
+                                      : g
+                                  );
+                                  setDomainGroups(updatedGroups);
+                                  showMessage('Category deleted.');
+                                }}
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleAddSubCategory(group.id, category.id)}
-                              >
-                                <Plus className="h-4 w-4 mr-1" />
-                                Add Sub-Category
                               </Button>
                             </div>
                           </div>
@@ -539,14 +810,37 @@ const MasterDataStructureConfig = () => {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => handleEditSubCategory(subCategory.id, subCategory.name)}
+                                      onClick={() => {
+                                        setEditingSubCategory(subCategory.id);
+                                        setEditingSubCategoryName(subCategory.name);
+                                      }}
                                     >
                                       <Edit2 className="h-4 w-4" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => handleDeleteSubCategory(group.id, category.id, subCategory.id)}
+                                      onClick={() => {
+                                        const updatedGroups = domainGroups.map((g) =>
+                                          g.id === group.id
+                                            ? {
+                                                ...g,
+                                                categories: g.categories.map((c) =>
+                                                  c.id === category.id
+                                                    ? {
+                                                        ...c,
+                                                        subCategories: c.subCategories.filter(
+                                                          (sc) => sc.id !== subCategory.id
+                                                        ),
+                                                      }
+                                                    : c
+                                                ),
+                                              }
+                                            : g
+                                        );
+                                        setDomainGroups(updatedGroups);
+                                        showMessage('Sub-Category deleted.');
+                                      }}
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
