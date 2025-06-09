@@ -1,5 +1,5 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
 import EventsCalendar from '../components/EventsCalendar';
@@ -18,7 +18,15 @@ import CommunicationTypeConfig from '../components/master-data/CommunicationType
 import PricingConfig from '../components/master-data/PricingConfig';
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState('events-calendar');
+
+  useEffect(() => {
+    const sectionParam = searchParams.get('section');
+    if (sectionParam) {
+      setActiveSection(sectionParam);
+    }
+  }, [searchParams]);
 
   const renderContent = () => {
     switch (activeSection) {

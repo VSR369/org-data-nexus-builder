@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserPlus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -102,6 +102,19 @@ const systemMenuItems = [
 ];
 
 export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps) {
+  const location = useLocation();
+  const isOnRegistrationPage = location.pathname === '/register';
+
+  const handleMasterDataClick = (sectionId: string) => {
+    if (isOnRegistrationPage) {
+      // Navigate to home page with the section
+      window.location.href = `/?section=${sectionId}`;
+    } else {
+      // Just set the active section on the current page
+      setActiveSection(sectionId);
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b p-4">
@@ -137,9 +150,9 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
               {foundationMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
-                    onClick={() => setActiveSection(item.id)}
-                    isActive={activeSection === item.id}
-                    className="w-full justify-start"
+                    onClick={() => handleMasterDataClick(item.id)}
+                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
                     <span className="font-medium">{item.title}</span>
@@ -157,9 +170,9 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
               {organizationMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
-                    onClick={() => setActiveSection(item.id)}
-                    isActive={activeSection === item.id}
-                    className="w-full justify-start"
+                    onClick={() => handleMasterDataClick(item.id)}
+                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
                     <span className="font-medium">{item.title}</span>
@@ -177,9 +190,9 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
               {challengeMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
-                    onClick={() => setActiveSection(item.id)}
-                    isActive={activeSection === item.id}
-                    className="w-full justify-start"
+                    onClick={() => handleMasterDataClick(item.id)}
+                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
                     <span className="font-medium">{item.title}</span>
@@ -197,9 +210,9 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
               {systemMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
-                    onClick={() => setActiveSection(item.id)}
-                    isActive={activeSection === item.id}
-                    className="w-full justify-start"
+                    onClick={() => handleMasterDataClick(item.id)}
+                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
                     <span className="font-medium">{item.title}</span>
