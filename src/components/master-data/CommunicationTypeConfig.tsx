@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ const CommunicationTypeConfig = () => {
   const { toast } = useToast();
 
   const communicationTypes = [
-    { id: 'calendar', label: 'Innovation Events Calendar', description: 'Google Calendar Integration' },
+    { id: 'calendar', label: 'Events Calendar', description: 'Google Calendar Integration' },
     { id: 'blog', label: 'Innovation News / Blogs', description: 'Blog Site Links' },
     { id: 'youtube', label: 'YouTube', description: 'YouTube Channel Links' },
     { id: 'podcast', label: 'Podcast', description: 'Podcast Links' },
@@ -268,7 +267,7 @@ const CommunicationTypeConfig = () => {
             <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
               {communicationTypes.map((type) => (
                 <TabsTrigger key={type.id} value={type.id} className="text-xs">
-                  {type.label.split(' ')[0]}
+                  {type.id === 'calendar' ? 'Events' : type.label.split(' ')[0]}
                 </TabsTrigger>
               ))}
             </TabsList>
