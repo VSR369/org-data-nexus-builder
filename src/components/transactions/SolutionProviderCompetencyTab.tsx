@@ -44,10 +44,13 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   const industrySegmentName = getIndustrySegmentName(selectedIndustrySegment);
   console.log('Industry segment name:', industrySegmentName);
 
-  // Show all domain groups for every industry segment selection
+  // Filter domain groups based on the selected industry segment
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
     ? [] // Don't show any groups if no industry segment is selected
-    : masterDomainGroups; // Show all groups for any selected industry segment
+    : masterDomainGroups.filter(group => {
+        console.log('Checking group:', group.name, 'industrySegment:', group.industrySegment, 'looking for:', industrySegmentName);
+        return group.industrySegment === industrySegmentName;
+      });
 
   console.log('Filtered domain groups:', filteredDomainGroups);
 
