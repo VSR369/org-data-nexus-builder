@@ -21,7 +21,7 @@ interface AppSidebarProps {
 const transactionMenuItems = [
   {
     id: 'self-enrollment',
-    title: 'Self Enrollment - Solution Provider',
+    title: 'Solution Provider Enrollment',
     icon: UserCheck,
   },
 ];
