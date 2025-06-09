@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
+import EventsCalendar from '../components/EventsCalendar';
 import IndustrySegmentConfig from '../components/master-data/IndustrySegmentConfig';
 import OrganizationTypeConfig from '../components/master-data/OrganizationTypeConfig';
 import EntityTypeConfig from '../components/master-data/EntityTypeConfig';
@@ -12,10 +13,12 @@ import CountryConfig from '../components/master-data/CountryConfig';
 import CommunicationTypeConfig from '../components/master-data/CommunicationTypeConfig';
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState('industry-segments');
+  const [activeSection, setActiveSection] = useState('events-calendar');
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'events-calendar':
+        return <EventsCalendar />;
       case 'industry-segments':
         return <IndustrySegmentConfig />;
       case 'organization-types':
@@ -33,7 +36,7 @@ const Index = () => {
       case 'communication-types':
         return <CommunicationTypeConfig />;
       default:
-        return <IndustrySegmentConfig />;
+        return <EventsCalendar />;
     }
   };
 

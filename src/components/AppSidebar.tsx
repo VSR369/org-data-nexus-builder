@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Settings, Database, Gift, DollarSign, Globe, MessageSquare } from 'lucide-react';
+import { Briefcase, Building2, Users, Settings, Database, Gift, DollarSign, Globe, MessageSquare, Calendar } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,11 @@ interface AppSidebarProps {
 }
 
 const menuItems = [
+  {
+    id: 'events-calendar',
+    title: 'Events Calendar',
+    icon: Calendar,
+  },
   {
     id: 'industry-segments',
     title: 'Industry Segments',
