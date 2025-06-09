@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -56,8 +56,18 @@ const SelfEnrollmentForm = () => {
 
   const [competencyCompleted, setCompetencyCompleted] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
+  const [isBasicDetailsComplete, setIsBasicDetailsComplete] = useState(false);
 
   console.log('SelfEnrollmentForm - selectedIndustrySegment:', selectedIndustrySegment);
+  console.log('SelfEnrollmentForm - providerType:', providerType);
+  console.log('SelfEnrollmentForm - isBasicDetailsComplete:', isBasicDetailsComplete);
+
+  // Check validation whenever form data, provider type, or industry segment changes
+  useEffect(() => {
+    const isValid = validateRequiredFields(formData, providerType, selectedIndustrySegment);
+    setIsBasicDetailsComplete(isValid);
+    console.log('Validation result changed:', isValid);
+  }, [formData, providerType, selectedIndustrySegment]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({
@@ -68,7 +78,7 @@ const SelfEnrollmentForm = () => {
 
   const handleTabChange = (value: string) => {
     if (value === 'competency-assessment') {
-      if (!validateRequiredFields(formData, providerType, selectedIndustrySegment)) {
+      if (!isBasicDetailsComplete) {
         setShowValidationError(true);
         toast({
           title: "Required Fields Missing",
@@ -83,7 +93,7 @@ const SelfEnrollmentForm = () => {
   };
 
   const handleSubmitEnrollment = () => {
-    if (!validateRequiredFields(formData, providerType, selectedIndustrySegment)) {
+    if (!isBasicDetailsComplete) {
       toast({
         title: "Required Fields Missing",
         description: "Please complete all required fields before submitting.",
@@ -118,8 +128,6 @@ const SelfEnrollmentForm = () => {
     console.log('Industry segment changed to:', value);
     setSelectedIndustrySegment(value);
   };
-
-  const isBasicDetailsComplete = validateRequiredFields(formData, providerType, selectedIndustrySegment);
 
   return (
     <div className="space-y-6">
