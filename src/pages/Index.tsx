@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
@@ -11,6 +10,7 @@ import RewardTypeConfig from '../components/master-data/RewardTypeConfig';
 import CurrencyConfig from '../components/master-data/CurrencyConfig';
 import CountryConfig from '../components/master-data/CountryConfig';
 import CommunicationTypeConfig from '../components/master-data/CommunicationTypeConfig';
+import TemplateManagement from '../components/templates/TemplateManagement';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('events-calendar');
@@ -19,6 +19,8 @@ const Index = () => {
     switch (activeSection) {
       case 'events-calendar':
         return <EventsCalendar />;
+      case 'template-management':
+        return <TemplateManagement />;
       case 'industry-segments':
         return <IndustrySegmentConfig />;
       case 'organization-types':
