@@ -19,42 +19,25 @@ interface AppSidebarProps {
   setActiveSection: (section: string) => void;
 }
 
-const menuItems = [
+const foundationMenuItems = [
   {
-    id: 'events-calendar',
-    title: 'Events Calendar',
-    icon: Calendar,
+    id: 'countries',
+    title: 'Countries',
+    icon: Globe,
   },
   {
-    id: 'voting-assessment',
-    title: 'Voting & Assessment Config',
-    icon: Target,
-  },
-  {
-    id: 'pricing-config',
-    title: 'Pricing Configuration',
-    icon: CreditCard,
-  },
-  {
-    id: 'master-data-structure',
-    title: 'Domain Groups',
-    icon: Database,
-  },
-  {
-    id: 'challenge-status',
-    title: 'Challenge Status',
-    icon: CheckCircle,
-  },
-  {
-    id: 'solution-status',
-    title: 'Solution Statuses',
-    icon: Award,
+    id: 'currencies',
+    title: 'Currencies',
+    icon: DollarSign,
   },
   {
     id: 'industry-segments',
     title: 'Industry Segments',
     icon: Briefcase,
   },
+];
+
+const organizationMenuItems = [
   {
     id: 'organization-types',
     title: 'Organization Types',
@@ -70,25 +53,51 @@ const menuItems = [
     title: 'Departments',
     icon: Users,
   },
+];
+
+const challengeMenuItems = [
+  {
+    id: 'master-data-structure',
+    title: 'Domain Groups',
+    icon: Database,
+  },
+  {
+    id: 'challenge-status',
+    title: 'Challenge Status',
+    icon: CheckCircle,
+  },
+  {
+    id: 'solution-status',
+    title: 'Solution Statuses',
+    icon: Award,
+  },
+];
+
+const systemMenuItems = [
+  {
+    id: 'communication-types',
+    title: 'Communication & Content Types',
+    icon: MessageSquare,
+  },
   {
     id: 'reward-types',
     title: 'Reward Types',
     icon: Gift,
   },
   {
-    id: 'currencies',
-    title: 'Currencies',
-    icon: DollarSign,
+    id: 'pricing-config',
+    title: 'Pricing Configuration',
+    icon: CreditCard,
   },
   {
-    id: 'countries',
-    title: 'Countries',
-    icon: Globe,
+    id: 'voting-assessment',
+    title: 'Voting & Assessment Config',
+    icon: Target,
   },
   {
-    id: 'communication-types',
-    title: 'Communication & Content Types',
-    icon: MessageSquare,
+    id: 'events-calendar',
+    title: 'Events Calendar',
+    icon: Calendar,
   },
 ];
 
@@ -122,10 +131,70 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         </SidebarGroup>
         
         <SidebarGroup>
+          <SidebarGroupLabel>Foundation Data</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {foundationMenuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    onClick={() => setActiveSection(item.id)}
+                    isActive={activeSection === item.id}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span className="font-medium">{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
           <SidebarGroupLabel>Organization Setup</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {organizationMenuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    onClick={() => setActiveSection(item.id)}
+                    isActive={activeSection === item.id}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span className="font-medium">{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Challenge & Solution Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {challengeMenuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    onClick={() => setActiveSection(item.id)}
+                    isActive={activeSection === item.id}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span className="font-medium">{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>System Configuration</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {systemMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => setActiveSection(item.id)}
