@@ -1,36 +1,23 @@
 
 import { useState, useEffect } from 'react';
 import { CompetencyAssessment } from '../types';
-import { masterDomainGroups } from '../masterData';
+import { getDomainGroupsByIndustrySegment, industrySegmentMapping } from '../data';
 
 export const useCompetencyAssessment = (selectedIndustrySegment: string, onCompetencyComplete: (isComplete: boolean) => void) => {
   const [competencyAssessments, setCompetencyAssessments] = useState<Record<string, CompetencyAssessment>>({});
 
   // Map the selected industry segment value to the full industry segment name used in master data
   const getIndustrySegmentName = (value: string) => {
-    const mapping = {
-      'bfsi': 'Banking, Financial Services & Insurance (BFSI)',
-      'retail': 'Retail & E-Commerce',
-      'healthcare': 'Healthcare & Life Sciences',
-      'it': 'Information Technology & Software Services',
-      'telecom': 'Telecommunications',
-      'education': 'Education & EdTech',
-      'manufacturing': 'Manufacturing',
-      'logistics': 'Logistics & Supply Chain'
-    };
-    return mapping[value as keyof typeof mapping] || value;
+    return industrySegmentMapping[value as keyof typeof industrySegmentMapping] || value;
   };
 
   const industrySegmentName = getIndustrySegmentName(selectedIndustrySegment);
   console.log('Mapped industry segment name:', industrySegmentName);
 
-  // Filter domain groups based on the selected industry segment using the exact industrySegment field from master data
+  // Use the new helper function to get filtered domain groups
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
     ? [] // Don't show any groups if no industry segment is selected
-    : masterDomainGroups.filter(group => {
-        console.log('Checking group:', group.name, 'industrySegment:', group.industrySegment, 'looking for:', industrySegmentName);
-        return group.industrySegment === industrySegmentName;
-      });
+    : getDomainGroupsByIndustrySegment(selectedIndustrySegment);
 
   console.log('Filtered domain groups:', filteredDomainGroups);
   console.log('Number of filtered groups:', filteredDomainGroups.length);
