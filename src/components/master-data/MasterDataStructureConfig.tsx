@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Save, X, Database, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Edit, Trash2, Save, X, Database, ChevronDown, ChevronRight } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface DomainItem {
@@ -53,13 +54,12 @@ const MasterDataStructureConfig = () => {
   const [editingSubCategory, setEditingSubCategory] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [newItemName, setNewItemName] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-  // Navigation state for better UX
-  const [breadcrumb, setBreadcrumb] = useState<Array<{type: string, id: string, name: string}>>([]);
+  // Expand/collapse states
+  const [expandedGroups, setExpandedGroups] = useState<{ [groupId: string]: boolean }>({});
+  const [expandedCategories, setExpandedCategories] = useState<{ [categoryId: string]: boolean }>({});
 
-  // Initialize default data for all industry segments with the new domain structure
+  // Initialize default data for all industry segments with the domain structure
   useEffect(() => {
     const defaultData: IndustrySegmentData = {
       groups: [
@@ -195,7 +195,21 @@ const MasterDataStructureConfig = () => {
     }));
   };
 
-  // Group operations
+  const toggleGroupExpansion = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
+  // CRUD operations for groups
   const addGroup = () => {
     if (!newItemName.trim()) return;
     
@@ -269,13 +283,13 @@ const MasterDataStructureConfig = () => {
     });
   };
 
-  // Category operations
-  const addCategory = () => {
-    if (!newItemName.trim() || !selectedGroup) return;
+  // CRUD operations for categories
+  const addCategory = (groupId: string) => {
+    if (!newItemName.trim()) return;
     
     const currentData = getCurrentData();
     const newCategory: DomainItem = {
-      id: `${selectedGroup}-${Date.now()}`,
+      id: `${groupId}-${Date.now()}`,
       name: newItemName.trim()
     };
     
@@ -283,7 +297,7 @@ const MasterDataStructureConfig = () => {
       ...currentData,
       categories: {
         ...currentData.categories,
-        [selectedGroup]: [...(currentData.categories[selectedGroup] || []), newCategory]
+        [groupId]: [...(currentData.categories[groupId] || []), newCategory]
       }
     };
     
@@ -367,13 +381,13 @@ const MasterDataStructureConfig = () => {
     });
   };
 
-  // Sub-category operations
-  const addSubCategory = () => {
-    if (!newItemName.trim() || !selectedCategory) return;
+  // CRUD operations for sub-categories
+  const addSubCategory = (categoryId: string) => {
+    if (!newItemName.trim()) return;
     
     const currentData = getCurrentData();
     const newSubCategory: DomainItem = {
-      id: `${selectedCategory}-${Date.now()}`,
+      id: `${categoryId}-${Date.now()}`,
       name: newItemName.trim()
     };
     
@@ -381,7 +395,7 @@ const MasterDataStructureConfig = () => {
       ...currentData,
       subCategories: {
         ...currentData.subCategories,
-        [selectedCategory]: [...(currentData.subCategories[selectedCategory] || []), newSubCategory]
+        [categoryId]: [...(currentData.subCategories[categoryId] || []), newSubCategory]
       }
     };
     
@@ -471,33 +485,6 @@ const MasterDataStructureConfig = () => {
 
   const currentData = getCurrentData();
 
-  // Helper function to get parent context
-  const getParentContext = (type: 'category' | 'subcategory', itemId: string) => {
-    if (type === 'category') {
-      const group = currentData.groups.find(g => 
-        currentData.categories[g.id]?.some(c => c.id === itemId)
-      );
-      return group ? `Domain Group: ${group.name}` : '';
-    } else {
-      // For subcategory, find the category
-      let parentCategory = null;
-      for (const categoryId in currentData.subCategories) {
-        if (currentData.subCategories[categoryId].some(sc => sc.id === itemId)) {
-          // Find the category name
-          for (const groupId in currentData.categories) {
-            const category = currentData.categories[groupId].find(c => c.id === categoryId);
-            if (category) {
-              parentCategory = category;
-              break;
-            }
-          }
-          break;
-        }
-      }
-      return parentCategory ? `Category: ${parentCategory.name}` : '';
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -530,33 +517,35 @@ const MasterDataStructureConfig = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="groups" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="groups">Domain Groups</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="subcategories">Sub-Categories</TabsTrigger>
-          </TabsList>
+        {/* Add New Group */}
+        <div className="border rounded-lg p-4 bg-muted/50">
+          <h3 className="font-medium mb-3">Add New Domain Group</h3>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter domain group name"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={addGroup} disabled={!newItemName.trim()}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Group
+            </Button>
+          </div>
+        </div>
 
-          <TabsContent value="groups">
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter new domain group name"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={addGroup} disabled={!newItemName.trim()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Group
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                {currentData.groups.map((group) => (
-                  <div key={group.id} className="flex items-center justify-between p-3 border rounded-lg">
+        {/* Tree Structure */}
+        <div className="space-y-2">
+          {currentData.groups.map((group) => (
+            <div key={group.id} className="border rounded-lg overflow-hidden">
+              <Collapsible 
+                open={expandedGroups[group.id]} 
+                onOpenChange={() => toggleGroupExpansion(group.id)}
+              >
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                     {editingGroup === group.id ? (
-                      <div className="flex gap-2 flex-1">
+                      <div className="flex gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
                         <Input
                           value={editingValue}
                           onChange={(e) => setEditingValue(e.target.value)}
@@ -572,12 +561,21 @@ const MasterDataStructureConfig = () => {
                     ) : (
                       <>
                         <div className="flex items-center gap-3">
-                          <Badge variant="secondary">{group.name}</Badge>
+                          <div className="flex items-center gap-2">
+                            {expandedGroups[group.id] ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </div>
+                          <Badge variant="default" className="font-medium">
+                            GROUP: {group.name}
+                          </Badge>
                           <span className="text-sm text-muted-foreground">
                             {(currentData.categories[group.id] || []).length} categories
                           </span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button onClick={() => editGroup(group.id)} variant="outline" size="sm">
                             <Edit className="w-3 h-3" />
                           </Button>
@@ -588,223 +586,160 @@ const MasterDataStructureConfig = () => {
                       </>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="categories">
-            <div className="space-y-4">
-              {/* Breadcrumb for Categories */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <span>Domain Groups</span>
-                <ChevronRight className="w-4 h-4" />
-                <span className="font-medium text-foreground">Categories</span>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Select Domain Group</Label>
-                <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a domain group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currentData.groups.map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedGroup && (
-                <>
-                  {/* Show selected domain group context */}
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Domain Group</Badge>
-                      <span className="font-medium">
-                        {currentData.groups.find(g => g.id === selectedGroup)?.name}
-                      </span>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <div className="border-t bg-muted/20 p-4 space-y-4">
+                    {/* Add Category */}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={`Add category to ${group.name}`}
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={() => addCategory(group.id)} 
+                        disabled={!newItemName.trim()}
+                        size="sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Category
+                      </Button>
                     </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter new category name"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button onClick={addCategory} disabled={!newItemName.trim()}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Category
-                    </Button>
-                  </div>
+                    {/* Categories */}
+                    <div className="space-y-2 ml-6">
+                      {(currentData.categories[group.id] || []).map((category) => (
+                        <div key={category.id} className="border rounded-lg overflow-hidden bg-background">
+                          <Collapsible 
+                            open={expandedCategories[category.id]} 
+                            onOpenChange={() => toggleCategoryExpansion(category.id)}
+                          >
+                            <CollapsibleTrigger className="w-full">
+                              <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
+                                {editingCategory === category.id ? (
+                                  <div className="flex gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                                    <Input
+                                      value={editingValue}
+                                      onChange={(e) => setEditingValue(e.target.value)}
+                                      className="flex-1"
+                                    />
+                                    <Button onClick={saveCategoryEdit} size="sm">
+                                      <Save className="w-3 h-3" />
+                                    </Button>
+                                    <Button onClick={() => setEditingCategory(null)} variant="outline" size="sm">
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex items-center gap-2">
+                                        {expandedCategories[category.id] ? (
+                                          <ChevronDown className="w-4 h-4" />
+                                        ) : (
+                                          <ChevronRight className="w-4 h-4" />
+                                        )}
+                                      </div>
+                                      <div className="flex flex-col items-start">
+                                        <Badge variant="secondary" className="font-medium mb-1">
+                                          CATEGORY: {category.name}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          Group: {group.name}
+                                        </span>
+                                      </div>
+                                      <span className="text-sm text-muted-foreground ml-2">
+                                        {(currentData.subCategories[category.id] || []).length} sub-categories
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                      <Button onClick={() => editCategory(category.id)} variant="outline" size="sm">
+                                        <Edit className="w-3 h-3" />
+                                      </Button>
+                                      <Button onClick={() => deleteCategory(category.id)} variant="destructive" size="sm">
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </CollapsibleTrigger>
+                            
+                            <CollapsibleContent>
+                              <div className="border-t bg-muted/20 p-3 space-y-3">
+                                {/* Add Sub-Category */}
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder={`Add sub-category to ${category.name}`}
+                                    value={newItemName}
+                                    onChange={(e) => setNewItemName(e.target.value)}
+                                    className="flex-1"
+                                  />
+                                  <Button 
+                                    onClick={() => addSubCategory(category.id)} 
+                                    disabled={!newItemName.trim()}
+                                    size="sm"
+                                  >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Sub-Category
+                                  </Button>
+                                </div>
 
-                  <div className="space-y-2">
-                    {(currentData.categories[selectedGroup] || []).map((category) => (
-                      <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        {editingCategory === category.id ? (
-                          <div className="flex gap-2 flex-1">
-                            <Input
-                              value={editingValue}
-                              onChange={(e) => setEditingValue(e.target.value)}
-                              className="flex-1"
-                            />
-                            <Button onClick={saveCategoryEdit} size="sm">
-                              <Save className="w-3 h-3" />
-                            </Button>
-                            <Button onClick={() => setEditingCategory(null)} variant="outline" size="sm">
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-3">
-                              <Badge variant="outline">{category.name}</Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {(currentData.subCategories[category.id] || []).length} sub-categories
-                              </span>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button onClick={() => editCategory(category.id)} variant="outline" size="sm">
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button onClick={() => deleteCategory(category.id)} variant="destructive" size="sm">
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="subcategories">
-            <div className="space-y-4">
-              {/* Breadcrumb for Sub-Categories */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <span>Domain Groups</span>
-                <ChevronRight className="w-4 h-4" />
-                <span>Categories</span>
-                <ChevronRight className="w-4 h-4" />
-                <span className="font-medium text-foreground">Sub-Categories</span>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Select Domain Group</Label>
-                <Select value={selectedGroup} onValueChange={(value) => {
-                  setSelectedGroup(value);
-                  setSelectedCategory(''); // Reset category when group changes
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a domain group first" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currentData.groups.map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedGroup && (
-                <div className="space-y-2">
-                  <Label>Select Category</Label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(currentData.categories[selectedGroup] || []).map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
+                                {/* Sub-Categories */}
+                                <div className="space-y-2 ml-6">
+                                  {(currentData.subCategories[category.id] || []).map((subCategory) => (
+                                    <div key={subCategory.id} className="flex items-center justify-between p-3 border rounded-lg bg-background">
+                                      {editingSubCategory === subCategory.id ? (
+                                        <div className="flex gap-2 flex-1">
+                                          <Input
+                                            value={editingValue}
+                                            onChange={(e) => setEditingValue(e.target.value)}
+                                            className="flex-1"
+                                          />
+                                          <Button onClick={saveSubCategoryEdit} size="sm">
+                                            <Save className="w-3 h-3" />
+                                          </Button>
+                                          <Button onClick={() => setEditingSubCategory(null)} variant="outline" size="sm">
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="flex flex-col items-start">
+                                            <Badge variant="outline" className="font-medium mb-1">
+                                              SUB-CATEGORY: {subCategory.name}
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground">
+                                              Category: {category.name}
+                                            </span>
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <Button onClick={() => editSubCategory(subCategory.id)} variant="outline" size="sm">
+                                              <Edit className="w-3 h-3" />
+                                            </Button>
+                                            <Button onClick={() => deleteSubCategory(subCategory.id)} variant="destructive" size="sm">
+                                              <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </div>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {selectedCategory && (
-                <>
-                  {/* Show full context hierarchy */}
-                  <div className="space-y-2">
-                    <div className="p-3 bg-muted rounded-lg space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Domain Group</Badge>
-                        <span className="font-medium">
-                          {currentData.groups.find(g => g.id === selectedGroup)?.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Category</Badge>
-                        <span className="font-medium">
-                          {currentData.categories[selectedGroup]?.find(c => c.id === selectedCategory)?.name}
-                        </span>
-                      </div>
                     </div>
                   </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter new sub-category name"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button onClick={addSubCategory} disabled={!newItemName.trim()}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Sub-Category
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {(currentData.subCategories[selectedCategory] || []).map((subCategory) => (
-                      <div key={subCategory.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        {editingSubCategory === subCategory.id ? (
-                          <div className="flex gap-2 flex-1">
-                            <Input
-                              value={editingValue}
-                              onChange={(e) => setEditingValue(e.target.value)}
-                              className="flex-1"
-                            />
-                            <Button onClick={saveSubCategoryEdit} size="sm">
-                              <Save className="w-3 h-3" />
-                            </Button>
-                            <Button onClick={() => setEditingSubCategory(null)} variant="outline" size="sm">
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <Badge variant="outline">{subCategory.name}</Badge>
-                            <div className="flex gap-2">
-                              <Button onClick={() => editSubCategory(subCategory.id)} variant="outline" size="sm">
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button onClick={() => deleteSubCategory(subCategory.id)} variant="destructive" size="sm">
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
-          </TabsContent>
-        </Tabs>
+          ))}
+        </div>
 
         <div className="flex justify-end pt-4 border-t">
           <Button onClick={handleSaveAll}>
