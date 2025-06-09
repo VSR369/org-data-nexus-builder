@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +28,11 @@ const menuItems = [
     id: 'voting-assessment',
     title: 'Voting & Assessment Config',
     icon: Target,
+  },
+  {
+    id: 'master-data-structure',
+    title: 'Master Data Structure',
+    icon: Database,
   },
   {
     id: 'industry-segments',
