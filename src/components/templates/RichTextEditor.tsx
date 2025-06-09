@@ -56,39 +56,49 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
     }
   }, [value]);
 
+  useEffect(() => {
+    // Inject Quill styles dynamically
+    const styleId = 'quill-custom-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .ql-toolbar {
+          border-top: 1px solid #ccc;
+          border-left: 1px solid #ccc;
+          border-right: 1px solid #ccc;
+          padding: 8px;
+          border-radius: 6px 6px 0 0;
+        }
+        .ql-container {
+          border-bottom: 1px solid #ccc;
+          border-left: 1px solid #ccc;
+          border-right: 1px solid #ccc;
+          border-radius: 0 0 6px 6px;
+          min-height: 400px;
+          font-family: inherit;
+        }
+        .ql-editor {
+          min-height: 400px;
+          padding: 12px;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .ql-editor h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
+        .ql-editor h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
+        .ql-editor h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
+        .ql-editor p { margin: 1em 0; }
+        .ql-editor ul, .ql-editor ol { margin: 1em 0; padding-left: 2em; }
+        .ql-editor table { border-collapse: collapse; width: 100%; }
+        .ql-editor td, .ql-editor th { border: 1px solid #ddd; padding: 8px; }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <Card className="p-4">
       <div className="space-y-4">
-        <style jsx global>{`
-          .ql-toolbar {
-            border-top: 1px solid #ccc;
-            border-left: 1px solid #ccc;
-            border-right: 1px solid #ccc;
-            padding: 8px;
-            border-radius: 6px 6px 0 0;
-          }
-          .ql-container {
-            border-bottom: 1px solid #ccc;
-            border-left: 1px solid #ccc;
-            border-right: 1px solid #ccc;
-            border-radius: 0 0 6px 6px;
-            min-height: 400px;
-            font-family: inherit;
-          }
-          .ql-editor {
-            min-height: 400px;
-            padding: 12px;
-            font-size: 14px;
-            line-height: 1.5;
-          }
-          .ql-editor h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
-          .ql-editor h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
-          .ql-editor h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
-          .ql-editor p { margin: 1em 0; }
-          .ql-editor ul, .ql-editor ol { margin: 1em 0; padding-left: 2em; }
-          .ql-editor table { border-collapse: collapse; width: 100%; }
-          .ql-editor td, .ql-editor th { border: 1px solid #ddd; padding: 8px; }
-        `}</style>
         <div ref={editorRef} />
       </div>
     </Card>
