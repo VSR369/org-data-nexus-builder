@@ -27,6 +27,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   console.log('SolutionProviderCompetencyTab - Received selectedIndustrySegment:', selectedIndustrySegment);
   console.log('SolutionProviderCompetencyTab - masterDomainGroups:', masterDomainGroups);
 
+  // Map the selected industry segment value to the full industry segment name used in master data
   const getIndustrySegmentName = (value: string) => {
     const mapping = {
       'bfsi': 'Banking, Financial Services & Insurance (BFSI)',
@@ -42,9 +43,9 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   };
 
   const industrySegmentName = getIndustrySegmentName(selectedIndustrySegment);
-  console.log('Industry segment name:', industrySegmentName);
+  console.log('Mapped industry segment name:', industrySegmentName);
 
-  // Filter domain groups based on the selected industry segment
+  // Filter domain groups based on the selected industry segment using the exact industrySegment field from master data
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
     ? [] // Don't show any groups if no industry segment is selected
     : masterDomainGroups.filter(group => {
@@ -53,6 +54,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       });
 
   console.log('Filtered domain groups:', filteredDomainGroups);
+  console.log('Number of filtered groups:', filteredDomainGroups.length);
 
   const activeCapabilities = competencyCapabilities
     .filter(cap => cap.isActive)
@@ -60,6 +62,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
 
   useEffect(() => {
     console.log('useEffect triggered with selectedIndustrySegment:', selectedIndustrySegment);
+    console.log('Filtered groups in useEffect:', filteredDomainGroups.length);
     
     if (!selectedIndustrySegment || selectedIndustrySegment === 'all') {
       setCompetencyAssessments({});
@@ -70,9 +73,12 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     const initialAssessments: Record<string, CompetencyAssessment> = {};
     
     filteredDomainGroups.forEach(group => {
+      console.log('Processing group:', group.name, 'with', group.categories.length, 'categories');
       group.categories.forEach(category => {
+        console.log('Processing category:', category.name, 'with', category.subCategories.length, 'subcategories');
         category.subCategories.forEach(subCategory => {
           const key = `${group.id}-${category.id}-${subCategory.id}`;
+          console.log('Creating assessment for key:', key, 'subCategory:', subCategory.name);
           initialAssessments[key] = {
             groupId: group.id,
             categoryId: category.id,
@@ -84,6 +90,7 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
     });
     
     console.log('Setting initial assessments:', initialAssessments);
+    console.log('Total assessments created:', Object.keys(initialAssessments).length);
     setCompetencyAssessments(initialAssessments);
     
     // Consider competency complete if all subcategories have assessments
@@ -93,8 +100,11 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
       }, 0);
     }, 0);
     
-    onCompetencyComplete(Object.keys(initialAssessments).length === totalSubCategories && totalSubCategories > 0);
-  }, [selectedIndustrySegment, filteredDomainGroups, onCompetencyComplete]);
+    console.log('Total subcategories expected:', totalSubCategories);
+    const isComplete = Object.keys(initialAssessments).length === totalSubCategories && totalSubCategories > 0;
+    console.log('Setting competency complete to:', isComplete);
+    onCompetencyComplete(isComplete);
+  }, [selectedIndustrySegment, filteredDomainGroups.length, onCompetencyComplete]);
 
   const updateCapability = (groupId: string, categoryId: string, subCategoryId: string, capability: string) => {
     const key = `${groupId}-${categoryId}-${subCategoryId}`;
@@ -144,7 +154,8 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   console.log('Competency completion check:', {
     totalExpected: totalExpectedAssessments,
     actualAssessments: Object.keys(competencyAssessments).length,
-    isComplete: isCompetencyComplete
+    isComplete: isCompetencyComplete,
+    filteredGroupsCount: filteredDomainGroups.length
   });
 
   return (
