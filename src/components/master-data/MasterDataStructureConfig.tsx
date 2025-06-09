@@ -57,7 +57,7 @@ const MasterDataStructureConfig = () => {
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-  // Initialize default data for all industry segments
+  // Initialize default data for all industry segments with original domain structure
   useEffect(() => {
     const defaultData: IndustrySegmentData = {
       groups: [
@@ -84,6 +84,16 @@ const MasterDataStructureConfig = () => {
           { id: '3-1', name: 'Financial Planning' },
           { id: '3-2', name: 'Risk Management' },
           { id: '3-3', name: 'Audit & Compliance' }
+        ],
+        '4': [
+          { id: '4-1', name: 'Digital Marketing' },
+          { id: '4-2', name: 'Sales Strategy' },
+          { id: '4-3', name: 'Customer Relationship Management' }
+        ],
+        '5': [
+          { id: '5-1', name: 'Supply Chain Management' },
+          { id: '5-2', name: 'Project Management' },
+          { id: '5-3', name: 'Resource Planning' }
         ]
       },
       subCategories: {
@@ -96,6 +106,21 @@ const MasterDataStructureConfig = () => {
           { id: '1-2-1', name: 'Business Intelligence' },
           { id: '1-2-2', name: 'Data Visualization' },
           { id: '1-2-3', name: 'Predictive Analytics' }
+        ],
+        '1-3': [
+          { id: '1-3-1', name: 'Network Security' },
+          { id: '1-3-2', name: 'Application Security' },
+          { id: '1-3-3', name: 'Data Protection' }
+        ],
+        '2-1': [
+          { id: '2-1-1', name: 'Workflow Automation' },
+          { id: '2-1-2', name: 'Lean Methodology' },
+          { id: '2-1-3', name: 'Six Sigma' }
+        ],
+        '3-1': [
+          { id: '3-1-1', name: 'Budget Planning' },
+          { id: '3-1-2', name: 'Financial Forecasting' },
+          { id: '3-1-3', name: 'Investment Analysis' }
         ]
       }
     };
@@ -221,6 +246,77 @@ const MasterDataStructureConfig = () => {
     });
   };
 
+  const editCategory = (categoryId: string) => {
+    const currentData = getCurrentData();
+    let categoryToEdit = null;
+    
+    for (const groupId in currentData.categories) {
+      const category = currentData.categories[groupId].find(c => c.id === categoryId);
+      if (category) {
+        categoryToEdit = category;
+        break;
+      }
+    }
+    
+    if (categoryToEdit) {
+      setEditingCategory(categoryId);
+      setEditingValue(categoryToEdit.name);
+    }
+  };
+
+  const saveCategoryEdit = () => {
+    if (!editingValue.trim() || !editingCategory) return;
+    
+    const currentData = getCurrentData();
+    const updatedCategories = { ...currentData.categories };
+    
+    for (const groupId in updatedCategories) {
+      updatedCategories[groupId] = updatedCategories[groupId].map(category =>
+        category.id === editingCategory
+          ? { ...category, name: editingValue.trim() }
+          : category
+      );
+    }
+    
+    const updatedData = {
+      ...currentData,
+      categories: updatedCategories
+    };
+    
+    updateIndustryData(updatedData);
+    setEditingCategory(null);
+    setEditingValue('');
+    
+    toast({
+      title: "Success",
+      description: "Category updated successfully",
+    });
+  };
+
+  const deleteCategory = (categoryId: string) => {
+    const currentData = getCurrentData();
+    const updatedCategories = { ...currentData.categories };
+    
+    for (const groupId in updatedCategories) {
+      updatedCategories[groupId] = updatedCategories[groupId].filter(category => category.id !== categoryId);
+    }
+    
+    const updatedData = {
+      ...currentData,
+      categories: updatedCategories,
+      subCategories: Object.fromEntries(
+        Object.entries(currentData.subCategories).filter(([key]) => key !== categoryId)
+      )
+    };
+    
+    updateIndustryData(updatedData);
+    
+    toast({
+      title: "Success",
+      description: "Category deleted successfully",
+    });
+  };
+
   // Sub-category operations
   const addSubCategory = () => {
     if (!newItemName.trim() || !selectedCategory) return;
@@ -245,6 +341,74 @@ const MasterDataStructureConfig = () => {
     toast({
       title: "Success",
       description: "Sub-category added successfully",
+    });
+  };
+
+  const editSubCategory = (subCategoryId: string) => {
+    const currentData = getCurrentData();
+    let subCategoryToEdit = null;
+    
+    for (const categoryId in currentData.subCategories) {
+      const subCategory = currentData.subCategories[categoryId].find(sc => sc.id === subCategoryId);
+      if (subCategory) {
+        subCategoryToEdit = subCategory;
+        break;
+      }
+    }
+    
+    if (subCategoryToEdit) {
+      setEditingSubCategory(subCategoryId);
+      setEditingValue(subCategoryToEdit.name);
+    }
+  };
+
+  const saveSubCategoryEdit = () => {
+    if (!editingValue.trim() || !editingSubCategory) return;
+    
+    const currentData = getCurrentData();
+    const updatedSubCategories = { ...currentData.subCategories };
+    
+    for (const categoryId in updatedSubCategories) {
+      updatedSubCategories[categoryId] = updatedSubCategories[categoryId].map(subCategory =>
+        subCategory.id === editingSubCategory
+          ? { ...subCategory, name: editingValue.trim() }
+          : subCategory
+      );
+    }
+    
+    const updatedData = {
+      ...currentData,
+      subCategories: updatedSubCategories
+    };
+    
+    updateIndustryData(updatedData);
+    setEditingSubCategory(null);
+    setEditingValue('');
+    
+    toast({
+      title: "Success",
+      description: "Sub-category updated successfully",
+    });
+  };
+
+  const deleteSubCategory = (subCategoryId: string) => {
+    const currentData = getCurrentData();
+    const updatedSubCategories = { ...currentData.subCategories };
+    
+    for (const categoryId in updatedSubCategories) {
+      updatedSubCategories[categoryId] = updatedSubCategories[categoryId].filter(subCategory => subCategory.id !== subCategoryId);
+    }
+    
+    const updatedData = {
+      ...currentData,
+      subCategories: updatedSubCategories
+    };
+    
+    updateIndustryData(updatedData);
+    
+    toast({
+      title: "Success",
+      description: "Sub-category deleted successfully",
     });
   };
 
@@ -388,12 +552,38 @@ const MasterDataStructureConfig = () => {
                   <div className="space-y-2">
                     {(currentData.categories[selectedGroup] || []).map((category) => (
                       <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline">{category.name}</Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {(currentData.subCategories[category.id] || []).length} sub-categories
-                          </span>
-                        </div>
+                        {editingCategory === category.id ? (
+                          <div className="flex gap-2 flex-1">
+                            <Input
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button onClick={saveCategoryEdit} size="sm">
+                              <Save className="w-3 h-3" />
+                            </Button>
+                            <Button onClick={() => setEditingCategory(null)} variant="outline" size="sm">
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline">{category.name}</Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {(currentData.subCategories[category.id] || []).length} sub-categories
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button onClick={() => editCategory(category.id)} variant="outline" size="sm">
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button onClick={() => deleteCategory(category.id)} variant="destructive" size="sm">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -438,7 +628,33 @@ const MasterDataStructureConfig = () => {
                   <div className="space-y-2">
                     {(currentData.subCategories[selectedCategory] || []).map((subCategory) => (
                       <div key={subCategory.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <Badge variant="outline">{subCategory.name}</Badge>
+                        {editingSubCategory === subCategory.id ? (
+                          <div className="flex gap-2 flex-1">
+                            <Input
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button onClick={saveSubCategoryEdit} size="sm">
+                              <Save className="w-3 h-3" />
+                            </Button>
+                            <Button onClick={() => setEditingSubCategory(null)} variant="outline" size="sm">
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <Badge variant="outline">{subCategory.name}</Badge>
+                            <div className="flex gap-2">
+                              <Button onClick={() => editSubCategory(subCategory.id)} variant="outline" size="sm">
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button onClick={() => deleteSubCategory(subCategory.id)} variant="destructive" size="sm">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
