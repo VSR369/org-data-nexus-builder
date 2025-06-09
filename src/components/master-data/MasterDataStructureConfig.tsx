@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 interface SubCategory {
   id: string;
   name: string;
+  description?: string;
 }
 
 interface Category {
@@ -20,50 +21,170 @@ interface Category {
 interface DomainGroup {
   id: string;
   name: string;
+  industrySegment: string;
   categories: Category[];
 }
 
 const initialDomainGroups: DomainGroup[] = [
   {
     id: '1',
-    name: 'Technology',
+    name: 'Strategy, Innovation & Growth',
+    industrySegment: 'Technology',
     categories: [
       {
         id: '101',
-        name: 'Software Development',
+        name: 'Strategic Vision & Business Planning',
         subCategories: [
-          { id: '101-1', name: 'Web Development' },
-          { id: '101-2', name: 'Mobile Development' },
+          { id: '101-1', name: 'Vision, Mission, and Goals Alignment', description: 'Ensuring organizational vision, mission, and strategic goals are aligned and clearly communicated.' },
+          { id: '101-2', name: 'Strategic Planning Frameworks', description: 'Using structured tools like SWOT, PESTLE, or Balanced Scorecards for strategic planning.' },
+          { id: '101-3', name: 'Competitive Positioning', description: 'Identifying and strengthening the organization\'s differentiation in the marketplace.' },
+          { id: '101-4', name: 'Long-Term Scenario Thinking', description: 'Planning for various future scenarios to remain resilient and adaptive.' },
         ],
       },
       {
         id: '102',
-        name: 'Data Science',
+        name: 'Business Model & Value Proposition Design',
         subCategories: [
-          { id: '102-1', name: 'Machine Learning' },
-          { id: '102-2', name: 'Data Analysis' },
+          { id: '102-1', name: 'Revenue Models & Monetization', description: 'Designing and optimizing revenue generation strategies.' },
+          { id: '102-2', name: 'Customer Segments & Value Mapping', description: 'Identifying key customer groups and tailoring value propositions for each.' },
+          { id: '102-3', name: 'Partner Ecosystem Design', description: 'Structuring collaborative networks with suppliers, partners, and platforms.' },
+          { id: '102-4', name: 'Business Sustainability Models', description: 'Integrating sustainable practices into business models for long-term viability.' },
+        ],
+      },
+      {
+        id: '103',
+        name: 'Outcome Measurement & Business Value Realization',
+        subCategories: [
+          { id: '103-1', name: 'ROI Analysis & Impact Metrics', description: 'Measuring return on investments and defining key impact indicators.' },
+          { id: '103-2', name: 'Benefits Realization Management', description: 'Ensuring projects deliver intended benefits aligned with strategic goals.' },
+          { id: '103-3', name: 'Outcome-based Contracting', description: 'Structuring contracts based on outcome delivery rather than inputs or activities.' },
+          { id: '103-4', name: 'Value Assurance Reviews', description: 'Periodic reviews to ensure value creation throughout project or initiative lifecycles.' },
         ],
       },
     ],
   },
   {
     id: '2',
-    name: 'Healthcare',
+    name: 'Operations, Delivery, Risk & Sustainability',
+    industrySegment: 'Healthcare',
     categories: [
       {
         id: '201',
-        name: 'Medical Devices',
+        name: 'Product & Systems Development Excellence',
         subCategories: [
-          { id: '201-1', name: 'Diagnostic Equipment' },
-          { id: '201-2', name: 'Therapeutic Devices' },
+          { id: '201-1', name: 'Requirement Analysis & Specification', description: 'Capturing and documenting functional and non-functional requirements.' },
+          { id: '201-2', name: 'System Design Architecture', description: 'Designing scalable and robust systems architecture.' },
+          { id: '201-3', name: 'Prototyping & Iterative Development', description: 'Rapid design-build-test cycles to evolve solutions.' },
+          { id: '201-4', name: 'Quality & Reliability Engineering', description: 'Ensuring consistency, safety, and reliability of products/services.' },
         ],
       },
       {
         id: '202',
-        name: 'Pharmaceuticals',
+        name: 'Service Design & Customer Experience',
         subCategories: [
-          { id: '202-1', name: 'Drug Discovery' },
-          { id: '202-2', name: 'Clinical Trials' },
+          { id: '202-1', name: 'Journey Mapping & Service Blueprinting', description: 'Visualizing customer interactions and backend systems to improve services.' },
+          { id: '202-2', name: 'Omnichannel Experience Strategy', description: 'Designing seamless experiences across physical and digital channels.' },
+          { id: '202-3', name: 'Customer Feedback Integration', description: 'Embedding user feedback loops into service refinement.' },
+          { id: '202-4', name: 'Personalization & Accessibility', description: 'Customizing experiences and ensuring inclusivity.' },
+        ],
+      },
+      {
+        id: '203',
+        name: 'Process Excellence & Core Functions',
+        subCategories: [
+          { id: '203-1', name: 'Sales, Marketing, Finance, HR, Ops, SCM', description: 'Functional performance across all core departments.' },
+          { id: '203-2', name: 'SOP Development', description: 'Creating standard operating procedures to ensure consistency.' },
+          { id: '203-3', name: 'KPI/OKR Definition', description: 'Setting Key Performance Indicators and Objectives & Key Results for teams.' },
+          { id: '203-4', name: 'Continuous Improvement (Lean, Six Sigma)', description: 'Using proven methodologies for process and performance improvement.' },
+        ],
+      },
+      {
+        id: '204',
+        name: 'Compliance, Risk & Regulatory Governance',
+        subCategories: [
+          { id: '204-1', name: 'Stakeholder Engagement', description: 'Involving and aligning internal and external stakeholders to mitigate risks.' },
+        ],
+      },
+      {
+        id: '205',
+        name: 'ESG & Sustainability Strategy',
+        subCategories: [
+          { id: '205-1', name: 'Carbon Footprint & Green IT', description: 'Reducing environmental impact through sustainable IT and operations.' },
+          { id: '205-2', name: 'Circular Economy Practices', description: 'Promoting reuse, recycling, and cradle-to-cradle design.' },
+          { id: '205-3', name: 'Ethical Governance Frameworks', description: 'Establishing values-driven, transparent decision-making systems.' },
+          { id: '205-4', name: 'Social Responsibility Programs', description: 'Designing and running initiatives for social impact.' },
+        ],
+      },
+      {
+        id: '206',
+        name: 'Global / Regional Delivery Capability',
+        subCategories: [
+          { id: '206-1', name: 'Multi-Region Operations', description: 'Managing operations across geographies with consistency.' },
+          { id: '206-2', name: 'Countries Worked', description: 'Select the applicable countries.' },
+          { id: '206-3', name: 'Regulatory & Localization Readiness', description: 'Ensuring compliance with regional regulations and local needs.' },
+          { id: '206-4', name: 'Delivery Center Strategy', description: 'Designing and operating efficient delivery hubs in different regions/countries.' },
+          { id: '206-5', name: 'Time Zone & Language Support', description: 'Supporting global teams and customers across languages and time zones.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '3',
+    name: 'People, Culture & Change',
+    industrySegment: 'Technology',
+    categories: [
+      {
+        id: '301',
+        name: 'Talent Management & Organizational Culture',
+        subCategories: [
+          { id: '301-1', name: 'Stakeholder Engagement', description: 'Engaging leadership, employees, and partners during change or growth.' },
+          { id: '301-2', name: 'Communication Planning', description: 'Crafting effective internal and external communication strategies.' },
+          { id: '301-3', name: 'Cultural Assessment & Transformation', description: 'Evaluating and evolving organizational values, beliefs, and behaviors.' },
+          { id: '301-4', name: 'Adoption & Training Programs', description: 'Preparing people to embrace new processes, tools, and mindsets.' },
+        ],
+      },
+      {
+        id: '302',
+        name: 'Operating Model & Organizational Structure',
+        subCategories: [
+          { id: '302-1', name: 'Role Clarity & Governance Structure', description: 'Defining responsibilities and decision-making structures.' },
+          { id: '302-2', name: 'Decision Rights Allocation', description: 'Clarifying who decides what and at which level.' },
+          { id: '302-3', name: 'Centralization vs. Decentralization', description: 'Structuring operations to balance autonomy and control.' },
+          { id: '302-4', name: 'Shared Services Design', description: 'Creating internal service hubs for scale and efficiency.' },
+        ],
+      },
+      {
+        id: '303',
+        name: 'Digital Workplace & Workforce Enablement',
+        subCategories: [
+          { id: '303-1', name: 'Collaboration Tools & Digital Adoption', description: 'Using tools like Slack, Teams, Notion to boost team collaboration.' },
+          { id: '303-2', name: 'Hybrid/Remote Work Enablement', description: 'Supporting flexible work arrangements with appropriate systems.' },
+          { id: '303-3', name: 'Workforce Productivity Solutions', description: 'Enhancing employee output using automation, apps, and analytics.' },
+          { id: '303-4', name: 'Employee Experience Platforms', description: 'Tools and systems to improve engagement, well-being, and satisfaction.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '4',
+    name: 'Technology & Digital Transformation',
+    industrySegment: 'Technology',
+    categories: [
+      {
+        id: '401',
+        name: 'Technology & Digital Transformation',
+        subCategories: [
+          { id: '401-1', name: 'Enterprise Architecture', description: 'Designing IT infrastructure and digital systems aligned to business goals.' },
+          { id: '401-2', name: 'Cloud & Edge Infrastructure', description: 'Leveraging cloud and edge computing for scalability and efficiency.' },
+          { id: '401-3', name: 'API & Integration Frameworks', description: 'Enabling interoperability across systems via robust APIs.' },
+          { id: '401-4', name: 'DevSecOps & Cybersecurity', description: 'Embedding security into the software development lifecycle.' },
+        ],
+      },
+      {
+        id: '402',
+        name: 'Data Strategy & Decision Intelligence',
+        subCategories: [
+          { id: '402-1', name: 'KPI/OKR Definition', description: 'Leveraging performance metrics for data-driven decision making.' },
         ],
       },
     ],
@@ -88,6 +209,7 @@ const MasterDataStructureConfig = () => {
     const newGroup: DomainGroup = {
       id: generateId(),
       name: 'New Domain Group',
+      industrySegment: 'Technology',
       categories: [],
     };
     setDomainGroups([...domainGroups, newGroup]);
@@ -291,11 +413,11 @@ const MasterDataStructureConfig = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {domainGroups.map((group) => (
-              <div key={group.id} className="border rounded-lg p-4">
+              <div key={group.id} className="border-l-4 border-primary pl-4">
                 {/* Domain Group Header */}
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-3 mb-4">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -303,66 +425,55 @@ const MasterDataStructureConfig = () => {
                     className="p-1 h-auto"
                   >
                     {expandedGroups.has(group.id) ? (
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-5 w-5" />
                     ) : (
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-5 w-5" />
                     )}
                   </Button>
                   
-                  {editingGroup === group.id ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <Input
-                        value={editingGroupName}
-                        onChange={(e) => setEditingGroupName(e.target.value)}
-                        className="text-left"
-                      />
-                      <Button size="sm" onClick={() => handleSaveGroup(group.id)}>
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 flex-1 justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="default" className="text-left">Domain Group</Badge>
-                        <span className="font-semibold text-left">{group.name}</span>
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-green-600 text-lg font-bold">✅</span>
+                    <div className="flex-1">
+                      <div className="text-xl font-bold text-foreground mb-1">
+                        GROUP {group.id}: {group.name}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditGroup(group.id, group.name)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteGroup(group.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddCategory(group.id)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Category
-                        </Button>
+                      <div className="text-sm text-muted-foreground">
+                        Industry Segment: {group.industrySegment}
                       </div>
                     </div>
-                  )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditGroup(group.id, group.name)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteGroup(group.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddCategory(group.id)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Category
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Categories */}
                 {expandedGroups.has(group.id) && (
-                  <div className="ml-6 space-y-3">
+                  <div className="ml-8 space-y-4">
                     {group.categories.map((category) => (
-                      <div key={category.id} className="border-l-2 border-muted pl-4">
+                      <div key={category.id} className="border-l-2 border-secondary pl-4">
                         {/* Category Header */}
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-3 mb-3">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -376,96 +487,71 @@ const MasterDataStructureConfig = () => {
                             )}
                           </Button>
                           
-                          {editingCategory === category.id ? (
-                            <div className="flex items-center gap-2 flex-1">
-                              <Input
-                                value={editingCategoryName}
-                                onChange={(e) => setEditingCategoryName(e.target.value)}
-                                className="text-left"
-                              />
-                              <Button size="sm" onClick={() => handleSaveCategory(group.id, category.id)}>
-                                <Save className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 flex-1 justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="text-left">Category</Badge>
-                                <span className="font-medium text-left">{category.name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleEditCategory(category.id, category.name)}
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDeleteCategory(group.id, category.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleAddSubCategory(group.id, category.id)}
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add Sub-Category
-                                </Button>
+                          <div className="flex items-center gap-3 flex-1 justify-between">
+                            <div className="flex-1">
+                              <div className="text-lg font-semibold text-foreground">
+                                Category: {category.name}
                               </div>
                             </div>
-                          )}
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditCategory(category.id, category.name)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteCategory(group.id, category.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAddSubCategory(group.id, category.id)}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add Sub-Category
+                              </Button>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Sub-Categories */}
                         {expandedCategories.has(category.id) && (
-                          <div className="ml-6 space-y-2">
+                          <div className="ml-6 space-y-3">
                             {category.subCategories.map((subCategory) => (
-                              <div key={subCategory.id} className="border-l-2 border-muted-foreground/30 pl-4">
-                                {editingSubCategory === subCategory.id ? (
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      value={editingSubCategoryName}
-                                      onChange={(e) => setEditingSubCategoryName(e.target.value)}
-                                      className="text-left"
-                                    />
-                                    <Button size="sm" onClick={() => handleSaveSubCategory(group.id, category.id, subCategory.id)}>
-                                      <Save className="h-4 w-4" />
+                              <div key={subCategory.id} className="border-l border-muted pl-4">
+                                <div className="flex items-start gap-3 justify-between">
+                                  <div className="flex-1">
+                                    <div className="text-base font-medium text-foreground mb-1">
+                                      Sub-Category: {subCategory.name}
+                                    </div>
+                                    {subCategory.description && (
+                                      <div className="text-sm text-muted-foreground">
+                                        {subCategory.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleEditSubCategory(subCategory.id, subCategory.name)}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
                                     </Button>
-                                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                                      <X className="h-4 w-4" />
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteSubCategory(group.id, category.id, subCategory.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="text-left">Sub-Category</Badge>
-                                      <span className="text-sm text-left">{subCategory.name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleEditSubCategory(subCategory.id, subCategory.name)}
-                                      >
-                                        <Edit2 className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDeleteSubCategory(group.id, category.id, subCategory.id)}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )}
+                                </div>
                               </div>
                             ))}
                           </div>
