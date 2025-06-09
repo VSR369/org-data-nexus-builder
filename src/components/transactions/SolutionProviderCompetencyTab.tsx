@@ -44,18 +44,10 @@ const SolutionProviderCompetencyTab: React.FC<SolutionProviderCompetencyTabProps
   const industrySegmentName = getIndustrySegmentName(selectedIndustrySegment);
   console.log('Industry segment name:', industrySegmentName);
 
-  // Fix the filtering logic to show all groups for BFSI (both BFSI and IT groups)
+  // Show all domain groups for every industry segment selection
   const filteredDomainGroups = selectedIndustrySegment === 'all' || !selectedIndustrySegment
-    ? masterDomainGroups 
-    : selectedIndustrySegment === 'bfsi' 
-      ? masterDomainGroups.filter(group => 
-          group.industrySegment === 'Banking, Financial Services & Insurance (BFSI)' || 
-          group.industrySegment === 'Information Technology & Software Services'
-        )
-      : masterDomainGroups.filter(group => {
-          console.log('Checking group:', group.name, 'industrySegment:', group.industrySegment);
-          return group.industrySegment === industrySegmentName;
-        });
+    ? [] // Don't show any groups if no industry segment is selected
+    : masterDomainGroups; // Show all groups for any selected industry segment
 
   console.log('Filtered domain groups:', filteredDomainGroups);
 
