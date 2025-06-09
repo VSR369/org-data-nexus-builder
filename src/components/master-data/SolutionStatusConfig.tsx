@@ -30,12 +30,11 @@ const SolutionStatusConfig = () => {
     { id: '4', name: 'Partial Payment Done by Client', description: 'Client has made partial payment for solution development', order: 4, isActive: true },
     { id: '5', name: 'Solution Voting', description: 'Community or stakeholder voting phase', order: 5, isActive: true },
     { id: '6', name: 'Solution Evaluation / Assessment', description: 'Detailed technical and business evaluation of solutions', order: 6, isActive: true },
-    { id: '7', name: 'Finalized Status (Post-Evaluation Outcomes)', description: 'Final status after evaluation completion', order: 7, isActive: true },
-    { id: '7a', name: 'Finalized – Investment Approved', description: 'Solution approved for investment', order: 8, isActive: true, parentId: '7' },
-    { id: '7b', name: 'Finalized – Pilot / Proof-of-Concept (PoC)', description: 'Solution approved for pilot or proof-of-concept phase', order: 9, isActive: true, parentId: '7' },
-    { id: '7c', name: 'Finalized – Ready for Full-Scale Implementation', description: 'Solution ready for full implementation', order: 10, isActive: true, parentId: '7' },
-    { id: '7d', name: 'Finalized – Suspended', description: 'Solution implementation suspended', order: 11, isActive: true, parentId: '7' },
-    { id: '8', name: 'Selection & Reward Declaration', description: 'Final selection announcement and reward distribution', order: 12, isActive: true },
+    { id: '7', name: 'Finalized – Investment Approved', description: 'Solution approved for investment', order: 7, isActive: true },
+    { id: '8', name: 'Finalized – Pilot / Proof-of-Concept (PoC)', description: 'Solution approved for pilot or proof-of-concept phase', order: 8, isActive: true },
+    { id: '9', name: 'Finalized – Ready for Full-Scale Implementation', description: 'Solution ready for full implementation', order: 9, isActive: true },
+    { id: '10', name: 'Finalized – Suspended', description: 'Solution implementation suspended', order: 10, isActive: true },
+    { id: '11', name: 'Selection & Reward Declaration', description: 'Final selection announcement and reward distribution', order: 11, isActive: true },
   ]);
 
   const handleEdit = (status: SolutionStatus) => {
@@ -155,77 +154,39 @@ const SolutionStatusConfig = () => {
       )}
 
       <div className="grid gap-4">
-        {parentStatuses.map((status) => (
-          <div key={status.id}>
-            <Card>
-              <CardContent className="p-4">
-                {editingId === status.id ? (
-                  <EditStatusForm 
-                    status={status} 
-                    onSave={handleSave} 
-                    onCancel={() => setEditingId(null)} 
-                  />
-                ) : (
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-foreground">{status.name}</h3>
-                      <p className="text-muted-foreground mt-1">{status.description}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-sm text-muted-foreground">Order: {status.order}</span>
-                        <span className={`text-sm px-2 py-1 rounded ${status.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {status.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(status)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(status.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+        {solutionStatuses.map((status) => (
+          <Card key={status.id}>
+            <CardContent className="p-4">
+              {editingId === status.id ? (
+                <EditStatusForm 
+                  status={status} 
+                  onSave={handleSave} 
+                  onCancel={() => setEditingId(null)} 
+                />
+              ) : (
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-foreground">{status.name}</h3>
+                    <p className="text-muted-foreground mt-1">{status.description}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="text-sm text-muted-foreground">Order: {status.order}</span>
+                      <span className={`text-sm px-2 py-1 rounded ${status.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {status.isActive ? 'Active' : 'Inactive'}
+                      </span>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Child statuses */}
-            {getChildStatuses(status.id).map((childStatus) => (
-              <Card key={childStatus.id} className="ml-8 mt-2">
-                <CardContent className="p-4">
-                  {editingId === childStatus.id ? (
-                    <EditStatusForm 
-                      status={childStatus} 
-                      onSave={handleSave} 
-                      onCancel={() => setEditingId(null)} 
-                    />
-                  ) : (
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-foreground">{childStatus.name}</h4>
-                        <p className="text-muted-foreground text-sm mt-1">{childStatus.description}</p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="text-sm text-muted-foreground">Order: {childStatus.order}</span>
-                          <span className={`text-sm px-2 py-1 rounded ${childStatus.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            {childStatus.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(childStatus)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(childStatus.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(status)}>
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(status.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
