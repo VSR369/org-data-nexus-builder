@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EnrollmentTabs from './enrollment/EnrollmentTabs';
@@ -151,5 +152,3 @@ const SelfEnrollmentForm = () => {
 };
 
 export default SelfEnrollmentForm;
-
-</initial_code>
