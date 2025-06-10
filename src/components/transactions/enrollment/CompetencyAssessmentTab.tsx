@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useDomainGroupsData } from '../../master-data/domain-groups/hooks/useDomainGroupsData';
 
 interface CompetencyData {
   [domainGroup: string]: {
@@ -20,44 +22,7 @@ interface CompetencyAssessmentTabProps {
   updateCompetencyData: (domainGroup: string, category: string, subCategory: string, rating: number) => void;
 }
 
-// Mock competency structure based on industry segment
-const getCompetencyStructure = (industrySegment: string) => {
-  const structures: { [key: string]: any } = {
-    bfsi: {
-      "Digital Banking": {
-        "Core Banking Systems": ["Account Management", "Transaction Processing", "Payment Systems"],
-        "Digital Channels": ["Mobile Banking", "Internet Banking", "API Integration"]
-      },
-      "Risk Management": {
-        "Credit Risk": ["Credit Scoring", "Portfolio Management", "Default Prediction"],
-        "Operational Risk": ["Process Automation", "Compliance Monitoring", "Fraud Detection"]
-      }
-    },
-    retail: {
-      "E-commerce Platform": {
-        "Customer Experience": ["User Interface Design", "Shopping Cart", "Checkout Process"],
-        "Inventory Management": ["Stock Control", "Order Fulfillment", "Supply Chain"]
-      },
-      "Data Analytics": {
-        "Customer Analytics": ["Behavior Analysis", "Personalization", "Recommendation Engine"],
-        "Sales Analytics": ["Performance Metrics", "Trend Analysis", "Forecasting"]
-      }
-    },
-    healthcare: {
-      "Health Information Systems": {
-        "Electronic Health Records": ["Patient Data Management", "Clinical Documentation", "Interoperability"],
-        "Medical Imaging": ["DICOM Systems", "Image Processing", "Diagnostic Tools"]
-      },
-      "Telemedicine": {
-        "Remote Consultation": ["Video Conferencing", "Patient Monitoring", "Digital Diagnosis"],
-        "Mobile Health": ["Health Apps", "Wearable Integration", "Data Collection"]
-      }
-    }
-  };
-
-  return structures[industrySegment] || {};
-};
-
+// Industry segment mapping to match the domain groups data
 const getIndustrySegmentName = (value: string) => {
   const names: { [key: string]: string } = {
     bfsi: "Banking, Financial Services & Insurance (BFSI)",
@@ -72,11 +37,31 @@ const getIndustrySegmentName = (value: string) => {
   return names[value] || value;
 };
 
+// Helper function to get rating description based on value
+const getRatingDescription = (rating: number) => {
+  if (rating >= 0 && rating < 2.5) return "No Competency";
+  if (rating >= 2.5 && rating < 5) return "Basic";
+  if (rating >= 5 && rating < 7.5) return "Advanced";
+  if (rating >= 7.5 && rating <= 10) return "Guru";
+  return "";
+};
+
+// Helper function to get rating color based on value
+const getRatingColor = (rating: number) => {
+  if (rating >= 0 && rating < 2.5) return "text-red-600";
+  if (rating >= 2.5 && rating < 5) return "text-yellow-600";
+  if (rating >= 5 && rating < 7.5) return "text-blue-600";
+  if (rating >= 7.5 && rating <= 10) return "text-green-600";
+  return "text-gray-600";
+};
+
 const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   selectedIndustrySegment,
   competencyData,
   updateCompetencyData
 }) => {
+  const { industrySegments } = useDomainGroupsData();
+
   if (!selectedIndustrySegment) {
     return (
       <div className="text-center py-12">
@@ -88,7 +73,25 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     );
   }
 
-  const competencyStructure = getCompetencyStructure(selectedIndustrySegment);
+  // Find the selected industry segment
+  const selectedSegment = industrySegments.find(segment => segment.id === selectedIndustrySegment);
+  
+  if (!selectedSegment) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-semibold mb-2">Core Competencies Assessment</h3>
+        <p className="text-muted-foreground">
+          Industry segment not found. Please select a valid industry segment.
+        </p>
+      </div>
+    );
+  }
+
+  // Get domain groups for the selected industry segment
+  const { domainGroups: allDomainGroups } = useDomainGroupsData();
+  const relevantDomainGroups = allDomainGroups.filter(group => 
+    group.industrySegmentId === selectedIndustrySegment
+  );
 
   return (
     <div className="space-y-6">
@@ -103,52 +106,82 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardContent>
       </Card>
 
-      {Object.keys(competencyStructure).length === 0 ? (
+      {relevantDomainGroups.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-semibold mb-2">Competency Structure</h3>
             <p className="text-muted-foreground">
-              Competency assessment structure for this industry segment is being configured.
+              No domain groups found for this industry segment. Please configure domain groups in the master data.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {Object.entries(competencyStructure).map(([domainGroup, categories]) => (
-            <Card key={domainGroup}>
+          {relevantDomainGroups.map((domainGroup) => (
+            <Card key={domainGroup.id}>
               <CardHeader>
-                <CardTitle className="text-lg">{domainGroup}</CardTitle>
+                <CardTitle className="text-lg">{domainGroup.name}</CardTitle>
+                {domainGroup.description && (
+                  <p className="text-sm text-muted-foreground">{domainGroup.description}</p>
+                )}
               </CardHeader>
-              <CardContent className="space-y-6">
-                {Object.entries(categories).map(([category, subCategories]) => (
-                  <div key={category} className="space-y-4">
-                    <h4 className="font-medium text-base">{category}</h4>
-                    <div className="space-y-4 pl-4">
-                      {(subCategories as string[]).map((subCategory) => {
-                        const currentRating = competencyData[domainGroup]?.[category]?.[subCategory] || 0;
-                        return (
-                          <div key={subCategory} className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-sm">{subCategory}</Label>
-                              <span className="text-sm font-medium">
-                                {currentRating}/10
-                              </span>
+              <CardContent>
+                <Accordion type="multiple" className="w-full">
+                  {domainGroup.categories.map((category) => (
+                    <AccordionItem key={category.id} value={category.id}>
+                      <AccordionTrigger className="text-left">
+                        <div>
+                          <div className="font-medium">{category.name}</div>
+                          {category.description && (
+                            <div className="text-sm text-muted-foreground mt-1">{category.description}</div>
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4">
+                        {category.subCategories.map((subCategory) => {
+                          const currentRating = competencyData[domainGroup.name]?.[category.name]?.[subCategory.name] || 0;
+                          const ratingDescription = getRatingDescription(currentRating);
+                          const ratingColor = getRatingColor(currentRating);
+                          
+                          return (
+                            <div key={subCategory.id} className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <Label className="text-sm font-medium">{subCategory.name}</Label>
+                                  {subCategory.description && (
+                                    <p className="text-xs text-muted-foreground mt-1">{subCategory.description}</p>
+                                  )}
+                                </div>
+                                <div className="text-right ml-4">
+                                  <div className="text-lg font-bold">{currentRating}/10</div>
+                                  <div className={`text-xs font-medium ${ratingColor}`}>
+                                    {ratingDescription}
+                                  </div>
+                                </div>
+                              </div>
+                              <Slider
+                                value={[currentRating]}
+                                onValueChange={([value]) => 
+                                  updateCompetencyData(domainGroup.name, category.name, subCategory.name, value)
+                                }
+                                max={10}
+                                min={0}
+                                step={0.5}
+                                className="w-full"
+                              />
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>0 - No Competency</span>
+                                <span>2.5 - Basic</span>
+                                <span>5 - Advanced</span>
+                                <span>7.5+ - Guru</span>
+                              </div>
                             </div>
-                            <Slider
-                              value={[currentRating]}
-                              onValueChange={([value]) => 
-                                updateCompetencyData(domainGroup, category, subCategory, value)
-                              }
-                              max={10}
-                              step={1}
-                              className="w-full"
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                          );
+                        })}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </CardContent>
             </Card>
           ))}
