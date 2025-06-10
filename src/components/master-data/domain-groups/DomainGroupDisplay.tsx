@@ -65,6 +65,7 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Industry Segment</TableHead>
               <TableHead>Domain Group</TableHead>
               <TableHead>Categories</TableHead>
               <TableHead>Sub Categories</TableHead>
@@ -75,6 +76,9 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
           <TableBody>
             {hierarchicalData.map((domainGroup) => (
               <TableRow key={domainGroup.id}>
+                <TableCell>
+                  <div className="font-medium">{domainGroup.industrySegmentName || 'Not Specified'}</div>
+                </TableCell>
                 <TableCell className="font-medium">
                   <div>
                     <div>{domainGroup.name}</div>

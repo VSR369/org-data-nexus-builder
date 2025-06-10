@@ -1,15 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Database, Plus } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
+import { IndustrySegmentData } from '@/types/industrySegments';
 import { domainGroupsDataManager } from './domainGroupsDataManager';
+import { industrySegmentDataManager } from '../industry-segments/industrySegmentDataManager';
 
 interface DomainGroupFormProps {
   data: DomainGroupsData;
@@ -17,6 +20,7 @@ interface DomainGroupFormProps {
 }
 
 interface FormData {
+  industrySegmentId: string;
   domainGroupName: string;
   domainGroupDescription: string;
   categoryName: string;
@@ -28,6 +32,7 @@ interface FormData {
 
 const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate }) => {
   const [formData, setFormData] = useState<FormData>({
+    industrySegmentId: '',
     domainGroupName: '',
     domainGroupDescription: '',
     categoryName: '',
@@ -37,14 +42,35 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
     isActive: true
   });
   
+  const [industrySegmentData, setIndustrySegmentData] = useState<IndustrySegmentData>({ industrySegments: [] });
   const { toast } = useToast();
+
+  // Load industry segments data on component mount
+  useEffect(() => {
+    const loadedIndustryData = industrySegmentDataManager.loadData();
+    setIndustrySegmentData(loadedIndustryData);
+  }, []);
 
   const handleSubmit = () => {
     // Validate required fields
-    if (!formData.domainGroupName || !formData.categoryName || !formData.subCategoryName) {
+    if (!formData.industrySegmentId || !formData.domainGroupName || !formData.categoryName || !formData.subCategoryName) {
       toast({
         title: "Validation Error",
-        description: "Domain Group Name, Category Name, and Sub Category Name are required",
+        description: "Industry Segment, Domain Group Name, Category Name, and Sub Category Name are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Find the selected industry segment
+    const selectedIndustrySegment = industrySegmentData.industrySegments.find(
+      segment => segment.id === formData.industrySegmentId
+    );
+
+    if (!selectedIndustrySegment) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a valid industry segment",
         variant: "destructive"
       });
       return;
@@ -58,8 +84,8 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
       id: baseId + '_dg',
       name: formData.domainGroupName,
       description: formData.domainGroupDescription || undefined,
-      industrySegmentId: 'none',
-      industrySegmentName: 'Not Applicable',
+      industrySegmentId: formData.industrySegmentId,
+      industrySegmentName: selectedIndustrySegment.industrySegment,
       isActive: formData.isActive,
       createdAt: timestamp
     };
@@ -96,6 +122,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
     
     // Reset form
     setFormData({
+      industrySegmentId: '',
       domainGroupName: '',
       domainGroupDescription: '',
       categoryName: '',
@@ -119,11 +146,31 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
           Create Domain Group Hierarchy
         </CardTitle>
         <CardDescription>
-          Fill all fields to create a complete hierarchy: Domain Group → Category → Sub Category
+          Fill all fields to create a complete hierarchy: Industry Segment → Domain Group → Category → Sub Category
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Industry Segment */}
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="industry-segment">Industry Segment *</Label>
+            <Select 
+              value={formData.industrySegmentId} 
+              onValueChange={(value) => setFormData({...formData, industrySegmentId: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an industry segment" />
+              </SelectTrigger>
+              <SelectContent>
+                {industrySegmentData.industrySegments.map((segment) => (
+                  <SelectItem key={segment.id} value={segment.id}>
+                    {segment.industrySegment}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Domain Group Name */}
           <div className="space-y-2">
             <Label htmlFor="domain-group">Domain Group Name *</Label>
