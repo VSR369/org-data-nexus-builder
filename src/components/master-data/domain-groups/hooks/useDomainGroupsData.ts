@@ -94,8 +94,16 @@ export const useDomainGroupsData = () => {
         
         setAllDomainGroups(initializedData);
 
-        // Set default active segment
-        if (segments.length > 0 && !activeIndustrySegment) {
+        // Set default active segment to Life Sciences
+        const lifeSciencesSegment = segments.find(segment => 
+          segment.name.toLowerCase().includes('healthcare') || 
+          segment.name.toLowerCase().includes('life sciences')
+        );
+        
+        if (lifeSciencesSegment && !activeIndustrySegment) {
+          setActiveIndustrySegment(lifeSciencesSegment.id);
+          console.log('Set active segment to Life Sciences:', lifeSciencesSegment.id);
+        } else if (segments.length > 0 && !activeIndustrySegment) {
           setActiveIndustrySegment(segments[0].id);
         }
 
@@ -116,7 +124,11 @@ export const useDomainGroupsData = () => {
         group.industrySegmentId === activeIndustrySegment
       );
       setDomainGroups(filtered);
-      console.log(`Filtered ${filtered.length} domain groups for segment ${activeIndustrySegment}`);
+      console.log(`Filtered ${filtered.length} domain groups for segment ${activeIndustrySegment}:`, filtered);
+      
+      // Reset selections when industry segment changes
+      setActiveDomainGroup('');
+      setActiveCategory('');
     }
   }, [activeIndustrySegment, allDomainGroups]);
 
