@@ -56,10 +56,16 @@ interface DomainGroupsData {
   subCategories: SubCategory[];
 }
 
-// Data manager
+// Data managers
 const domainGroupsDataManager = new DataManager({
   key: 'master_data_domain_groups_hierarchy',
   defaultData: { domainGroups: [], categories: [], subCategories: [] } as DomainGroupsData,
+  version: 1
+});
+
+const industrySegmentDataManager = new DataManager({
+  key: 'master_data_industry_segments',
+  defaultData: [] as IndustrySegment[],
   version: 1
 });
 
@@ -78,9 +84,9 @@ const DomainGroupsConfig: React.FC = () => {
   
   // Form states
   const [newDomainGroup, setNewDomainGroup] = useState({
+    industrySegmentId: '',
     name: '',
-    description: '',
-    industrySegmentId: ''
+    description: ''
   });
   
   const [newCategory, setNewCategory] = useState({
@@ -99,20 +105,21 @@ const DomainGroupsConfig: React.FC = () => {
 
   // Load data on component mount
   useEffect(() => {
+    console.log('=== DomainGroupsConfig: Loading data ===');
+    
+    // Load domain groups data
     const loadedData = domainGroupsDataManager.loadData();
+    console.log('📊 Loaded domain groups data:', loadedData);
     setData(loadedData);
 
-    // Load industry segments
-    const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
-    if (savedIndustrySegments) {
-      try {
-        const industrySegmentsData: IndustrySegment[] = JSON.parse(savedIndustrySegments);
-        setIndustrySegments(industrySegmentsData.filter(segment => segment.isActive));
-      } catch (error) {
-        console.error('Error parsing industry segments data:', error);
-        setIndustrySegments([]);
-      }
-    }
+    // Load industry segments from DataManager
+    const loadedIndustrySegments = industrySegmentDataManager.loadData();
+    console.log('📊 Loaded industry segments from DataManager:', loadedIndustrySegments);
+    
+    // Filter only active industry segments
+    const activeSegments = loadedIndustrySegments.filter(segment => segment.isActive);
+    console.log('✅ Active industry segments:', activeSegments);
+    setIndustrySegments(activeSegments);
   }, []);
 
   // Helper functions
@@ -133,10 +140,10 @@ const DomainGroupsConfig: React.FC = () => {
 
   // CRUD operations
   const handleAddDomainGroup = () => {
-    if (!newDomainGroup.name || !newDomainGroup.industrySegmentId) {
+    if (!newDomainGroup.industrySegmentId || !newDomainGroup.name) {
       toast({
         title: "Validation Error",
-        description: "Name and industry segment are required fields",
+        description: "Industry segment and name are required fields",
         variant: "destructive"
       });
       return;
@@ -158,7 +165,7 @@ const DomainGroupsConfig: React.FC = () => {
     
     setData(updatedData);
     domainGroupsDataManager.saveData(updatedData);
-    setNewDomainGroup({ name: '', description: '', industrySegmentId: '' });
+    setNewDomainGroup({ industrySegmentId: '', name: '', description: '' });
     setIsDomainGroupDialogOpen(false);
 
     toast({
@@ -346,15 +353,6 @@ const DomainGroupsConfig: React.FC = () => {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="dg-name">Domain Group Name *</Label>
-                        <Input 
-                          id="dg-name"
-                          value={newDomainGroup.name}
-                          onChange={(e) => setNewDomainGroup({...newDomainGroup, name: e.target.value})}
-                          placeholder="e.g., Core Banking"
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="dg-industry">Industry Segment *</Label>
                         <Select 
                           value={newDomainGroup.industrySegmentId} 
@@ -374,6 +372,15 @@ const DomainGroupsConfig: React.FC = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dg-name">Domain Group Name *</Label>
+                        <Input 
+                          id="dg-name"
+                          value={newDomainGroup.name}
+                          onChange={(e) => setNewDomainGroup({...newDomainGroup, name: e.target.value})}
+                          placeholder="e.g., Core Banking"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="dg-desc">Description</Label>

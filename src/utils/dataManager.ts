@@ -188,7 +188,8 @@ export class GlobalCacheManager {
       'rewardTypes',
       'communicationTypes',
       'master_data_domain_groups',
-      'master_data_domain_groups_hierarchy' // Add the new domain groups hierarchy key
+      'master_data_domain_groups_hierarchy',
+      'master_data_industry_segments'
     ];
     
     oldKeys.forEach(key => {

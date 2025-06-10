@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from "@/components/ui/switch";
 import { Factory, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager } from '@/utils/dataManager';
 
 // Local type definition for IndustrySegment
 interface IndustrySegment {
@@ -22,8 +24,8 @@ interface IndustrySegment {
   createdAt: string;
 }
 
-// Local mock data for industry segments
-const mockIndustrySegments: IndustrySegment[] = [
+// Default industry segments
+const defaultIndustrySegments: IndustrySegment[] = [
   {
     id: '1',
     name: 'Banking & Financial Services',
@@ -66,8 +68,15 @@ const mockIndustrySegments: IndustrySegment[] = [
   }
 ];
 
+// Data manager for industry segments
+const industrySegmentDataManager = new DataManager({
+  key: 'master_data_industry_segments',
+  defaultData: defaultIndustrySegments,
+  version: 1
+});
+
 const IndustrySegmentConfig: React.FC = () => {
-  const [segments, setSegments] = useState<IndustrySegment[]>(mockIndustrySegments);
+  const [segments, setSegments] = useState<IndustrySegment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -81,6 +90,14 @@ const IndustrySegmentConfig: React.FC = () => {
   });
   
   const { toast } = useToast();
+
+  // Load data on component mount
+  useEffect(() => {
+    console.log('=== IndustrySegmentConfig: Loading industry segments ===');
+    const loadedSegments = industrySegmentDataManager.loadData();
+    console.log('📊 Loaded industry segments:', loadedSegments);
+    setSegments(loadedSegments);
+  }, []);
   
   // Filter segments based on search term and active tab
   const filteredSegments = segments.filter(segment => {
@@ -112,7 +129,9 @@ const IndustrySegmentConfig: React.FC = () => {
       createdAt: new Date().toISOString()
     };
     
-    setSegments([...segments, segmentToAdd]);
+    const updatedSegments = [...segments, segmentToAdd];
+    setSegments(updatedSegments);
+    industrySegmentDataManager.saveData(updatedSegments);
     setNewSegment({ name: '', code: '', description: '', isActive: true });
     setIsAddDialogOpen(false);
     
@@ -137,6 +156,7 @@ const IndustrySegmentConfig: React.FC = () => {
     );
     
     setSegments(updatedSegments);
+    industrySegmentDataManager.saveData(updatedSegments);
     setIsEditDialogOpen(false);
     setCurrentSegment(null);
     
@@ -152,6 +172,7 @@ const IndustrySegmentConfig: React.FC = () => {
     );
     
     setSegments(updatedSegments);
+    industrySegmentDataManager.saveData(updatedSegments);
     
     toast({
       title: "Status Updated",
