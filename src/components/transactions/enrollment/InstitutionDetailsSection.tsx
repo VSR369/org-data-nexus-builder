@@ -1,67 +1,90 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FormData } from './types';
+import { departmentsDataManager, organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface InstitutionDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
 }
 
-// Department master data - this should ideally come from a centralized location
-const departmentData = {
-  categories: [
-    'Core Business Functions',
-    'Corporate Support Functions',
-    'Technology & Digital Functions',
-    'Industry-Specific or Specialized Departments'
-  ],
+// Department master data structure
+interface DepartmentData {
+  categories: string[];
   subcategories: {
-    'Core Business Functions': [
-      'Strategy & Planning',
-      'Sales & Business Development',
-      'Marketing & Communications',
-      'Product Management',
-      'Operations / Service Delivery',
-      'Customer Support / Success',
-      'Research & Development (R&D)',
-      'Supply Chain & Procurement',
-      'Project / Program Management Office (PMO)'
-    ],
-    'Corporate Support Functions': [
-      'Finance & Accounting',
-      'Human Resources (HR)',
-      'Legal & Compliance',
-      'Administration & Facilities Management',
-      'Internal Audit & Risk Management'
-    ],
-    'Technology & Digital Functions': [
-      'Information Technology (IT)',
-      'Enterprise Architecture',
-      'Data & Analytics / Business Intelligence',
-      'Cybersecurity & Information Security',
-      'Digital Transformation Office / Innovation Lab',
-      'DevOps / Infrastructure & Cloud Services'
-    ],
-    'Industry-Specific or Specialized Departments': [
-      'Quality Assurance / Regulatory Affairs (e.g., Pharma, Manufacturing)',
-      'Clinical Affairs (e.g., Healthcare, MedTech)',
-      'Merchandising & Category Management (Retail)',
-      'Content / Editorial / Creative (Media & EdTech)',
-      'Corporate Social Responsibility (CSR) / ESG'
-    ]
-  }
-};
+    [category: string]: string[];
+  };
+}
 
 const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   formData,
   updateFormData
 }) => {
+  const [departmentData, setDepartmentData] = useState<DepartmentData>({
+    categories: [],
+    subcategories: {}
+  });
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
+
+  // Load master data on component mount
+  useEffect(() => {
+    // Load departments - this is currently a flat array, we need to convert it to categories/subcategories
+    const departments = departmentsDataManager.loadData();
+    console.log('Loaded departments from master data:', departments);
+    
+    // For now, create a simple mapping - all departments as categories with empty subcategories
+    // This can be enhanced when the department structure is properly implemented
+    const departmentCategories = [
+      'Core Business Functions',
+      'Corporate Support Functions', 
+      'Technology & Digital Functions',
+      'Industry-Specific or Specialized Departments'
+    ];
+    
+    const departmentSubcategories = {
+      'Core Business Functions': departments.filter(d => 
+        ['Strategy', 'Sales', 'Marketing', 'Product', 'Operations', 'Customer', 'Research', 'Supply', 'Project'].some(keyword => 
+          d.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ),
+      'Corporate Support Functions': departments.filter(d => 
+        ['Finance', 'Human', 'Legal', 'Administration', 'Audit', 'Risk'].some(keyword => 
+          d.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ),
+      'Technology & Digital Functions': departments.filter(d => 
+        ['Technology', 'IT', 'Data', 'Analytics', 'Cyber', 'Digital', 'DevOps'].some(keyword => 
+          d.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ),
+      'Industry-Specific or Specialized Departments': departments.filter(d => 
+        ['Quality', 'Clinical', 'Regulatory', 'CSR', 'ESG'].some(keyword => 
+          d.toLowerCase().includes(keyword.toLowerCase())
+        )
+      )
+    };
+
+    setDepartmentData({
+      categories: departmentCategories,
+      subcategories: departmentSubcategories
+    });
+
+    // Load organization types
+    const orgTypes = organizationTypesDataManager.loadData();
+    setOrganizationTypes(orgTypes);
+
+    // Load countries
+    const countryList = countriesDataManager.loadData();
+    setCountries(countryList);
+  }, []);
+
   const availableSubCategories = formData.departmentCategory 
-    ? departmentData.subcategories[formData.departmentCategory as keyof typeof departmentData.subcategories] || []
+    ? departmentData.subcategories[formData.departmentCategory] || []
     : [];
 
   const handleDepartmentCategoryChange = (value: string) => {
@@ -90,11 +113,11 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
               <SelectValue placeholder="Select organization type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="corporation">Corporation</SelectItem>
-              <SelectItem value="llp">Limited Liability Partnership</SelectItem>
-              <SelectItem value="partnership">Partnership</SelectItem>
-              <SelectItem value="proprietorship">Sole Proprietorship</SelectItem>
-              <SelectItem value="ngo">NGO</SelectItem>
+              {organizationTypes.map((type) => (
+                <SelectItem key={type} value={type.toLowerCase().replace(/\s+/g, '-')}>
+                  {type}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -105,11 +128,11 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="in">India</SelectItem>
-              <SelectItem value="us">United States</SelectItem>
-              <SelectItem value="uk">United Kingdom</SelectItem>
-              <SelectItem value="ca">Canada</SelectItem>
-              <SelectItem value="au">Australia</SelectItem>
+              {countries.map((country) => (
+                <SelectItem key={country} value={country.toLowerCase().replace(/\s+/g, '-')}>
+                  {country}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
