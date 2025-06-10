@@ -6,12 +6,31 @@ import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = 'solution-provider-enrollment-draft';
 
+// Function to load saved data synchronously
+const loadSavedData = () => {
+  try {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      console.log('Loading saved draft data synchronously:', parsedData);
+      return parsedData;
+    }
+  } catch (error) {
+    console.error('Error loading saved data:', error);
+  }
+  return null;
+};
+
 export const useFormState = () => {
   const { toast } = useToast();
-  const [providerType, setProviderType] = useState('');
-  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState('');
   
-  const [formData, setFormData] = useState<FormData>({
+  // Load saved data synchronously during initialization
+  const savedData = loadSavedData();
+  
+  const [providerType, setProviderType] = useState(savedData?.providerType || '');
+  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState(savedData?.selectedIndustrySegment || '');
+  
+  const [formData, setFormData] = useState<FormData>(savedData?.formData || {
     // Institution fields (conditional)
     orgName: '',
     orgType: '',
@@ -45,32 +64,14 @@ export const useFormState = () => {
 
   const [isBasicDetailsComplete, setIsBasicDetailsComplete] = useState(false);
 
-  // Load saved data on component mount
+  // Show toast notification if data was restored
   useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        console.log('Loading saved draft data:', parsedData);
-        
-        if (parsedData.formData) {
-          setFormData(parsedData.formData);
-        }
-        if (parsedData.providerType) {
-          setProviderType(parsedData.providerType);
-        }
-        if (parsedData.selectedIndustrySegment) {
-          setSelectedIndustrySegment(parsedData.selectedIndustrySegment);
-          console.log('Restored industry segment from draft:', parsedData.selectedIndustrySegment);
-        }
-        
-        toast({
-          title: "Draft Restored",
-          description: "Your previously saved draft has been restored.",
-        });
-      } catch (error) {
-        console.error('Error loading saved data:', error);
-      }
+      console.log('Restored draft data - Industry segment:', savedData.selectedIndustrySegment);
+      toast({
+        title: "Draft Restored",
+        description: "Your previously saved draft has been restored.",
+      });
     }
   }, [toast]);
 
