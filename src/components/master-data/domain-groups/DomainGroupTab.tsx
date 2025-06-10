@@ -180,7 +180,7 @@ export const DomainGroupTab: React.FC<DomainGroupTabProps> = ({
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{group.name}</span>
                           {selectedDomainGroup === group.id && (
-                            <Badge variant="default" size="sm">Selected</Badge>
+                            <Badge variant="default">Selected</Badge>
                           )}
                         </div>
                         {group.description && (

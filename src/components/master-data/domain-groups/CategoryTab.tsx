@@ -180,7 +180,7 @@ export const CategoryTab: React.FC<CategoryTabProps> = ({
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{category.name}</span>
                           {selectedCategory === category.id && (
-                            <Badge variant="default" size="sm">Selected</Badge>
+                            <Badge variant="default">Selected</Badge>
                           )}
                         </div>
                         {category.description && (
