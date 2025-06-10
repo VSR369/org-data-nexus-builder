@@ -2,9 +2,10 @@
 import { DomainGroup } from '../types';
 import { lifeSciencesDomainGroups } from './lifeSciencesDomainGroups';
 import { manufacturingDomainGroups } from './manufacturingDomainGroups';
+import { logisticsDomainGroups } from './logisticsDomainGroups';
 
 // Define the data version for cache management
-export const DATA_VERSION = '2.0.0';
+export const DATA_VERSION = '2.1.0';
 
 // Registry mapping industry segments to their data files
 export const industryDataRegistry = {
@@ -16,6 +17,11 @@ export const industryDataRegistry = {
   'manufacturing': {
     name: 'Manufacturing (Smart / Discrete / Process)',
     dataLoader: () => manufacturingDomainGroups,
+    version: DATA_VERSION
+  },
+  'logistics-supply-chain': {
+    name: 'Logistics & Supply Chain',
+    dataLoader: () => logisticsDomainGroups,
     version: DATA_VERSION
   }
   // Add more industry segments as they are created
@@ -35,11 +41,20 @@ export const getDomainGroupsForIndustry = (industrySegmentId: string, industrySe
     return registryEntry.dataLoader();
   }
   
-  // Check for partial name matches
-  const partialMatch = Object.values(industryDataRegistry).find(entry => 
-    industrySegmentName.toLowerCase().includes(entry.name.toLowerCase().split(' ')[0].toLowerCase()) ||
-    entry.name.toLowerCase().includes(industrySegmentName.toLowerCase().split(' ')[0].toLowerCase())
-  );
+  // Check for partial name matches - enhanced to handle logistics
+  const partialMatch = Object.values(industryDataRegistry).find(entry => {
+    const industryLower = industrySegmentName.toLowerCase();
+    const entryLower = entry.name.toLowerCase();
+    
+    // Check for logistics-specific matches
+    if (industryLower.includes('logistics') || industryLower.includes('supply chain')) {
+      return entryLower.includes('logistics') || entryLower.includes('supply chain');
+    }
+    
+    // Original partial matching logic
+    return industryLower.includes(entryLower.split(' ')[0]) ||
+           entryLower.includes(industryLower.split(' ')[0]);
+  });
   
   if (partialMatch) {
     console.log(`Found partial match for industry: ${industrySegmentName} -> ${partialMatch.name}`);
