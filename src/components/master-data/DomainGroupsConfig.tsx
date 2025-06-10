@@ -17,16 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 import { DataManager } from '@/utils/dataManager';
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
 
-// Industry Segment interface to match the master data
-interface IndustrySegment {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
 // Default data
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -49,7 +39,7 @@ const industrySegmentDataManager = new DataManager({
 
 const DomainGroupsConfig: React.FC = () => {
   const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
-  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('domain-groups');
   const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
@@ -103,8 +93,7 @@ const DomainGroupsConfig: React.FC = () => {
   
   // Helper functions
   const getIndustrySegmentName = (segmentId: string): string => {
-    const segment = industrySegments.find(s => s.id === segmentId);
-    return segment ? segment.name : 'Unknown';
+    return segmentId; // Since segments are stored as strings, the ID is the name
   };
   
   const getDomainGroupName = (domainGroupId: string): string => {
@@ -329,9 +318,9 @@ const DomainGroupsConfig: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Industry Segments</SelectItem>
-                  {industrySegments.filter(seg => seg.isActive).map((segment) => (
-                    <SelectItem key={segment.id} value={segment.id}>
-                      {segment.name}
+                  {industrySegments.map((segment, index) => (
+                    <SelectItem key={index} value={segment}>
+                      {segment}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -378,9 +367,9 @@ const DomainGroupsConfig: React.FC = () => {
                               <SelectValue placeholder="Select Industry Segment" />
                             </SelectTrigger>
                             <SelectContent>
-                              {industrySegments.filter(seg => seg.isActive).map((segment) => (
-                                <SelectItem key={segment.id} value={segment.id}>
-                                  {segment.name}
+                              {industrySegments.map((segment, index) => (
+                                <SelectItem key={index} value={segment}>
+                                  {segment}
                                 </SelectItem>
                               ))}
                             </SelectContent>
