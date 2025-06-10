@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useDomainGroupsData } from '../../master-data/domain-groups/hooks/useDomainGroupsData';
+import { masterDomainGroups, industrySegmentMapping } from '../competency/data';
 
 interface CompetencyData {
   [domainGroup: string]: {
@@ -21,36 +21,6 @@ interface CompetencyAssessmentTabProps {
   competencyData: CompetencyData;
   updateCompetencyData: (domainGroup: string, category: string, subCategory: string, rating: number) => void;
 }
-
-// Industry segment mapping to match the domain groups data
-const getIndustrySegmentName = (value: string) => {
-  const names: { [key: string]: string } = {
-    bfsi: "Banking, Financial Services & Insurance (BFSI)",
-    retail: "Retail & E-Commerce",
-    healthcare: "Healthcare & Life Sciences",
-    it: "Information Technology & Software Services",
-    telecom: "Telecommunications",
-    education: "Education & EdTech",
-    manufacturing: "Manufacturing",
-    logistics: "Logistics & Supply Chain"
-  };
-  return names[value] || value;
-};
-
-// Map form values to industry segment IDs used in domain groups
-const mapToIndustrySegmentId = (formValue: string) => {
-  const mapping: { [key: string]: string } = {
-    bfsi: "bfsi",
-    retail: "retail", 
-    healthcare: "healthcare",
-    it: "it",
-    telecom: "telecom",
-    education: "education",
-    manufacturing: "manufacturing",
-    logistics: "logistics"
-  };
-  return mapping[formValue] || formValue;
-};
 
 // Helper function to get rating description based on value
 const getRatingDescription = (rating: number) => {
@@ -75,10 +45,8 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   competencyData,
   updateCompetencyData
 }) => {
-  const { industrySegments, domainGroups: allDomainGroups } = useDomainGroupsData();
-
   console.log('CompetencyAssessmentTab - selectedIndustrySegment:', selectedIndustrySegment);
-  console.log('CompetencyAssessmentTab - allDomainGroups:', allDomainGroups);
+  console.log('CompetencyAssessmentTab - masterDomainGroups:', masterDomainGroups);
 
   if (!selectedIndustrySegment) {
     return (
@@ -91,28 +59,14 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     );
   }
 
-  // Map the form value to the industry segment ID used in domain groups
-  const mappedIndustrySegmentId = mapToIndustrySegmentId(selectedIndustrySegment);
-  console.log('Mapped industry segment ID:', mappedIndustrySegmentId);
-
-  // Find the selected industry segment
-  const selectedSegment = industrySegments.find(segment => segment.id === mappedIndustrySegmentId);
-  console.log('Found selected segment:', selectedSegment);
-  
-  if (!selectedSegment) {
-    console.log('No segment found, creating fallback');
-    // Create a fallback segment object for display
-    const fallbackSegment = {
-      id: selectedIndustrySegment,
-      name: getIndustrySegmentName(selectedIndustrySegment)
-    };
-    console.log('Using fallback segment:', fallbackSegment);
-  }
+  // Get the full industry segment name from the mapping
+  const fullIndustrySegmentName = industrySegmentMapping[selectedIndustrySegment as keyof typeof industrySegmentMapping] || selectedIndustrySegment;
+  console.log('Full industry segment name:', fullIndustrySegmentName);
 
   // Get domain groups for the selected industry segment
-  const relevantDomainGroups = allDomainGroups.filter(group => {
-    const matches = group.industrySegmentId === mappedIndustrySegmentId;
-    console.log(`Checking domain group ${group.name} with industrySegmentId ${group.industrySegmentId} against ${mappedIndustrySegmentId}: ${matches}`);
+  const relevantDomainGroups = masterDomainGroups.filter(group => {
+    const matches = group.industrySegment === fullIndustrySegmentName;
+    console.log(`Checking domain group ${group.name} with industrySegment ${group.industrySegment} against ${fullIndustrySegmentName}: ${matches}`);
     return matches;
   });
 
@@ -126,7 +80,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardHeader>
         <CardContent>
           <Badge variant="secondary" className="text-base px-4 py-2">
-            {getIndustrySegmentName(selectedIndustrySegment)}
+            {fullIndustrySegmentName}
           </Badge>
         </CardContent>
       </Card>
@@ -136,11 +90,11 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-semibold mb-2">Competency Structure</h3>
             <p className="text-muted-foreground">
-              No domain groups found for industry segment: {getIndustrySegmentName(selectedIndustrySegment)}. 
+              No domain groups found for industry segment: {fullIndustrySegmentName}. 
               Please configure domain groups for this industry segment in the master data.
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Looking for industry segment ID: {mappedIndustrySegmentId}
+              Looking for industry segment: {fullIndustrySegmentName}
             </p>
           </CardContent>
         </Card>
