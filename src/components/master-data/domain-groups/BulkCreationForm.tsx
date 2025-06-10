@@ -11,33 +11,65 @@ import { createLifeSciencesHierarchyData } from './lifeSciencesHierarchyData';
 interface BulkCreationFormProps {
   data: DomainGroupsData;
   onDataUpdate: (newData: DomainGroupsData) => void;
+  onCreationComplete?: () => void;
 }
 
-const BulkCreationForm: React.FC<BulkCreationFormProps> = ({ data, onDataUpdate }) => {
+const BulkCreationForm: React.FC<BulkCreationFormProps> = ({ 
+  data, 
+  onDataUpdate, 
+  onCreationComplete 
+}) => {
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
-  const createLifeSciencesHierarchy = () => {
+  const createLifeSciencesHierarchy = async () => {
+    console.log('🚀 Starting Life Sciences hierarchy creation...');
     setIsCreating(true);
     
-    const { newDomainGroups, newCategories, newSubCategories } = createLifeSciencesHierarchyData();
+    try {
+      const { newDomainGroups, newCategories, newSubCategories } = createLifeSciencesHierarchyData();
 
-    // Update data
-    const updatedData = {
-      domainGroups: [...data.domainGroups, ...newDomainGroups],
-      categories: [...data.categories, ...newCategories],
-      subCategories: [...data.subCategories, ...newSubCategories]
-    };
-    
-    onDataUpdate(updatedData);
-    domainGroupsDataManager.saveData(updatedData);
-    
-    setIsCreating(false);
-    
-    toast({
-      title: "Success",
-      description: `Created complete Life Sciences hierarchy: 4 domain groups, 12 categories, and 48 sub-categories`,
-    });
+      console.log('📦 Created hierarchy data:', {
+        domainGroups: newDomainGroups.length,
+        categories: newCategories.length,
+        subCategories: newSubCategories.length
+      });
+
+      // Update data with new hierarchy
+      const updatedData = {
+        domainGroups: [...data.domainGroups, ...newDomainGroups],
+        categories: [...data.categories, ...newCategories],
+        subCategories: [...data.subCategories, ...newSubCategories]
+      };
+      
+      console.log('💾 Saving updated data to storage...');
+      domainGroupsDataManager.saveData(updatedData);
+      
+      console.log('🔄 Updating parent component state...');
+      onDataUpdate(updatedData);
+      
+      // Call completion callback to trigger immediate UI update
+      if (onCreationComplete) {
+        onCreationComplete();
+      }
+      
+      toast({
+        title: "Success",
+        description: `Created complete Life Sciences hierarchy: ${newDomainGroups.length} domain groups, ${newCategories.length} categories, and ${newSubCategories.length} sub-categories`,
+      });
+
+      console.log('✅ Life Sciences hierarchy creation completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Error creating Life Sciences hierarchy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create Life Sciences hierarchy. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
