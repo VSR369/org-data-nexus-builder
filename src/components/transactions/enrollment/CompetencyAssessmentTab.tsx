@@ -209,34 +209,30 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                         )}
                         
                         {/* Sub-Categories with Rating Sliders */}
-                        <div className="space-y-6 ml-4">
+                        <div className="space-y-4 ml-4">
                           {category.subCategories.map((subCategory, subIndex) => (
-                            <div key={`${subCategory.id}-${subCategory.name}`} className="border-l-2 border-primary/30 pl-6 py-4 bg-muted/20 rounded-r-lg">
-                              <div className="mb-4">
-                                <div className="flex items-start gap-2 mb-3">
-                                  <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
-                                    {categoryIndex + 1}.{subIndex + 1}
-                                  </span>
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-sm">{subCategory.name}</h4>
-                                    {subCategory.description && (
-                                      <p className="text-muted-foreground text-sm mt-1">{subCategory.description}</p>
-                                    )}
-                                  </div>
+                            <div key={`${subCategory.id}-${subCategory.name}`} className="border rounded-lg p-4 bg-muted/20">
+                              <div className="flex items-start gap-3 mb-3">
+                                <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
+                                  {categoryIndex + 1}.{subIndex + 1}
+                                </span>
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-sm mb-1">{subCategory.name}</h4>
+                                  {subCategory.description && (
+                                    <p className="text-muted-foreground text-xs">{subCategory.description}</p>
+                                  )}
                                 </div>
                               </div>
                               
-                              {/* Rating Slider */}
-                              <div className="mt-4">
-                                <RatingSlider
-                                  subCategoryName={subCategory.name}
-                                  description={subCategory.description}
-                                  currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
-                                  onRatingChange={(rating) => 
-                                    handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
-                                  }
-                                />
-                              </div>
+                              {/* Rating Slider - integrated into subcategory display */}
+                              <RatingSlider
+                                subCategoryName={subCategory.name}
+                                description={subCategory.description}
+                                currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
+                                onRatingChange={(rating) => 
+                                  handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
+                                }
+                              />
                             </div>
                           ))}
                         </div>

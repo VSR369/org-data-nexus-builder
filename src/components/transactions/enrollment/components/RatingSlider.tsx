@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
 
 interface RatingSliderProps {
   subCategoryName: string;
@@ -29,8 +28,6 @@ const getRatingColor = (rating: number) => {
 };
 
 const RatingSlider: React.FC<RatingSliderProps> = ({
-  subCategoryName,
-  description,
   currentRating,
   onRatingChange
 }) => {
@@ -38,15 +35,10 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
   const ratingColor = getRatingColor(currentRating);
 
   return (
-    <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <Label className="text-sm font-medium">{subCategoryName}</Label>
-          {description && (
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
-          )}
-        </div>
-        <div className="text-right ml-4">
+    <div className="space-y-3 mt-3">
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-muted-foreground">Competency Rating:</span>
+        <div className="text-right">
           <div className="text-lg font-bold">{currentRating}/10</div>
           <div className={`text-xs font-medium ${ratingColor}`}>
             {ratingDescription}
