@@ -34,17 +34,26 @@ const getIndustrySegmentName = (segmentId: string) => {
   
   // Fallback mapping
   const segmentNames: { [key: string]: string } = {
-    '1': 'Manufacturing',
+    '1': 'Manufacturing (Smart / Discrete / Process)',
     '2': 'Healthcare & Life Sciences', 
     '3': 'Logistics & Supply Chain',
-    '4': 'Banking, Financial Services & Insurance',
-    '5': 'Information Technology',
-    '6': 'Retail & E-commerce'
+    '4': 'Banking, Financial Services & Insurance (BFSI)',
+    '5': 'Information Technology & Software Services',
+    '6': 'Retail & E-Commerce',
+    '7': 'Telecommunications',
+    '8': 'Education & EdTech',
+    '9': 'Media, Entertainment & OTT',
+    '10': 'Energy & Utilities (Power, Oil & Gas, Renewables)',
+    '11': 'Automotive & Mobility',
+    '12': 'Real Estate & Smart Infrastructure',
+    '13': 'Travel, Tourism & Hospitality',
+    '14': 'Agriculture & AgriTech',
+    '15': 'Public Sector & e-Governance'
   };
   
   const name = segmentNames[segmentId];
   console.log(`Fallback mapping segment ID ${segmentId} to name: ${name}`);
-  return name || `Segment ${segmentId}`;
+  return name || `Industry Segment ${segmentId}`;
 };
 
 const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
