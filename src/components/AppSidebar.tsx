@@ -64,11 +64,6 @@ const organizationMenuItems = [
 
 const challengeMenuItems = [
   {
-    id: 'domain-groups',
-    title: 'Domain Groups',
-    icon: Database,
-  },
-  {
     id: 'challenge-statuses',
     title: 'Challenge Status',
     icon: CheckCircle,
