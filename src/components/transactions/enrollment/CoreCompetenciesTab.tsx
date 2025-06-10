@@ -8,7 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
-import { mockIndustrySegments } from '../../master-data/domain-groups/data/mockData';
+
+interface IndustrySegment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 interface CoreCompetenciesTabProps {
   competencyData: any;
@@ -21,10 +29,33 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 }) => {
   const [activeSegmentTab, setActiveSegmentTab] = useState('');
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   
   // Independent form fields for Core Competencies only
   const [providerName, setProviderName] = useState('');
   const [organizationName, setOrganizationName] = useState('');
+
+  // Load industry segments from master data
+  useEffect(() => {
+    const loadIndustrySegments = () => {
+      const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
+      if (savedIndustrySegments) {
+        try {
+          const industrySegmentsData: IndustrySegment[] = JSON.parse(savedIndustrySegments);
+          console.log('Loaded industry segments from master data:', industrySegmentsData);
+          setIndustrySegments(industrySegmentsData.filter(segment => segment.isActive));
+        } catch (error) {
+          console.error('Error parsing industry segments data:', error);
+          setIndustrySegments([]);
+        }
+      } else {
+        console.log('No industry segments found in master data');
+        setIndustrySegments([]);
+      }
+    };
+
+    loadIndustrySegments();
+  }, []);
 
   // Update active tab when selected industry segments change
   useEffect(() => {
@@ -35,7 +66,7 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 
   // Helper function to get industry segment name from ID
   const getIndustrySegmentName = (segmentId: string) => {
-    const segment = mockIndustrySegments.find(s => s.id === segmentId);
+    const segment = industrySegments.find(s => s.id === segmentId);
     return segment ? segment.name : `Industry Segment ${segmentId}`;
   };
 
@@ -80,7 +111,7 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   };
 
   // Get available segments that are not already selected
-  const availableSegments = mockIndustrySegments.filter(
+  const availableSegments = industrySegments.filter(
     segment => !selectedSegments.includes(segment.id) && segment.isActive
   );
 
@@ -120,43 +151,58 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
           <CardTitle className="text-base">Core Competencies Assessment</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="segment-select">Select Industry Segment for Assessment</Label>
-            <div className="flex gap-2 mt-2">
-              <Select onValueChange={handleAddSegment}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select industry segment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSegments.map((segment) => (
-                    <SelectItem key={segment.id} value={segment.id}>
-                      {segment.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {industrySegments.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                No industry segments found. Please configure industry segments in Foundation Data first.
+              </p>
             </div>
-          </div>
-
-          {selectedSegments.length > 0 && (
-            <div>
-              <Label>Selected Segments:</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedSegments.map((segmentId) => (
-                  <Badge key={segmentId} variant="secondary" className="flex items-center gap-1">
-                    {getIndustrySegmentName(segmentId)}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => handleRemoveSegment(segmentId)}
-                    >
-                      ×
-                    </Button>
-                  </Badge>
-                ))}
+          ) : (
+            <>
+              <div>
+                <Label htmlFor="segment-select">Select Industry Segment for Assessment</Label>
+                <div className="flex gap-2 mt-2">
+                  <Select onValueChange={handleAddSegment}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select industry segment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSegments.map((segment) => (
+                        <SelectItem key={segment.id} value={segment.id}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {segment.code}
+                            </Badge>
+                            {segment.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+
+              {selectedSegments.length > 0 && (
+                <div>
+                  <Label>Selected Segments:</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedSegments.map((segmentId) => (
+                      <Badge key={segmentId} variant="secondary" className="flex items-center gap-1">
+                        {getIndustrySegmentName(segmentId)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={() => handleRemoveSegment(segmentId)}
+                        >
+                          ×
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -7,7 +7,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
-import { mockIndustrySegments } from '../../master-data/domain-groups/data/mockData';
+
+interface IndustrySegment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 interface IndustrySegmentSectionProps {
   selectedIndustrySegments: string[];
@@ -29,6 +37,29 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   providerRoles = []
 }) => {
   const [newSegment, setNewSegment] = React.useState('');
+  const [industrySegments, setIndustrySegments] = React.useState<IndustrySegment[]>([]);
+
+  // Load industry segments from master data
+  React.useEffect(() => {
+    const loadIndustrySegments = () => {
+      const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
+      if (savedIndustrySegments) {
+        try {
+          const industrySegmentsData: IndustrySegment[] = JSON.parse(savedIndustrySegments);
+          console.log('Loaded industry segments from master data:', industrySegmentsData);
+          setIndustrySegments(industrySegmentsData.filter(segment => segment.isActive));
+        } catch (error) {
+          console.error('Error parsing industry segments data:', error);
+          setIndustrySegments([]);
+        }
+      } else {
+        console.log('No industry segments found in master data');
+        setIndustrySegments([]);
+      }
+    };
+
+    loadIndustrySegments();
+  }, []);
 
   const handleAddSegment = () => {
     if (newSegment && !selectedIndustrySegments.includes(newSegment)) {
@@ -37,13 +68,13 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
     }
   };
 
-  const availableSegments = mockIndustrySegments.filter(
+  const availableSegments = industrySegments.filter(
     segment => !selectedIndustrySegments.includes(segment.id) && segment.isActive
   );
 
   // Helper function to get industry segment name by ID
   const getIndustrySegmentName = (segmentId: string) => {
-    const segment = mockIndustrySegments.find(s => s.id === segmentId);
+    const segment = industrySegments.find(s => s.id === segmentId);
     return segment ? segment.name : `Industry Segment ${segmentId}`;
   };
 
@@ -140,7 +171,12 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
               <SelectContent>
                 {availableSegments.map((segment) => (
                   <SelectItem key={segment.id} value={segment.id}>
-                    {segment.name}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {segment.code}
+                      </Badge>
+                      {segment.name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -156,6 +192,14 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
 
           {invalidFields.has('industrySegment') && (
             <p className="text-sm text-destructive">Please select at least one industry segment</p>
+          )}
+
+          {industrySegments.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground text-sm">
+                No industry segments found. Please configure industry segments in Foundation Data first.
+              </p>
+            </div>
           )}
         </div>
       </CardContent>
