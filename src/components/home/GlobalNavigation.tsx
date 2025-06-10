@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,6 @@ import { Link } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MasterDataContent } from "@/components/MasterDataContent";
-import MasterDataStructureConfig from "@/components/master-data/MasterDataStructureConfig";
 
 export const GlobalNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -50,7 +50,7 @@ export const GlobalNavigation = () => {
   const handleRoleSelection = (role: string) => {
     setSelectedRole(role);
     setIsSignInDialogOpen(true);
-    // For Platform Administrator, set a different default section
+    // For Platform Administrator, set default to master data structure
     if (role === "Platform Administrator") {
       setActiveSection('master-data-structure');
     } else {
@@ -220,21 +220,17 @@ export const GlobalNavigation = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
-            {selectedRole === "Platform Administrator" ? (
-              <MasterDataStructureConfig />
-            ) : (
-              <SidebarProvider>
-                <div className="flex h-full w-full">
-                  <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-                  <main className="flex-1 overflow-auto">
-                    <MasterDataContent 
-                      activeSection={activeSection} 
-                      onSignInComplete={handleSignInComplete}
-                    />
-                  </main>
-                </div>
-              </SidebarProvider>
-            )}
+            <SidebarProvider>
+              <div className="flex h-full w-full">
+                <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+                <main className="flex-1 overflow-auto">
+                  <MasterDataContent 
+                    activeSection={activeSection} 
+                    onSignInComplete={handleSignInComplete}
+                  />
+                </main>
+              </div>
+            </SidebarProvider>
           </div>
         </DialogContent>
       </Dialog>
