@@ -3,6 +3,10 @@ import { DomainGroup, IndustrySegment } from '../types';
 import { defaultDomainGroupsData } from '../data/defaultDomainGroups';
 import { lifeSciencesDomainGroups } from '../data/lifeSciencesDomainGroups';
 import { manufacturingDomainGroups } from '../data/manufacturingDomainGroups';
+import { bfsiDomainGroups } from '../../../../transactions/competency/data/bfsiDomainGroups';
+import { retailDomainGroups } from '../../../../transactions/competency/data/retailDomainGroups';
+import { itDomainGroups } from '../../../../transactions/competency/data/itDomainGroups';
+import { healthcareDomainGroups } from '../../../../transactions/competency/data/healthcareDomainGroups';
 
 const defaultSegments = [
   'Banking, Financial Services & Insurance (BFSI)',
@@ -28,28 +32,34 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
   segments.forEach(segment => {
     console.log('Processing segment:', segment.name);
     
-    // Check if this is Healthcare & Life Sciences segment
-    const isLifeSciences = segment.name === 'Healthcare & Life Sciences' || 
-                          segment.name.toLowerCase().includes('healthcare') ||
-                          segment.name.toLowerCase().includes('life sciences');
-    
-    // Check if this is Manufacturing segment
-    const isManufacturing = segment.name === 'Manufacturing (Smart / Discrete / Process)' ||
-                           segment.name.toLowerCase().includes('manufacturing');
-    
-    console.log('Is Life Sciences segment?', isLifeSciences, 'for segment:', segment.name);
-    console.log('Is Manufacturing segment?', isManufacturing, 'for segment:', segment.name);
-    
     let sourceData = defaultDomainGroupsData;
     
-    if (isLifeSciences) {
-      sourceData = lifeSciencesDomainGroups;
-    } else if (isManufacturing) {
+    // Map industry segments to their specific data
+    if (segment.name === 'Healthcare & Life Sciences' || segment.name.toLowerCase().includes('healthcare')) {
+      sourceData = [...lifeSciencesDomainGroups, ...healthcareDomainGroups.map(group => ({
+        ...group,
+        industrySegment: segment.name
+      }))];
+    } else if (segment.name === 'Manufacturing (Smart / Discrete / Process)' || segment.name.toLowerCase().includes('manufacturing')) {
       sourceData = manufacturingDomainGroups;
+    } else if (segment.name === 'Banking, Financial Services & Insurance (BFSI)' || segment.name.toLowerCase().includes('bfsi')) {
+      sourceData = bfsiDomainGroups.map(group => ({
+        ...group,
+        industrySegment: segment.name
+      }));
+    } else if (segment.name === 'Retail & E-Commerce' || segment.name.toLowerCase().includes('retail')) {
+      sourceData = retailDomainGroups.map(group => ({
+        ...group,
+        industrySegment: segment.name
+      }));
+    } else if (segment.name === 'Information Technology & Software Services' || segment.name.toLowerCase().includes('information technology')) {
+      sourceData = itDomainGroups.map(group => ({
+        ...group,
+        industrySegment: segment.name
+      }));
     }
     
-    console.log('Using data source:', isLifeSciences ? 'lifeSciencesDomainGroups' : isManufacturing ? 'manufacturingDomainGroups' : 'defaultDomainGroupsData');
-    console.log('Source data has', sourceData.length, 'groups');
+    console.log('Using data source with', sourceData.length, 'groups');
     
     sourceData.forEach(group => {
       const newGroup: DomainGroup = {
@@ -68,7 +78,6 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
         }))
       };
       allData.push(newGroup);
-      console.log('Added group:', newGroup.name, 'for segment:', segment.name);
     });
   });
   
@@ -77,7 +86,6 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
 };
 
 export const initializeDataForAllSegments = (): DomainGroup[] => {
-  // Get industry segments from localStorage or use defaults
   const savedSegments = localStorage.getItem('industrySegments');
   let segments: string[] = [];
   
@@ -92,7 +100,6 @@ export const initializeDataForAllSegments = (): DomainGroup[] => {
     segments = defaultSegments;
   }
 
-  // Convert to IndustrySegment format
   const industrySegmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
     id: (index + 1).toString(),
     name: segment,

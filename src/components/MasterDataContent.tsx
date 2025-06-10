@@ -17,6 +17,7 @@ import DepartmentConfig from "@/components/master-data/DepartmentConfig";
 import PricingConfig from "@/components/master-data/PricingConfig";
 import EventsCalendarConfig from "@/components/master-data/EventsCalendarConfig";
 import SolutionVotingAssessmentConfig from "@/components/voting-assessment/SolutionVotingAssessmentConfig";
+import { SelfEnrollmentForm } from "@/components/transactions/SelfEnrollmentForm";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -34,188 +35,150 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
     switch (activeSection) {
       case 'master-data-structure':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <DomainGroupsConfig />
           </div>
         );
 
       case 'countries':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <CountryConfig />
           </div>
         );
 
       case 'currencies':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <CurrencyConfig />
           </div>
         );
 
       case 'industry-segments':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <IndustrySegmentConfig />
           </div>
         );
 
       case 'entity-types':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <EntityTypeConfig />
           </div>
         );
 
       case 'organization-types':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <OrganizationTypeConfig />
           </div>
         );
 
       case 'departments':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <DepartmentConfig />
           </div>
         );
 
       case 'competency-capability':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <CompetencyCapabilityConfig />
           </div>
         );
 
       case 'reward-types':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <RewardTypeConfig />
           </div>
         );
 
       case 'challenge-statuses':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <ChallengeStatusConfig />
           </div>
         );
 
       case 'solution-statuses':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <SolutionStatusConfig />
           </div>
         );
 
       case 'communication-types':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <CommunicationTypeConfig />
           </div>
         );
 
       case 'pricing-config':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <PricingConfig />
           </div>
         );
 
       case 'voting-assessment':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <SolutionVotingAssessmentConfig />
           </div>
         );
 
       case 'events-calendar':
         return (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="container mx-auto p-6">
             <EventsCalendarConfig />
           </div>
         );
 
       case 'self-enrollment':
         return (
-          <div className="h-full overflow-y-auto p-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-primary" />
-                  Solution Provider Enrollment
-                </CardTitle>
-                <CardDescription>
+          <div className="container mx-auto p-6">
+            <div className="space-y-6">
+              <div className="text-left">
+                <h2 className="text-3xl font-bold text-foreground mb-2">Solution Provider Enrollment</h2>
+                <p className="text-lg text-muted-foreground">
                   Register as a solution provider to participate in challenges and submit innovative solutions.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Benefits of Enrollment:</h4>
-                    <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        Access to exclusive challenges
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        Submit solutions and compete
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        Network with industry experts
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        Earn rewards and recognition
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Quick Actions:</h4>
-                    <div className="space-y-2">
-                      <Button onClick={handleQuickAccess} className="w-full">
-                        Start Enrollment Process
-                      </Button>
-                      <Button variant="outline" className="w-full">
-                        View Requirements
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </p>
+              </div>
+              <SelfEnrollmentForm />
+            </div>
           </div>
         );
 
       default:
         return (
-          <div className="h-full overflow-y-auto p-6 space-y-6">
+          <div className="container mx-auto p-6 space-y-8">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                Welcome to CoInnovator Portal
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                Master Data Portal
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Access master data configurations and manage your solution provider enrollment.
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Comprehensive configuration management system for all master data entities and business processes.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="hover:shadow-lg transition-shadow">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <UserCheck className="h-5 w-5 text-primary" />
-                    Transactions
+                    Solution Provider Enrollment
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Manage solution provider enrollments and transaction processes.
+                    Manage solution provider registrations and competency assessments.
                   </p>
                   <Button onClick={handleQuickAccess} size="sm" className="w-full">
-                    Quick Access
+                    Access Enrollment
                   </Button>
                 </CardContent>
               </Card>
@@ -224,6 +187,23 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Database className="h-5 w-5 text-primary" />
+                    Domain Groups Structure
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Configure hierarchical domain groups, categories, and sub-categories.
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Manage Structure
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Globe className="h-5 w-5 text-primary" />
                     Foundation Data
                   </CardTitle>
                 </CardHeader>
@@ -253,6 +233,64 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
                   </Button>
                 </CardContent>
               </Card>
+
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Brain className="h-5 w-5 text-primary" />
+                    Competency Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Define competencies, capabilities, and assessment criteria.
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Setup Competencies
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Target className="h-5 w-5 text-primary" />
+                    System Configuration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Configure rewards, pricing, voting, and communication types.
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    System Setup
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 border border-blue-200">
+              <div className="text-center space-y-4">
+                <h3 className="text-2xl font-semibold text-gray-900">Quick Configuration Stats</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-blue-600">15+</div>
+                    <div className="text-sm text-gray-600">Industry Segments</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-green-600">200+</div>
+                    <div className="text-sm text-gray-600">Domain Groups</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-purple-600">500+</div>
+                    <div className="text-sm text-gray-600">Categories</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-orange-600">1000+</div>
+                    <div className="text-sm text-gray-600">Sub-Categories</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -260,7 +298,7 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
   };
 
   return (
-    <div className="h-full bg-gradient-to-br from-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       {getSectionContent()}
     </div>
   );

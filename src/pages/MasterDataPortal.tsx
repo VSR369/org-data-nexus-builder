@@ -69,18 +69,18 @@ const MasterDataPortal = () => {
           </div>
         </header>
 
-        {/* Main Content with Sidebar - adjusted for fixed header */}
-        <div className="flex w-full pt-16">
-          <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-          <main className="flex-1 overflow-hidden">
-            <div className="h-[calc(100vh-4rem)] overflow-y-auto">
-              <MasterDataContent 
-                activeSection={activeSection} 
-                onSignInComplete={handleSignInComplete}
-              />
-            </div>
-          </main>
-        </div>
+        {/* Sidebar */}
+        <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+        
+        {/* Main Content */}
+        <main className="flex-1 pt-16 overflow-hidden">
+          <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+            <MasterDataContent 
+              activeSection={activeSection} 
+              onSignInComplete={handleSignInComplete}
+            />
+          </div>
+        </main>
       </div>
     </SidebarProvider>
   );

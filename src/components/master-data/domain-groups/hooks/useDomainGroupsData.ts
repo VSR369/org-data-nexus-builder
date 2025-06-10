@@ -6,15 +6,13 @@ import { useDomainGroupOperations } from './useDomainGroupOperations';
 
 export const useDomainGroupsData = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
+  const [allDomainGroups, setAllDomainGroups] = useState<DomainGroup[]>([]);
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeIndustrySegment, setActiveIndustrySegment] = useState<string>('');
   const [activeDomainGroup, setActiveDomainGroup] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('');
-  const [activeSubCategory, setActiveSubCategory] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'industry' | 'domain' | 'category' | 'subcategory'>('industry');
 
-  // Get domain group operations
   const {
     addDomainGroup,
     updateDomainGroup,
@@ -25,30 +23,24 @@ export const useDomainGroupsData = () => {
     addSubCategory,
     updateSubCategory,
     deleteSubCategory
-  } = useDomainGroupOperations(domainGroups, setDomainGroups);
+  } = useDomainGroupOperations(allDomainGroups, setAllDomainGroups);
 
   // Load initial data
   useEffect(() => {
     const loadData = () => {
       try {
-        console.log('Loading domain groups data...');
+        console.log('Loading complete domain groups data...');
         
-        // Clear any existing domain groups data to force refresh
-        localStorage.removeItem('domainGroupsData');
-        
-        // Try multiple possible keys for industry segments master data
+        // Get industry segments from localStorage or use defaults
         let segments: IndustrySegment[] = [];
-        
-        // First try the standard master data key
         const savedMasterSegments = localStorage.getItem('industrySegments');
+        
         if (savedMasterSegments) {
           try {
             const parsedSegments = JSON.parse(savedMasterSegments);
             console.log('Found industry segments in master data:', parsedSegments);
             
-            // Handle different possible formats
             if (Array.isArray(parsedSegments)) {
-              // If it's an array of strings, convert to IndustrySegment objects
               if (typeof parsedSegments[0] === 'string') {
                 segments = parsedSegments.map((segment, index) => ({
                   id: (index + 1).toString(),
@@ -57,7 +49,6 @@ export const useDomainGroupsData = () => {
                   description: `Industry segment: ${segment}`
                 }));
               } else {
-                // If it's already an array of objects, use as is
                 segments = parsedSegments;
               }
             }
@@ -66,9 +57,8 @@ export const useDomainGroupsData = () => {
           }
         }
         
-        // If no segments found, use defaults
+        // Use defaults if no segments found
         if (segments.length === 0) {
-          console.log('No industry segments found in master data, using defaults');
           const defaultSegments = [
             'Banking, Financial Services & Insurance (BFSI)',
             'Retail & E-Commerce',
@@ -98,33 +88,13 @@ export const useDomainGroupsData = () => {
         setIndustrySegments(segments);
         console.log('Loaded industry segments:', segments);
 
-        // Initialize domain groups data with force refresh
-        console.log('Initializing domain groups data...');
+        // Initialize complete domain groups data
         const initializedData = initializeDomainGroupsData(segments);
-        console.log('Initialized domain groups data:', initializedData);
+        console.log('Initialized complete domain groups data:', initializedData);
         
-        // Log specific Life Sciences data for debugging
-        const lifeSciencesSegment = segments.find(s => 
-          s.name === 'Healthcare & Life Sciences' || 
-          s.name.toLowerCase().includes('healthcare') ||
-          s.name.toLowerCase().includes('life sciences')
-        );
-        if (lifeSciencesSegment) {
-          console.log('Found Life Sciences segment:', lifeSciencesSegment);
-          const lifeSciencesGroups = initializedData.filter(g => g.industrySegmentId === lifeSciencesSegment.id);
-          console.log('Life Sciences domain groups:', lifeSciencesGroups);
-          console.log('Life Sciences groups count:', lifeSciencesGroups.length);
-          lifeSciencesGroups.forEach(group => {
-            console.log(`Group: ${group.name}, Categories: ${group.categories.length}`);
-            group.categories.forEach(cat => {
-              console.log(`  Category: ${cat.name}, SubCategories: ${cat.subCategories.length}`);
-            });
-          });
-        }
-        
-        setDomainGroups(initializedData);
+        setAllDomainGroups(initializedData);
 
-        // Set default active segment if segments exist
+        // Set default active segment
         if (segments.length > 0 && !activeIndustrySegment) {
           setActiveIndustrySegment(segments[0].id);
         }
@@ -137,25 +107,28 @@ export const useDomainGroupsData = () => {
     };
 
     loadData();
-  }, []); // Remove activeIndustrySegment dependency to avoid infinite loops
+  }, []);
+
+  // Update filtered domain groups when active industry segment changes
+  useEffect(() => {
+    if (activeIndustrySegment) {
+      const filtered = allDomainGroups.filter(group => 
+        group.industrySegmentId === activeIndustrySegment
+      );
+      setDomainGroups(filtered);
+      console.log(`Filtered ${filtered.length} domain groups for segment ${activeIndustrySegment}`);
+    }
+  }, [activeIndustrySegment, allDomainGroups]);
 
   // Save data when it changes
   useEffect(() => {
-    if (domainGroups.length > 0) {
-      localStorage.setItem('domainGroupsData', JSON.stringify(domainGroups));
+    if (allDomainGroups.length > 0) {
+      localStorage.setItem('domainGroupsData', JSON.stringify(allDomainGroups));
       console.log('Saved domain groups to localStorage');
     }
-  }, [domainGroups]);
-
-  const updateDomainGroups = (newDomainGroups: DomainGroup[]) => {
-    setDomainGroups(newDomainGroups);
-  };
+  }, [allDomainGroups]);
 
   // Get filtered data based on selections
-  const filteredDomainGroups = domainGroups.filter(group => 
-    group.industrySegmentId === activeIndustrySegment
-  );
-
   const categories = activeDomainGroup 
     ? domainGroups.find(group => group.id === activeDomainGroup)?.categories || []
     : [];
@@ -165,7 +138,7 @@ export const useDomainGroupsData = () => {
     : [];
 
   return {
-    domainGroups: filteredDomainGroups,
+    domainGroups,
     industrySegments,
     isLoading,
     activeIndustrySegment,
@@ -174,12 +147,6 @@ export const useDomainGroupsData = () => {
     setActiveDomainGroup,
     activeCategory,
     setActiveCategory,
-    activeSubCategory,
-    setActiveSubCategory,
-    activeTab,
-    setActiveTab,
-    updateDomainGroups,
-    // Additional properties needed by DomainGroupsConfig
     categories,
     subCategories,
     selectedIndustrySegment: activeIndustrySegment,
