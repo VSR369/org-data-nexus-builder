@@ -46,7 +46,7 @@ export const GlobalNavigation = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-gradient-to-r from-background via-background/95 to-background backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border-b border-primary/20 shadow-lg">
+      <nav className="sticky top-0 z-[60] bg-gradient-to-r from-background via-background/95 to-background backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border-b border-primary/20 shadow-lg">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
@@ -175,7 +175,7 @@ export const GlobalNavigation = () => {
 
       {/* Sign In Dialog */}
       <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
+        <DialogContent className="max-w-7xl w-full h-[85vh] p-0 top-[52%] z-40">
           <DialogHeader className="p-6 border-b">
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
               Master Data & Transactions Portal
