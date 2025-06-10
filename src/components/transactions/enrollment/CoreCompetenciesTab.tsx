@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,25 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
+import { mockIndustrySegments } from '../../master-data/domain-groups/data/mockData';
 
 interface CoreCompetenciesTabProps {
   competencyData: any;
   updateCompetencyData: (industrySegment: string, domainGroup: string, category: string, subCategory: string, rating: number) => void;
 }
-
-// Temporary hardcoded segments - user will replace this with new implementation
-const industrySegments = [
-  'Banking & Finance',
-  'Healthcare & Life Sciences',
-  'Technology & Software',
-  'Manufacturing',
-  'Retail & Consumer Goods',
-  'Logistics & Supply Chain',
-  'Energy & Utilities',
-  'Education',
-  'Government & Public Sector',
-  'Real Estate & Construction'
-];
 
 const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   competencyData,
@@ -33,31 +21,10 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 }) => {
   const [activeSegmentTab, setActiveSegmentTab] = useState('');
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
-  const [availableSegments, setAvailableSegments] = useState<{id: string, name: string}[]>([]);
   
   // Independent form fields for Core Competencies only
   const [providerName, setProviderName] = useState('');
   const [organizationName, setOrganizationName] = useState('');
-
-  // Load industry segments
-  useEffect(() => {
-    const loadSegments = () => {
-      try {
-        // Create available segments with IDs for selection
-        const segmentsWithIds = industrySegments.map((segment, index) => ({
-          id: (index + 1).toString(),
-          name: segment
-        }));
-        setAvailableSegments(segmentsWithIds);
-        
-        console.log('CoreCompetenciesTab - Loaded industry segments:', industrySegments);
-      } catch (error) {
-        console.error('CoreCompetenciesTab - Error loading segments:', error);
-      }
-    };
-
-    loadSegments();
-  }, []);
 
   // Update active tab when selected industry segments change
   useEffect(() => {
@@ -68,18 +35,8 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 
   // Helper function to get industry segment name from ID
   const getIndustrySegmentName = (segmentId: string) => {
-    try {
-      const segmentIndex = parseInt(segmentId) - 1;
-      
-      if (segmentIndex >= 0 && segmentIndex < industrySegments.length) {
-        const name = industrySegments[segmentIndex];
-        return name;
-      }
-    } catch (error) {
-      console.error('CoreCompetenciesTab - Error loading industry segments:', error);
-    }
-    
-    return `Industry Segment ${segmentId}`;
+    const segment = mockIndustrySegments.find(s => s.id === segmentId);
+    return segment ? segment.name : `Industry Segment ${segmentId}`;
   };
 
   // Get competency progress for each segment
@@ -121,6 +78,11 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
       setActiveSegmentTab('');
     }
   };
+
+  // Get available segments that are not already selected
+  const availableSegments = mockIndustrySegments.filter(
+    segment => !selectedSegments.includes(segment.id) && segment.isActive
+  );
 
   return (
     <TabsContent value="core-competencies" className="space-y-6">
@@ -166,14 +128,11 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
                   <SelectValue placeholder="Select industry segment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableSegments
-                    .filter(segment => !selectedSegments.includes(segment.id))
-                    .map((segment) => (
-                      <SelectItem key={segment.id} value={segment.id}>
-                        {segment.name}
-                      </SelectItem>
-                    ))
-                  }
+                  {availableSegments.map((segment) => (
+                    <SelectItem key={segment.id} value={segment.id}>
+                      {segment.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -222,7 +181,7 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
                   return (
                     <TabsTrigger key={segmentId} value={segmentId} className="text-sm relative">
                       <div className="flex flex-col items-center gap-1">
-                        <span>{getIndustrySegmentName(segmentId)}</span>
+                        <span className="text-xs">{getIndustrySegmentName(segmentId)}</span>
                         {progress.total > 0 && (
                           <span className="text-xs text-muted-foreground">
                             {progressPercentage}% Complete

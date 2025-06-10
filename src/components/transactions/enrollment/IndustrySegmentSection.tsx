@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { mockIndustrySegments } from '../../master-data/domain-groups/data/mockData';
 
 interface IndustrySegmentSectionProps {
   selectedIndustrySegments: string[];
@@ -17,20 +18,6 @@ interface IndustrySegmentSectionProps {
   invalidFields?: Set<string>;
   providerRoles?: string[];
 }
-
-// Temporary hardcoded segments - user will replace this with new implementation
-const industrySegments = [
-  { id: 'banking-finance', name: 'Banking & Finance' },
-  { id: 'healthcare', name: 'Healthcare & Life Sciences' },
-  { id: 'technology', name: 'Technology & Software' },
-  { id: 'manufacturing', name: 'Manufacturing' },
-  { id: 'retail', name: 'Retail & Consumer Goods' },
-  { id: 'logistics', name: 'Logistics & Supply Chain' },
-  { id: 'energy', name: 'Energy & Utilities' },
-  { id: 'education', name: 'Education' },
-  { id: 'government', name: 'Government & Public Sector' },
-  { id: 'real-estate', name: 'Real Estate & Construction' }
-];
 
 const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   selectedIndustrySegments,
@@ -50,9 +37,15 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
     }
   };
 
-  const availableSegments = industrySegments.filter(
-    segment => !selectedIndustrySegments.includes(segment.id)
+  const availableSegments = mockIndustrySegments.filter(
+    segment => !selectedIndustrySegments.includes(segment.id) && segment.isActive
   );
+
+  // Helper function to get industry segment name by ID
+  const getIndustrySegmentName = (segmentId: string) => {
+    const segment = mockIndustrySegments.find(s => s.id === segmentId);
+    return segment ? segment.name : `Industry Segment ${segmentId}`;
+  };
 
   // Determine the heading based on selected roles
   const getHeading = () => {
@@ -121,22 +114,19 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Selected Segments:</Label>
               <div className="flex flex-wrap gap-2">
-                {selectedIndustrySegments.map((segmentId) => {
-                  const segment = industrySegments.find(s => s.id === segmentId);
-                  return (
-                    <Badge key={segmentId} variant="secondary" className="flex items-center gap-1">
-                      {segment?.name || segmentId}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 hover:bg-transparent"
-                        onClick={() => onRemoveIndustrySegment(segmentId)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  );
-                })}
+                {selectedIndustrySegments.map((segmentId) => (
+                  <Badge key={segmentId} variant="secondary" className="flex items-center gap-1">
+                    {getIndustrySegmentName(segmentId)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 hover:bg-transparent"
+                      onClick={() => onRemoveIndustrySegment(segmentId)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
               </div>
             </div>
           )}

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { mockIndustrySegments } from '../../../master-data/domain-groups/data/mockData';
 
 interface DomainGroup {
   id: string;
@@ -81,13 +82,20 @@ export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
     });
   };
 
+  // Helper function to get industry segment name
+  const getIndustrySegmentName = (segmentId: string) => {
+    const segment = mockIndustrySegments.find(s => s.id === segmentId);
+    return segment ? segment.name : `Industry Segment ${segmentId}`;
+  };
+
   return {
-    industrySegments: [], // Remove industry segments data
+    industrySegments: mockIndustrySegments,
     domainGroups,
     relevantDomainGroups,
     expandedGroups,
     expandedCategories,
     toggleGroupExpansion,
-    toggleCategoryExpansion
+    toggleCategoryExpansion,
+    getIndustrySegmentName
   };
 };
