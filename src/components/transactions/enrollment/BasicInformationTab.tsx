@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import IndustrySegmentSection from './IndustrySegmentSection';
 import InstitutionDetailsSection from './InstitutionDetailsSection';
 import ProviderDetailsSection from './ProviderDetailsSection';
@@ -29,8 +31,98 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
   onFormDataUpdate,
   invalidFields = new Set()
 }) => {
+  const handleProviderRoleChange = (role: string, checked: boolean) => {
+    const currentRoles = formData.providerRoles || [];
+    
+    if (role === 'both') {
+      // If "Both" is selected, set both roles or clear all
+      if (checked) {
+        onFormDataUpdate('providerRoles', ['solution-provider', 'solution-assessor']);
+      } else {
+        onFormDataUpdate('providerRoles', []);
+      }
+    } else {
+      // Handle individual role selection
+      let newRoles;
+      if (checked) {
+        newRoles = [...currentRoles.filter(r => r !== 'both'), role];
+      } else {
+        newRoles = currentRoles.filter(r => r !== role && r !== 'both');
+      }
+      
+      // If both individual roles are selected, also check "both"
+      if (newRoles.includes('solution-provider') && newRoles.includes('solution-assessor')) {
+        newRoles = ['solution-provider', 'solution-assessor', 'both'];
+      }
+      
+      onFormDataUpdate('providerRoles', newRoles);
+    }
+  };
+
+  const currentRoles = formData.providerRoles || [];
+  const isBothSelected = currentRoles.includes('both') || 
+    (currentRoles.includes('solution-provider') && currentRoles.includes('solution-assessor'));
+
   return (
     <div className="space-y-6">
+      {/* Provider Role Selection */}
+      <div className="space-y-4">
+        <div>
+          <Label className="text-base font-medium">Provider Role</Label>
+          <p className="text-sm text-muted-foreground mb-3">
+            Select your role(s) on the platform
+          </p>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="solution-provider"
+              checked={currentRoles.includes('solution-provider')}
+              onCheckedChange={(checked) => 
+                handleProviderRoleChange('solution-provider', checked as boolean)
+              }
+              className={invalidFields.has('providerRoles') ? 'border-destructive' : ''}
+            />
+            <Label htmlFor="solution-provider" className="font-normal">
+              Solution Provider
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="solution-assessor"
+              checked={currentRoles.includes('solution-assessor')}
+              onCheckedChange={(checked) => 
+                handleProviderRoleChange('solution-assessor', checked as boolean)
+              }
+              className={invalidFields.has('providerRoles') ? 'border-destructive' : ''}
+            />
+            <Label htmlFor="solution-assessor" className="font-normal">
+              Solution Assessor
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="both-roles"
+              checked={isBothSelected}
+              onCheckedChange={(checked) => 
+                handleProviderRoleChange('both', checked as boolean)
+              }
+              className={invalidFields.has('providerRoles') ? 'border-destructive' : ''}
+            />
+            <Label htmlFor="both-roles" className="font-normal">
+              Both
+            </Label>
+          </div>
+        </div>
+        
+        {invalidFields.has('providerRoles') && (
+          <p className="text-sm text-destructive">Please select at least one provider role</p>
+        )}
+      </div>
+
       <IndustrySegmentSection
         selectedIndustrySegments={selectedIndustrySegments}
         onAddIndustrySegment={onAddIndustrySegment}

@@ -51,6 +51,9 @@ export const useFormState = () => {
     pinCode: '',
     address: '',
     
+    // Provider role selection
+    providerRoles: [],
+    
     // Optional fields
     website: '',
     bankAccount: '',

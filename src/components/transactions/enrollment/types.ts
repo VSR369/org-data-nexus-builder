@@ -19,6 +19,9 @@ export interface FormData {
   pinCode: string;
   address: string;
   
+  // Provider role selection
+  providerRoles: string[];
+  
   // Optional fields
   website: string;
   bankAccount: string;
