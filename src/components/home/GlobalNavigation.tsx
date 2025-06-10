@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,11 @@ export const GlobalNavigation = () => {
   const [activeSection, setActiveSection] = useState('self-enrollment');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
+  console.log('GlobalNavigation rendered');
+  console.log('isSignInDialogOpen:', isSignInDialogOpen);
+  console.log('selectedRole:', selectedRole);
+  console.log('activeSection:', activeSection);
+
   const navigationItems = [
     { label: "Home", href: "/" },
     { label: "Challenges", href: "/challenges" },
@@ -47,6 +53,7 @@ export const GlobalNavigation = () => {
   ];
 
   const handleRoleSelection = (role: string) => {
+    console.log('Role selected:', role);
     setSelectedRole(role);
     setIsSignInDialogOpen(true);
     // For Platform Administrator, set default to master data structure
@@ -59,6 +66,7 @@ export const GlobalNavigation = () => {
   };
 
   const handleSignInComplete = () => {
+    console.log('Sign in complete');
     setIsLoggedIn(true);
     setIsSignInDialogOpen(false);
     setSelectedRole(null);
@@ -66,18 +74,18 @@ export const GlobalNavigation = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-[60] bg-gradient-to-r from-background via-background/95 to-background backdrop-blur-md supports-[backdrop-filter]:bg-background/80 border-b border-primary/20 shadow-lg">
+      {/* Navigation Bar with Bright Background for Visibility */}
+      <nav className="sticky top-0 z-[60] bg-white border-b-4 border-blue-500 shadow-2xl">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <Sparkles className="h-5 w-5 text-white animate-pulse" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Sparkles className="h-5 w-5 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-bounce"></div>
               </div>
-              <span className="font-bold text-2xl bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="font-bold text-2xl text-blue-600">
                 CoInnovator
               </span>
             </Link>
@@ -88,50 +96,47 @@ export const GlobalNavigation = () => {
                 <Link
                   key={item.label}
                   to={item.href}
-                  className="relative px-4 py-2 text-foreground hover:text-primary transition-all duration-300 story-link group"
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 transition-all duration-300 font-medium"
                 >
-                  <span className="relative z-10">{item.label}</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  {item.label}
                 </Link>
               ))}
             </div>
 
             {/* Search Bar */}
             <div className="hidden xl:flex items-center space-x-4 flex-1 max-w-md mx-8">
-              <div className="relative w-full group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <div className="relative w-full">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search challenges, solutions, industries..."
-                  className="pl-12 bg-gradient-to-r from-background to-muted/30 border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 rounded-xl"
+                  className="pl-12 bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             </div>
 
-            {/* Auth Section */}
+            {/* Auth Section - BRIGHT VISIBLE BUTTONS */}
             <div className="flex items-center space-x-4">
               {isLoggedIn ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="/placeholder.svg" alt="User" />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white">
+                        <AvatarFallback className="bg-blue-600 text-white">
                           <User className="h-4 w-4" />
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-background/95 backdrop-blur-md border border-primary/20 shadow-xl" align="end">
-                    <DropdownMenuItem className="hover:bg-primary/10">
-                      <User className="mr-2 h-4 w-4 text-primary" />
+                  <DropdownMenuContent className="w-56 bg-white border shadow-xl z-[70]" align="end">
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-primary/10">
-                      <Settings className="mr-2 h-4 w-4 text-primary" />
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsLoggedIn(false)} className="hover:bg-red-50 hover:text-red-600">
+                    <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </DropdownMenuItem>
@@ -142,26 +147,29 @@ export const GlobalNavigation = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
-                        variant="ghost" 
-                        className="hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-lg"
+                        onClick={() => console.log('Sign In button clicked')}
                       >
                         Sign In
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 ml-2" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 bg-background/95 backdrop-blur-md border border-primary/20 shadow-xl" align="end">
+                    <DropdownMenuContent className="w-56 bg-white border shadow-xl z-[70]" align="end">
                       {userRoles.map((role) => (
                         <DropdownMenuItem 
                           key={role}
-                          onClick={() => handleRoleSelection(role)}
-                          className="hover:bg-primary/10 cursor-pointer"
+                          onClick={() => {
+                            console.log('Dropdown item clicked:', role);
+                            handleRoleSelection(role);
+                          }}
+                          className="hover:bg-blue-50 cursor-pointer py-2"
                         >
                           {role}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button className="bg-gradient-to-r from-primary via-blue-600 to-purple-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium shadow-lg">
                     Sign Up
                   </Button>
                 </div>
@@ -171,13 +179,13 @@ export const GlobalNavigation = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden hover:bg-primary/10"
+                className="lg:hidden"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 {isMenuOpen ? (
-                  <X className="h-5 w-5 text-primary" />
+                  <X className="h-5 w-5" />
                 ) : (
-                  <Menu className="h-5 w-5 text-primary" />
+                  <Menu className="h-5 w-5" />
                 )}
               </Button>
             </div>
@@ -185,19 +193,19 @@ export const GlobalNavigation = () => {
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="lg:hidden border-t border-primary/20 py-6 space-y-4 bg-gradient-to-b from-background to-muted/20">
+            <div className="lg:hidden border-t bg-white py-6 space-y-4">
               <div className="relative mb-4">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search..."
-                  className="pl-12 bg-muted/30 border-primary/20 rounded-xl"
+                  className="pl-12 bg-gray-50 border-gray-300 rounded-xl"
                 />
               </div>
               {navigationItems.map((item) => (
                 <Link
                   key={item.label}
                   to={item.href}
-                  className="block py-3 px-4 text-foreground hover:text-primary hover:bg-primary/10 transition-all duration-300 rounded-lg mx-2"
+                  className="block py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-300 rounded-lg mx-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
@@ -208,10 +216,13 @@ export const GlobalNavigation = () => {
         </div>
       </nav>
 
-      {/* Sign In Dialog */}
-      <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>
+      {/* Sign In Dialog - ENSURE IT'S VISIBLE */}
+      <Dialog open={isSignInDialogOpen} onOpenChange={(open) => {
+        console.log('Dialog open state changed:', open);
+        setIsSignInDialogOpen(open);
+      }}>
         <DialogContent 
-          className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden bg-background border border-border shadow-2xl"
+          className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden bg-white border-2 border-blue-500 shadow-2xl z-[80]"
           style={{ 
             position: 'fixed',
             top: '5vh',
@@ -222,19 +233,19 @@ export const GlobalNavigation = () => {
             transform: 'none'
           }}
         >
-          <DialogHeader className="p-6 border-b bg-background/95 backdrop-blur-sm shrink-0 z-10">
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+          <DialogHeader className="p-6 border-b bg-blue-50 shrink-0 z-10">
+            <DialogTitle className="text-2xl font-bold text-blue-800">
               {selectedRole === "Platform Administrator" ? "Master Data Configuration Portal" : "Master Data & Transactions Portal"}
               {selectedRole && (
-                <span className="text-lg text-muted-foreground ml-2">- {selectedRole}</span>
+                <span className="text-lg text-gray-600 ml-2">- {selectedRole}</span>
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden bg-background relative min-h-0">
+          <div className="flex-1 overflow-hidden bg-white relative min-h-0">
             <SidebarProvider>
               <div className="flex h-full w-full min-h-0">
                 <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-                <main className="flex-1 relative overflow-hidden min-h-0">
+                <main className="flex-1 relative overflow-hidden min-h-0 bg-gray-50">
                   <div className="h-full overflow-y-auto">
                     <MasterDataContent 
                       activeSection={activeSection} 
