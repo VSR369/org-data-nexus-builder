@@ -6,7 +6,7 @@ import CompetencyAssessmentTab from './CompetencyAssessmentTab';
 interface CoreCompetenciesTabProps {
   selectedIndustrySegment: string;
   competencyData: any;
-  updateCompetencyData: (data: any) => void;
+  updateCompetencyData: (domainGroup: string, category: string, subCategory: string, rating: number) => void;
 }
 
 const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
