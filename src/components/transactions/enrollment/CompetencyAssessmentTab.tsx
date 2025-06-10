@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,13 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { masterDomainGroups, industrySegmentMapping } from '../competency/data';
+
+interface IndustrySegment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+}
 
 interface CompetencyData {
   [domainGroup: string]: {
@@ -45,6 +51,59 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   competencyData,
   updateCompetencyData
 }) => {
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+
+  useEffect(() => {
+    // Load industry segments from master data
+    const loadIndustrySegments = () => {
+      const savedSegments = localStorage.getItem('industrySegments');
+      let segments: string[] = [];
+      
+      if (savedSegments) {
+        try {
+          segments = JSON.parse(savedSegments);
+        } catch (error) {
+          console.error('Error parsing saved segments:', error);
+          // Default segments if parsing fails
+          segments = [
+            'Banking, Financial Services & Insurance (BFSI)',
+            'Retail & E-Commerce',
+            'Healthcare & Life Sciences',
+            'Information Technology & Software Services',
+            'Telecommunications',
+            'Education & EdTech',
+            'Manufacturing (Smart / Discrete / Process)',
+            'Logistics & Supply Chain'
+          ];
+        }
+      } else {
+        // Default segments if none saved
+        segments = [
+          'Banking, Financial Services & Insurance (BFSI)',
+          'Retail & E-Commerce',
+          'Healthcare & Life Sciences',
+          'Information Technology & Software Services',
+          'Telecommunications',
+          'Education & EdTech',
+          'Manufacturing (Smart / Discrete / Process)',
+          'Logistics & Supply Chain'
+        ];
+      }
+
+      // Convert to IndustrySegment format
+      const segmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
+        id: (index + 1).toString(),
+        name: segment,
+        code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
+        description: `Industry segment: ${segment}`
+      }));
+
+      setIndustrySegments(segmentObjects);
+    };
+
+    loadIndustrySegments();
+  }, []);
+
   console.log('CompetencyAssessmentTab - selectedIndustrySegment:', selectedIndustrySegment);
   console.log('CompetencyAssessmentTab - masterDomainGroups:', masterDomainGroups);
 
@@ -59,14 +118,16 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     );
   }
 
-  // Get the full industry segment name from the mapping
-  const fullIndustrySegmentName = industrySegmentMapping[selectedIndustrySegment as keyof typeof industrySegmentMapping] || selectedIndustrySegment;
-  console.log('Full industry segment name:', fullIndustrySegmentName);
+  // Get the industry segment name from the loaded segments
+  const selectedSegment = industrySegments.find(segment => segment.id === selectedIndustrySegment);
+  const industrySegmentName = selectedSegment ? selectedSegment.name : selectedIndustrySegment;
+
+  console.log('Industry segment name:', industrySegmentName);
 
   // Get domain groups for the selected industry segment
   const relevantDomainGroups = masterDomainGroups.filter(group => {
-    const matches = group.industrySegment === fullIndustrySegmentName;
-    console.log(`Checking domain group ${group.name} with industrySegment ${group.industrySegment} against ${fullIndustrySegmentName}: ${matches}`);
+    const matches = group.industrySegment === industrySegmentName;
+    console.log(`Checking domain group ${group.name} with industrySegment ${group.industrySegment} against ${industrySegmentName}: ${matches}`);
     return matches;
   });
 
@@ -81,7 +142,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardHeader>
         <CardContent>
           <Badge variant="secondary" className="text-base px-4 py-2">
-            {fullIndustrySegmentName}
+            {industrySegmentName}
           </Badge>
         </CardContent>
       </Card>
@@ -91,11 +152,11 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-semibold mb-2">Competency Structure</h3>
             <p className="text-muted-foreground">
-              No domain groups found for industry segment: {fullIndustrySegmentName}. 
+              No domain groups found for industry segment: {industrySegmentName}. 
               Please configure domain groups for this industry segment in the master data.
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Looking for industry segment: {fullIndustrySegmentName}
+              Looking for industry segment: {industrySegmentName}
             </p>
           </CardContent>
         </Card>
