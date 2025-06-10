@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Edit, Trash2, Save, X, ChevronRight, ChevronDown, FolderOpen, Folder } from 'lucide-react';
 import { Category, IndustrySegment, DomainGroup } from './types';
 
 interface CategoryTabProps {
@@ -37,6 +38,17 @@ export const CategoryTab: React.FC<CategoryTabProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
 
   const handleAdd = () => {
     if (formData.name.trim() && selectedDomainGroup) {
@@ -88,6 +100,58 @@ export const CategoryTab: React.FC<CategoryTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Tree Structure View */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            Domain Structure
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Folder className="h-4 w-4 text-blue-600" />
+              <span>{selectedIndustrySegment?.name}</span>
+            </div>
+            <div className="ml-6 flex items-center gap-2 text-sm font-medium">
+              <FolderOpen className="h-4 w-4 text-green-600" />
+              <span>{selectedDomainGroupInfo?.name}</span>
+            </div>
+            <div className="ml-12 space-y-1">
+              {categories.map((category) => (
+                <Collapsible
+                  key={category.id}
+                  open={expandedCategories.has(category.id)}
+                  onOpenChange={() => toggleCategoryExpansion(category.id)}
+                >
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm hover:bg-muted/50 p-1 rounded w-full text-left">
+                    {expandedCategories.has(category.id) ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                    <Folder className="h-3 w-3 text-orange-600" />
+                    <span className={selectedCategory === category.id ? "font-semibold text-primary" : ""}>{category.name}</span>
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      {category.subCategories?.length || 0} sub-categories
+                    </Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="ml-6 mt-1 space-y-1">
+                    {category.subCategories?.map((subCategory) => (
+                      <div key={subCategory.id} className="flex items-center gap-2 text-xs text-muted-foreground p-1">
+                        <div className="w-3 h-3 border-l border-b border-muted-foreground/30 ml-1"></div>
+                        <span>{subCategory.name}</span>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Breadcrumb */}
       <div className="text-sm text-muted-foreground">
         <span>{selectedIndustrySegment?.name}</span>
@@ -99,14 +163,14 @@ export const CategoryTab: React.FC<CategoryTabProps> = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Categories</CardTitle>
+          <CardTitle>Categories Management</CardTitle>
           <CardDescription>
             Manage categories within the selected domain group
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Current Categories</h3>
+            <h3 className="text-lg font-medium">Current Categories ({categories.length})</h3>
             <Button 
               onClick={() => setIsAdding(true)} 
               disabled={isAdding}

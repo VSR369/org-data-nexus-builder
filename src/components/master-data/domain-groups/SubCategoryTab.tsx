@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderOpen, Folder, FileText } from 'lucide-react';
 import { SubCategory, IndustrySegment, DomainGroup, Category } from './types';
 
 interface SubCategoryTabProps {
@@ -86,6 +86,41 @@ export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Tree Structure View */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            Domain Structure
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Folder className="h-4 w-4 text-blue-600" />
+              <span>{selectedIndustrySegment?.name}</span>
+            </div>
+            <div className="ml-6 flex items-center gap-2 text-sm font-medium">
+              <FolderOpen className="h-4 w-4 text-green-600" />
+              <span>{selectedDomainGroupInfo?.name}</span>
+            </div>
+            <div className="ml-12 flex items-center gap-2 text-sm font-medium">
+              <FolderOpen className="h-4 w-4 text-orange-600" />
+              <span>{selectedCategoryInfo?.name}</span>
+            </div>
+            <div className="ml-18 space-y-1">
+              {subCategories.map((subCategory) => (
+                <div key={subCategory.id} className="flex items-center gap-2 text-xs p-1">
+                  <div className="w-3 h-3 border-l border-b border-muted-foreground/30 ml-1"></div>
+                  <FileText className="h-3 w-3 text-purple-600" />
+                  <span>{subCategory.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Breadcrumb */}
       <div className="text-sm text-muted-foreground">
         <span>{selectedIndustrySegment?.name}</span>
@@ -99,14 +134,14 @@ export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Sub-Categories</CardTitle>
+          <CardTitle>Sub-Categories Management</CardTitle>
           <CardDescription>
             Manage sub-categories within the selected category
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Current Sub-Categories</h3>
+            <h3 className="text-lg font-medium">Current Sub-Categories ({subCategories.length})</h3>
             <Button 
               onClick={() => setIsAdding(true)} 
               disabled={isAdding}
