@@ -16,14 +16,14 @@ const MasterDataPortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      {/* Main Content with Sidebar */}
-      <SidebarProvider>
+    <SidebarProvider>
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex w-full">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
           <div className="container mx-auto px-6">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-4">
+                <SidebarTrigger />
                 <Link to="/">
                   <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <ArrowLeft className="h-4 w-4" />
@@ -47,7 +47,6 @@ const MasterDataPortal = () => {
               </div>
               
               <div className="flex items-center space-x-4">
-                <SidebarTrigger className="lg:hidden" />
                 {isLoggedIn ? (
                   <div className="flex items-center space-x-3">
                     <span className="text-sm text-muted-foreground">Authenticated</span>
@@ -70,10 +69,11 @@ const MasterDataPortal = () => {
           </div>
         </header>
 
-        <div className="flex h-[calc(100vh-4rem)] w-full">
+        {/* Main Content with Sidebar - adjusted for fixed header */}
+        <div className="flex w-full pt-16">
           <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
           <main className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto">
+            <div className="h-[calc(100vh-4rem)] overflow-y-auto">
               <MasterDataContent 
                 activeSection={activeSection} 
                 onSignInComplete={handleSignInComplete}
@@ -81,8 +81,8 @@ const MasterDataPortal = () => {
             </div>
           </main>
         </div>
-      </SidebarProvider>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

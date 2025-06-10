@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Database, Users, Globe, Building2, Briefcase, DollarSign, MessageSquare, Gift, CreditCard, Target, Calendar, Award, Brain, UserCheck } from "lucide-react";
-import MasterDataStructureConfig from "@/components/master-data/MasterDataStructureConfig";
+import DomainGroupsConfig from "@/components/master-data/DomainGroupsConfig";
 import CountryConfig from "@/components/master-data/CountryConfig";
 import CurrencyConfig from "@/components/master-data/CurrencyConfig";
 import IndustrySegmentConfig from "@/components/master-data/IndustrySegmentConfig";
@@ -34,105 +34,105 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
     switch (activeSection) {
       case 'master-data-structure':
         return (
-          <div className="h-full overflow-y-auto">
-            <MasterDataStructureConfig />
+          <div className="h-full overflow-y-auto p-6">
+            <DomainGroupsConfig />
           </div>
         );
 
       case 'countries':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <CountryConfig />
           </div>
         );
 
       case 'currencies':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <CurrencyConfig />
           </div>
         );
 
       case 'industry-segments':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <IndustrySegmentConfig />
           </div>
         );
 
       case 'entity-types':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <EntityTypeConfig />
           </div>
         );
 
       case 'organization-types':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <OrganizationTypeConfig />
           </div>
         );
 
       case 'departments':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <DepartmentConfig />
           </div>
         );
 
       case 'competency-capability':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <CompetencyCapabilityConfig />
           </div>
         );
 
       case 'reward-types':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <RewardTypeConfig />
           </div>
         );
 
       case 'challenge-statuses':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <ChallengeStatusConfig />
           </div>
         );
 
       case 'solution-statuses':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <SolutionStatusConfig />
           </div>
         );
 
       case 'communication-types':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <CommunicationTypeConfig />
           </div>
         );
 
       case 'pricing-config':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <PricingConfig />
           </div>
         );
 
       case 'voting-assessment':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <SolutionVotingAssessmentConfig />
           </div>
         );
 
       case 'events-calendar':
         return (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto p-6">
             <EventsCalendarConfig />
           </div>
         );
