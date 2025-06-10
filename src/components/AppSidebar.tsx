@@ -81,7 +81,7 @@ const challengeMenuItems = [
   },
   {
     id: 'competency-capabilities',
-    title: 'Competency & Capabilities',
+    title: 'Capability Ratings',
     icon: Brain,
   },
 ];
