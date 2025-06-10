@@ -36,20 +36,13 @@ export const useDomainGroupsData = () => {
         const segments = industrySegmentsDataManager.loadData();
         console.log('Found industry segments from shared DataManager:', segments);
         
-        let segmentObjects: IndustrySegment[] = [];
-        
-        if (Array.isArray(segments) && segments.length > 0) {
-          if (typeof segments[0] === 'string') {
-            segmentObjects = segments.map((segment, index) => ({
-              id: (index + 1).toString(),
-              name: segment,
-              code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
-              description: `Industry segment: ${segment}`
-            }));
-          } else {
-            segmentObjects = segments;
-          }
-        }
+        // Always convert string array to IndustrySegment objects
+        const segmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
+          id: (index + 1).toString(),
+          name: segment,
+          code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
+          description: `Industry segment: ${segment}`
+        }));
         
         setIndustrySegments(segmentObjects);
         console.log('Loaded industry segments:', segmentObjects);
