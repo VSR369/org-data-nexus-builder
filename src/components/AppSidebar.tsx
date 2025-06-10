@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2, Factory } from 'lucide-react';
+import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -63,6 +63,11 @@ const organizationMenuItems = [
 ];
 
 const challengeMenuItems = [
+  {
+    id: 'domain-groups',
+    title: 'Domain Groups',
+    icon: FolderTree,
+  },
   {
     id: 'challenge-statuses',
     title: 'Challenge Status',

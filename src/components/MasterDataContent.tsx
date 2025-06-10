@@ -24,6 +24,7 @@ import SelfEnrollmentForm from './transactions/SelfEnrollmentForm';
 import SolutionVotingAssessmentConfig from './voting-assessment/SolutionVotingAssessmentConfig';
 import GlobalCacheManagerComponent from './master-data/GlobalCacheManager';
 import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
+import DomainGroupsConfig from './master-data/DomainGroupsConfig';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -46,6 +47,8 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <CurrencyConfig />;
       case 'industry-segments':
         return <IndustrySegmentConfig />;
+      case 'domain-groups':
+        return <DomainGroupsConfig />;
       case 'departments':
         return <DepartmentConfig />;
       case 'competency-capabilities':
