@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
+import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 interface CoreCompetenciesTabProps {
   selectedIndustrySegments: string[];
@@ -12,48 +13,30 @@ interface CoreCompetenciesTabProps {
   updateCompetencyData: (industrySegment: string, domainGroup: string, category: string, subCategory: string, rating: number) => void;
 }
 
-// Helper function to get industry segment name from ID
-// This should match the exact same mapping used in IndustrySegmentSection
+// Helper function to get industry segment name from ID using the same data source as BasicInformationTab
 const getIndustrySegmentName = (segmentId: string) => {
-  // Load from shared data manager to ensure consistency
   try {
-    const { industrySegmentsDataManager } = require('@/utils/sharedDataManagers');
+    // Load industry segments from the same shared data manager used in BasicInformationTab
     const segments = industrySegmentsDataManager.loadData();
+    console.log('CoreCompetenciesTab - Available segments from shared manager:', segments);
     
     // Convert segment array index to ID (index + 1)
     const segmentIndex = parseInt(segmentId) - 1;
     
     if (segmentIndex >= 0 && segmentIndex < segments.length) {
       const name = segments[segmentIndex];
-      console.log(`Mapping segment ID ${segmentId} (index ${segmentIndex}) to name: ${name}`);
+      console.log(`CoreCompetenciesTab - Mapping segment ID ${segmentId} (index ${segmentIndex}) to name: ${name}`);
       return name;
+    } else {
+      console.warn(`CoreCompetenciesTab - Segment ID ${segmentId} (index ${segmentIndex}) is out of range. Available segments:`, segments);
     }
   } catch (error) {
-    console.error('Error loading industry segments:', error);
+    console.error('CoreCompetenciesTab - Error loading industry segments:', error);
   }
   
-  // Fallback mapping
-  const segmentNames: { [key: string]: string } = {
-    '1': 'Manufacturing (Smart / Discrete / Process)',
-    '2': 'Healthcare & Life Sciences', 
-    '3': 'Logistics & Supply Chain',
-    '4': 'Banking, Financial Services & Insurance (BFSI)',
-    '5': 'Information Technology & Software Services',
-    '6': 'Retail & E-Commerce',
-    '7': 'Telecommunications',
-    '8': 'Education & EdTech',
-    '9': 'Media, Entertainment & OTT',
-    '10': 'Energy & Utilities (Power, Oil & Gas, Renewables)',
-    '11': 'Automotive & Mobility',
-    '12': 'Real Estate & Smart Infrastructure',
-    '13': 'Travel, Tourism & Hospitality',
-    '14': 'Agriculture & AgriTech',
-    '15': 'Public Sector & e-Governance'
-  };
-  
-  const name = segmentNames[segmentId];
-  console.log(`Fallback mapping segment ID ${segmentId} to name: ${name}`);
-  return name || `Industry Segment ${segmentId}`;
+  // If we can't find the segment, return a descriptive fallback
+  console.warn(`CoreCompetenciesTab - Could not find segment name for ID: ${segmentId}`);
+  return `Industry Segment ${segmentId}`;
 };
 
 const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
@@ -62,6 +45,34 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   updateCompetencyData
 }) => {
   const [activeSegmentTab, setActiveSegmentTab] = useState(selectedIndustrySegments[0] || '');
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+
+  // Load industry segments to ensure we have the latest data
+  useEffect(() => {
+    const loadSegments = () => {
+      try {
+        const segments = industrySegmentsDataManager.loadData();
+        setIndustrySegments(segments);
+        console.log('CoreCompetenciesTab - Loaded industry segments:', segments);
+      } catch (error) {
+        console.error('CoreCompetenciesTab - Error loading segments:', error);
+      }
+    };
+
+    loadSegments();
+
+    // Listen for industry segments updates
+    const handleIndustrySegmentsUpdated = () => {
+      console.log('CoreCompetenciesTab - Received industry segments update');
+      loadSegments();
+    };
+
+    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
+
+    return () => {
+      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
+    };
+  }, []);
 
   console.log('CoreCompetenciesTab - selectedIndustrySegments:', selectedIndustrySegments);
   console.log('CoreCompetenciesTab - selected segment names:', selectedIndustrySegments.map(id => getIndustrySegmentName(id)));
@@ -87,7 +98,7 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
       <TabsContent value="core-competencies" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Industry Segments</CardTitle>
+            <CardTitle>Selected Industry Segment</CardTitle>
             <p className="text-sm text-muted-foreground">
               Rate your competencies for the selected industry segment
             </p>
@@ -115,7 +126,7 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
     <TabsContent value="core-competencies" className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Industry Segments</CardTitle>
+          <CardTitle>Selected Industry Segments</CardTitle>
           <p className="text-sm text-muted-foreground">
             Rate your competencies for each selected industry segment. Click on the tabs below to switch between segments.
           </p>
