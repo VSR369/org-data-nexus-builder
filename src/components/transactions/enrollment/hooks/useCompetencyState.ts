@@ -11,11 +11,11 @@ import {
 } from '../utils/competencyUtils';
 
 export const useCompetencyState = () => {
-  // Load saved competency data synchronously during initialization
+  // Load saved competency data with automatic validation and cleanup
   const savedCompetencyData = loadSavedCompetencyData();
   const [competencyData, setCompetencyData] = useState<CompetencyData>(savedCompetencyData);
 
-  // Auto-save competency data
+  // Auto-save competency data with validation
   useEffect(() => {
     saveCompetencyData(competencyData);
   }, [competencyData]);
@@ -27,7 +27,14 @@ export const useCompetencyState = () => {
     subCategory: string, 
     rating: number
   ) => {
-    console.log('Updating competency data:', { industrySegment, domainGroup, category, subCategory, rating });
+    console.log('🔄 Updating competency data:', { industrySegment, domainGroup, category, subCategory, rating });
+    
+    // Validate that industrySegment is a valid ID (numeric string)
+    if (!/^\d+$/.test(industrySegment)) {
+      console.error('❌ Invalid industry segment ID:', industrySegment);
+      return;
+    }
+    
     setCompetencyData(prev => ({
       ...prev,
       [industrySegment]: {
@@ -48,6 +55,7 @@ export const useCompetencyState = () => {
   };
 
   const clearCompetencyData = () => {
+    console.log('🗑️ Clearing all competency data...');
     setCompetencyData({});
     clearStoredCompetencyData();
   };
@@ -56,8 +64,14 @@ export const useCompetencyState = () => {
     return countRatedSubcategories(competencyData);
   };
 
-  // Get competency data for a specific industry segment
+  // Get competency data for a specific industry segment with validation
   const getCompetencyDataForSegment = (industrySegment: string) => {
+    // Validate that industrySegment is a valid ID
+    if (!/^\d+$/.test(industrySegment)) {
+      console.warn('⚠️ Invalid industry segment ID requested:', industrySegment);
+      return {};
+    }
+    
     return competencyData[industrySegment] || {};
   };
 
