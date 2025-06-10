@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Brain } from 'lucide-react';
+import { Plus, Pencil, Trash2, Brain, Scale } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface CompetencyCapability {
@@ -16,44 +16,49 @@ interface CompetencyCapability {
   color: string;
   order: number;
   isActive: boolean;
+  ratingRange: string;
 }
 
 const CompetencyCapabilityConfig = () => {
   const { toast } = useToast();
   
-  // Pre-defined competency capabilities with proper order and colors
+  // Updated competency capabilities with rating ranges
   const [capabilities, setCapabilities] = useState<CompetencyCapability[]>([
     {
       id: '1',
-      name: 'Guru',
-      description: 'Expert level with deep knowledge and ability to guide others',
-      color: 'bg-purple-100 text-purple-800 border-purple-300',
+      name: 'No Competency',
+      description: 'No knowledge or experience in this area',
+      color: 'bg-red-100 text-red-800 border-red-300',
       order: 1,
       isActive: true,
+      ratingRange: '0 - 2.49999',
     },
     {
       id: '2',
-      name: 'Advanced',
-      description: 'High proficiency with comprehensive understanding',
-      color: 'bg-blue-100 text-blue-800 border-blue-300',
+      name: 'Basic',
+      description: 'Fundamental knowledge and basic competency',
+      color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
       order: 2,
       isActive: true,
+      ratingRange: '2.5 - 4.9999',
     },
     {
       id: '3',
-      name: 'Basic',
-      description: 'Fundamental knowledge and basic competency',
-      color: 'bg-green-100 text-green-800 border-green-300',
+      name: 'Advanced',
+      description: 'High proficiency with comprehensive understanding',
+      color: 'bg-blue-100 text-blue-800 border-blue-300',
       order: 3,
       isActive: true,
+      ratingRange: '5 - 7.49999',
     },
     {
       id: '4',
-      name: 'Not Applicable',
-      description: 'This competency area is not relevant or applicable',
-      color: 'bg-gray-100 text-gray-800 border-gray-300',
+      name: 'Guru',
+      description: 'Expert level with deep knowledge and ability to guide others',
+      color: 'bg-purple-100 text-purple-800 border-purple-300',
       order: 4,
       isActive: true,
+      ratingRange: '7.5 - 10',
     },
   ]);
 
@@ -63,22 +68,23 @@ const CompetencyCapabilityConfig = () => {
     name: '',
     description: '',
     color: 'bg-blue-100 text-blue-800 border-blue-300',
+    ratingRange: '',
   });
 
   const colorOptions = [
-    { value: 'bg-purple-100 text-purple-800 border-purple-300', label: 'Purple' },
-    { value: 'bg-blue-100 text-blue-800 border-blue-300', label: 'Blue' },
-    { value: 'bg-green-100 text-green-800 border-green-300', label: 'Green' },
-    { value: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: 'Yellow' },
     { value: 'bg-red-100 text-red-800 border-red-300', label: 'Red' },
+    { value: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: 'Yellow' },
+    { value: 'bg-blue-100 text-blue-800 border-blue-300', label: 'Blue' },
+    { value: 'bg-purple-100 text-purple-800 border-purple-300', label: 'Purple' },
+    { value: 'bg-green-100 text-green-800 border-green-300', label: 'Green' },
     { value: 'bg-gray-100 text-gray-800 border-gray-300', label: 'Gray' },
   ];
 
   const handleAdd = () => {
-    if (!formData.name.trim()) {
+    if (!formData.name.trim() || !formData.ratingRange.trim()) {
       toast({
         title: "Error",
-        description: "Capability name is required",
+        description: "Capability name and rating range are required",
         variant: "destructive",
       });
       return;
@@ -89,12 +95,13 @@ const CompetencyCapabilityConfig = () => {
       name: formData.name,
       description: formData.description,
       color: formData.color,
+      ratingRange: formData.ratingRange,
       order: capabilities.length + 1,
       isActive: true,
     };
 
     setCapabilities(prev => [...prev, newCapability]);
-    setFormData({ name: '', description: '', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    setFormData({ name: '', description: '', color: 'bg-blue-100 text-blue-800 border-blue-300', ratingRange: '' });
     setIsAddDialogOpen(false);
     
     toast({
@@ -109,11 +116,12 @@ const CompetencyCapabilityConfig = () => {
       name: capability.name,
       description: capability.description,
       color: capability.color,
+      ratingRange: capability.ratingRange,
     });
   };
 
   const handleUpdate = () => {
-    if (!formData.name.trim() || !editingCapability) return;
+    if (!formData.name.trim() || !formData.ratingRange.trim() || !editingCapability) return;
 
     setCapabilities(prev => prev.map(cap => 
       cap.id === editingCapability.id 
@@ -122,7 +130,7 @@ const CompetencyCapabilityConfig = () => {
     ));
 
     setEditingCapability(null);
-    setFormData({ name: '', description: '', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    setFormData({ name: '', description: '', color: 'bg-blue-100 text-blue-800 border-blue-300', ratingRange: '' });
     
     toast({
       title: "Success",
@@ -148,14 +156,40 @@ const CompetencyCapabilityConfig = () => {
 
   return (
     <div className="space-y-6">
+      {/* Rating Scale Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scale className="w-5 h-5" />
+            Competency Rating Scale Overview
+          </CardTitle>
+          <CardDescription>
+            The competency assessment uses a 0-10 rating scale with the following capability levels
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {sortedCapabilities.filter(cap => cap.isActive).map((capability) => (
+              <div key={capability.id} className="text-center p-4 border rounded-lg">
+                <Badge className={`${capability.color} mb-2`}>
+                  {capability.name}
+                </Badge>
+                <div className="text-sm font-medium mb-1">{capability.ratingRange}</div>
+                <div className="text-xs text-muted-foreground">{capability.description}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5" />
-            Competency Capability Levels
+            Competency Capability Levels Management
           </CardTitle>
           <CardDescription>
-            Manage competency capability levels used for solution provider assessments
+            Manage competency capability levels and their rating ranges used for solution provider assessments
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -174,7 +208,7 @@ const CompetencyCapabilityConfig = () => {
                 <DialogHeader>
                   <DialogTitle>Add New Competency Capability</DialogTitle>
                   <DialogDescription>
-                    Create a new competency capability level for assessments
+                    Create a new competency capability level with rating range for assessments
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -185,6 +219,15 @@ const CompetencyCapabilityConfig = () => {
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter capability name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ratingRange">Rating Range *</Label>
+                    <Input
+                      id="ratingRange"
+                      value={formData.ratingRange}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ratingRange: e.target.value }))}
+                      placeholder="e.g., 0 - 2.49999"
                     />
                   </div>
                   <div>
@@ -238,6 +281,9 @@ const CompetencyCapabilityConfig = () => {
                     </Badge>
                     <div>
                       <div className="font-medium">{capability.name}</div>
+                      <div className="text-sm text-muted-foreground mb-1">
+                        Rating Range: {capability.ratingRange}
+                      </div>
                       {capability.description && (
                         <div className="text-sm text-muted-foreground">
                           {capability.description}
@@ -285,7 +331,7 @@ const CompetencyCapabilityConfig = () => {
           <DialogHeader>
             <DialogTitle>Edit Competency Capability</DialogTitle>
             <DialogDescription>
-              Update the competency capability details
+              Update the competency capability details and rating range
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -296,6 +342,15 @@ const CompetencyCapabilityConfig = () => {
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter capability name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-ratingRange">Rating Range *</Label>
+              <Input
+                id="edit-ratingRange"
+                value={formData.ratingRange}
+                onChange={(e) => setFormData(prev => ({ ...prev, ratingRange: e.target.value }))}
+                placeholder="e.g., 0 - 2.49999"
               />
             </div>
             <div>
