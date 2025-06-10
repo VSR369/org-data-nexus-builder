@@ -164,7 +164,7 @@ const CapabilityLevelsManagement: React.FC<CapabilityLevelsManagementProps> = ({
           Configure competency level labels and score ranges
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Current Capability Levels</h3>
           <Button 
@@ -178,187 +178,194 @@ const CapabilityLevelsManagement: React.FC<CapabilityLevelsManagementProps> = ({
         </div>
 
         {isAdding && (
-          <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="new-level-label">Level Label</Label>
-                <Input
-                  id="new-level-label"
-                  value={formData.label}
-                  onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                  placeholder="Enter level label"
-                  className="mt-1"
-                />
+          <Card className="bg-muted/30">
+            <CardContent className="p-4 space-y-4">
+              <h4 className="font-medium">Add New Capability Level</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-level-label">Level Label</Label>
+                  <Input
+                    id="new-level-label"
+                    value={formData.label}
+                    onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
+                    placeholder="e.g., Basic, Advanced"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-level-color">Color</Label>
+                  <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colorOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded ${option.value}`}></div>
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="new-level-color">Color</Label>
-                <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colorOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded ${option.value}`}></div>
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-level-min">Minimum Score</Label>
+                  <Input
+                    id="new-level-min"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value={formData.minScore}
+                    onChange={(e) => setFormData(prev => ({ ...prev, minScore: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-level-max">Maximum Score</Label>
+                  <Input
+                    id="new-level-max"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value={formData.maxScore}
+                    onChange={(e) => setFormData(prev => ({ ...prev, maxScore: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="new-level-min">Minimum Score</Label>
-                <Input
-                  id="new-level-min"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  value={formData.minScore}
-                  onChange={(e) => setFormData(prev => ({ ...prev, minScore: parseFloat(e.target.value) || 0 }))}
-                  className="mt-1"
-                />
+              <div className="flex gap-2">
+                <Button onClick={handleAdd} size="sm" className="flex items-center gap-1">
+                  <Save className="w-3 h-3" />
+                  Save
+                </Button>
+                <Button onClick={handleCancelAdd} variant="outline" size="sm" className="flex items-center gap-1">
+                  <X className="w-3 h-3" />
+                  Cancel
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="new-level-max">Maximum Score</Label>
-                <Input
-                  id="new-level-max"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  value={formData.maxScore}
-                  onChange={(e) => setFormData(prev => ({ ...prev, maxScore: parseFloat(e.target.value) || 0 }))}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleAdd} size="sm" className="flex items-center gap-1">
-                <Save className="w-3 h-3" />
-                Save
-              </Button>
-              <Button onClick={handleCancelAdd} variant="outline" size="sm" className="flex items-center gap-1">
-                <X className="w-3 h-3" />
-                Cancel
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         <div className="space-y-3">
           {capabilityLevels
             .sort((a, b) => a.order - b.order)
             .map((level) => (
-            <div key={level.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              {editingId === level.id ? (
-                <div className="flex gap-2 flex-1 space-y-2">
-                  <div className="flex-1 space-y-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <Input
-                        value={formData.label}
-                        onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                        placeholder="Level label"
-                      />
-                      <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {colorOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded ${option.value}`}></div>
-                                {option.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="10"
-                        value={formData.minScore}
-                        onChange={(e) => setFormData(prev => ({ ...prev, minScore: parseFloat(e.target.value) || 0 }))}
-                        placeholder="Min score"
-                      />
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="10"
-                        value={formData.maxScore}
-                        onChange={(e) => setFormData(prev => ({ ...prev, maxScore: parseFloat(e.target.value) || 0 }))}
-                        placeholder="Max score"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 items-start">
-                    <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
-                      <Save className="w-3 h-3" />
-                      Save
-                    </Button>
-                    <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
-                      <X className="w-3 h-3" />
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge className={level.color}>
-                          {level.label}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {level.minScore} – {level.maxScore}
-                        </span>
-                        <Badge variant={level.isActive ? "default" : "secondary"}>
-                          {level.isActive ? "Active" : "Inactive"}
-                        </Badge>
+            <Card key={level.id} className="hover:bg-muted/20 transition-colors">
+              <CardContent className="p-4">
+                {editingId === level.id ? (
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Edit Capability Level</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Level Label</Label>
+                        <Input
+                          value={formData.label}
+                          onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
+                          placeholder="Level label"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Color</Label>
+                        <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {colorOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-4 h-4 rounded ${option.value}`}></div>
+                                  {option.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Minimum Score</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="10"
+                          value={formData.minScore}
+                          onChange={(e) => setFormData(prev => ({ ...prev, minScore: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Maximum Score</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="10"
+                          value={formData.maxScore}
+                          onChange={(e) => setFormData(prev => ({ ...prev, maxScore: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
+                        <Save className="w-3 h-3" />
+                        Save
+                      </Button>
+                      <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
+                        <X className="w-3 h-3" />
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => toggleActive(level.id)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {level.isActive ? "Deactivate" : "Activate"}
-                    </Button>
-                    <Button
-                      onClick={() => handleEdit(level)}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Edit className="w-3 h-3" />
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(level.id)}
-                      variant="destructive"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete
-                    </Button>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Badge className={level.color}>
+                        {level.label}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground font-mono">
+                        {level.minScore} – {level.maxScore}
+                      </span>
+                      <Badge variant={level.isActive ? "default" : "secondary"}>
+                        {level.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => toggleActive(level.id)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {level.isActive ? "Deactivate" : "Activate"}
+                      </Button>
+                      <Button
+                        onClick={() => handleEdit(level)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(level.id)}
+                        variant="destructive"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                </>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       </CardContent>
