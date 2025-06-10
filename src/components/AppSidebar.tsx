@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3 } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -111,6 +111,14 @@ const systemMenuItems = [
     id: 'events-calendar',
     title: 'Events Calendar',
     icon: Calendar,
+  },
+];
+
+const administrationMenuItems = [
+  {
+    id: 'global-cache-manager',
+    title: 'Global Cache Manager',
+    icon: Trash2,
   },
 ];
 
@@ -226,6 +234,26 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
           <SidebarGroupContent>
             <SidebarMenu>
               {systemMenuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    onClick={() => handleMasterDataClick(item.id)}
+                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    className="w-full justify-start cursor-pointer"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span className="font-medium">{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {administrationMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => handleMasterDataClick(item.id)}

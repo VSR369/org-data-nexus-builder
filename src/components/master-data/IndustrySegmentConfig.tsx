@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 
 const defaultSegments = [
   'Banking, Financial Services & Insurance (BFSI)',
@@ -26,6 +27,16 @@ const defaultSegments = [
   'Public Sector & e-Governance'
 ];
 
+// Create data manager instance
+const dataManager = new DataManager<string[]>({
+  key: 'master_data_industry_segments',
+  defaultData: defaultSegments,
+  version: 1
+});
+
+// Register with global cache manager
+GlobalCacheManager.registerKey('master_data_industry_segments');
+
 const IndustrySegmentConfig = () => {
   const { toast } = useToast();
   const [segments, setSegments] = useState<string[]>([]);
@@ -34,26 +45,18 @@ const IndustrySegmentConfig = () => {
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
-  // Load segments from localStorage on component mount
+  // Load segments from DataManager on component mount
   useEffect(() => {
-    const savedSegments = localStorage.getItem('industrySegments');
-    if (savedSegments) {
-      try {
-        const parsedSegments = JSON.parse(savedSegments);
-        setSegments(parsedSegments);
-      } catch (error) {
-        console.error('Error parsing saved segments:', error);
-        setSegments(defaultSegments);
-      }
-    } else {
-      setSegments(defaultSegments);
-    }
+    const loadedSegments = dataManager.loadData();
+    setSegments(loadedSegments);
+    console.log('Loaded industry segments from DataManager:', loadedSegments);
   }, []);
 
-  // Save segments to localStorage whenever segments change
+  // Save segments to DataManager whenever segments change
   useEffect(() => {
     if (segments.length > 0) {
-      localStorage.setItem('industrySegments', JSON.stringify(segments));
+      dataManager.saveData(segments);
+      console.log('Saved industry segments to DataManager:', segments);
     }
   }, [segments]);
 
@@ -109,7 +112,8 @@ const IndustrySegmentConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    setSegments(defaultSegments);
+    const resetData = dataManager.resetToDefault();
+    setSegments(resetData);
     toast({
       title: "Success",
       description: "Industry segments reset to default values",
