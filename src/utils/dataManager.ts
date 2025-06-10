@@ -5,7 +5,7 @@ interface DataManagerConfig<T> {
 }
 
 export class DataManager<T> {
-  private config: DataManagerConfig<T>;
+  public config: DataManagerConfig<T>; // Make config public so it can be accessed for migrations
 
   constructor(config: DataManagerConfig<T>) {
     this.config = config;
@@ -176,7 +176,23 @@ export class GlobalCacheManager {
     });
     
     // Also clear old keys that might be lingering
-    localStorage.removeItem('industrySegments');
+    const oldKeys = [
+      'industrySegments',
+      'organizationTypes',
+      'entityTypes',
+      'countries',
+      'currencies',
+      'departments',
+      'challengeStatuses',
+      'solutionStatuses',
+      'rewardTypes',
+      'communicationTypes',
+      'domainGroupsData' // Keep this as it's managed separately
+    ];
+    
+    oldKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
     
     console.log('All master data cache cleared, including old keys');
   }
