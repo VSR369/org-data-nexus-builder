@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
@@ -191,26 +192,33 @@ const DomainGroupsConfig: React.FC = () => {
           {hasExistingHierarchies ? (
             <Collapsible open={showCreationForms} onOpenChange={setShowCreationForms}>
               <CollapsibleTrigger asChild>
-                <Card className="cursor-pointer hover:bg-muted/30 transition-colors">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <Plus className="w-5 h-5" />
-                        Add New Domain Group Hierarchy
-                      </CardTitle>
-                      {showCreationForms ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </div>
-                    <CardDescription>
-                      Create additional hierarchies for different industry segments or domain groups
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between hover:bg-muted/30 transition-colors h-auto p-0"
+                >
+                  <Card className="w-full cursor-pointer border-none shadow-none">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="text-left">
+                          <CardTitle className="flex items-center gap-2">
+                            <Plus className="w-5 h-5" />
+                            Add New Domain Group Hierarchy
+                          </CardTitle>
+                          <CardDescription>
+                            Create additional hierarchies for different industry segments or domain groups
+                          </CardDescription>
+                        </div>
+                        {showCreationForms ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-6">
+              <CollapsibleContent className="space-y-6 mt-4">
                 <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
                 <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
               </CollapsibleContent>
