@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeDomainGroupsData } from '../utils/dataInitializer';
@@ -97,10 +98,31 @@ export const useDomainGroupsData = () => {
         setIndustrySegments(segments);
         console.log('Loaded industry segments:', segments);
 
-        // Initialize domain groups data
+        // Initialize domain groups data with force refresh
+        console.log('Initializing domain groups data...');
         const initializedData = initializeDomainGroupsData(segments);
+        console.log('Initialized domain groups data:', initializedData);
+        
+        // Log specific Life Sciences data for debugging
+        const lifeSciencesSegment = segments.find(s => 
+          s.name === 'Healthcare & Life Sciences' || 
+          s.name.toLowerCase().includes('healthcare') ||
+          s.name.toLowerCase().includes('life sciences')
+        );
+        if (lifeSciencesSegment) {
+          console.log('Found Life Sciences segment:', lifeSciencesSegment);
+          const lifeSciencesGroups = initializedData.filter(g => g.industrySegmentId === lifeSciencesSegment.id);
+          console.log('Life Sciences domain groups:', lifeSciencesGroups);
+          console.log('Life Sciences groups count:', lifeSciencesGroups.length);
+          lifeSciencesGroups.forEach(group => {
+            console.log(`Group: ${group.name}, Categories: ${group.categories.length}`);
+            group.categories.forEach(cat => {
+              console.log(`  Category: ${cat.name}, SubCategories: ${cat.subCategories.length}`);
+            });
+          });
+        }
+        
         setDomainGroups(initializedData);
-        console.log('Loaded domain groups:', initializedData);
 
         // Set default active segment if segments exist
         if (segments.length > 0 && !activeIndustrySegment) {
