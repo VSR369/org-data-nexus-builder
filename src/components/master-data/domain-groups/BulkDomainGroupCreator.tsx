@@ -16,13 +16,24 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
-  // Check if Life Sciences hierarchy already exists
-  const lifeSciencesIndustrySegmentId = '1'; // Based on the default data
+  // Check if Life Sciences hierarchy already exists - look for any domain group with "Life Sciences" in industry segment name
   const lifeSciencesExists = data.domainGroups.some(
-    dg => dg.industrySegmentId === lifeSciencesIndustrySegmentId
+    dg => dg.industrySegmentName === 'Life Sciences' || 
+          dg.industrySegmentId === '1' ||
+          dg.name.toLowerCase().includes('life sciences')
   );
 
-  // If Life Sciences hierarchy already exists, don't show the bulk creator
+  console.log('🔍 Checking Life Sciences existence:', {
+    domainGroupsCount: data.domainGroups.length,
+    lifeSciencesExists,
+    domainGroups: data.domainGroups.map(dg => ({ 
+      name: dg.name, 
+      industrySegmentName: dg.industrySegmentName,
+      industrySegmentId: dg.industrySegmentId 
+    }))
+  });
+
+  // If Life Sciences hierarchy already exists, show confirmation message
   if (lifeSciencesExists) {
     return (
       <Card className="bg-green-50 border-green-200">
@@ -34,7 +45,8 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
             <div className="flex-1">
               <h3 className="font-medium text-green-900">Life Sciences Hierarchy Already Created</h3>
               <p className="text-sm text-green-700">
-                The Life Sciences domain group hierarchy is already configured and ready for use.
+                The Life Sciences domain group hierarchy is already configured and ready for use. 
+                You can view and manage it in the hierarchies section below.
               </p>
             </div>
             <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -62,7 +74,7 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
       id: group1Id,
       name: 'Strategy, Innovation & Growth (Life Sciences & Pharma)',
       description: 'Strategic planning, innovation management, and growth initiatives in life sciences and pharmaceutical industry',
-      industrySegmentId: lifeSciencesIndustrySegmentId,
+      industrySegmentId: '1',
       industrySegmentName: 'Life Sciences',
       isActive: true,
       createdAt: timestamp
@@ -215,7 +227,7 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
       id: group2Id,
       name: 'Operations, Delivery, Risk & Sustainability (Life Sciences & Pharma)',
       description: 'Operational excellence, delivery management, risk mitigation, and sustainability initiatives',
-      industrySegmentId: lifeSciencesIndustrySegmentId,
+      industrySegmentId: '1',
       industrySegmentName: 'Life Sciences',
       isActive: true,
       createdAt: timestamp
@@ -368,7 +380,7 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
       id: group3Id,
       name: 'People, Culture & Change (Life Sciences & Pharma)',
       description: 'Human resources, culture development, and organizational change management',
-      industrySegmentId: lifeSciencesIndustrySegmentId,
+      industrySegmentId: '1',
       industrySegmentName: 'Life Sciences',
       isActive: true,
       createdAt: timestamp
@@ -474,7 +486,7 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
       id: group4Id,
       name: 'Technology & Digital Transformation (Life Sciences & Pharma)',
       description: 'Technology solutions and digital transformation initiatives in life sciences',
-      industrySegmentId: lifeSciencesIndustrySegmentId,
+      industrySegmentId: '1',
       industrySegmentName: 'Life Sciences',
       isActive: true,
       createdAt: timestamp
