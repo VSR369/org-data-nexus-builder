@@ -61,6 +61,7 @@ export const useFormState = () => {
         }
         if (parsedData.selectedIndustrySegment) {
           setSelectedIndustrySegment(parsedData.selectedIndustrySegment);
+          console.log('Restored industry segment from draft:', parsedData.selectedIndustrySegment);
         }
         
         toast({
@@ -73,7 +74,7 @@ export const useFormState = () => {
     }
   }, [toast]);
 
-  // Auto-save functionality
+  // Auto-save functionality with industry segment
   useEffect(() => {
     const saveData = {
       formData,
@@ -93,7 +94,7 @@ export const useFormState = () => {
     
     if (hasData) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
-      console.log('Auto-saved draft data');
+      console.log('Auto-saved draft data with industry segment:', selectedIndustrySegment);
     }
   }, [formData, providerType, selectedIndustrySegment]);
 
@@ -125,6 +126,7 @@ export const useFormState = () => {
     };
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+    console.log('Manual draft save with industry segment:', selectedIndustrySegment);
     
     toast({
       title: "Draft Saved",
