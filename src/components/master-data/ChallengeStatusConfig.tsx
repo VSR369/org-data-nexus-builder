@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,13 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 const ChallengeStatusConfig = () => {
   const { toast } = useToast();
   const [statuses, setStatuses] = useState([
-    'Draft',
-    'Published',
-    'Active',
-    'Evaluation in Progress',
-    'Completed',
-    'Cancelled',
-    'On Hold'
+    'Challenge Identification',
+    'Challenge Creation',
+    'Challenge Curation',
+    'Challenge Review',
+    'Challenge Modification / Refinement',
+    'Challenge Rejection',
+    'Challenge Approved for Publishing'
   ]);
   
   const [newStatus, setNewStatus] = useState('');
