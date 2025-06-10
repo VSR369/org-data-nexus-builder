@@ -12,7 +12,7 @@ interface InstitutionDetailsSectionProps {
   updateFormData: (field: string, value: string) => void;
 }
 
-// Department master data structure
+// Department master data structure that matches DepartmentConfig
 interface DepartmentData {
   categories: string[];
   subcategories: {
@@ -33,46 +33,110 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
 
   // Load master data on component mount
   useEffect(() => {
-    // Load departments - this is currently a flat array, we need to convert it to categories/subcategories
-    const departments = departmentsDataManager.loadData();
-    console.log('Loaded departments from master data:', departments);
+    // Try to load the structured department data from localStorage
+    // This should match the structure used in DepartmentConfig
+    const departmentConfigKey = 'department_master_data';
+    const storedDepartmentData = localStorage.getItem(departmentConfigKey);
     
-    // For now, create a simple mapping - all departments as categories with empty subcategories
-    // This can be enhanced when the department structure is properly implemented
-    const departmentCategories = [
-      'Core Business Functions',
-      'Corporate Support Functions', 
-      'Technology & Digital Functions',
-      'Industry-Specific or Specialized Departments'
-    ];
-    
-    const departmentSubcategories = {
-      'Core Business Functions': departments.filter(d => 
-        ['Strategy', 'Sales', 'Marketing', 'Product', 'Operations', 'Customer', 'Research', 'Supply', 'Project'].some(keyword => 
-          d.toLowerCase().includes(keyword.toLowerCase())
-        )
-      ),
-      'Corporate Support Functions': departments.filter(d => 
-        ['Finance', 'Human', 'Legal', 'Administration', 'Audit', 'Risk'].some(keyword => 
-          d.toLowerCase().includes(keyword.toLowerCase())
-        )
-      ),
-      'Technology & Digital Functions': departments.filter(d => 
-        ['Technology', 'IT', 'Data', 'Analytics', 'Cyber', 'Digital', 'DevOps'].some(keyword => 
-          d.toLowerCase().includes(keyword.toLowerCase())
-        )
-      ),
-      'Industry-Specific or Specialized Departments': departments.filter(d => 
-        ['Quality', 'Clinical', 'Regulatory', 'CSR', 'ESG'].some(keyword => 
-          d.toLowerCase().includes(keyword.toLowerCase())
-        )
-      )
-    };
-
-    setDepartmentData({
-      categories: departmentCategories,
-      subcategories: departmentSubcategories
-    });
+    if (storedDepartmentData) {
+      try {
+        const parsedData = JSON.parse(storedDepartmentData);
+        console.log('Loaded structured department data from master data:', parsedData);
+        setDepartmentData(parsedData);
+      } catch (error) {
+        console.error('Error parsing department master data:', error);
+        // Fallback to default structure
+        setDepartmentData({
+          categories: [
+            'Core Business Functions',
+            'Corporate Support Functions',
+            'Technology & Digital Functions',
+            'Industry-Specific or Specialized Departments'
+          ],
+          subcategories: {
+            'Core Business Functions': [
+              'Strategy & Planning',
+              'Sales & Business Development',
+              'Marketing & Communications',
+              'Product Management',
+              'Operations / Service Delivery',
+              'Customer Support / Success',
+              'Research & Development (R&D)',
+              'Supply Chain & Procurement',
+              'Project / Program Management Office (PMO)'
+            ],
+            'Corporate Support Functions': [
+              'Finance & Accounting',
+              'Human Resources (HR)',
+              'Legal & Compliance',
+              'Administration & Facilities Management',
+              'Internal Audit & Risk Management'
+            ],
+            'Technology & Digital Functions': [
+              'Information Technology (IT)',
+              'Enterprise Architecture',
+              'Data & Analytics / Business Intelligence',
+              'Cybersecurity & Information Security',
+              'Digital Transformation Office / Innovation Lab',
+              'DevOps / Infrastructure & Cloud Services'
+            ],
+            'Industry-Specific or Specialized Departments': [
+              'Quality Assurance / Regulatory Affairs (e.g., Pharma, Manufacturing)',
+              'Clinical Affairs (e.g., Healthcare, MedTech)',
+              'Merchandising & Category Management (Retail)',
+              'Content / Editorial / Creative (Media & EdTech)',
+              'Corporate Social Responsibility (CSR) / ESG'
+            ]
+          }
+        });
+      }
+    } else {
+      // If no structured data exists, create default structure
+      console.log('No structured department data found, using defaults');
+      setDepartmentData({
+        categories: [
+          'Core Business Functions',
+          'Corporate Support Functions',
+          'Technology & Digital Functions',
+          'Industry-Specific or Specialized Departments'
+        ],
+        subcategories: {
+          'Core Business Functions': [
+            'Strategy & Planning',
+            'Sales & Business Development',
+            'Marketing & Communications',
+            'Product Management',
+            'Operations / Service Delivery',
+            'Customer Support / Success',
+            'Research & Development (R&D)',
+            'Supply Chain & Procurement',
+            'Project / Program Management Office (PMO)'
+          ],
+          'Corporate Support Functions': [
+            'Finance & Accounting',
+            'Human Resources (HR)',
+            'Legal & Compliance',
+            'Administration & Facilities Management',
+            'Internal Audit & Risk Management'
+          ],
+          'Technology & Digital Functions': [
+            'Information Technology (IT)',
+            'Enterprise Architecture',
+            'Data & Analytics / Business Intelligence',
+            'Cybersecurity & Information Security',
+            'Digital Transformation Office / Innovation Lab',
+            'DevOps / Infrastructure & Cloud Services'
+          ],
+          'Industry-Specific or Specialized Departments': [
+            'Quality Assurance / Regulatory Affairs (e.g., Pharma, Manufacturing)',
+            'Clinical Affairs (e.g., Healthcare, MedTech)',
+            'Merchandising & Category Management (Retail)',
+            'Content / Editorial / Creative (Media & EdTech)',
+            'Corporate Social Responsibility (CSR) / ESG'
+          ]
+        }
+      });
+    }
 
     // Load organization types
     const orgTypes = organizationTypesDataManager.loadData();
