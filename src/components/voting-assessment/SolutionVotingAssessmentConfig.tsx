@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -377,7 +376,7 @@ const SolutionVotingAssessmentConfig = () => {
                             <SelectValue placeholder="Select category (optional)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No specific category</SelectItem>
+                            <SelectItem value="none">No specific category</SelectItem>
                             {getSelectedDomainGroup()?.categories.map((category) => (
                               <SelectItem key={category.id} value={category.id}>
                                 {category.name}
@@ -401,7 +400,7 @@ const SolutionVotingAssessmentConfig = () => {
                             Total: {totalWeightage}%
                           </Badge>
                           <Button 
-                            onClick={() => addParameter(selectedCategory ? 'category' : 'group')} 
+                            onClick={() => addParameter(selectedCategory && selectedCategory !== 'none' ? 'category' : 'group')} 
                             size="sm"
                           >
                             <Plus className="w-4 h-4 mr-2" />
@@ -415,7 +414,7 @@ const SolutionVotingAssessmentConfig = () => {
                       <Alert className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
-                          {selectedCategory 
+                          {selectedCategory && selectedCategory !== 'none'
                             ? `Setting parameters at Category level: ${getSelectedCategory()?.name}. These will apply to all sub-categories.`
                             : `Setting parameters at Group level: ${getSelectedDomainGroup()?.name}. These will apply to all categories and sub-categories unless overridden.`
                           }
@@ -623,3 +622,5 @@ const SolutionVotingAssessmentConfig = () => {
 };
 
 export default SolutionVotingAssessmentConfig;
+
+}
