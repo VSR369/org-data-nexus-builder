@@ -188,7 +188,7 @@ const DomainGroupsConfig: React.FC = () => {
       {/* Creation Forms Section */}
       {(!hasExistingHierarchies || showCreationForms) && (
         <div className="space-y-6">
-          {hasExistingHierarchies && (
+          {hasExistingHierarchies ? (
             <Collapsible open={showCreationForms} onOpenChange={setShowCreationForms}>
               <CollapsibleTrigger asChild>
                 <Card className="cursor-pointer hover:bg-muted/30 transition-colors">
@@ -215,9 +215,7 @@ const DomainGroupsConfig: React.FC = () => {
                 <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
               </CollapsibleContent>
             </Collapsible>
-          )}
-          
-          {!hasExistingHierarchies && (
+          ) : (
             <>
               <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
               <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
@@ -229,7 +227,7 @@ const DomainGroupsConfig: React.FC = () => {
       {/* Help Section */}
       <Card className="bg-muted/30">
         <CardHeader>
-          <CardTitle className="text-base">How It Works</CardHeader>
+          <CardTitle className="text-base">How It Works</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-start gap-3">
