@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
@@ -103,41 +102,6 @@ const DomainGroupsConfig: React.FC = () => {
         )}
       </div>
 
-      {/* Overview Stats Card */}
-      {hasExistingHierarchies && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Hierarchy Overview
-            </CardTitle>
-            <CardDescription>
-              Current state of your domain group hierarchies
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{stats.industrySegmentsCount}</div>
-                <div className="text-sm text-muted-foreground">Industry Segments</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.domainGroupsCount}</div>
-                <div className="text-sm text-muted-foreground">Domain Groups</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.categoriesCount}</div>
-                <div className="text-sm text-muted-foreground">Categories</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{stats.subCategoriesCount}</div>
-                <div className="text-sm text-muted-foreground">Sub-Categories</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Status Banner */}
       {hasExistingHierarchies ? (
         <Card className="bg-green-50 border-green-200">
@@ -181,48 +145,37 @@ const DomainGroupsConfig: React.FC = () => {
         </Card>
       )}
 
-      {/* Existing Hierarchies Display */}
-      {hasExistingHierarchies && (
-        <DomainGroupDisplay data={data} onDataUpdate={handleDataUpdate} />
-      )}
-
-      {/* Creation Forms Section */}
+      {/* Creation Forms Section - Now appears above overview when toggled */}
       {(!hasExistingHierarchies || showCreationForms) && (
         <div className="space-y-6">
           {hasExistingHierarchies ? (
-            <Collapsible open={showCreationForms} onOpenChange={setShowCreationForms}>
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-between hover:bg-muted/30 transition-colors h-auto p-0"
-                >
-                  <Card className="w-full cursor-pointer border-none shadow-none">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="text-left">
-                          <CardTitle className="flex items-center gap-2">
-                            <Plus className="w-5 h-5" />
-                            Add New Domain Group Hierarchy
-                          </CardTitle>
-                          <CardDescription>
-                            Create additional hierarchies for different industry segments or domain groups
-                          </CardDescription>
-                        </div>
-                        {showCreationForms ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </div>
-                    </CardHeader>
-                  </Card>
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-6 mt-4">
+            <Card className="border-2 border-primary/20 bg-primary/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      Add New Domain Group Hierarchy
+                    </CardTitle>
+                    <CardDescription>
+                      Create additional hierarchies for different industry segments or domain groups
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCreationForms(false)}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                    Hide
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
                 <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
-              </CollapsibleContent>
-            </Collapsible>
+              </CardContent>
+            </Card>
           ) : (
             <>
               <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
@@ -230,6 +183,46 @@ const DomainGroupsConfig: React.FC = () => {
             </>
           )}
         </div>
+      )}
+
+      {/* Overview Stats Card */}
+      {hasExistingHierarchies && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Hierarchy Overview
+            </CardTitle>
+            <CardDescription>
+              Current state of your domain group hierarchies
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{stats.industrySegmentsCount}</div>
+                <div className="text-sm text-muted-foreground">Industry Segments</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{stats.domainGroupsCount}</div>
+                <div className="text-sm text-muted-foreground">Domain Groups</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{stats.categoriesCount}</div>
+                <div className="text-sm text-muted-foreground">Categories</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{stats.subCategoriesCount}</div>
+                <div className="text-sm text-muted-foreground">Sub-Categories</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Existing Hierarchies Display */}
+      {hasExistingHierarchies && (
+        <DomainGroupDisplay data={data} onDataUpdate={handleDataUpdate} />
       )}
 
       {/* Help Section */}
