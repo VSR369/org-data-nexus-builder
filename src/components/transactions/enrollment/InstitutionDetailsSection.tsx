@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 interface InstitutionDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
+  providerType: string;
   invalidFields?: Set<string>;
 }
 
@@ -25,6 +26,7 @@ interface DepartmentData {
 const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   formData,
   updateFormData,
+  providerType,
   invalidFields = new Set()
 }) => {
   const [departmentData, setDepartmentData] = useState<DepartmentData>({
@@ -33,6 +35,11 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   });
   const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
+
+  // Only show institution details for organization provider type
+  if (providerType !== 'organization') {
+    return null;
+  }
 
   // Load master data on component mount
   useEffect(() => {

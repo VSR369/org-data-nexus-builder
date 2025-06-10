@@ -19,12 +19,18 @@ interface IndustrySegmentSectionProps {
   selectedIndustrySegments: string[];
   onAddIndustrySegment: (value: string) => void;
   onRemoveIndustrySegment: (value: string) => void;
+  providerType: string;
+  onProviderTypeChange: (value: string) => void;
+  invalidFields?: Set<string>;
 }
 
 const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   selectedIndustrySegments,
   onAddIndustrySegment,
-  onRemoveIndustrySegment
+  onRemoveIndustrySegment,
+  providerType,
+  onProviderTypeChange,
+  invalidFields = new Set()
 }) => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [selectedSegmentToAdd, setSelectedSegmentToAdd] = useState<string>('');
@@ -91,6 +97,20 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Provider Type Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="provider-type">Provider Type *</Label>
+          <Select value={providerType} onValueChange={onProviderTypeChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select provider type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="individual">Individual</SelectItem>
+              <SelectItem value="organization">Organization</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Selected Industry Segments */}
         {selectedIndustrySegments.length > 0 && (
           <div className="space-y-2">

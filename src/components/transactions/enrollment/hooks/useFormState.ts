@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { FormData } from '../types';
 import { validateRequiredFields } from '../utils/formValidation';
 import { useToast } from "@/hooks/use-toast";
-import { generateUniqueProviderId } from '@/utils/providerIdGenerator';
 
 const STORAGE_KEY = 'solution-provider-enrollment-draft';
 
@@ -32,9 +32,6 @@ export const useFormState = () => {
   const [isSubmitted, setIsSubmitted] = useState(savedData?.isSubmitted || false);
   
   const [formData, setFormData] = useState<FormData>(savedData?.formData || {
-    // Generate unique provider ID if not already present
-    providerId: savedData?.formData?.providerId || generateUniqueProviderId(),
-    
     // Institution fields (conditional)
     orgName: '',
     orgType: '',
@@ -73,19 +70,18 @@ export const useFormState = () => {
     if (savedData) {
       console.log('Restored draft data - Industry segments:', savedData.selectedIndustrySegments);
       console.log('Restored submission status:', savedData.isSubmitted);
-      console.log('Provider ID:', formData.providerId);
       toast({
         title: "Data Restored",
-        description: `Your enrollment data has been restored. Provider ID: ${formData.providerId}`,
+        description: "Your enrollment data has been restored from previous session",
       });
     } else {
-      console.log('New provider registration - Generated ID:', formData.providerId);
+      console.log('New provider registration started');
       toast({
         title: "New Registration",
-        description: `New provider ID generated: ${formData.providerId}`,
+        description: "Starting new solution provider enrollment",
       });
     }
-  }, [toast, formData.providerId]);
+  }, [toast]);
 
   // Auto-save functionality with industry segments and submission status
   useEffect(() => {
@@ -170,11 +166,7 @@ export const useFormState = () => {
       const existingProviders = localStorage.getItem('enrolled-providers');
       const providers = existingProviders ? JSON.parse(existingProviders) : [];
       
-      // Check if this provider ID already exists
-      const existingIndex = providers.findIndex((p: any) => p.providerId === formData.providerId);
-      
       const providerData = {
-        providerId: formData.providerId,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -184,17 +176,9 @@ export const useFormState = () => {
         lastUpdated: new Date().toISOString()
       };
       
-      if (existingIndex >= 0) {
-        // Update existing provider
-        providers[existingIndex] = providerData;
-        console.log('Updated existing provider enrollment:', formData.providerId);
-      } else {
-        // Add new provider
-        providers.push(providerData);
-        console.log('Added new provider enrollment:', formData.providerId);
-      }
-      
+      providers.push(providerData);
       localStorage.setItem('enrolled-providers', JSON.stringify(providers));
+      console.log('Added new provider enrollment');
     } catch (error) {
       console.error('Error storing provider enrollment:', error);
     }

@@ -6,7 +6,6 @@ import InstitutionDetailsSection from './InstitutionDetailsSection';
 import ProviderDetailsSection from './ProviderDetailsSection';
 import BankingDetailsSection from './BankingDetailsSection';
 import AdditionalInfoSection from './AdditionalInfoSection';
-import ProviderIdSection from './ProviderIdSection';
 import { FormData } from './types';
 
 interface BasicInformationTabProps {
@@ -32,8 +31,6 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <ProviderIdSection providerId={formData.providerId} />
-      
       <IndustrySegmentSection
         selectedIndustrySegments={selectedIndustrySegments}
         onAddIndustrySegment={onAddIndustrySegment}
