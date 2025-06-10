@@ -4,6 +4,7 @@ import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 import DomainGroupForm from './domain-groups/DomainGroupForm';
 import DomainGroupDisplay from './domain-groups/DomainGroupDisplay';
+import BulkDomainGroupCreator from './domain-groups/BulkDomainGroupCreator';
 
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -36,6 +37,7 @@ const DomainGroupsConfig: React.FC = () => {
         </div>
       </div>
 
+      <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
       <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
       <DomainGroupDisplay data={data} onDataUpdate={handleDataUpdate} />
     </div>
