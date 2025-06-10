@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,20 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showExistingGroups, setShowExistingGroups] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // Add ref for the form section
+  const formSectionRef = useRef<HTMLDivElement>(null);
+
+  const handleAddDomainGroupClick = () => {
+    setShowAddForm(true);
+    // Scroll to form section after a brief delay to ensure it's rendered
+    setTimeout(() => {
+      formSectionRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }, 100);
+  };
 
   const toggleCategoryExpansion = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -251,7 +265,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
                   <CardDescription>Add new domain groups or explore existing ones</CardDescription>
                 </div>
                 <Button 
-                  onClick={() => setShowAddForm(true)}
+                  onClick={handleAddDomainGroupClick}
                   className="flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -328,129 +342,131 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 
           {/* Domain Group Hierarchy Creation Form */}
           {showAddForm && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Domain Group Hierarchy Creation</CardTitle>
-                    <CardDescription>Create a complete domain group hierarchy with categories and sub-categories</CardDescription>
-                  </div>
-                  <Button
-                    onClick={() => setShowAddForm(false)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Domain Group Section */}
-                <div className="p-4 border rounded-lg bg-blue-50 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                    <h4 className="font-medium">Domain Group *</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div ref={formSectionRef}>
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="group-name">Group Name *</Label>
-                      <Input
-                        id="group-name"
-                        value={formData.groupName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
-                        placeholder="e.g., Strategy, Innovation & Growth"
-                      />
+                      <CardTitle>Domain Group Hierarchy Creation</CardTitle>
+                      <CardDescription>Create a complete domain group hierarchy with categories and sub-categories</CardDescription>
                     </div>
-                    <div>
-                      <Label htmlFor="group-description">Group Description</Label>
-                      <Textarea
-                        id="group-description"
-                        value={formData.groupDescription}
-                        onChange={(e) => setFormData(prev => ({ ...prev, groupDescription: e.target.value }))}
-                        placeholder="Describe the domain group"
-                        rows={2}
-                      />
+                    <Button
+                      onClick={() => setShowAddForm(false)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Domain Group Section */}
+                  <div className="p-4 border rounded-lg bg-blue-50 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                      <h4 className="font-medium">Domain Group *</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="group-name">Group Name *</Label>
+                        <Input
+                          id="group-name"
+                          value={formData.groupName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
+                          placeholder="e.g., Strategy, Innovation & Growth"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="group-description">Group Description</Label>
+                        <Textarea
+                          id="group-description"
+                          value={formData.groupDescription}
+                          onChange={(e) => setFormData(prev => ({ ...prev, groupDescription: e.target.value }))}
+                          placeholder="Describe the domain group"
+                          rows={2}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Category Section */}
-                <div className="p-4 border rounded-lg bg-green-50 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <ChevronRight className="w-4 h-4" />
-                    <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                    <h4 className="font-medium">Category (Optional)</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="category-name">Category Name</Label>
-                      <Input
-                        id="category-name"
-                        value={formData.categoryName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, categoryName: e.target.value }))}
-                        placeholder="e.g., Strategic Vision & Business Planning"
-                      />
+                  {/* Category Section */}
+                  <div className="p-4 border rounded-lg bg-green-50 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4" />
+                      <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                      <h4 className="font-medium">Category (Optional)</h4>
                     </div>
-                    <div>
-                      <Label htmlFor="category-description">Category Description</Label>
-                      <Textarea
-                        id="category-description"
-                        value={formData.categoryDescription}
-                        onChange={(e) => setFormData(prev => ({ ...prev, categoryDescription: e.target.value }))}
-                        placeholder="Describe the category"
-                        rows={2}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="category-name">Category Name</Label>
+                        <Input
+                          id="category-name"
+                          value={formData.categoryName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, categoryName: e.target.value }))}
+                          placeholder="e.g., Strategic Vision & Business Planning"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="category-description">Category Description</Label>
+                        <Textarea
+                          id="category-description"
+                          value={formData.categoryDescription}
+                          onChange={(e) => setFormData(prev => ({ ...prev, categoryDescription: e.target.value }))}
+                          placeholder="Describe the category"
+                          rows={2}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Sub-Category Section */}
-                <div className="p-4 border rounded-lg bg-purple-50 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <ChevronRight className="w-4 h-4" />
-                    <ChevronRight className="w-4 h-4" />
-                    <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
-                    <h4 className="font-medium">Sub-Category (Optional)</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="subcategory-name">Sub-Category Name</Label>
-                      <Input
-                        id="subcategory-name"
-                        value={formData.subCategoryName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, subCategoryName: e.target.value }))}
-                        placeholder="e.g., Clinical & Scientific Mission Alignment"
-                      />
+                  {/* Sub-Category Section */}
+                  <div className="p-4 border rounded-lg bg-purple-50 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4" />
+                      <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                      <h4 className="font-medium">Sub-Category (Optional)</h4>
                     </div>
-                    <div>
-                      <Label htmlFor="subcategory-description">Sub-Category Description</Label>
-                      <Textarea
-                        id="subcategory-description"
-                        value={formData.subCategoryDescription}
-                        onChange={(e) => setFormData(prev => ({ ...prev, subCategoryDescription: e.target.value }))}
-                        placeholder="Describe the sub-category"
-                        rows={2}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="subcategory-name">Sub-Category Name</Label>
+                        <Input
+                          id="subcategory-name"
+                          value={formData.subCategoryName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, subCategoryName: e.target.value }))}
+                          placeholder="e.g., Clinical & Scientific Mission Alignment"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subcategory-description">Sub-Category Description</Label>
+                        <Textarea
+                          id="subcategory-description"
+                          value={formData.subCategoryDescription}
+                          onChange={(e) => setFormData(prev => ({ ...prev, subCategoryDescription: e.target.value }))}
+                          placeholder="Describe the sub-category"
+                          rows={2}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-4">
-                  <Button 
-                    onClick={handleCompleteAdd}
-                    className="flex items-center gap-1"
-                  >
-                    <Save className="w-4 h-4" />
-                    Create Hierarchy
-                  </Button>
-                  <Button onClick={resetForm} variant="outline">
-                    <X className="w-4 h-4" />
-                    Clear Form
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      onClick={handleCompleteAdd}
+                      className="flex items-center gap-1"
+                    >
+                      <Save className="w-4 h-4" />
+                      Create Hierarchy
+                    </Button>
+                    <Button onClick={resetForm} variant="outline">
+                      <X className="w-4 h-4" />
+                      Clear Form
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </>
       )}
