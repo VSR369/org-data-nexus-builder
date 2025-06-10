@@ -8,7 +8,7 @@ import { ArrowLeft, Database } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const MasterDataPortal = () => {
-  const [activeSection, setActiveSection] = useState('master-data-structure');
+  const [activeSection, setActiveSection] = useState('domain-groups');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleSignInComplete = () => {

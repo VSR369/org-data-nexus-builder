@@ -65,11 +65,6 @@ const organizationMenuItems = [
 
 const challengeMenuItems = [
   {
-    id: 'master-data-structure',
-    title: 'Master Data Structure',
-    icon: Database,
-  },
-  {
     id: 'domain-groups',
     title: 'Domain Groups',
     icon: Database,
