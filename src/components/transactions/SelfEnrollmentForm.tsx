@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import EnrollmentTabs from './enrollment/EnrollmentTabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicInformationTab from './enrollment/BasicInformationTab';
+import CompetencyEvaluationTab from './enrollment/CompetencyEvaluationTab';
 import EnrollmentActions from './enrollment/EnrollmentActions';
 import { useFormState } from './enrollment/hooks/useFormState';
 import { useEnrollmentSubmission } from './enrollment/hooks/useEnrollmentSubmission';
@@ -99,18 +101,35 @@ const SelfEnrollmentForm = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            <BasicInformationTab
-              selectedIndustrySegments={selectedIndustrySegments}
-              onAddIndustrySegment={handleAddIndustrySegment}
-              onRemoveIndustrySegment={handleRemoveIndustrySegment}
-              providerType={providerType}
-              onProviderTypeChange={handleProviderTypeChange}
-              formData={formData}
-              onFormDataUpdate={handleFormDataUpdate}
-              invalidFields={invalidFields}
-            />
-            
+          <Tabs defaultValue="basic-information" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic-information">Basic Information</TabsTrigger>
+              <TabsTrigger value="competency-evaluation">Competency Evaluation</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic-information" className="mt-6">
+              <BasicInformationTab
+                selectedIndustrySegments={selectedIndustrySegments}
+                onAddIndustrySegment={handleAddIndustrySegment}
+                onRemoveIndustrySegment={handleRemoveIndustrySegment}
+                providerType={providerType}
+                onProviderTypeChange={handleProviderTypeChange}
+                formData={formData}
+                onFormDataUpdate={handleFormDataUpdate}
+                invalidFields={invalidFields}
+              />
+            </TabsContent>
+
+            <TabsContent value="competency-evaluation" className="mt-6">
+              <CompetencyEvaluationTab
+                selectedIndustrySegments={selectedIndustrySegments}
+                formData={formData}
+                onFormDataUpdate={handleFormDataUpdate}
+              />
+            </TabsContent>
+          </Tabs>
+          
+          <div className="mt-6">
             <EnrollmentActions
               onSubmitEnrollment={isSubmitted ? handleResubmit : handleSubmitEnrollment}
               onSaveDraft={saveDraft}
