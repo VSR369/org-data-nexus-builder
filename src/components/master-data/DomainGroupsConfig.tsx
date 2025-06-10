@@ -14,16 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { DataManager } from '@/utils/dataManager';
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
 
-// Industry Segment interface
-interface IndustrySegment {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
 // Default data
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -46,7 +36,7 @@ const industrySegmentDataManager = new DataManager({
 
 const DomainGroupsConfig: React.FC = () => {
   const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
-  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -73,15 +63,9 @@ const DomainGroupsConfig: React.FC = () => {
     
     setData(loadedData);
     
-    // Handle industry segments properly - they should be objects with id, name, code
-    const validSegments: IndustrySegment[] = Array.isArray(loadedSegments) 
-      ? loadedSegments.filter(segment => 
-          segment && 
-          typeof segment === 'object' && 
-          segment.id && 
-          segment.name && 
-          segment.isActive
-        )
+    // Handle industry segments - they are stored as strings
+    const validSegments: string[] = Array.isArray(loadedSegments) 
+      ? loadedSegments.filter(segment => segment && typeof segment === 'string')
       : [];
     
     console.log('✅ Valid industry segments after filtering:', validSegments);
@@ -90,8 +74,7 @@ const DomainGroupsConfig: React.FC = () => {
   
   // Helper function to get industry segment name
   const getIndustrySegmentName = (segmentId: string): string => {
-    const segment = industrySegments.find(s => s.id === segmentId);
-    return segment ? segment.name : 'Unknown Segment';
+    return segmentId || 'Unknown Segment';
   };
 
   // Handle form submission
@@ -233,9 +216,9 @@ const DomainGroupsConfig: React.FC = () => {
                   <SelectValue placeholder="Select Industry Segment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {industrySegments.map((segment) => (
-                    <SelectItem key={segment.id} value={segment.id}>
-                      {segment.name} ({segment.code})
+                  {industrySegments.map((segment, index) => (
+                    <SelectItem key={index} value={segment}>
+                      {segment}
                     </SelectItem>
                   ))}
                 </SelectContent>
