@@ -183,6 +183,8 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
           <BankingDetailsSection
             formData={formData}
             updateFormData={onFormDataUpdate}
+            providerType={providerType}
+            invalidFields={invalidFields}
           />
         </TabsContent>
 
