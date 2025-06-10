@@ -5,6 +5,8 @@ export interface FormData {
   orgType: string;
   orgCountry: string;
   regAddress: string;
+  departmentCategory: string;
+  departmentSubCategory: string;
   
   // Provider details (required)
   firstName: string;

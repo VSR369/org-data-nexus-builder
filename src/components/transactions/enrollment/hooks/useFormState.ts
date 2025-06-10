@@ -17,6 +17,8 @@ export const useFormState = () => {
     orgType: '',
     orgCountry: '',
     regAddress: '',
+    departmentCategory: '',
+    departmentSubCategory: '',
     
     // Provider details (required)
     firstName: '',

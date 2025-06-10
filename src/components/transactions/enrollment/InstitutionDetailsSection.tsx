@@ -11,10 +11,65 @@ interface InstitutionDetailsSectionProps {
   updateFormData: (field: string, value: string) => void;
 }
 
+// Department master data - this should ideally come from a centralized location
+const departmentData = {
+  categories: [
+    'Core Business Functions',
+    'Corporate Support Functions',
+    'Technology & Digital Functions',
+    'Industry-Specific or Specialized Departments'
+  ],
+  subcategories: {
+    'Core Business Functions': [
+      'Strategy & Planning',
+      'Sales & Business Development',
+      'Marketing & Communications',
+      'Product Management',
+      'Operations / Service Delivery',
+      'Customer Support / Success',
+      'Research & Development (R&D)',
+      'Supply Chain & Procurement',
+      'Project / Program Management Office (PMO)'
+    ],
+    'Corporate Support Functions': [
+      'Finance & Accounting',
+      'Human Resources (HR)',
+      'Legal & Compliance',
+      'Administration & Facilities Management',
+      'Internal Audit & Risk Management'
+    ],
+    'Technology & Digital Functions': [
+      'Information Technology (IT)',
+      'Enterprise Architecture',
+      'Data & Analytics / Business Intelligence',
+      'Cybersecurity & Information Security',
+      'Digital Transformation Office / Innovation Lab',
+      'DevOps / Infrastructure & Cloud Services'
+    ],
+    'Industry-Specific or Specialized Departments': [
+      'Quality Assurance / Regulatory Affairs (e.g., Pharma, Manufacturing)',
+      'Clinical Affairs (e.g., Healthcare, MedTech)',
+      'Merchandising & Category Management (Retail)',
+      'Content / Editorial / Creative (Media & EdTech)',
+      'Corporate Social Responsibility (CSR) / ESG'
+    ]
+  }
+};
+
 const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   formData,
   updateFormData
 }) => {
+  const availableSubCategories = formData.departmentCategory 
+    ? departmentData.subcategories[formData.departmentCategory as keyof typeof departmentData.subcategories] || []
+    : [];
+
+  const handleDepartmentCategoryChange = (value: string) => {
+    updateFormData('departmentCategory', value);
+    // Clear subcategory when category changes
+    updateFormData('departmentSubCategory', '');
+  };
+
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
       <h4 className="font-medium">Institution Details</h4>
@@ -67,6 +122,40 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
             value={formData.website}
             onChange={(e) => updateFormData('website', e.target.value)}
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="department-category">Department Category</Label>
+          <Select value={formData.departmentCategory} onValueChange={handleDepartmentCategoryChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select department category" />
+            </SelectTrigger>
+            <SelectContent>
+              {departmentData.categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="department-subcategory">Department Sub Category</Label>
+          <Select 
+            value={formData.departmentSubCategory} 
+            onValueChange={(value) => updateFormData('departmentSubCategory', value)}
+            disabled={!formData.departmentCategory}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select department sub category" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableSubCategories.map((subCategory) => (
+                <SelectItem key={subCategory} value={subCategory}>
+                  {subCategory}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="reg-address">Registered Address *</Label>
