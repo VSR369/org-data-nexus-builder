@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Trash2, RefreshCw, Info } from 'lucide-react';
+import { Trash2, RefreshCw, Info, Database } from 'lucide-react';
+import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 
 const GlobalCacheManagerComponent = () => {
   const [message, setMessage] = useState<string | null>(null);
@@ -33,6 +34,36 @@ const GlobalCacheManagerComponent = () => {
     showMessage(`Cleared ${masterDataKeys.length} cache entries`);
   };
 
+  const clearDomainGroupsOnly = () => {
+    // Clear only domain groups data
+    const keysToRemove = [
+      'master_data_domain_groups',
+      'master_data_domain_groups_version',
+      'master_data_domain_groups_initialized'
+    ];
+
+    let clearedCount = 0;
+    keysToRemove.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+        clearedCount++;
+      }
+    });
+
+    showMessage(`Cleared ${clearedCount} domain groups cache entries`);
+  };
+
+  const resetDomainGroupsToDefault = () => {
+    // Force reset domain groups to default empty state
+    domainGroupsDataManager.saveData({
+      domainGroups: [],
+      categories: [],
+      subCategories: []
+    });
+    
+    showMessage('Domain groups reset to default empty state');
+  };
+
   const getCacheInfo = () => {
     const keys = Object.keys(localStorage);
     const masterDataKeys = keys.filter(key => 
@@ -41,10 +72,26 @@ const GlobalCacheManagerComponent = () => {
       key.includes('Cache')
     );
     
+    const domainGroupsData = localStorage.getItem('master_data_domain_groups');
+    let domainGroupsInfo = null;
+    if (domainGroupsData) {
+      try {
+        const parsed = JSON.parse(domainGroupsData);
+        domainGroupsInfo = {
+          domainGroups: parsed.domainGroups?.length || 0,
+          categories: parsed.categories?.length || 0,
+          subCategories: parsed.subCategories?.length || 0
+        };
+      } catch (e) {
+        domainGroupsInfo = { error: 'Failed to parse' };
+      }
+    }
+    
     return {
       totalKeys: keys.length,
       masterDataKeys: masterDataKeys.length,
-      keys: masterDataKeys
+      keys: masterDataKeys,
+      domainGroupsInfo
     };
   };
 
@@ -87,6 +134,24 @@ const GlobalCacheManagerComponent = () => {
             </div>
           </div>
 
+          {cacheInfo.domainGroupsInfo && (
+            <div className="p-4 bg-blue-50 rounded-lg border">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Domain Groups Data
+              </h4>
+              {cacheInfo.domainGroupsInfo.error ? (
+                <p className="text-red-600 text-sm">Error parsing domain groups data</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div>Domain Groups: {cacheInfo.domainGroupsInfo.domainGroups}</div>
+                  <div>Categories: {cacheInfo.domainGroupsInfo.categories}</div>
+                  <div>Sub-Categories: {cacheInfo.domainGroupsInfo.subCategories}</div>
+                </div>
+              )}
+            </div>
+          )}
+
           {cacheInfo.keys.length > 0 && (
             <div>
               <h4 className="font-medium mb-2">Cached Master Data:</h4>
@@ -125,21 +190,41 @@ const GlobalCacheManagerComponent = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
-            onClick={clearAllCache}
-            variant="destructive"
-            className="w-full flex items-center gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Clear All Master Data Cache
-          </Button>
+          <div className="grid gap-3">
+            <Button 
+              onClick={clearDomainGroupsOnly}
+              variant="outline"
+              className="w-full flex items-center gap-2"
+            >
+              <Database className="h-4 w-4" />
+              Clear Domain Groups Cache Only
+            </Button>
+            
+            <Button 
+              onClick={resetDomainGroupsToDefault}
+              variant="outline"
+              className="w-full flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reset Domain Groups to Empty State
+            </Button>
+            
+            <Button 
+              onClick={clearAllCache}
+              variant="destructive"
+              className="w-full flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear All Master Data Cache
+            </Button>
+          </div>
           
           <div className="text-sm text-muted-foreground">
-            <p>⚠️ Clearing cache will:</p>
+            <p>⚠️ Cache operations will:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Remove all cached master data</li>
-              <li>Force reload of data from defaults on next visit</li>
-              <li>Reset any customizations to default values</li>
+              <li><strong>Domain Groups Only:</strong> Clear just domain groups data</li>
+              <li><strong>Reset to Empty:</strong> Force domain groups back to empty state</li>
+              <li><strong>Clear All:</strong> Remove all cached master data and force reload from defaults</li>
             </ul>
           </div>
         </CardContent>

@@ -9,9 +9,9 @@ const defaultDomainGroupsData: DomainGroupsData = {
   subCategories: []
 };
 
-// Data manager
+// Data manager with stable version to prevent auto-clearing
 export const domainGroupsDataManager = new DataManager({
   key: 'master_data_domain_groups',
   defaultData: defaultDomainGroupsData,
-  version: 1
+  version: 2 // Incremented to establish stable version
 });
