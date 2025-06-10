@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { FormData } from '../types';
 
@@ -16,7 +15,7 @@ export const useEnrollmentSubmission = (
   ) => { isValid: boolean; missingFields: string[] },
   markAsSubmitted: () => void,
   resetSubmissionStatus: () => void,
-  clearDraft: () => void
+  onSuccessfulSubmission: () => void
 ) => {
   const { toast } = useToast();
 
@@ -42,22 +41,33 @@ export const useEnrollmentSubmission = (
       return;
     }
 
-    // Mark as submitted first
+    // Mark as submitted - data should persist for future edits
     markAsSubmitted();
     
     toast({
       title: "Success",
-      description: "Solution Provider enrollment submitted successfully. All data has been saved and will persist across sessions.",
+      description: "Solution Provider enrollment submitted successfully. All data has been saved and will persist across sessions. You can edit and resubmit anytime.",
     });
   };
 
   const handleResubmit = () => {
-    // Reset submission status to allow editing and resubmission
-    resetSubmissionStatus();
+    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments, hasCompetencyRatings);
+    
+    if (!validation.isValid) {
+      toast({
+        title: "Required Fields Missing",
+        description: `Please complete the following: ${validation.missingFields.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Keep submission status as true since this is a resubmission
+    markAsSubmitted();
     
     toast({
-      title: "Ready for Edit",
-      description: "You can now modify your enrollment and submit again. All existing data is preserved.",
+      title: "Success",
+      description: "Solution Provider enrollment updated and resubmitted successfully. All data remains preserved.",
     });
   };
 

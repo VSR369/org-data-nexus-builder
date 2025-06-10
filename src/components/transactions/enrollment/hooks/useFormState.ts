@@ -70,8 +70,8 @@ export const useFormState = () => {
       console.log('Restored draft data - Industry segments:', savedData.selectedIndustrySegments);
       console.log('Restored submission status:', savedData.isSubmitted);
       toast({
-        title: "Draft Restored",
-        description: "Your previously saved enrollment data has been restored, including all industry segments and competency ratings.",
+        title: "Data Restored",
+        description: "Your enrollment data has been restored, including all industry segments and competency ratings.",
       });
     }
   }, [toast]);
@@ -127,8 +127,9 @@ export const useFormState = () => {
   };
 
   const clearDraft = () => {
+    // Only clear the draft data, don't reset the entire form if it's been submitted
+    // This function should be used carefully - mainly for complete reset scenarios
     localStorage.removeItem(STORAGE_KEY);
-    setIsSubmitted(false);
     console.log('Draft cleared from storage');
   };
 

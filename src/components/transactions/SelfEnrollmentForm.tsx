@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EnrollmentTabs from './enrollment/EnrollmentTabs';
@@ -56,9 +55,7 @@ const SelfEnrollmentForm = () => {
     markAsSubmitted,
     resetSubmissionStatus,
     () => {
-      clearDraft();
-      clearCompetencyData();
-      clearAllValidation();
+      console.log('Enrollment submitted successfully - data preserved for future edits');
     }
   );
 
@@ -110,7 +107,7 @@ const SelfEnrollmentForm = () => {
             Register as a Solution Provider to showcase your expertise and connect with organizations
             {isSubmitted && (
               <span className="block mt-2 text-green-600 font-medium">
-                ✓ Successfully submitted! Your data is saved and will persist across sessions. You can still modify and resubmit if needed.
+                ✓ Successfully submitted! Your data is preserved and you can edit and resubmit anytime.
               </span>
             )}
             {!isSubmitted && selectedIndustrySegments.length > 0 && hasCompetencyRatings() && (
