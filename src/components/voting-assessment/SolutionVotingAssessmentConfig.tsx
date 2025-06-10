@@ -206,7 +206,7 @@ const SolutionVotingAssessmentConfig = () => {
           <Tabs defaultValue="voting-scale" className="space-y-6">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="voting-scale">Voting Scale</TabsTrigger>
-              <TabsTrigger value="parameters">Parameters</TabsTrigger>
+              <TabsTrigger value="assessment">Assessment</TabsTrigger>
               <TabsTrigger value="weights">Weights</TabsTrigger>
               <TabsTrigger value="thresholds">Thresholds</TabsTrigger>
               <TabsTrigger value="ai-config">AI Config</TabsTrigger>
@@ -232,7 +232,7 @@ const SolutionVotingAssessmentConfig = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="parameters">
+            <TabsContent value="assessment">
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
