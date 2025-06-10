@@ -3,7 +3,23 @@ import { DataManager } from '@/utils/dataManager';
 import { IndustrySegmentData } from '@/types/industrySegments';
 
 const defaultIndustrySegmentData: IndustrySegmentData = {
-  industrySegments: []
+  industrySegments: [
+    {
+      id: '1',
+      industrySegment: 'Life Sciences',
+      description: ''
+    },
+    {
+      id: '2', 
+      industrySegment: 'Logistics & Supply Chain',
+      description: ''
+    },
+    {
+      id: '3',
+      industrySegment: 'Manufacturing (Smart, Process, Discrete)',
+      description: ''
+    }
+  ]
 };
 
 class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
@@ -32,5 +48,5 @@ class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
 export const industrySegmentDataManager = new IndustrySegmentDataManager({
   key: 'master_data_industry_segments',
   defaultData: defaultIndustrySegmentData,
-  version: 2 // Increment version to force data reset
+  version: 3 // Increment version to force data reset with new segments
 });
