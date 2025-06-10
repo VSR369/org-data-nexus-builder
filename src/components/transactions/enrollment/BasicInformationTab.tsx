@@ -1,7 +1,13 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import IndustrySegmentSection from './IndustrySegmentSection';
 import InstitutionDetailsSection from './InstitutionDetailsSection';
@@ -9,6 +15,12 @@ import ProviderDetailsSection from './ProviderDetailsSection';
 import BankingDetailsSection from './BankingDetailsSection';
 import AdditionalInfoSection from './AdditionalInfoSection';
 import { FormData } from './types';
+
+interface IndustrySegment {
+  id: string;
+  industrySegment: string;
+  description: string;
+}
 
 interface BasicInformationTabProps {
   selectedIndustrySegments: string[];
@@ -32,6 +44,36 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
   invalidFields = new Set()
 }) => {
   const { toast } = useToast();
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+
+  // Load industry segments from master data
+  useEffect(() => {
+    const loadIndustrySegments = () => {
+      try {
+        const savedData = localStorage.getItem('master_data_industry_segments');
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          
+          // Handle the correct data structure with industrySegments property
+          if (data && data.industrySegments && Array.isArray(data.industrySegments)) {
+            console.log('Loaded industry segments from master data:', data.industrySegments);
+            setIndustrySegments(data.industrySegments);
+          } else {
+            console.log('Invalid industry segments data structure');
+            setIndustrySegments([]);
+          }
+        } else {
+          console.log('No industry segments found in master data');
+          setIndustrySegments([]);
+        }
+      } catch (error) {
+        console.error('Error loading industry segments:', error);
+        setIndustrySegments([]);
+      }
+    };
+
+    loadIndustrySegments();
+  }, []);
 
   const handleProviderRoleChange = (role: string, checked: boolean) => {
     const currentRoles = formData.providerRoles || [];
@@ -70,6 +112,21 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
       });
     }
   };
+
+  const handleAddIndustrySegment = (segmentId: string) => {
+    if (!selectedIndustrySegments.includes(segmentId)) {
+      onAddIndustrySegment(segmentId);
+    }
+  };
+
+  const getIndustrySegmentName = (segmentId: string) => {
+    const segment = industrySegments.find(s => s.id === segmentId);
+    return segment ? segment.industrySegment : segmentId;
+  };
+
+  const availableSegments = industrySegments.filter(
+    segment => !selectedIndustrySegments.includes(segment.id)
+  );
 
   const currentRoles = formData.providerRoles || [];
   const isBothSelected = currentRoles.includes('both') || 
@@ -136,6 +193,70 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
           <p className="text-sm text-destructive">Please select at least one provider role</p>
         )}
       </div>
+
+      {/* Industry Segment Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Industry Segments</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {industrySegments.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground text-sm">
+                No industry segments found. Please configure industry segments in Master Data first.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <Label htmlFor="segment-select">Select Industry Segment</Label>
+                <Select onValueChange={handleAddIndustrySegment}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select industry segment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSegments.map((segment) => (
+                      <SelectItem key={segment.id} value={segment.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{segment.industrySegment}</span>
+                          {segment.description && (
+                            <span className="text-xs text-muted-foreground">{segment.description}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedIndustrySegments.length > 0 && (
+                <div>
+                  <Label>Selected Industry Segments:</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedIndustrySegments.map((segmentId) => (
+                      <Badge key={segmentId} variant="secondary" className="flex items-center gap-1">
+                        {getIndustrySegmentName(segmentId)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={() => onRemoveIndustrySegment(segmentId)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          
+          {invalidFields.has('industrySegments') && (
+            <p className="text-sm text-destructive">Please select at least one industry segment</p>
+          )}
+        </CardContent>
+      </Card>
 
       <IndustrySegmentSection
         selectedIndustrySegments={selectedIndustrySegments}
