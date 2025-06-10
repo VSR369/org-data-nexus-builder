@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,9 +10,61 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Factory, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { IndustrySegment } from './domain-groups/types';
-import { mockIndustrySegments } from './domain-groups/data/mockData';
 import { useToast } from "@/hooks/use-toast";
+
+// Local type definition for IndustrySegment
+interface IndustrySegment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Local mock data for industry segments
+const mockIndustrySegments: IndustrySegment[] = [
+  {
+    id: '1',
+    name: 'Banking & Financial Services',
+    code: 'BFSI',
+    description: 'Banking, financial services, and insurance sector',
+    isActive: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Healthcare & Life Sciences',
+    code: 'HLS',
+    description: 'Healthcare providers, pharmaceuticals, and life sciences',
+    isActive: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    name: 'Information Technology',
+    code: 'IT',
+    description: 'Software, hardware, and IT services',
+    isActive: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    name: 'Retail & Consumer Goods',
+    code: 'RCG',
+    description: 'Retail, e-commerce, and consumer products',
+    isActive: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '5',
+    name: 'Manufacturing',
+    code: 'MFG',
+    description: 'Manufacturing and industrial sector',
+    isActive: false,
+    createdAt: new Date().toISOString()
+  }
+];
 
 const IndustrySegmentConfig: React.FC = () => {
   const [segments, setSegments] = useState<IndustrySegment[]>(mockIndustrySegments);
