@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
-import { initializeDomainGroupsData } from '../utils/dataInitializer';
+import { initializeDomainGroupsData, refreshSegmentData, getCachedDomainGroupsForSegment } from '../utils/dataInitializer';
+import { clearAllCacheData } from '../data/industryDataRegistry';
 import { useDomainGroupOperations } from './useDomainGroupOperations';
 
 export const useDomainGroupsData = () => {
@@ -29,7 +30,7 @@ export const useDomainGroupsData = () => {
   useEffect(() => {
     const loadData = () => {
       try {
-        console.log('Loading complete domain groups data...');
+        console.log('Loading complete domain groups data with new registry system...');
         
         // Get industry segments from localStorage or use defaults
         let segments: IndustrySegment[] = [];
@@ -88,24 +89,34 @@ export const useDomainGroupsData = () => {
         setIndustrySegments(segments);
         console.log('Loaded industry segments:', segments);
 
-        // Force initialize with fresh Life Sciences data
-        console.log('Force initializing fresh domain groups data...');
+        // Force initialize with fresh data using new registry system
+        console.log('Force initializing fresh domain groups data with registry...');
         const initializedData = initializeDomainGroupsData(segments);
-        console.log('Fresh initialized domain groups data:', initializedData);
+        console.log('Fresh initialized domain groups data from registry:', initializedData);
         
         setAllDomainGroups(initializedData);
 
-        // Set default active segment to Life Sciences
-        const lifeSciencesSegment = segments.find(segment => 
-          segment.name.toLowerCase().includes('healthcare') || 
-          segment.name.toLowerCase().includes('life sciences')
+        // Set default active segment to Manufacturing if available
+        const manufacturingSegment = segments.find(segment => 
+          segment.name.toLowerCase().includes('manufacturing')
         );
         
-        if (lifeSciencesSegment && !activeIndustrySegment) {
-          setActiveIndustrySegment(lifeSciencesSegment.id);
-          console.log('Set active segment to Life Sciences:', lifeSciencesSegment.id);
-        } else if (segments.length > 0 && !activeIndustrySegment) {
-          setActiveIndustrySegment(segments[0].id);
+        if (manufacturingSegment && !activeIndustrySegment) {
+          setActiveIndustrySegment(manufacturingSegment.id);
+          console.log('Set active segment to Manufacturing:', manufacturingSegment.id);
+        } else {
+          // Fallback to Life Sciences or first segment
+          const lifeSciencesSegment = segments.find(segment => 
+            segment.name.toLowerCase().includes('healthcare') || 
+            segment.name.toLowerCase().includes('life sciences')
+          );
+          
+          if (lifeSciencesSegment && !activeIndustrySegment) {
+            setActiveIndustrySegment(lifeSciencesSegment.id);
+            console.log('Set active segment to Life Sciences:', lifeSciencesSegment.id);
+          } else if (segments.length > 0 && !activeIndustrySegment) {
+            setActiveIndustrySegment(segments[0].id);
+          }
         }
 
         setIsLoading(false);
@@ -132,6 +143,22 @@ export const useDomainGroupsData = () => {
       setActiveCategory('');
     }
   }, [activeIndustrySegment, allDomainGroups]);
+
+  // Function to manually refresh data for current segment
+  const refreshCurrentSegmentData = () => {
+    if (activeIndustrySegment) {
+      const segment = industrySegments.find(s => s.id === activeIndustrySegment);
+      if (segment) {
+        console.log('Manually refreshing data for current segment:', segment.name);
+        const refreshedData = refreshSegmentData(segment);
+        
+        // Update allDomainGroups with refreshed data
+        const updatedAllGroups = allDomainGroups.filter(g => g.industrySegmentId !== activeIndustrySegment);
+        updatedAllGroups.push(...refreshedData);
+        setAllDomainGroups(updatedAllGroups);
+      }
+    }
+  };
 
   // Save data when it changes (but not on initial load to avoid overwriting fresh data)
   useEffect(() => {
@@ -176,6 +203,7 @@ export const useDomainGroupsData = () => {
     deleteCategory,
     addSubCategory,
     updateSubCategory,
-    deleteSubCategory
+    deleteSubCategory,
+    refreshCurrentSegmentData
   };
 };
