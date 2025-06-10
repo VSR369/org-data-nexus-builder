@@ -1,3 +1,4 @@
+
 import { DomainGroup, IndustrySegment } from '../types';
 import { defaultDomainGroupsData } from '../data/defaultDomainGroups';
 import { lifeSciencesDomainGroups } from '../data/lifeSciencesDomainGroups';
@@ -25,6 +26,13 @@ const defaultSegments = [
   'Public Sector & e-Governance'
 ];
 
+const ensureRequiredProperties = (group: any, industrySegment: string) => ({
+  ...group,
+  industrySegment,
+  isActive: group.isActive ?? true,
+  createdAt: group.createdAt ?? new Date().toISOString()
+});
+
 export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainGroup[] => {
   const allData: DomainGroup[] = [];
   
@@ -35,27 +43,18 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
     
     // Map industry segments to their specific data
     if (segment.name === 'Healthcare & Life Sciences' || segment.name.toLowerCase().includes('healthcare')) {
-      sourceData = [...lifeSciencesDomainGroups, ...healthcareDomainGroups.map(group => ({
-        ...group,
-        industrySegment: segment.name
-      }))];
+      sourceData = [
+        ...lifeSciencesDomainGroups,
+        ...healthcareDomainGroups.map(group => ensureRequiredProperties(group, segment.name))
+      ];
     } else if (segment.name === 'Manufacturing (Smart / Discrete / Process)' || segment.name.toLowerCase().includes('manufacturing')) {
       sourceData = manufacturingDomainGroups;
     } else if (segment.name === 'Banking, Financial Services & Insurance (BFSI)' || segment.name.toLowerCase().includes('bfsi')) {
-      sourceData = bfsiDomainGroups.map(group => ({
-        ...group,
-        industrySegment: segment.name
-      }));
+      sourceData = bfsiDomainGroups.map(group => ensureRequiredProperties(group, segment.name));
     } else if (segment.name === 'Retail & E-Commerce' || segment.name.toLowerCase().includes('retail')) {
-      sourceData = retailDomainGroups.map(group => ({
-        ...group,
-        industrySegment: segment.name
-      }));
+      sourceData = retailDomainGroups.map(group => ensureRequiredProperties(group, segment.name));
     } else if (segment.name === 'Information Technology & Software Services' || segment.name.toLowerCase().includes('information technology')) {
-      sourceData = itDomainGroups.map(group => ({
-        ...group,
-        industrySegment: segment.name
-      }));
+      sourceData = itDomainGroups.map(group => ensureRequiredProperties(group, segment.name));
     }
     
     console.log('Using data source with', sourceData.length, 'groups');
