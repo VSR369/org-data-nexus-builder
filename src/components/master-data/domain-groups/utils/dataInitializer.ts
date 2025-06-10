@@ -1,12 +1,11 @@
-
 import { DomainGroup, IndustrySegment } from '../types';
 import { defaultDomainGroupsData } from '../data/defaultDomainGroups';
 import { lifeSciencesDomainGroups } from '../data/lifeSciencesDomainGroups';
 import { manufacturingDomainGroups } from '../data/manufacturingDomainGroups';
-import { bfsiDomainGroups } from '../../../../transactions/competency/data/bfsiDomainGroups';
-import { retailDomainGroups } from '../../../../transactions/competency/data/retailDomainGroups';
-import { itDomainGroups } from '../../../../transactions/competency/data/itDomainGroups';
-import { healthcareDomainGroups } from '../../../../transactions/competency/data/healthcareDomainGroups';
+import { bfsiDomainGroups } from '../../../transactions/competency/data/bfsiDomainGroups';
+import { retailDomainGroups } from '../../../transactions/competency/data/retailDomainGroups';
+import { itDomainGroups } from '../../../transactions/competency/data/itDomainGroups';
+import { healthcareDomainGroups } from '../../../transactions/competency/data/healthcareDomainGroups';
 
 const defaultSegments = [
   'Banking, Financial Services & Insurance (BFSI)',
