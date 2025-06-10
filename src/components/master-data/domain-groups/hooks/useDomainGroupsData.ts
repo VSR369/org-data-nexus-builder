@@ -33,20 +33,63 @@ export const useDomainGroupsData = () => {
       try {
         console.log('Loading domain groups data...');
         
-        // Load industry segments from master data
-        const savedIndustrySegments = localStorage.getItem('industrySegments');
+        // Try multiple possible keys for industry segments master data
         let segments: IndustrySegment[] = [];
         
-        if (savedIndustrySegments) {
-          segments = JSON.parse(savedIndustrySegments);
-        } else {
-          // Default segments if none exist
-          segments = [
-            { id: '1', name: 'Information Technology', code: 'IT', description: 'Technology and software services' },
-            { id: '2', name: 'Healthcare', code: 'HC', description: 'Medical and healthcare services' },
-            { id: '3', name: 'Banking & Financial Services', code: 'BFSI', description: 'Banking and financial institutions' },
-            { id: '4', name: 'Retail & E-commerce', code: 'RET', description: 'Retail and online commerce' }
+        // First try the standard master data key
+        const savedMasterSegments = localStorage.getItem('industrySegments');
+        if (savedMasterSegments) {
+          try {
+            const parsedSegments = JSON.parse(savedMasterSegments);
+            console.log('Found industry segments in master data:', parsedSegments);
+            
+            // Handle different possible formats
+            if (Array.isArray(parsedSegments)) {
+              // If it's an array of strings, convert to IndustrySegment objects
+              if (typeof parsedSegments[0] === 'string') {
+                segments = parsedSegments.map((segment, index) => ({
+                  id: (index + 1).toString(),
+                  name: segment,
+                  code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
+                  description: `Industry segment: ${segment}`
+                }));
+              } else {
+                // If it's already an array of objects, use as is
+                segments = parsedSegments;
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing industry segments:', error);
+          }
+        }
+        
+        // If no segments found, use defaults
+        if (segments.length === 0) {
+          console.log('No industry segments found in master data, using defaults');
+          const defaultSegments = [
+            'Banking, Financial Services & Insurance (BFSI)',
+            'Retail & E-Commerce',
+            'Healthcare & Life Sciences',
+            'Information Technology & Software Services',
+            'Telecommunications',
+            'Education & EdTech',
+            'Manufacturing (Smart / Discrete / Process)',
+            'Logistics & Supply Chain',
+            'Media, Entertainment & OTT',
+            'Energy & Utilities (Power, Oil & Gas, Renewables)',
+            'Automotive & Mobility',
+            'Real Estate & Smart Infrastructure',
+            'Travel, Tourism & Hospitality',
+            'Agriculture & AgriTech',
+            'Public Sector & e-Governance'
           ];
+          
+          segments = defaultSegments.map((segment, index) => ({
+            id: (index + 1).toString(),
+            name: segment,
+            code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
+            description: `Industry segment: ${segment}`
+          }));
         }
         
         setIndustrySegments(segments);
