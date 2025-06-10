@@ -68,7 +68,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
       {/* Provider Role Selection */}
       <div className="space-y-4">
         <div>
-          <Label className="text-base font-medium">Provider Role</Label>
+          <Label className="text-base font-medium">Role</Label>
           <p className="text-sm text-muted-foreground mb-3">
             Select your role(s) on the platform
           </p>

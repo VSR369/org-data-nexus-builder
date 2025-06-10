@@ -1,18 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
-import { Plus, X } from 'lucide-react';
-
-interface IndustrySegment {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-}
+import { X } from "lucide-react";
 
 interface IndustrySegmentSectionProps {
   selectedIndustrySegments: string[];
@@ -23,6 +17,19 @@ interface IndustrySegmentSectionProps {
   invalidFields?: Set<string>;
 }
 
+const industrySegments = [
+  { id: 'manufacturing', name: 'Manufacturing' },
+  { id: 'healthcare', name: 'Healthcare & Life Sciences' },
+  { id: 'financial-services', name: 'Financial Services' },
+  { id: 'retail', name: 'Retail & Consumer Goods' },
+  { id: 'technology', name: 'Technology & Software' },
+  { id: 'logistics', name: 'Logistics & Supply Chain' },
+  { id: 'energy', name: 'Energy & Utilities' },
+  { id: 'government', name: 'Government & Public Sector' },
+  { id: 'education', name: 'Education' },
+  { id: 'real-estate', name: 'Real Estate & Construction' }
+];
+
 const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   selectedIndustrySegments,
   onAddIndustrySegment,
@@ -31,48 +38,12 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   onProviderTypeChange,
   invalidFields = new Set()
 }) => {
-  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
-  const [selectedSegmentToAdd, setSelectedSegmentToAdd] = useState<string>('');
-
-  useEffect(() => {
-    // Load industry segments from shared DataManager
-    const loadIndustrySegments = () => {
-      console.log('📥 IndustrySegmentSection: Loading segments from shared DataManager...');
-      
-      const segments = industrySegmentsDataManager.loadData();
-      console.log('📋 IndustrySegmentSection: Loaded segments:', segments);
-
-      // Convert to IndustrySegment format
-      const segmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
-        id: (index + 1).toString(),
-        name: segment,
-        code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
-        description: `Industry segment: ${segment}`
-      }));
-
-      setIndustrySegments(segmentObjects);
-      console.log('✅ IndustrySegmentSection: Converted to segment objects:', segmentObjects);
-    };
-
-    loadIndustrySegments();
-
-    // Listen for industry segments updates from master data
-    const handleIndustrySegmentsUpdated = (event: CustomEvent) => {
-      console.log('🔄 IndustrySegmentSection: Received industry segments update:', event.detail);
-      loadIndustrySegments();
-    };
-
-    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated as EventListener);
-
-    return () => {
-      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated as EventListener);
-    };
-  }, []);
+  const [newSegment, setNewSegment] = React.useState('');
 
   const handleAddSegment = () => {
-    if (selectedSegmentToAdd && !selectedIndustrySegments.includes(selectedSegmentToAdd)) {
-      onAddIndustrySegment(selectedSegmentToAdd);
-      setSelectedSegmentToAdd('');
+    if (newSegment && !selectedIndustrySegments.includes(newSegment)) {
+      onAddIndustrySegment(newSegment);
+      setNewSegment('');
     }
   };
 
@@ -81,43 +52,79 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   );
 
   return (
-    <div className="space-y-6">
-      {/* Provider Type Selection - First Row */}
-      <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-        <h4 className="font-medium">Provider Type</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="provider-type">Provider Type *</Label>
-            <Select value={providerType} onValueChange={onProviderTypeChange}>
-              <SelectTrigger className={invalidFields.has('providerType') ? 'border-destructive' : ''}>
-                <SelectValue placeholder="Select provider type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="individual">Individual</SelectItem>
-                <SelectItem value="organization">Organization</SelectItem>
-              </SelectContent>
-            </Select>
-            {invalidFields.has('providerType') && (
-              <p className="text-sm text-destructive">Provider Type is required</p>
-            )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Provider Information</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Provider Type Selection */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-base font-medium">Provider Type *</Label>
+            <p className="text-sm text-muted-foreground mb-3">
+              Select whether you are registering as an individual or organization
+            </p>
           </div>
+          
+          <RadioGroup 
+            value={providerType} 
+            onValueChange={onProviderTypeChange}
+            className={invalidFields.has('providerType') ? 'border border-destructive rounded-md p-2' : ''}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="individual" id="individual" />
+              <Label htmlFor="individual" className="font-normal">Individual</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="organization" id="organization" />
+              <Label htmlFor="organization" className="font-normal">Organization</Label>
+            </div>
+          </RadioGroup>
+          
+          {invalidFields.has('providerType') && (
+            <p className="text-sm text-destructive">Please select a provider type</p>
+          )}
         </div>
-      </div>
 
-      {/* Industry Segments Selection - Second Row */}
-      <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-        <h4 className="font-medium">Industry Segments *</h4>
-        <p className="text-sm text-muted-foreground">
-          Select one or more industry segments where you provide solutions. You can add competencies for each segment.
-        </p>
+        {/* Industry Segments */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-base font-medium">Industry Segments *</Label>
+            <p className="text-sm text-muted-foreground mb-3">
+              Select the industry segments where you have expertise
+            </p>
+          </div>
 
-        {/* Add New Industry Segment */}
-        <div className="space-y-2">
-          <Label htmlFor="industry-segment">Add Industry Segment</Label>
+          {/* Selected Segments */}
+          {selectedIndustrySegments.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Selected Segments:</Label>
+              <div className="flex flex-wrap gap-2">
+                {selectedIndustrySegments.map((segmentId) => {
+                  const segment = industrySegments.find(s => s.id === segmentId);
+                  return (
+                    <Badge key={segmentId} variant="secondary" className="flex items-center gap-1">
+                      {segment?.name || segmentId}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 hover:bg-transparent"
+                        onClick={() => onRemoveIndustrySegment(segmentId)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Add New Segment */}
           <div className="flex gap-2">
-            <Select value={selectedSegmentToAdd} onValueChange={setSelectedSegmentToAdd}>
+            <Select value={newSegment} onValueChange={setNewSegment}>
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select Industry Segment to Add" />
+                <SelectValue placeholder="Select an industry segment to add" />
               </SelectTrigger>
               <SelectContent>
                 {availableSegments.map((segment) => (
@@ -127,55 +134,21 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              type="button"
-              onClick={handleAddSegment}
-              disabled={!selectedSegmentToAdd}
-              className="flex items-center gap-2"
+            <Button 
+              onClick={handleAddSegment} 
+              disabled={!newSegment}
+              variant="outline"
             >
-              <Plus className="h-4 w-4" />
               Add
             </Button>
           </div>
+
+          {invalidFields.has('industrySegment') && (
+            <p className="text-sm text-destructive">Please select at least one industry segment</p>
+          )}
         </div>
-
-        {/* Selected Industry Segments */}
-        {selectedIndustrySegments.length > 0 && (
-          <div className="space-y-2">
-            <Label>Selected Industry Segments:</Label>
-            <div className="flex flex-wrap gap-2">
-              {selectedIndustrySegments.map((segmentId) => {
-                const segment = industrySegments.find(s => s.id === segmentId);
-                return (
-                  <Badge key={segmentId} variant="secondary" className="flex items-center gap-2">
-                    {segment ? segment.name : segmentId}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => onRemoveIndustrySegment(segmentId)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {selectedIndustrySegments.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Please select at least one industry segment to continue with your enrollment.
-          </p>
-        )}
-
-        {invalidFields.has('industrySegment') && (
-          <p className="text-sm text-destructive">At least one industry segment is required</p>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
