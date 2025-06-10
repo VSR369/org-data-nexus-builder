@@ -27,6 +27,10 @@ export const validateRequiredFields = (
   // Check all required fields
   for (const field of requiredFields) {
     const value = formData[field as keyof FormData];
+    if (Array.isArray(value)) {
+      // Skip array fields in required validation (they're optional)
+      continue;
+    }
     if (!value || value.trim() === '') {
       console.log(`Missing required field: ${field}`);
       return false;

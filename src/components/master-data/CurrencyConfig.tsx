@@ -13,14 +13,15 @@ interface Currency {
   code: string;
   name: string;
   symbol: string;
+  country: string;
 }
 
 const CurrencyConfig = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([
-    { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-    { id: '2', code: 'USD', name: 'US Dollar', symbol: '$' },
-    { id: '3', code: 'EUR', name: 'Euro', symbol: '€' },
-    { id: '4', code: 'GBP', name: 'British Pound', symbol: '£' },
+    { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
+    { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States' },
+    { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
+    { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
   ]);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -30,7 +31,7 @@ const CurrencyConfig = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentCurrency.code || !currentCurrency.name || !currentCurrency.symbol) {
+    if (!currentCurrency.code || !currentCurrency.name || !currentCurrency.symbol || !currentCurrency.country) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -92,7 +93,7 @@ const CurrencyConfig = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="code">Currency Code *</Label>
                 <Input
@@ -120,6 +121,15 @@ const CurrencyConfig = () => {
                   onChange={(e) => setCurrentCurrency(prev => ({ ...prev, symbol: e.target.value }))}
                   placeholder="e.g., $"
                   maxLength={3}
+                />
+              </div>
+              <div>
+                <Label htmlFor="country">Country *</Label>
+                <Input
+                  id="country"
+                  value={currentCurrency.country || ''}
+                  onChange={(e) => setCurrentCurrency(prev => ({ ...prev, country: e.target.value }))}
+                  placeholder="e.g., United States"
                 />
               </div>
             </div>
@@ -150,7 +160,9 @@ const CurrencyConfig = () => {
                   <Badge variant="outline">{currency.code}</Badge>
                   <div>
                     <h3 className="font-medium">{currency.name}</h3>
-                    <p className="text-sm text-muted-foreground">Symbol: {currency.symbol}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Symbol: {currency.symbol} • Country: {currency.country}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
