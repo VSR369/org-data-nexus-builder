@@ -44,32 +44,41 @@ const IndustrySegmentConfig = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false); // Track if initial load is complete
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
 
   // Load segments from DataManager on component mount
   useEffect(() => {
+    console.log(`🚀 IndustrySegmentConfig: Starting initial load...`);
+    
+    // Debug current localStorage state first
+    dataManager.debugCurrentState();
+    
     const loadedSegments = dataManager.loadData();
-    console.log('Loading industry segments from DataManager:', loadedSegments);
+    console.log(`📥 IndustrySegmentConfig: Loaded segments from DataManager:`, loadedSegments);
+    console.log(`📊 Loaded segments count: ${loadedSegments.length}`);
+    
     setSegments(loadedSegments);
-    setIsLoaded(true); // Mark as loaded after setting segments
-    console.log('Industry segments loaded successfully:', loadedSegments.length, 'segments');
+    setIsInitialLoadComplete(true);
+    
+    console.log(`✅ IndustrySegmentConfig: Initial load complete, segments set to:`, loadedSegments);
   }, []);
 
-  // Save segments to DataManager only after initial load is complete
+  // Save segments to DataManager - only after initial load is complete
   useEffect(() => {
-    if (!isLoaded) {
-      console.log('Skipping save - initial load not complete yet');
-      return; // Don't save during initial load
+    if (!isInitialLoadComplete) {
+      console.log(`⏸️ IndustrySegmentConfig: Skipping save - initial load not complete yet`);
+      return;
     }
     
-    console.log('Saving industry segments to DataManager:', segments.length, 'segments');
+    console.log(`💾 IndustrySegmentConfig: Auto-saving segments (${segments.length} items):`, segments);
     dataManager.saveData(segments);
-    console.log('Industry segments saved successfully');
-  }, [segments, isLoaded]);
+    console.log(`✅ IndustrySegmentConfig: Auto-save complete`);
+  }, [segments, isInitialLoadComplete]);
 
   const handleAddSegment = () => {
     if (newSegment.trim()) {
       const updatedSegments = [...segments, newSegment.trim()];
+      console.log(`➕ Adding segment: "${newSegment.trim()}", new array:`, updatedSegments);
       setSegments(updatedSegments);
       setNewSegment('');
       setIsAdding(false);
@@ -89,6 +98,7 @@ const IndustrySegmentConfig = () => {
     if (editingValue.trim() && editingIndex !== null) {
       const updatedSegments = [...segments];
       updatedSegments[editingIndex] = editingValue.trim();
+      console.log(`✏️ Editing segment at index ${editingIndex}: "${editingValue.trim()}", new array:`, updatedSegments);
       setSegments(updatedSegments);
       setEditingIndex(null);
       setEditingValue('');
@@ -100,12 +110,14 @@ const IndustrySegmentConfig = () => {
   };
 
   const handleDeleteSegment = (index: number) => {
+    const segmentToDelete = segments[index];
     const updatedSegments = segments.filter((_, i) => i !== index);
-    console.log('Deleting segment. New array length:', updatedSegments.length);
+    console.log(`🗑️ Deleting segment "${segmentToDelete}" at index ${index}`);
+    console.log(`📊 New array length: ${updatedSegments.length}, segments:`, updatedSegments);
     setSegments(updatedSegments);
     toast({
       title: "Success",
-      description: "Industry segment deleted successfully",
+      description: `Industry segment "${segmentToDelete}" deleted successfully`,
     });
   };
 
@@ -120,6 +132,7 @@ const IndustrySegmentConfig = () => {
   };
 
   const handleResetToDefault = () => {
+    console.log(`🔄 IndustrySegmentConfig: Resetting to default data`);
     const resetData = dataManager.resetToDefault();
     setSegments(resetData);
     toast({
@@ -129,16 +142,16 @@ const IndustrySegmentConfig = () => {
   };
 
   // Show loading state until data is loaded
-  if (!isLoaded) {
+  if (!isInitialLoadComplete) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Industry Segments</CardTitle>
-          <CardDescription>Loading...</CardDescription>
+          <CardDescription>Loading industry segments...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading industry segments...</p>
+            <p className="text-muted-foreground">Loading industry segments from storage...</p>
           </div>
         </CardContent>
       </Card>
@@ -150,7 +163,7 @@ const IndustrySegmentConfig = () => {
       <CardHeader>
         <CardTitle>Industry Segments</CardTitle>
         <CardDescription>
-          Configure industry segments for organization classification
+          Configure industry segments for organization classification ({segments.length} segments)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -173,6 +186,15 @@ const IndustrySegmentConfig = () => {
               Add Segment
             </Button>
           </div>
+        </div>
+
+        {/* Debug info - remove this after testing */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+          <p><strong>Debug Info:</strong></p>
+          <p>• Segments count: {segments.length}</p>
+          <p>• Initial load complete: {isInitialLoadComplete ? 'Yes' : 'No'}</p>
+          <p>• First segment: {segments[0] || 'None'}</p>
+          <p>• Last segment: {segments[segments.length - 1] || 'None'}</p>
         </div>
 
         {isAdding && (
