@@ -1,117 +1,89 @@
 
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment } from '../types';
-import { initializeDataForAllSegments } from '../utils/dataInitializer';
-import { useDomainGroupOperations } from './useDomainGroupOperations';
-
-const defaultSegments = [
-  'Banking, Financial Services & Insurance (BFSI)',
-  'Retail & E-Commerce',
-  'Healthcare & Life Sciences',
-  'Information Technology & Software Services',
-  'Telecommunications',
-  'Education & EdTech',
-  'Manufacturing (Smart / Discrete / Process)',
-  'Logistics & Supply Chain',
-  'Media, Entertainment & OTT',
-  'Energy & Utilities (Power, Oil & Gas, Renewables)',
-  'Automotive & Mobility',
-  'Real Estate & Smart Infrastructure',
-  'Travel, Tourism & Hospitality',
-  'Agriculture & AgriTech',
-  'Public Sector & e-Governance'
-];
+import { initializeDomainGroupsData } from '../utils/dataInitializer';
 
 export const useDomainGroupsData = () => {
-  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
-  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
-  const [selectedDomainGroup, setSelectedDomainGroup] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeIndustrySegment, setActiveIndustrySegment] = useState<string>('');
+  const [activeDomainGroup, setActiveDomainGroup] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [activeSubCategory, setActiveSubCategory] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'industry' | 'domain' | 'category' | 'subcategory'>('industry');
 
-  // Load industry segments from localStorage
+  // Load initial data
   useEffect(() => {
-    const loadIndustrySegments = () => {
-      const savedSegments = localStorage.getItem('industrySegments');
-      let segments: string[] = [];
-      
-      if (savedSegments) {
-        try {
-          segments = JSON.parse(savedSegments);
-        } catch (error) {
-          console.error('Error parsing saved segments:', error);
-          segments = defaultSegments;
+    const loadData = () => {
+      try {
+        console.log('Loading domain groups data...');
+        
+        // Load industry segments from master data
+        const savedIndustrySegments = localStorage.getItem('industrySegments');
+        let segments: IndustrySegment[] = [];
+        
+        if (savedIndustrySegments) {
+          segments = JSON.parse(savedIndustrySegments);
+        } else {
+          // Default segments if none exist
+          segments = [
+            { id: '1', name: 'Information Technology', code: 'IT', description: 'Technology and software services' },
+            { id: '2', name: 'Healthcare', code: 'HC', description: 'Medical and healthcare services' },
+            { id: '3', name: 'Banking & Financial Services', code: 'BFSI', description: 'Banking and financial institutions' },
+            { id: '4', name: 'Retail & E-commerce', code: 'RET', description: 'Retail and online commerce' }
+          ];
         }
-      } else {
-        segments = defaultSegments;
-      }
+        
+        setIndustrySegments(segments);
+        console.log('Loaded industry segments:', segments);
 
-      // Convert to IndustrySegment format
-      const industrySegmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
-        id: (index + 1).toString(),
-        name: segment,
-        code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
-        description: `Industry segment: ${segment}`
-      }));
+        // Initialize domain groups data
+        const initializedData = initializeDomainGroupsData(segments);
+        setDomainGroups(initializedData);
+        console.log('Loaded domain groups:', initializedData);
 
-      setIndustrySegments(industrySegmentObjects);
-    };
+        // Set default active segment if segments exist
+        if (segments.length > 0 && !activeIndustrySegment) {
+          setActiveIndustrySegment(segments[0].id);
+        }
 
-    loadIndustrySegments();
-
-    // Listen for storage changes to update when industry segments are modified
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'industrySegments') {
-        loadIndustrySegments();
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading domain groups data:', error);
+        setIsLoading(false);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    loadData();
+  }, []); // Remove activeIndustrySegment dependency to avoid conditional hook calls
 
-  // Initialize data for all industry segments
+  // Save data when it changes
   useEffect(() => {
-    if (industrySegments.length > 0) {
-      const allData = initializeDataForAllSegments();
-      setDomainGroups(allData);
+    if (domainGroups.length > 0) {
+      localStorage.setItem('domainGroupsData', JSON.stringify(domainGroups));
+      console.log('Saved domain groups to localStorage');
     }
-  }, [industrySegments]);
+  }, [domainGroups]);
 
-  const getDomainGroupsByIndustry = (industrySegmentId: string) => {
-    return domainGroups.filter(group => group.industrySegmentId === industrySegmentId);
+  const updateDomainGroups = (newDomainGroups: DomainGroup[]) => {
+    setDomainGroups(newDomainGroups);
   };
-
-  const getCategoriesByDomainGroup = (domainGroupId: string) => {
-    const group = domainGroups.find(g => g.id === domainGroupId);
-    return group?.categories || [];
-  };
-
-  const getSubCategoriesByCategory = (categoryId: string) => {
-    for (const group of domainGroups) {
-      const category = group.categories.find(c => c.id === categoryId);
-      if (category) {
-        return category.subCategories;
-      }
-    }
-    return [];
-  };
-
-  const operations = useDomainGroupOperations(domainGroups, setDomainGroups);
 
   return {
+    domainGroups,
     industrySegments,
-    selectedIndustrySegment,
-    setSelectedIndustrySegment,
-    selectedDomainGroup,
-    setSelectedDomainGroup,
-    selectedCategory,
-    setSelectedCategory,
-    domainGroups: getDomainGroupsByIndustry(selectedIndustrySegment),
-    categories: getCategoriesByDomainGroup(selectedDomainGroup),
-    subCategories: getSubCategoriesByCategory(selectedCategory),
     isLoading,
-    ...operations
+    activeIndustrySegment,
+    setActiveIndustrySegment,
+    activeDomainGroup,
+    setActiveDomainGroup,
+    activeCategory,
+    setActiveCategory,
+    activeSubCategory,
+    setActiveSubCategory,
+    activeTab,
+    setActiveTab,
+    updateDomainGroups,
   };
 };
