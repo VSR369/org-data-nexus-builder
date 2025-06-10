@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Upload } from 'lucide-react';
+import { Database, Upload, CheckCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domainGroupsDataManager';
+import { Badge } from "@/components/ui/badge";
 
 interface BulkDomainGroupCreatorProps {
   data: DomainGroupsData;
@@ -16,14 +16,41 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({ data, o
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
+  // Check if Life Sciences hierarchy already exists
+  const lifeSciencesIndustrySegmentId = '1'; // Based on the default data
+  const lifeSciencesExists = data.domainGroups.some(
+    dg => dg.industrySegmentId === lifeSciencesIndustrySegmentId
+  );
+
+  // If Life Sciences hierarchy already exists, don't show the bulk creator
+  if (lifeSciencesExists) {
+    return (
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-green-900">Life Sciences Hierarchy Already Created</h3>
+              <p className="text-sm text-green-700">
+                The Life Sciences domain group hierarchy is already configured and ready for use.
+              </p>
+            </div>
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              Already Available
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const createLifeSciencesHierarchy = () => {
     setIsCreating(true);
     
     const timestamp = new Date().toISOString();
     const baseId = Date.now();
-    
-    // Life Sciences Industry Segment ID (assuming it exists)
-    const lifeSciencesIndustrySegmentId = '1'; // Based on the default data
     
     const newDomainGroups: DomainGroup[] = [];
     const newCategories: Category[] = [];
