@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FormData } from '../types';
 import { validateRequiredFields } from '../utils/formValidation';
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,16 @@ const loadSavedData = () => {
     console.error('Error loading saved data:', error);
   }
   return null;
+};
+
+// Function to force save data immediately
+const forceSaveData = (data: any) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    console.log('Force saved draft data:', data);
+  } catch (error) {
+    console.error('Error force saving data:', error);
+  }
 };
 
 export const useFormState = () => {
@@ -68,26 +78,8 @@ export const useFormState = () => {
 
   const [isBasicDetailsComplete, setIsBasicDetailsComplete] = useState(false);
 
-  // Show toast notification if data was restored
-  useEffect(() => {
-    if (savedData) {
-      console.log('Restored draft data - Industry segments:', savedData.selectedIndustrySegments);
-      console.log('Restored submission status:', savedData.isSubmitted);
-      toast({
-        title: "Data Restored",
-        description: "Your enrollment data has been restored from previous session",
-      });
-    } else {
-      console.log('New provider registration started');
-      toast({
-        title: "New Registration",
-        description: "Starting new solution provider enrollment",
-      });
-    }
-  }, [toast]);
-
-  // Auto-save functionality with industry segments and submission status
-  useEffect(() => {
+  // Enhanced auto-save with immediate persistence
+  const saveToStorage = useCallback(() => {
     const saveData = {
       formData,
       providerType,
@@ -106,11 +98,55 @@ export const useFormState = () => {
       });
     
     if (hasData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+      forceSaveData(saveData);
       console.log('Auto-saved draft data with submission status:', isSubmitted);
       console.log('Auto-saved industry segments:', selectedIndustrySegments);
     }
   }, [formData, providerType, selectedIndustrySegments, isSubmitted]);
+
+  // Auto-save functionality with debounced saving
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      saveToStorage();
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [saveToStorage]);
+
+  // Save on page unload/navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveToStorage();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveToStorage();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [saveToStorage]);
+
+  // Show toast notification if data was restored
+  useEffect(() => {
+    if (savedData) {
+      console.log('Restored draft data - Industry segments:', savedData.selectedIndustrySegments);
+      console.log('Restored submission status:', savedData.isSubmitted);
+      toast({
+        title: "Draft Restored",
+        description: "Your enrollment data has been restored from previous session",
+      });
+    } else {
+      console.log('New provider registration started');
+    }
+  }, [toast]);
 
   // Check validation whenever form data, provider type, or industry segments change
   useEffect(() => {
@@ -124,40 +160,59 @@ export const useFormState = () => {
       ...prev,
       [field]: value
     }));
+    // Force immediate save on critical field changes
+    setTimeout(saveToStorage, 0);
   };
 
   const addIndustrySegment = (segmentId: string) => {
     if (!selectedIndustrySegments.includes(segmentId)) {
-      setSelectedIndustrySegments(prev => [...prev, segmentId]);
+      setSelectedIndustrySegments(prev => {
+        const newSegments = [...prev, segmentId];
+        // Force save immediately after adding segment
+        setTimeout(() => {
+          const saveData = {
+            formData,
+            providerType,
+            selectedIndustrySegments: newSegments,
+            isSubmitted,
+            lastSaved: new Date().toISOString()
+          };
+          forceSaveData(saveData);
+        }, 0);
+        return newSegments;
+      });
     }
   };
 
   const removeIndustrySegment = (segmentId: string) => {
-    setSelectedIndustrySegments(prev => prev.filter(id => id !== segmentId));
+    setSelectedIndustrySegments(prev => {
+      const newSegments = prev.filter(id => id !== segmentId);
+      // Force save immediately after removing segment
+      setTimeout(() => {
+        const saveData = {
+          formData,
+          providerType,
+          selectedIndustrySegments: newSegments,
+          isSubmitted,
+          lastSaved: new Date().toISOString()
+        };
+        forceSaveData(saveData);
+      }, 0);
+      return newSegments;
+    });
   };
 
   const clearDraft = () => {
-    // Only clear the draft data, don't reset the entire form if it's been submitted
-    // This function should be used carefully - mainly for complete reset scenarios
     localStorage.removeItem(STORAGE_KEY);
     console.log('Draft cleared from storage');
   };
 
   const saveDraft = () => {
-    const saveData = {
-      formData,
-      providerType,
-      selectedIndustrySegments,
-      isSubmitted,
-      lastSaved: new Date().toISOString()
-    };
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
-    console.log('Manual draft save with industry segments and submission status:', selectedIndustrySegments, isSubmitted);
+    saveToStorage();
     
     toast({
       title: "Draft Saved",
-      description: "Your enrollment has been saved as a draft, including all industry segments and competency data",
+      description: "Your enrollment has been saved as a draft and will persist across all navigation",
     });
   };
 
@@ -182,6 +237,9 @@ export const useFormState = () => {
       providers.push(providerData);
       localStorage.setItem('enrolled-providers', JSON.stringify(providers));
       console.log('Added new provider enrollment');
+      
+      // Force save the updated submission status
+      setTimeout(saveToStorage, 0);
     } catch (error) {
       console.error('Error storing provider enrollment:', error);
     }
@@ -189,13 +247,17 @@ export const useFormState = () => {
 
   const resetSubmissionStatus = () => {
     setIsSubmitted(false);
+    setTimeout(saveToStorage, 0);
   };
 
   return {
     formData,
     updateFormData,
     providerType,
-    setProviderType,
+    setProviderType: (type: string) => {
+      setProviderType(type);
+      setTimeout(saveToStorage, 0);
+    },
     selectedIndustrySegments,
     addIndustrySegment,
     removeIndustrySegment,
