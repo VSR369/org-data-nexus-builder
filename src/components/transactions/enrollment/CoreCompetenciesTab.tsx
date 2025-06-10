@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,19 +7,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
-import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 interface CoreCompetenciesTabProps {
   competencyData: any;
   updateCompetencyData: (industrySegment: string, domainGroup: string, category: string, subCategory: string, rating: number) => void;
 }
 
+// Temporary hardcoded segments - user will replace this with new implementation
+const industrySegments = [
+  'Banking & Finance',
+  'Healthcare & Life Sciences',
+  'Technology & Software',
+  'Manufacturing',
+  'Retail & Consumer Goods',
+  'Logistics & Supply Chain',
+  'Energy & Utilities',
+  'Education',
+  'Government & Public Sector',
+  'Real Estate & Construction'
+];
+
 const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   competencyData,
   updateCompetencyData
 }) => {
   const [activeSegmentTab, setActiveSegmentTab] = useState('');
-  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const [availableSegments, setAvailableSegments] = useState<{id: string, name: string}[]>([]);
   
@@ -32,17 +43,14 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   useEffect(() => {
     const loadSegments = () => {
       try {
-        const segments = industrySegmentsDataManager.loadData();
-        setIndustrySegments(segments);
-        
         // Create available segments with IDs for selection
-        const segmentsWithIds = segments.map((segment, index) => ({
+        const segmentsWithIds = industrySegments.map((segment, index) => ({
           id: (index + 1).toString(),
           name: segment
         }));
         setAvailableSegments(segmentsWithIds);
         
-        console.log('CoreCompetenciesTab - Loaded industry segments:', segments);
+        console.log('CoreCompetenciesTab - Loaded industry segments:', industrySegments);
       } catch (error) {
         console.error('CoreCompetenciesTab - Error loading segments:', error);
       }

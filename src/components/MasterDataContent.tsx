@@ -8,7 +8,6 @@ import { Database, Users, Building, Globe, CreditCard, Briefcase,
          Settings, BarChart3, Vote } from 'lucide-react';
 
 // Master Data Components
-import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
 import OrganizationTypeConfig from './master-data/OrganizationTypeConfig';
 import EntityTypeConfig from './master-data/EntityTypeConfig';
 import CountryConfig from './master-data/CountryConfig';
@@ -37,8 +36,6 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
 }) => {
   const renderContent = () => {
     switch (activeSection) {
-      case 'industry-segments':
-        return <IndustrySegmentConfig />;
       case 'organization-types':
         return <OrganizationTypeConfig />;
       case 'entity-types':

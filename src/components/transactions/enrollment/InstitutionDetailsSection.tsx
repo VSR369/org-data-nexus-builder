@@ -26,11 +26,11 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
 
   useEffect(() => {
     // Load organization types
-    const orgTypes = organizationTypesDataManager.loadData();
+    const orgTypes = organizationTypesDataManager.loadData() as string[];
     setOrganizationTypes(orgTypes);
 
     // Load countries
-    const countryList = countriesDataManager.loadData();
+    const countryList = countriesDataManager.loadData() as string[];
     setCountries(countryList);
   }, []);
 

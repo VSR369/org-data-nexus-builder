@@ -1,16 +1,18 @@
 import { DataManager } from './dataManager';
 
 // Only keep the data managers that are not related to industry segments
-export const countriesDataManager = new DataManager(
-  'master_data_countries',
-  [
+export const countriesDataManager = new DataManager({
+  key: 'master_data_countries',
+  defaultData: [
     'United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Japan', 'Australia', 'India', 'Brazil', 'Mexico'
-  ]
-);
+  ],
+  version: 1
+});
 
-export const organizationTypesDataManager = new DataManager(
-  'master_data_organization_types',
-  [
+export const organizationTypesDataManager = new DataManager({
+  key: 'master_data_organization_types',
+  defaultData: [
     'Startup', 'Small Business', 'Medium Enterprise', 'Large Corporation', 'Non-Profit', 'Government Agency', 'Educational Institution', 'Healthcare Organization'
-  ]
-);
+  ],
+  version: 1
+});
