@@ -1,13 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
-
-interface IndustrySegment {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-}
 
 interface DomainGroup {
   id: string;
@@ -20,30 +12,11 @@ interface DomainGroup {
 }
 
 export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
-  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Load industry segments from shared DataManager
-    const loadIndustrySegments = () => {
-      console.log('📥 CompetencyAssessmentTab: Loading segments from shared DataManager...');
-      
-      const segments = industrySegmentsDataManager.loadData();
-      console.log('📋 CompetencyAssessmentTab: Loaded segments:', segments);
-
-      // Convert to IndustrySegment format
-      const segmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
-        id: (index + 1).toString(),
-        name: segment,
-        code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
-        description: `Industry segment: ${segment}`
-      }));
-
-      setIndustrySegments(segmentObjects);
-    };
-
     // Load domain groups from master data
     const loadDomainGroups = () => {
       const savedDomainGroups = localStorage.getItem('domainGroupsData');
@@ -74,20 +47,7 @@ export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
       }
     };
 
-    loadIndustrySegments();
     loadDomainGroups();
-
-    // Listen for industry segments updates
-    const handleIndustrySegmentsUpdated = () => {
-      console.log('🔄 CompetencyAssessmentTab: Received industry segments update');
-      loadIndustrySegments();
-    };
-
-    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
-
-    return () => {
-      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
-    };
   }, []);
 
   // Get relevant domain groups for the selected industry segment
@@ -122,7 +82,7 @@ export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
   };
 
   return {
-    industrySegments,
+    industrySegments: [], // Remove industry segments data
     domainGroups,
     relevantDomainGroups,
     expandedGroups,

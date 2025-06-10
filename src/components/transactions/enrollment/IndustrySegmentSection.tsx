@@ -18,16 +18,17 @@ interface IndustrySegmentSectionProps {
   providerRoles?: string[];
 }
 
+// Temporary hardcoded segments - user will replace this with new implementation
 const industrySegments = [
-  { id: 'manufacturing', name: 'Manufacturing' },
+  { id: 'banking-finance', name: 'Banking & Finance' },
   { id: 'healthcare', name: 'Healthcare & Life Sciences' },
-  { id: 'financial-services', name: 'Financial Services' },
-  { id: 'retail', name: 'Retail & Consumer Goods' },
   { id: 'technology', name: 'Technology & Software' },
+  { id: 'manufacturing', name: 'Manufacturing' },
+  { id: 'retail', name: 'Retail & Consumer Goods' },
   { id: 'logistics', name: 'Logistics & Supply Chain' },
   { id: 'energy', name: 'Energy & Utilities' },
-  { id: 'government', name: 'Government & Public Sector' },
   { id: 'education', name: 'Education' },
+  { id: 'government', name: 'Government & Public Sector' },
   { id: 'real-estate', name: 'Real Estate & Construction' }
 ];
 
