@@ -15,6 +15,12 @@ export const useFieldValidation = () => {
     const missingFields: string[] = [];
     const newInvalidFields = new Set<string>();
 
+    // Check if provider roles are selected
+    if (!formData.providerRoles || formData.providerRoles.length === 0) {
+      missingFields.push('Provider Role');
+      newInvalidFields.add('providerRoles');
+    }
+
     // Check provider type
     if (!providerType) {
       missingFields.push('Provider Type');
@@ -27,8 +33,8 @@ export const useFieldValidation = () => {
       newInvalidFields.add('industrySegment');
     }
 
-    // Check institution fields if provider type is institution
-    if (providerType === 'institution') {
+    // Check institution fields if provider type is organization
+    if (providerType === 'organization') {
       const institutionFields = ['orgName', 'orgType', 'orgCountry', 'regAddress', 'departmentCategory', 'departmentSubCategory'];
       institutionFields.forEach(field => {
         if (!formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '') {
@@ -58,6 +64,7 @@ export const useFieldValidation = () => {
       newInvalidFields.add('competencyRatings');
     }
 
+    console.log('Validation found these invalid fields:', Array.from(newInvalidFields));
     setInvalidFields(newInvalidFields);
 
     return {

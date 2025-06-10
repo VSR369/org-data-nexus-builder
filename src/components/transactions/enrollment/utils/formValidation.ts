@@ -6,6 +6,9 @@ export const validateRequiredFields = (
   providerType: string,
   selectedIndustrySegments: string[]
 ): boolean => {
+  // Check provider roles
+  if (!formData.providerRoles || formData.providerRoles.length === 0) return false;
+  
   // Check provider type
   if (!providerType) return false;
 
@@ -13,7 +16,7 @@ export const validateRequiredFields = (
   if (selectedIndustrySegments.length === 0) return false;
 
   // Check institution fields if provider type is institution
-  if (providerType === 'institution') {
+  if (providerType === 'organization') {
     const institutionFields = ['orgName', 'orgType', 'orgCountry', 'regAddress', 'departmentCategory', 'departmentSubCategory'];
     if (institutionFields.some(field => !formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '')) {
       return false;

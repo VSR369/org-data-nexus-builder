@@ -59,40 +59,64 @@ const BankingDetailsSection: React.FC<BankingDetailsSectionProps> = ({
         <h4 className="font-medium">Banking Details (Optional)</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="bank-account">Bank Account Number</Label>
+            <Label htmlFor="bank-account" className={invalidFields.has('bankAccount') ? 'text-destructive' : ''}>
+              Bank Account Number
+            </Label>
             <Input 
               id="bank-account" 
               placeholder="Enter bank account number"
               value={formData.bankAccount}
               onChange={(e) => updateFormData('bankAccount', e.target.value)}
+              className={invalidFields.has('bankAccount') ? 'border-destructive' : ''}
             />
+            {invalidFields.has('bankAccount') && (
+              <p className="text-xs text-destructive">This field is required</p>
+            )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="bank-name">Bank Name</Label>
+            <Label htmlFor="bank-name" className={invalidFields.has('bankName') ? 'text-destructive' : ''}>
+              Bank Name
+            </Label>
             <Input 
               id="bank-name" 
               placeholder="Enter bank name"
               value={formData.bankName}
               onChange={(e) => updateFormData('bankName', e.target.value)}
+              className={invalidFields.has('bankName') ? 'border-destructive' : ''}
             />
+            {invalidFields.has('bankName') && (
+              <p className="text-xs text-destructive">This field is required</p>
+            )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="branch">Branch</Label>
+            <Label htmlFor="branch" className={invalidFields.has('branch') ? 'text-destructive' : ''}>
+              Branch
+            </Label>
             <Input 
               id="branch" 
               placeholder="Enter branch name"
               value={formData.branch}
               onChange={(e) => updateFormData('branch', e.target.value)}
+              className={invalidFields.has('branch') ? 'border-destructive' : ''}
             />
+            {invalidFields.has('branch') && (
+              <p className="text-xs text-destructive">This field is required</p>
+            )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ifsc">IFSC Code / UPI ID</Label>
+            <Label htmlFor="ifsc" className={invalidFields.has('ifsc') ? 'text-destructive' : ''}>
+              IFSC Code / UPI ID
+            </Label>
             <Input 
               id="ifsc" 
               placeholder="Enter IFSC code or UPI ID"
               value={formData.ifsc}
               onChange={(e) => updateFormData('ifsc', e.target.value)}
+              className={invalidFields.has('ifsc') ? 'border-destructive' : ''}
             />
+            {invalidFields.has('ifsc') && (
+              <p className="text-xs text-destructive">This field is required</p>
+            )}
           </div>
         </div>
       </div>

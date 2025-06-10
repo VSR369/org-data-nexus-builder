@@ -33,9 +33,11 @@ export const useEnrollmentSubmission = (
     const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments, hasCompetencyRatings);
     
     if (!validation.isValid) {
+      const formattedMissingFields = validation.missingFields.join(', ');
+      
       toast({
         title: "Required Fields Missing",
-        description: `Please complete the following: ${validation.missingFields.join(', ')}`,
+        description: `Please complete all required fields highlighted in red: ${formattedMissingFields}`,
         variant: "destructive"
       });
       return;
@@ -54,9 +56,11 @@ export const useEnrollmentSubmission = (
     const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments, hasCompetencyRatings);
     
     if (!validation.isValid) {
+      const formattedMissingFields = validation.missingFields.join(', ');
+      
       toast({
         title: "Required Fields Missing",
-        description: `Please complete the following: ${validation.missingFields.join(', ')}`,
+        description: `Please complete all required fields highlighted in red: ${formattedMissingFields}`,
         variant: "destructive"
       });
       return;
