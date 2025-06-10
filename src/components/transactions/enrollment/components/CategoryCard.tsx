@@ -62,15 +62,23 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               const currentRating = competencyData[domainGroupName]?.[category.name]?.[subCategory.name] || 0;
               
               return (
-                <RatingSlider
-                  key={subCategory.id}
-                  subCategoryName={subCategory.name}
-                  description={subCategory.description}
-                  currentRating={currentRating}
-                  onRatingChange={(rating) => 
-                    updateCompetencyData(domainGroupName, category.name, subCategory.name, rating)
-                  }
-                />
+                <div key={subCategory.id} className="border rounded-lg p-4 bg-muted/20">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm mb-1">{subCategory.name}</h4>
+                      {subCategory.description && (
+                        <p className="text-muted-foreground text-xs">{subCategory.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <RatingSlider
+                    currentRating={currentRating}
+                    onRatingChange={(rating) => 
+                      updateCompetencyData(domainGroupName, category.name, subCategory.name, rating)
+                    }
+                  />
+                </div>
               );
             })}
           </div>
