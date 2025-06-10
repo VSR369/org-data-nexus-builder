@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Settings, Target, Users, Bot } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2, Settings, Target, Users, Bot, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 interface Parameter {
   id: string;
   name: string;
+  description: string;
   weightage: number;
 }
 
@@ -43,6 +47,26 @@ interface RatingThreshold {
   label: string;
 }
 
+interface DomainGroup {
+  id: string;
+  name: string;
+  industrySegmentId: string;
+  categories: Category[];
+}
+
+interface Category {
+  id: string;
+  name: string;
+  domainGroupId: string;
+  subCategories: SubCategory[];
+}
+
+interface SubCategory {
+  id: string;
+  name: string;
+  categoryId: string;
+}
+
 const SolutionVotingAssessmentConfig = () => {
   const { toast } = useToast();
   
@@ -55,12 +79,18 @@ const SolutionVotingAssessmentConfig = () => {
     veryLow: 1
   });
 
-  // Assessment Parameters
-  const [groups, setGroups] = useState<AssessmentLevel[]>([]);
-  const [categories, setCategories] = useState<AssessmentLevel[]>([]);
-  const [subCategories, setSubCategories] = useState<AssessmentLevel[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
+  // Master Data
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+  const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
+  
+  // Selection State
+  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
+  const [selectedDomainGroup, setSelectedDomainGroup] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  // Assessment Parameters
+  const [groupParameters, setGroupParameters] = useState<Parameter[]>([]);
+  const [categoryParameters, setCategoryParameters] = useState<Parameter[]>([]);
 
   // Voting + Assessment Mix
   const [weights, setWeights] = useState<WeightConfig>({
@@ -81,99 +111,137 @@ const SolutionVotingAssessmentConfig = () => {
   const [aiAssessmentEnabled, setAiAssessmentEnabled] = useState(false);
   const [humanAiComparisonEnabled, setHumanAiComparisonEnabled] = useState(false);
 
-  const addParameter = (levelType: 'group' | 'category' | 'subCategory', levelId: string) => {
+  // Load industry segments on mount
+  useEffect(() => {
+    const segments = industrySegmentsDataManager.loadData();
+    setIndustrySegments(segments);
+  }, []);
+
+  // Load domain groups when industry segment changes
+  useEffect(() => {
+    if (selectedIndustrySegment) {
+      // This would typically load from your domain groups data
+      // For now, using mock data
+      const mockDomainGroups: DomainGroup[] = [
+        {
+          id: '1',
+          name: 'Strategy Innovation & Growth',
+          industrySegmentId: selectedIndustrySegment,
+          categories: [
+            {
+              id: '1',
+              name: 'Market Strategy',
+              domainGroupId: '1',
+              subCategories: [
+                { id: '1', name: 'Market Analysis', categoryId: '1' },
+                { id: '2', name: 'Competitive Intelligence', categoryId: '1' }
+              ]
+            },
+            {
+              id: '2',
+              name: 'Innovation Management',
+              domainGroupId: '1',
+              subCategories: [
+                { id: '3', name: 'Product Innovation', categoryId: '2' },
+                { id: '4', name: 'Process Innovation', categoryId: '2' }
+              ]
+            }
+          ]
+        },
+        {
+          id: '2',
+          name: 'Technology & Digital Transformation',
+          industrySegmentId: selectedIndustrySegment,
+          categories: [
+            {
+              id: '3',
+              name: 'Digital Strategy',
+              domainGroupId: '2',
+              subCategories: [
+                { id: '5', name: 'Digital Roadmap', categoryId: '3' },
+                { id: '6', name: 'Technology Architecture', categoryId: '3' }
+              ]
+            }
+          ]
+        }
+      ];
+      setDomainGroups(mockDomainGroups);
+      setSelectedDomainGroup('');
+      setSelectedCategory('');
+      setGroupParameters([]);
+      setCategoryParameters([]);
+    }
+  }, [selectedIndustrySegment]);
+
+  // Reset parameters when group or category changes
+  useEffect(() => {
+    if (selectedDomainGroup) {
+      setSelectedCategory('');
+      setCategoryParameters([]);
+    }
+  }, [selectedDomainGroup]);
+
+  const addParameter = (level: 'group' | 'category') => {
     const newParameter: Parameter = {
       id: Date.now().toString(),
       name: '',
+      description: '',
       weightage: 0
     };
 
-    if (levelType === 'group') {
-      setGroups(prev => prev.map(group => 
-        group.id === levelId 
-          ? { ...group, parameters: [...group.parameters, newParameter] }
-          : group
-      ));
-    } else if (levelType === 'category') {
-      setCategories(prev => prev.map(category => 
-        category.id === levelId 
-          ? { ...category, parameters: [...category.parameters, newParameter] }
-          : category
-      ));
+    if (level === 'group') {
+      setGroupParameters(prev => [...prev, newParameter]);
     } else {
-      setSubCategories(prev => prev.map(subCategory => 
-        subCategory.id === levelId 
-          ? { ...subCategory, parameters: [...subCategory.parameters, newParameter] }
-          : subCategory
-      ));
+      setCategoryParameters(prev => [...prev, newParameter]);
     }
   };
 
-  const updateParameter = (levelType: 'group' | 'category' | 'subCategory', levelId: string, parameterId: string, field: 'name' | 'weightage', value: string | number) => {
-    const updateLevel = (levels: AssessmentLevel[]) => 
-      levels.map(level => 
-        level.id === levelId 
-          ? {
-              ...level,
-              parameters: level.parameters.map(param => 
-                param.id === parameterId 
-                  ? { ...param, [field]: value }
-                  : param
-              )
-            }
-          : level
+  const updateParameter = (level: 'group' | 'category', parameterId: string, field: keyof Parameter, value: string | number) => {
+    const updateParams = (params: Parameter[]) => 
+      params.map(param => 
+        param.id === parameterId 
+          ? { ...param, [field]: value }
+          : param
       );
 
-    if (levelType === 'group') {
-      setGroups(updateLevel);
-    } else if (levelType === 'category') {
-      setCategories(updateLevel);
+    if (level === 'group') {
+      setGroupParameters(updateParams);
     } else {
-      setSubCategories(updateLevel);
+      setCategoryParameters(updateParams);
     }
   };
 
-  const removeParameter = (levelType: 'group' | 'category' | 'subCategory', levelId: string, parameterId: string) => {
-    const updateLevel = (levels: AssessmentLevel[]) => 
-      levels.map(level => 
-        level.id === levelId 
-          ? {
-              ...level,
-              parameters: level.parameters.filter(param => param.id !== parameterId)
-            }
-          : level
-      );
-
-    if (levelType === 'group') {
-      setGroups(updateLevel);
-    } else if (levelType === 'category') {
-      setCategories(updateLevel);
+  const removeParameter = (level: 'group' | 'category', parameterId: string) => {
+    if (level === 'group') {
+      setGroupParameters(prev => prev.filter(param => param.id !== parameterId));
     } else {
-      setSubCategories(updateLevel);
+      setCategoryParameters(prev => prev.filter(param => param.id !== parameterId));
     }
   };
 
-  const addGroup = () => {
-    const newGroup: AssessmentLevel = {
-      id: Date.now().toString(),
-      name: '',
-      parameters: [],
-      overrideParent: false
-    };
-    setGroups(prev => [...prev, newGroup]);
+  const calculateTotalWeightage = (parameters: Parameter[]) => {
+    return parameters.reduce((total, param) => total + param.weightage, 0);
   };
 
-  const calculateFinalScore = (votingScore: number, assessmentScore: number) => {
-    return ((weights.votingWeight / 100) * votingScore) + ((weights.assessmentWeight / 100) * assessmentScore);
+  const getFilteredDomainGroups = () => {
+    return domainGroups.filter(group => group.industrySegmentId === selectedIndustrySegment);
   };
 
-  const getRatingLabel = (score: number) => {
-    const threshold = ratingThresholds.find(t => score >= t.min && score <= t.max);
-    return threshold?.label || 'Unknown';
+  const getSelectedDomainGroup = () => {
+    return domainGroups.find(group => group.id === selectedDomainGroup);
+  };
+
+  const getSelectedCategory = () => {
+    const group = getSelectedDomainGroup();
+    return group?.categories.find(cat => cat.id === selectedCategory);
   };
 
   const validateWeights = () => {
     return weights.votingWeight + weights.assessmentWeight === 100;
+  };
+
+  const calculateFinalScore = (votingScore: number, assessmentScore: number) => {
+    return ((weights.votingWeight / 100) * votingScore) + ((weights.assessmentWeight / 100) * assessmentScore);
   };
 
   const handleSave = () => {
@@ -186,12 +254,36 @@ const SolutionVotingAssessmentConfig = () => {
       return;
     }
 
-    // Here you would typically save to backend
+    const groupTotal = calculateTotalWeightage(groupParameters);
+    const categoryTotal = calculateTotalWeightage(categoryParameters);
+
+    if (groupTotal > 100) {
+      toast({
+        title: "Error",
+        description: "Group parameters total weightage cannot exceed 100%",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (categoryTotal > 100) {
+      toast({
+        title: "Error",
+        description: "Category parameters total weightage cannot exceed 100%",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Success",
       description: "Voting & Assessment configuration saved successfully",
     });
   };
+
+  const activeParameters = groupParameters.length > 0 ? groupParameters : categoryParameters;
+  const activeLevel = groupParameters.length > 0 ? 'group' : 'category';
+  const totalWeightage = calculateTotalWeightage(activeParameters);
 
   return (
     <div className="space-y-6">
@@ -234,65 +326,172 @@ const SolutionVotingAssessmentConfig = () => {
 
             <TabsContent value="assessment">
               <div className="space-y-6">
+                {/* Selection Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center justify-between">
-                      Competency Group Level
-                      <Button onClick={addGroup} size="sm">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Group
-                      </Button>
-                    </CardTitle>
+                    <CardTitle className="text-base">Solution Assessment Criteria</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    {groups.map((group) => (
-                      <div key={group.id} className="border rounded-lg p-4 mb-4">
-                        <div className="flex items-center gap-4 mb-4">
-                          <Input
-                            placeholder="Group Name"
-                            value={group.name}
-                            onChange={(e) => setGroups(prev => prev.map(g => 
-                              g.id === group.id ? { ...g, name: e.target.value } : g
-                            ))}
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addParameter('group', group.id)}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          {group.parameters.map((param) => (
-                            <div key={param.id} className="flex items-center gap-2">
-                              <Input
-                                placeholder="Parameter Name"
-                                value={param.name}
-                                onChange={(e) => updateParameter('group', group.id, param.id, 'name', e.target.value)}
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Weight %"
-                                value={param.weightage}
-                                onChange={(e) => updateParameter('group', group.id, param.id, 'weightage', Number(e.target.value))}
-                                className="w-24"
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeParameter('group', group.id, param.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+                  <CardContent className="space-y-4">
+                    {/* Industry Segment Selection */}
+                    <div>
+                      <Label htmlFor="industry-segment">Industry Segment</Label>
+                      <Select value={selectedIndustrySegment} onValueChange={setSelectedIndustrySegment}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select industry segment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {industrySegments.map((segment, index) => (
+                            <SelectItem key={index} value={index.toString()}>
+                              {segment}
+                            </SelectItem>
                           ))}
-                        </div>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Domain Group Selection */}
+                    {selectedIndustrySegment && (
+                      <div>
+                        <Label htmlFor="domain-group">Domain Group</Label>
+                        <Select value={selectedDomainGroup} onValueChange={setSelectedDomainGroup}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select domain group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getFilteredDomainGroups().map((group) => (
+                              <SelectItem key={group.id} value={group.id}>
+                                {group.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    ))}
+                    )}
+
+                    {/* Category Selection */}
+                    {selectedDomainGroup && (
+                      <div>
+                        <Label htmlFor="category">Category (Optional)</Label>
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">No specific category</SelectItem>
+                            {getSelectedDomainGroup()?.categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+
+                {/* Parameters Configuration */}
+                {selectedDomainGroup && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        Assessment Parameters
+                        <div className="flex items-center gap-2">
+                          <Badge variant={totalWeightage > 100 ? "destructive" : totalWeightage === 100 ? "default" : "secondary"}>
+                            Total: {totalWeightage}%
+                          </Badge>
+                          <Button 
+                            onClick={() => addParameter(selectedCategory ? 'category' : 'group')} 
+                            size="sm"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Parameter
+                          </Button>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Configuration Info */}
+                      <Alert className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          {selectedCategory 
+                            ? `Setting parameters at Category level: ${getSelectedCategory()?.name}. These will apply to all sub-categories.`
+                            : `Setting parameters at Group level: ${getSelectedDomainGroup()?.name}. These will apply to all categories and sub-categories unless overridden.`
+                          }
+                        </AlertDescription>
+                      </Alert>
+
+                      {/* Parameters List */}
+                      <div className="space-y-4">
+                        {activeParameters.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            No parameters configured. Click "Add Parameter" to get started.
+                          </div>
+                        ) : (
+                          activeParameters.map((param) => (
+                            <div key={param.id} className="border rounded-lg p-4 space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <Label htmlFor={`param-name-${param.id}`}>Parameter Name</Label>
+                                  <Input
+                                    id={`param-name-${param.id}`}
+                                    placeholder="Enter parameter name"
+                                    value={param.name}
+                                    onChange={(e) => updateParameter(activeLevel, param.id, 'name', e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`param-weight-${param.id}`}>Weightage (%)</Label>
+                                  <Input
+                                    id={`param-weight-${param.id}`}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    placeholder="0"
+                                    value={param.weightage}
+                                    onChange={(e) => updateParameter(activeLevel, param.id, 'weightage', Number(e.target.value))}
+                                  />
+                                </div>
+                                <div className="flex items-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => removeParameter(activeLevel, param.id)}
+                                    className="w-full"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Remove
+                                  </Button>
+                                </div>
+                              </div>
+                              <div>
+                                <Label htmlFor={`param-desc-${param.id}`}>Description</Label>
+                                <Textarea
+                                  id={`param-desc-${param.id}`}
+                                  placeholder="Enter parameter description"
+                                  value={param.description}
+                                  onChange={(e) => updateParameter(activeLevel, param.id, 'description', e.target.value)}
+                                  rows={2}
+                                />
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Weightage Validation */}
+                      {totalWeightage > 100 && (
+                        <Alert className="mt-4" variant="destructive">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            Total weightage ({totalWeightage}%) exceeds 100%. Please adjust the parameter weightages.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
