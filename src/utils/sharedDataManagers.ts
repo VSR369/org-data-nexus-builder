@@ -1,6 +1,7 @@
+
 import { DataManager } from './dataManager';
 
-// Only keep the data managers that are not related to industry segments
+// Data managers for master data (industry segments removed)
 export const countriesDataManager = new DataManager({
   key: 'master_data_countries',
   defaultData: [

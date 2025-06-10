@@ -1,5 +1,5 @@
 
-// Utility to clear all domain groups related cache data
+// Utility to clear all domain groups and industry segments cache data
 export const clearDomainGroupsCache = () => {
   const keysToRemove = [
     'domainGroupsData',
@@ -13,9 +13,13 @@ export const clearDomainGroupsCache = () => {
     'master_data_domain_groups_initialized',
     'master_data_domain_groups_hierarchy_version',
     'master_data_domain_groups_hierarchy_initialized',
+    'master_data_industry_segments',
+    'master_data_industry_segments_version',
+    'master_data_industry_segments_initialized',
     'domain_groups',
     'categories',
-    'sub_categories'
+    'sub_categories',
+    'industry_segments'
   ];
 
   keysToRemove.forEach(key => {
@@ -26,15 +30,18 @@ export const clearDomainGroupsCache = () => {
   const allKeys = Object.keys(localStorage);
   allKeys.forEach(key => {
     if (key.startsWith('domainGroups_') || 
+        key.startsWith('industry_') ||
         key.includes('domain') || 
         key.includes('Domain') || 
         key.includes('category') || 
-        key.includes('Category')) {
+        key.includes('Category') ||
+        key.includes('industry') ||
+        key.includes('Industry')) {
       localStorage.removeItem(key);
     }
   });
 
-  console.log('✅ Cleared all domain groups cache data completely');
+  console.log('✅ Cleared all domain groups and industry segments cache data completely');
 };
 
 // Auto-execute cache clearing

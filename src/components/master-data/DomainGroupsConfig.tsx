@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
@@ -13,16 +12,6 @@ import { Database, Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DataManager } from '@/utils/dataManager';
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
-
-// Industry Segment interface to match IndustrySegmentConfig
-interface IndustrySegment {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-}
 
 // Default data
 const defaultDomainGroupsData: DomainGroupsData = {
@@ -38,20 +27,11 @@ const domainGroupsDataManager = new DataManager({
   version: 1
 });
 
-// Use the SAME data manager as IndustrySegmentConfig
-const industrySegmentDataManager = new DataManager({
-  key: 'master_data_industry_segments',
-  defaultData: [],
-  version: 1
-});
-
 const DomainGroupsConfig: React.FC = () => {
   const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
-  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   
   // Form state
   const [formData, setFormData] = useState({
-    industrySegmentId: '',
     domainGroupName: '',
     domainGroupDescription: '',
     categoryName: '',
@@ -67,41 +47,18 @@ const DomainGroupsConfig: React.FC = () => {
   useEffect(() => {
     console.log('=== DomainGroupsConfig: Loading data ===');
     const loadedData = domainGroupsDataManager.loadData();
-    const loadedSegments = industrySegmentDataManager.loadData();
     
     console.log('📊 Loaded domain groups data:', loadedData);
-    console.log('📊 Loaded industry segments raw:', loadedSegments);
-    
     setData(loadedData);
-    
-    // Filter only active industry segments and ensure they are proper objects
-    const activeSegments: IndustrySegment[] = Array.isArray(loadedSegments) 
-      ? loadedSegments.filter((segment: any) => 
-          segment && 
-          typeof segment === 'object' && 
-          segment.id && 
-          segment.name && 
-          segment.isActive === true
-        )
-      : [];
-    
-    console.log('✅ Active industry segments after filtering:', activeSegments);
-    setIndustrySegments(activeSegments);
   }, []);
-  
-  // Helper function to get industry segment name
-  const getIndustrySegmentName = (segmentId: string): string => {
-    const segment = industrySegments.find(s => s.id === segmentId);
-    return segment ? segment.name : 'Unknown Segment';
-  };
 
   // Handle form submission
   const handleSubmit = () => {
     // Validate required fields
-    if (!formData.industrySegmentId || !formData.domainGroupName || !formData.categoryName || !formData.subCategoryName) {
+    if (!formData.domainGroupName || !formData.categoryName || !formData.subCategoryName) {
       toast({
         title: "Validation Error",
-        description: "Industry Segment, Domain Group Name, Category Name, and Sub Category Name are required",
+        description: "Domain Group Name, Category Name, and Sub Category Name are required",
         variant: "destructive"
       });
       return;
@@ -115,8 +72,8 @@ const DomainGroupsConfig: React.FC = () => {
       id: baseId + '_dg',
       name: formData.domainGroupName,
       description: formData.domainGroupDescription || undefined,
-      industrySegmentId: formData.industrySegmentId,
-      industrySegmentName: getIndustrySegmentName(formData.industrySegmentId),
+      industrySegmentId: 'none',
+      industrySegmentName: 'Not Applicable',
       isActive: formData.isActive,
       createdAt: timestamp
     };
@@ -153,7 +110,6 @@ const DomainGroupsConfig: React.FC = () => {
     
     // Reset form
     setFormData({
-      industrySegmentId: '',
       domainGroupName: '',
       domainGroupDescription: '',
       categoryName: '',
@@ -206,7 +162,7 @@ const DomainGroupsConfig: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Add Domain Group Details</h1>
-          <p className="text-muted-foreground">Create complete domain group hierarchy in one simple form</p>
+          <p className="text-muted-foreground">Create complete domain group hierarchy</p>
         </div>
       </div>
 
@@ -218,37 +174,12 @@ const DomainGroupsConfig: React.FC = () => {
             Create Domain Group Hierarchy
           </CardTitle>
           <CardDescription>
-            Fill all fields to create a complete hierarchy: Industry Segment → Domain Group → Category → Sub Category
+            Fill all fields to create a complete hierarchy: Domain Group → Category → Sub Category
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Field 1: Industry Segment */}
-            <div className="space-y-2">
-              <Label htmlFor="industry-segment">Industry Segment *</Label>
-              <Select 
-                value={formData.industrySegmentId} 
-                onValueChange={(value) => setFormData({...formData, industrySegmentId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Industry Segment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {industrySegments.map((segment) => (
-                    <SelectItem key={segment.id} value={segment.id}>
-                      {segment.name} ({segment.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {industrySegments.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No active industry segments found. Please add industry segments first.
-                </p>
-              )}
-            </div>
-
-            {/* Field 2: Domain Group */}
+            {/* Field 1: Domain Group */}
             <div className="space-y-2">
               <Label htmlFor="domain-group">Domain Group Name *</Label>
               <Input 
@@ -260,7 +191,7 @@ const DomainGroupsConfig: React.FC = () => {
             </div>
 
             {/* Domain Group Description */}
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="domain-group-desc">Domain Group Description</Label>
               <Textarea 
                 id="domain-group-desc"
@@ -271,7 +202,7 @@ const DomainGroupsConfig: React.FC = () => {
               />
             </div>
 
-            {/* Field 3: Category */}
+            {/* Field 2: Category */}
             <div className="space-y-2">
               <Label htmlFor="category">Category Name *</Label>
               <Input 
@@ -294,7 +225,7 @@ const DomainGroupsConfig: React.FC = () => {
               />
             </div>
 
-            {/* Field 4: Sub Category */}
+            {/* Field 3: Sub Category */}
             <div className="space-y-2">
               <Label htmlFor="sub-category">Sub Category Name *</Label>
               <Input 
@@ -348,7 +279,6 @@ const DomainGroupsConfig: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Industry Segment</TableHead>
                   <TableHead>Domain Group</TableHead>
                   <TableHead>Categories</TableHead>
                   <TableHead>Sub Categories</TableHead>
@@ -359,11 +289,6 @@ const DomainGroupsConfig: React.FC = () => {
               <TableBody>
                 {hierarchicalData.map((domainGroup) => (
                   <TableRow key={domainGroup.id}>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {getIndustrySegmentName(domainGroup.industrySegmentId)}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="font-medium">
                       <div>
                         <div>{domainGroup.name}</div>
