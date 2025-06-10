@@ -5,11 +5,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DomainGroupsManagement } from './domain-groups/DomainGroupsManagement';
 import { CategoryTab } from './domain-groups/CategoryTab';
 import { SubCategoryTab } from './domain-groups/SubCategoryTab';
+import { QuickAddForm } from './domain-groups/QuickAddForm';
 import { useDomainGroupsData } from './domain-groups/hooks/useDomainGroupsData';
 
 const DomainGroupsConfig = () => {
   const [message, setMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('domain-groups');
+  const [activeTab, setActiveTab] = useState('quick-add');
   
   const {
     industrySegments,
@@ -59,11 +60,27 @@ const DomainGroupsConfig = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="quick-add">Quick Add</TabsTrigger>
           <TabsTrigger value="domain-groups">Domain Groups</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="sub-categories">Sub-Categories</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="quick-add" className="space-y-4">
+          <QuickAddForm
+            industrySegments={industrySegments}
+            domainGroups={domainGroups}
+            selectedIndustrySegment={selectedIndustrySegment}
+            selectedDomainGroup={selectedDomainGroup}
+            selectedCategory={selectedCategory}
+            onSelectIndustrySegment={setSelectedIndustrySegment}
+            onAddDomainGroup={addDomainGroup}
+            onAddCategory={addCategory}
+            onAddSubCategory={addSubCategory}
+            showMessage={showMessage}
+          />
+        </TabsContent>
         
         <TabsContent value="domain-groups" className="space-y-4">
           <DomainGroupsManagement
