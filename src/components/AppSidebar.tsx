@@ -69,12 +69,12 @@ const challengeMenuItems = [
     icon: Database,
   },
   {
-    id: 'challenge-status',
+    id: 'challenge-statuses',
     title: 'Challenge Status',
     icon: CheckCircle,
   },
   {
-    id: 'solution-status',
+    id: 'solution-statuses',
     title: 'Solution Statuses',
     icon: Award,
   },

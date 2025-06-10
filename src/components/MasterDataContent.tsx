@@ -13,6 +13,10 @@ import RewardTypeConfig from "@/components/master-data/RewardTypeConfig";
 import ChallengeStatusConfig from "@/components/master-data/ChallengeStatusConfig";
 import SolutionStatusConfig from "@/components/master-data/SolutionStatusConfig";
 import CommunicationTypeConfig from "@/components/master-data/CommunicationTypeConfig";
+import DepartmentConfig from "@/components/master-data/DepartmentConfig";
+import PricingConfig from "@/components/master-data/PricingConfig";
+import EventsCalendarConfig from "@/components/master-data/EventsCalendarConfig";
+import SolutionVotingAssessmentConfig from "@/components/voting-assessment/SolutionVotingAssessmentConfig";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -70,6 +74,13 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
           </div>
         );
 
+      case 'departments':
+        return (
+          <div className="h-full overflow-y-auto">
+            <DepartmentConfig />
+          </div>
+        );
+
       case 'competency-capability':
         return (
           <div className="h-full overflow-y-auto">
@@ -102,6 +113,27 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
         return (
           <div className="h-full overflow-y-auto">
             <CommunicationTypeConfig />
+          </div>
+        );
+
+      case 'pricing-config':
+        return (
+          <div className="h-full overflow-y-auto">
+            <PricingConfig />
+          </div>
+        );
+
+      case 'voting-assessment':
+        return (
+          <div className="h-full overflow-y-auto">
+            <SolutionVotingAssessmentConfig />
+          </div>
+        );
+
+      case 'events-calendar':
+        return (
+          <div className="h-full overflow-y-auto">
+            <EventsCalendarConfig />
           </div>
         );
 

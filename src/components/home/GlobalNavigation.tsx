@@ -211,13 +211,14 @@ export const GlobalNavigation = () => {
       {/* Sign In Dialog */}
       <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>
         <DialogContent 
-          className="max-w-7xl w-full h-[90vh] p-0 overflow-hidden bg-background border border-border shadow-2xl"
+          className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden bg-background border border-border shadow-2xl"
           style={{ 
             position: 'fixed',
             top: '5vh',
             left: '2.5vw',
             width: '95vw',
             height: '90vh',
+            maxHeight: '90vh',
             transform: 'none'
           }}
         >
@@ -229,15 +230,17 @@ export const GlobalNavigation = () => {
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden bg-background relative">
+          <div className="flex-1 overflow-hidden bg-background relative min-h-0">
             <SidebarProvider>
-              <div className="flex h-full w-full">
+              <div className="flex h-full w-full min-h-0">
                 <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-                <main className="flex-1 relative overflow-hidden">
-                  <MasterDataContent 
-                    activeSection={activeSection} 
-                    onSignInComplete={handleSignInComplete}
-                  />
+                <main className="flex-1 relative overflow-hidden min-h-0">
+                  <div className="h-full overflow-y-auto">
+                    <MasterDataContent 
+                      activeSection={activeSection} 
+                      onSignInComplete={handleSignInComplete}
+                    />
+                  </div>
                 </main>
               </div>
             </SidebarProvider>
