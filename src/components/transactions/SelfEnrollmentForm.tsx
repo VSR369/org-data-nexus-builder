@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EnrollmentTabs from './enrollment/EnrollmentTabs';
@@ -33,7 +34,7 @@ const SelfEnrollmentForm = () => {
     clearCompetencyData
   } = useCompetencyState();
 
-  const { activeTab, handleTabChange } = useTabManagement(selectedIndustrySegments.length > 0);
+  const { activeTab, handleTabChange } = useTabManagement();
 
   const {
     invalidFields,
@@ -130,6 +131,7 @@ const SelfEnrollmentForm = () => {
               invalidFields={invalidFields}
             />
             
+            {/* Core Competencies Tab - completely independent, no basic info data passed */}
             <CoreCompetenciesTab
               competencyData={competencyData}
               updateCompetencyData={handleCompetencyUpdate}

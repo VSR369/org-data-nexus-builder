@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
 import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
@@ -22,6 +23,10 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   const [industrySegments, setIndustrySegments] = useState<string[]>([]);
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const [availableSegments, setAvailableSegments] = useState<{id: string, name: string}[]>([]);
+  
+  // Independent form fields for Core Competencies only
+  const [providerName, setProviderName] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
 
   // Load industry segments
   useEffect(() => {
@@ -44,17 +49,6 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
     };
 
     loadSegments();
-
-    const handleIndustrySegmentsUpdated = () => {
-      console.log('CoreCompetenciesTab - Received industry segments update');
-      loadSegments();
-    };
-
-    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
-
-    return () => {
-      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
-    };
   }, []);
 
   // Update active tab when selected industry segments change
@@ -71,10 +65,7 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
       
       if (segmentIndex >= 0 && segmentIndex < industrySegments.length) {
         const name = industrySegments[segmentIndex];
-        console.log(`CoreCompetenciesTab - Mapping segment ID ${segmentId} (index ${segmentIndex}) to name: ${name}`);
         return name;
-      } else {
-        console.warn(`CoreCompetenciesTab - Segment ID ${segmentId} (index ${segmentIndex}) is out of range. Available segments:`, industrySegments);
       }
     } catch (error) {
       console.error('CoreCompetenciesTab - Error loading industry segments:', error);
@@ -125,6 +116,35 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 
   return (
     <TabsContent value="core-competencies" className="space-y-6">
+      {/* Independent Core Competencies Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Solution Provider Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="provider-name">Solution Provider Name</Label>
+              <Input
+                id="provider-name"
+                placeholder="Enter provider name"
+                value={providerName}
+                onChange={(e) => setProviderName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="organization-name">Organization Name</Label>
+              <Input
+                id="organization-name"
+                placeholder="Enter organization name"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Core Competencies Assessment</CardTitle>
