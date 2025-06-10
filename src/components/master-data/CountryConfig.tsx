@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Globe, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface Country {
   id: string;
@@ -21,30 +22,99 @@ const defaultCountries: Country[] = [
   { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' },
 ];
 
-const dataManager = new DataManager<Country[]>({
-  key: 'master_data_countries',
-  defaultData: defaultCountries,
-  version: 1
-});
-
-GlobalCacheManager.registerKey('master_data_countries');
-
 const CountryConfig = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
   const { toast } = useToast();
 
-  // Load data on component mount
+  // Load and convert data from shared manager
   useEffect(() => {
-    const loadedCountries = dataManager.loadData();
-    setCountries(loadedCountries);
+    try {
+      const sharedCountries = countriesDataManager.loadData();
+      console.log('Loaded shared countries:', sharedCountries);
+      
+      // Convert string array to Country objects if needed
+      if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
+        if (typeof sharedCountries[0] === 'string') {
+          // Convert string array to Country objects
+          const convertedCountries = sharedCountries.map((countryName, index) => ({
+            id: (index + 1).toString(),
+            name: countryName,
+            code: getCountryCode(countryName),
+            region: getCountryRegion(countryName)
+          }));
+          setCountries(convertedCountries);
+        } else {
+          // Already in correct format
+          setCountries(sharedCountries as Country[]);
+        }
+      } else {
+        // Use default countries if no data
+        setCountries(defaultCountries);
+        // Save default countries to shared manager as string array
+        const countryNames = defaultCountries.map(c => c.name);
+        countriesDataManager.saveData(countryNames);
+      }
+    } catch (error) {
+      console.error('Error loading countries:', error);
+      setCountries(defaultCountries);
+    }
   }, []);
 
-  // Save data whenever countries change
+  // Helper functions to get country codes and regions
+  const getCountryCode = (countryName: string): string => {
+    const codeMap: { [key: string]: string } = {
+      'India': 'IN',
+      'United States': 'US',
+      'United States of America': 'US',
+      'United Arab Emirates': 'AE',
+      'United Kingdom': 'GB',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Japan': 'JP',
+      'Australia': 'AU',
+      'China': 'CN',
+      'Brazil': 'BR',
+      'Canada': 'CA',
+      'Mexico': 'MX',
+      'Netherlands': 'NL',
+      'Sweden': 'SE',
+      'Switzerland': 'CH',
+      'Singapore': 'SG'
+    };
+    return codeMap[countryName] || countryName.substring(0, 2).toUpperCase();
+  };
+
+  const getCountryRegion = (countryName: string): string => {
+    const regionMap: { [key: string]: string } = {
+      'India': 'Asia',
+      'United States': 'North America',
+      'United States of America': 'North America',
+      'United Arab Emirates': 'Middle East',
+      'United Kingdom': 'Europe',
+      'Germany': 'Europe',
+      'France': 'Europe',
+      'Japan': 'Asia',
+      'Australia': 'Oceania',
+      'China': 'Asia',
+      'Brazil': 'South America',
+      'Canada': 'North America',
+      'Mexico': 'North America',
+      'Netherlands': 'Europe',
+      'Sweden': 'Europe',
+      'Switzerland': 'Europe',
+      'Singapore': 'Asia'
+    };
+    return regionMap[countryName] || 'Unknown';
+  };
+
+  // Save countries to shared manager whenever countries change
   useEffect(() => {
     if (countries.length > 0) {
-      dataManager.saveData(countries);
+      const countryNames = countries.map(country => country.name);
+      countriesDataManager.saveData(countryNames);
+      console.log('Saved countries to shared manager:', countryNames);
     }
   }, [countries]);
 
@@ -103,8 +173,9 @@ const CountryConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    const defaultData = dataManager.resetToDefault();
-    setCountries(defaultData);
+    setCountries(defaultCountries);
+    const countryNames = defaultCountries.map(c => c.name);
+    countriesDataManager.saveData(countryNames);
     toast({
       title: "Success",
       description: "Countries reset to default values.",
