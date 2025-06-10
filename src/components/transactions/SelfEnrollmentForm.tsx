@@ -11,7 +11,9 @@ import InstitutionDetailsSection from './enrollment/InstitutionDetailsSection';
 import ProviderDetailsSection from './enrollment/ProviderDetailsSection';
 import BankingDetailsSection from './enrollment/BankingDetailsSection';
 import AdditionalInfoSection from './enrollment/AdditionalInfoSection';
+import CompetencyAssessmentTab from './enrollment/CompetencyAssessmentTab';
 import { useFormState } from './enrollment/hooks/useFormState';
+import { useCompetencyState } from './enrollment/hooks/useCompetencyState';
 import { useEnrollmentSubmission } from './enrollment/hooks/useEnrollmentSubmission';
 import { useTabManagement } from './enrollment/hooks/useTabManagement';
 
@@ -28,15 +30,26 @@ const SelfEnrollmentForm = () => {
     saveDraft
   } = useFormState();
 
+  const {
+    competencyData,
+    updateCompetencyData,
+    hasCompetencyRatings,
+    clearCompetencyData
+  } = useCompetencyState();
+
   const { activeTab, showValidationError, handleTabChange } = useTabManagement(isBasicDetailsComplete);
 
   const {
     handleSubmitEnrollment
-  } = useEnrollmentSubmission(isBasicDetailsComplete, true, clearDraft); // Set competency as always complete
+  } = useEnrollmentSubmission(isBasicDetailsComplete, hasCompetencyRatings(), () => {
+    clearDraft();
+    clearCompetencyData();
+  });
 
   console.log('SelfEnrollmentForm - selectedIndustrySegment:', selectedIndustrySegment);
   console.log('SelfEnrollmentForm - providerType:', providerType);
   console.log('SelfEnrollmentForm - isBasicDetailsComplete:', isBasicDetailsComplete);
+  console.log('SelfEnrollmentForm - hasCompetencyRatings:', hasCompetencyRatings());
 
   const handleIndustrySegmentChange = (value: string) => {
     console.log('Industry segment changed to:', value);
@@ -120,7 +133,7 @@ const SelfEnrollmentForm = () => {
                     type="button" 
                     onClick={handleSubmitEnrollment}
                     className="flex-1"
-                    disabled={!isBasicDetailsComplete}
+                    disabled={!isBasicDetailsComplete || !hasCompetencyRatings()}
                   >
                     Submit Enrollment
                   </Button>
@@ -133,24 +146,54 @@ const SelfEnrollmentForm = () => {
                     Save as Draft
                   </Button>
                 </div>
-                {!isBasicDetailsComplete && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Please complete all required fields before submitting.
-                  </p>
+                {(!isBasicDetailsComplete || !hasCompetencyRatings()) && (
+                  <div className="text-sm text-muted-foreground text-center space-y-1">
+                    {!isBasicDetailsComplete && (
+                      <p>Please complete all required fields before submitting.</p>
+                    )}
+                    {!hasCompetencyRatings() && (
+                      <p>Please complete competency ratings in Core Competencies tab before submitting.</p>
+                    )}
+                  </div>
                 )}
               </form>
             </TabsContent>
             
             <TabsContent value="core-competencies" className="space-y-6">
-              <div className="text-center py-12">
-                <h3 className="text-lg font-semibold mb-2">Core Competencies Assessment</h3>
-                <p className="text-muted-foreground">
-                  This section will allow you to showcase your expertise and competencies.
-                </p>
-                <p className="text-sm text-muted-foreground mt-4">
-                  Core competencies content will be implemented here.
-                </p>
+              <CompetencyAssessmentTab
+                selectedIndustrySegment={selectedIndustrySegment}
+                competencyData={competencyData}
+                updateCompetencyData={updateCompetencyData}
+              />
+              
+              <div className="flex gap-4 pt-6">
+                <Button 
+                  type="button" 
+                  onClick={handleSubmitEnrollment}
+                  className="flex-1"
+                  disabled={!isBasicDetailsComplete || !hasCompetencyRatings()}
+                >
+                  Submit Enrollment
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={saveDraft}
+                >
+                  Save as Draft
+                </Button>
               </div>
+              {(!isBasicDetailsComplete || !hasCompetencyRatings()) && (
+                <div className="text-sm text-muted-foreground text-center space-y-1">
+                  {!isBasicDetailsComplete && (
+                    <p>Please complete all required fields in Basic Information before submitting.</p>
+                  )}
+                  {!hasCompetencyRatings() && (
+                    <p>Please complete competency ratings before submitting.</p>
+                  )}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
