@@ -34,24 +34,6 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 
   return (
     <TabsContent value="core-competencies" className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Selected Industry Segments</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Rate your competencies for each selected industry segment
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {selectedIndustrySegments.map((segmentId) => (
-              <Badge key={segmentId} variant="secondary" className="text-base px-4 py-2">
-                Segment {segmentId}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {selectedIndustrySegments.map((segmentId, index) => (
         <div key={segmentId} className="space-y-4">
           {index > 0 && <Separator className="my-8" />}

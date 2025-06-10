@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EnrollmentTabs from './enrollment/EnrollmentTabs';
@@ -34,7 +33,7 @@ const SelfEnrollmentForm = () => {
     clearCompetencyData
   } = useCompetencyState();
 
-  const { activeTab, handleTabChange } = useTabManagement(selectedIndustrySegments.length > 0 ? selectedIndustrySegments[0] : '');
+  const { activeTab, handleTabChange } = useTabManagement(selectedIndustrySegments.length > 0);
 
   const {
     invalidFields,
@@ -49,7 +48,7 @@ const SelfEnrollmentForm = () => {
   } = useEnrollmentSubmission(
     formData,
     providerType,
-    selectedIndustrySegments[0] || '', // Use first segment for validation
+    selectedIndustrySegments,
     hasCompetencyRatings(),
     isSubmitted,
     validateAndHighlightFields,

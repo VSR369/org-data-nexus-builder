@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -197,7 +198,10 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Selected Industry Segment</CardTitle>
+          <CardTitle>Industry Segment: {industrySegmentName}</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Rate your competencies for the domain groups, categories, and sub-categories below
+          </p>
         </CardHeader>
         <CardContent>
           <Badge variant="secondary" className="text-base px-4 py-2">
