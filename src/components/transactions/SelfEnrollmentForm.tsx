@@ -17,8 +17,9 @@ const SelfEnrollmentForm = () => {
     updateFormData,
     providerType,
     setProviderType,
-    selectedIndustrySegment,
-    setSelectedIndustrySegment,
+    selectedIndustrySegments,
+    addIndustrySegment,
+    removeIndustrySegment,
     isSubmitted,
     markAsSubmitted,
     resetSubmissionStatus,
@@ -33,7 +34,7 @@ const SelfEnrollmentForm = () => {
     clearCompetencyData
   } = useCompetencyState();
 
-  const { activeTab, handleTabChange } = useTabManagement(selectedIndustrySegment);
+  const { activeTab, handleTabChange } = useTabManagement(selectedIndustrySegments.length > 0 ? selectedIndustrySegments[0] : '');
 
   const {
     invalidFields,
@@ -48,7 +49,7 @@ const SelfEnrollmentForm = () => {
   } = useEnrollmentSubmission(
     formData,
     providerType,
-    selectedIndustrySegment,
+    selectedIndustrySegments[0] || '', // Use first segment for validation
     hasCompetencyRatings(),
     isSubmitted,
     validateAndHighlightFields,
@@ -61,16 +62,21 @@ const SelfEnrollmentForm = () => {
     }
   );
 
-  console.log('SelfEnrollmentForm - selectedIndustrySegment:', selectedIndustrySegment);
+  console.log('SelfEnrollmentForm - selectedIndustrySegments:', selectedIndustrySegments);
   console.log('SelfEnrollmentForm - providerType:', providerType);
   console.log('SelfEnrollmentForm - hasCompetencyRatings:', hasCompetencyRatings());
   console.log('SelfEnrollmentForm - isSubmitted:', isSubmitted);
   console.log('SelfEnrollmentForm - invalidFields:', Array.from(invalidFields));
 
-  const handleIndustrySegmentChange = (value: string) => {
-    console.log('Industry segment changed to:', value);
-    setSelectedIndustrySegment(value);
+  const handleAddIndustrySegment = (value: string) => {
+    console.log('Industry segment added:', value);
+    addIndustrySegment(value);
     clearFieldValidation('industrySegment');
+  };
+
+  const handleRemoveIndustrySegment = (value: string) => {
+    console.log('Industry segment removed:', value);
+    removeIndustrySegment(value);
   };
 
   const handleProviderTypeChange = (value: string) => {
@@ -87,8 +93,8 @@ const SelfEnrollmentForm = () => {
     }
   };
 
-  const handleCompetencyUpdate = (domainGroup: string, category: string, subCategory: string, rating: number) => {
-    updateCompetencyData(domainGroup, category, subCategory, rating);
+  const handleCompetencyUpdate = (industrySegment: string, domainGroup: string, category: string, subCategory: string, rating: number) => {
+    updateCompetencyData(industrySegment, domainGroup, category, subCategory, rating);
     // Reset submission status if user modifies competency data after submission
     if (isSubmitted) {
       resetSubmissionStatus();
@@ -112,8 +118,9 @@ const SelfEnrollmentForm = () => {
         <CardContent>
           <EnrollmentTabs activeTab={activeTab} onTabChange={handleTabChange}>
             <BasicInformationTab
-              selectedIndustrySegment={selectedIndustrySegment}
-              onIndustrySegmentChange={handleIndustrySegmentChange}
+              selectedIndustrySegments={selectedIndustrySegments}
+              onAddIndustrySegment={handleAddIndustrySegment}
+              onRemoveIndustrySegment={handleRemoveIndustrySegment}
               providerType={providerType}
               onProviderTypeChange={handleProviderTypeChange}
               formData={formData}
@@ -122,7 +129,7 @@ const SelfEnrollmentForm = () => {
             />
             
             <CoreCompetenciesTab
-              selectedIndustrySegment={selectedIndustrySegment}
+              selectedIndustrySegments={selectedIndustrySegments}
               competencyData={competencyData}
               updateCompetencyData={handleCompetencyUpdate}
             />

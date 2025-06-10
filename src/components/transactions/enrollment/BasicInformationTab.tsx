@@ -12,8 +12,9 @@ import AdditionalInfoSection from './AdditionalInfoSection';
 import { FormData } from './types';
 
 interface BasicInformationTabProps {
-  selectedIndustrySegment: string;
-  onIndustrySegmentChange: (value: string) => void;
+  selectedIndustrySegments: string[];
+  onAddIndustrySegment: (value: string) => void;
+  onRemoveIndustrySegment: (value: string) => void;
   providerType: string;
   onProviderTypeChange: (value: string) => void;
   formData: FormData;
@@ -22,8 +23,9 @@ interface BasicInformationTabProps {
 }
 
 const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
-  selectedIndustrySegment,
-  onIndustrySegmentChange,
+  selectedIndustrySegments,
+  onAddIndustrySegment,
+  onRemoveIndustrySegment,
   providerType,
   onProviderTypeChange,
   formData,
@@ -34,8 +36,9 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
     <TabsContent value="basic-details" className="space-y-8">
       <form className="space-y-8">
         <IndustrySegmentSection
-          selectedIndustrySegment={selectedIndustrySegment}
-          onIndustrySegmentChange={onIndustrySegmentChange}
+          selectedIndustrySegments={selectedIndustrySegments}
+          onAddIndustrySegment={onAddIndustrySegment}
+          onRemoveIndustrySegment={onRemoveIndustrySegment}
         />
 
         <Separator />

@@ -28,7 +28,7 @@ export const useFormState = () => {
   const savedData = loadSavedData();
   
   const [providerType, setProviderType] = useState(savedData?.providerType || '');
-  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState(savedData?.selectedIndustrySegment || '');
+  const [selectedIndustrySegments, setSelectedIndustrySegments] = useState<string[]>(savedData?.selectedIndustrySegments || []);
   const [isSubmitted, setIsSubmitted] = useState(savedData?.isSubmitted || false);
   
   const [formData, setFormData] = useState<FormData>(savedData?.formData || {
@@ -68,7 +68,7 @@ export const useFormState = () => {
   // Show toast notification if data was restored
   useEffect(() => {
     if (savedData) {
-      console.log('Restored draft data - Industry segment:', savedData.selectedIndustrySegment);
+      console.log('Restored draft data - Industry segments:', savedData.selectedIndustrySegments);
       console.log('Restored submission status:', savedData.isSubmitted);
       toast({
         title: "Draft Restored",
@@ -77,18 +77,18 @@ export const useFormState = () => {
     }
   }, [toast]);
 
-  // Auto-save functionality with industry segment and submission status
+  // Auto-save functionality with industry segments and submission status
   useEffect(() => {
     const saveData = {
       formData,
       providerType,
-      selectedIndustrySegment,
+      selectedIndustrySegments,
       isSubmitted,
       lastSaved: new Date().toISOString()
     };
     
     // Only save if there's some meaningful data
-    const hasData = providerType || selectedIndustrySegment || 
+    const hasData = providerType || selectedIndustrySegments.length > 0 || 
       Object.values(formData).some(value => {
         if (Array.isArray(value)) {
           return value.length > 0;
@@ -100,20 +100,32 @@ export const useFormState = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
       console.log('Auto-saved draft data with submission status:', isSubmitted);
     }
-  }, [formData, providerType, selectedIndustrySegment, isSubmitted]);
+  }, [formData, providerType, selectedIndustrySegments, isSubmitted]);
 
-  // Check validation whenever form data, provider type, or industry segment changes
+  // Check validation whenever form data, provider type, or industry segments change
   useEffect(() => {
-    const isValid = validateRequiredFields(formData, providerType, selectedIndustrySegment);
+    // For backward compatibility, use the first industry segment for validation
+    const primaryIndustrySegment = selectedIndustrySegments[0] || '';
+    const isValid = validateRequiredFields(formData, providerType, primaryIndustrySegment);
     setIsBasicDetailsComplete(isValid);
     console.log('Validation result changed:', isValid);
-  }, [formData, providerType, selectedIndustrySegment]);
+  }, [formData, providerType, selectedIndustrySegments]);
 
   const updateFormData = (field: string, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const addIndustrySegment = (segmentId: string) => {
+    if (!selectedIndustrySegments.includes(segmentId)) {
+      setSelectedIndustrySegments(prev => [...prev, segmentId]);
+    }
+  };
+
+  const removeIndustrySegment = (segmentId: string) => {
+    setSelectedIndustrySegments(prev => prev.filter(id => id !== segmentId));
   };
 
   const clearDraft = () => {
@@ -126,13 +138,13 @@ export const useFormState = () => {
     const saveData = {
       formData,
       providerType,
-      selectedIndustrySegment,
+      selectedIndustrySegments,
       isSubmitted,
       lastSaved: new Date().toISOString()
     };
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
-    console.log('Manual draft save with industry segment and submission status:', selectedIndustrySegment, isSubmitted);
+    console.log('Manual draft save with industry segments and submission status:', selectedIndustrySegments, isSubmitted);
     
     toast({
       title: "Draft Saved",
@@ -153,8 +165,9 @@ export const useFormState = () => {
     updateFormData,
     providerType,
     setProviderType,
-    selectedIndustrySegment,
-    setSelectedIndustrySegment,
+    selectedIndustrySegments,
+    addIndustrySegment,
+    removeIndustrySegment,
     isBasicDetailsComplete,
     isSubmitted,
     markAsSubmitted,

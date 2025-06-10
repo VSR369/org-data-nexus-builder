@@ -2,7 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
+import { Plus, X } from 'lucide-react';
 
 interface IndustrySegment {
   id: string;
@@ -12,15 +16,18 @@ interface IndustrySegment {
 }
 
 interface IndustrySegmentSectionProps {
-  selectedIndustrySegment: string;
-  onIndustrySegmentChange: (value: string) => void;
+  selectedIndustrySegments: string[];
+  onAddIndustrySegment: (value: string) => void;
+  onRemoveIndustrySegment: (value: string) => void;
 }
 
 const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
-  selectedIndustrySegment,
-  onIndustrySegmentChange
+  selectedIndustrySegments,
+  onAddIndustrySegment,
+  onRemoveIndustrySegment
 }) => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+  const [selectedSegmentToAdd, setSelectedSegmentToAdd] = useState<string>('');
 
   useEffect(() => {
     // Load industry segments from shared DataManager
@@ -57,29 +64,94 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
     };
   }, []);
 
-  const selectedSegment = industrySegments.find(segment => segment.id === selectedIndustrySegment);
+  const handleAddSegment = () => {
+    if (selectedSegmentToAdd && !selectedIndustrySegments.includes(selectedSegmentToAdd)) {
+      onAddIndustrySegment(selectedSegmentToAdd);
+      setSelectedSegmentToAdd('');
+    }
+  };
+
+  const availableSegments = industrySegments.filter(
+    segment => !selectedIndustrySegments.includes(segment.id)
+  );
+
+  const getSelectedSegmentNames = () => {
+    return selectedIndustrySegments.map(segmentId => {
+      const segment = industrySegments.find(s => s.id === segmentId);
+      return segment ? segment.name : segmentId;
+    });
+  };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor="industry-segment">Industry Segment *</Label>
-      <Select value={selectedIndustrySegment} onValueChange={onIndustrySegmentChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select Industry Segment" />
-        </SelectTrigger>
-        <SelectContent>
-          {industrySegments.map((segment) => (
-            <SelectItem key={segment.id} value={segment.id}>
-              {segment.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {selectedSegment && (
+    <Card>
+      <CardHeader>
+        <CardTitle>Industry Segments *</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Selected: {selectedSegment.name}
+          Select one or more industry segments where you provide solutions. You can add competencies for each segment.
         </p>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Selected Industry Segments */}
+        {selectedIndustrySegments.length > 0 && (
+          <div className="space-y-2">
+            <Label>Selected Industry Segments:</Label>
+            <div className="flex flex-wrap gap-2">
+              {selectedIndustrySegments.map((segmentId) => {
+                const segment = industrySegments.find(s => s.id === segmentId);
+                return (
+                  <Badge key={segmentId} variant="secondary" className="flex items-center gap-2">
+                    {segment ? segment.name : segmentId}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => onRemoveIndustrySegment(segmentId)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Add New Industry Segment */}
+        <div className="space-y-2">
+          <Label htmlFor="industry-segment">Add Industry Segment</Label>
+          <div className="flex gap-2">
+            <Select value={selectedSegmentToAdd} onValueChange={setSelectedSegmentToAdd}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select Industry Segment to Add" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSegments.map((segment) => (
+                  <SelectItem key={segment.id} value={segment.id}>
+                    {segment.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              onClick={handleAddSegment}
+              disabled={!selectedSegmentToAdd}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </Button>
+          </div>
+        </div>
+
+        {selectedIndustrySegments.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Please select at least one industry segment to continue with your enrollment.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
