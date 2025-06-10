@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Plus, Edit, Trash2, Clock, MapPin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+type EventType = 'conference' | 'workshop' | 'webinar' | 'networking' | 'other';
+
 interface EventConfig {
   id: string;
   title: string;
   description: string;
-  type: 'conference' | 'workshop' | 'webinar' | 'networking' | 'other';
+  type: EventType;
   startDate: string;
   endDate: string;
   location: string;
@@ -54,7 +55,7 @@ const EventsCalendarConfig = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'conference' as const,
+    type: 'conference' as EventType,
     startDate: '',
     endDate: '',
     location: '',
@@ -183,7 +184,7 @@ const EventsCalendarConfig = () => {
                   <select
                     id="type"
                     value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value as any})}
+                    onChange={(e) => setFormData({...formData, type: e.target.value as EventType})}
                     className="w-full px-3 py-2 border border-input rounded-md"
                   >
                     <option value="conference">Conference</option>
