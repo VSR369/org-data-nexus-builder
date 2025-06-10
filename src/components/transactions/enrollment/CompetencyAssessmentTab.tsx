@@ -71,6 +71,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   });
 
   console.log('Relevant domain groups found:', relevantDomainGroups.length);
+  console.log('Domain groups details:', relevantDomainGroups);
 
   return (
     <div className="space-y-6">
@@ -104,9 +105,6 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
             <Card key={domainGroup.id}>
               <CardHeader>
                 <CardTitle className="text-lg">{domainGroup.name}</CardTitle>
-                {domainGroup.description && (
-                  <p className="text-sm text-muted-foreground">{domainGroup.description}</p>
-                )}
               </CardHeader>
               <CardContent>
                 <Accordion type="multiple" className="w-full">
@@ -115,9 +113,6 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                       <AccordionTrigger className="text-left">
                         <div>
                           <div className="font-medium">{category.name}</div>
-                          {category.description && (
-                            <div className="text-sm text-muted-foreground mt-1">{category.description}</div>
-                          )}
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-4">
