@@ -95,6 +95,15 @@ const CurrencyConfig = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
+                <Label htmlFor="country">Country *</Label>
+                <Input
+                  id="country"
+                  value={currentCurrency.country || ''}
+                  onChange={(e) => setCurrentCurrency(prev => ({ ...prev, country: e.target.value }))}
+                  placeholder="e.g., United States"
+                />
+              </div>
+              <div>
                 <Label htmlFor="code">Currency Code *</Label>
                 <Input
                   id="code"
@@ -121,15 +130,6 @@ const CurrencyConfig = () => {
                   onChange={(e) => setCurrentCurrency(prev => ({ ...prev, symbol: e.target.value }))}
                   placeholder="e.g., $"
                   maxLength={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="country">Country *</Label>
-                <Input
-                  id="country"
-                  value={currentCurrency.country || ''}
-                  onChange={(e) => setCurrentCurrency(prev => ({ ...prev, country: e.target.value }))}
-                  placeholder="e.g., United States"
                 />
               </div>
             </div>
