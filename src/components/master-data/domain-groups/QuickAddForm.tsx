@@ -19,7 +19,7 @@ interface QuickAddFormProps {
 }
 
 export const QuickAddForm: React.FC<QuickAddFormProps> = ({
-  industrySegments,
+  industrySegments: propsIndustrySegments,
   domainGroups,
   selectedIndustrySegment,
   selectedDomainGroup,
@@ -41,22 +41,38 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
       if (savedIndustrySegments) {
         try {
           const industrySegmentsData: IndustrySegment[] = JSON.parse(savedIndustrySegments);
-          console.log('Loading industry segments from master data:', industrySegmentsData);
-          setMasterDataSegments(industrySegmentsData.filter(segment => segment.isActive));
+          console.log('QuickAddForm - Loading industry segments from master data:', industrySegmentsData);
+          const activeSegments = industrySegmentsData.filter(segment => segment.isActive);
+          console.log('QuickAddForm - Active segments:', activeSegments);
+          setMasterDataSegments(activeSegments);
         } catch (error) {
-          console.error('Error parsing industry segments from master data:', error);
+          console.error('QuickAddForm - Error parsing industry segments from master data:', error);
           setMasterDataSegments([]);
         }
       } else {
-        console.log('No industry segments found in master data');
+        console.log('QuickAddForm - No industry segments found in master data');
         setMasterDataSegments([]);
       }
     };
 
     loadMasterDataSegments();
+    
+    // Listen for storage changes to update segments when master data changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'master_data_industry_segments') {
+        loadMasterDataSegments();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const selectedSegmentInfo = masterDataSegments.find(s => s.id === selectedIndustrySegment);
+  // Use master data segments, fallback to props if needed
+  const availableSegments = masterDataSegments.length > 0 ? masterDataSegments : propsIndustrySegments;
+  console.log('QuickAddForm - Available segments for selection:', availableSegments);
+
+  const selectedSegmentInfo = availableSegments.find(s => s.id === selectedIndustrySegment);
 
   const handleAddSubCategory = () => {
     if (!selectedCategory) {
@@ -83,7 +99,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   return (
     <div className="space-y-6">
       <IndustrySegmentSelection
-        industrySegments={masterDataSegments}
+        industrySegments={availableSegments}
         selectedIndustrySegment={selectedIndustrySegment}
         onSelectIndustrySegment={onSelectIndustrySegment}
       />

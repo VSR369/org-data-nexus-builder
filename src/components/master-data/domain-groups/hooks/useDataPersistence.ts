@@ -14,6 +14,8 @@ export const useDataPersistence = () => {
   }, []);
 
   const loadAllData = () => {
+    console.log('Loading all data...');
+    
     // Load industry segments ONLY from master data (Foundation Data)
     const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
     let loadedIndustrySegments: IndustrySegment[] = [];
@@ -33,6 +35,7 @@ export const useDataPersistence = () => {
     
     // Only show active industry segments from Foundation Data
     const activeSegments = loadedIndustrySegments.filter(segment => segment.isActive);
+    console.log('Active industry segments for domain groups:', activeSegments);
     setIndustrySegments(activeSegments);
 
     // Load domain groups

@@ -18,6 +18,9 @@ export const IndustrySegmentSelection: React.FC<IndustrySegmentSelectionProps> =
   selectedIndustrySegment,
   onSelectIndustrySegment
 }) => {
+  console.log('IndustrySegmentSelection - Received segments:', industrySegments);
+  console.log('IndustrySegmentSelection - Selected segment:', selectedIndustrySegment);
+  
   const selectedSegmentInfo = industrySegments.find(s => s.id === selectedIndustrySegment);
 
   return (
@@ -47,21 +50,30 @@ export const IndustrySegmentSelection: React.FC<IndustrySegmentSelectionProps> =
             <>
               <div>
                 <Label htmlFor="industry-segment">Industry Segment *</Label>
-                <Select value={selectedIndustrySegment} onValueChange={onSelectIndustrySegment}>
+                <Select 
+                  value={selectedIndustrySegment} 
+                  onValueChange={(value) => {
+                    console.log('IndustrySegmentSelection - Selecting segment:', value);
+                    onSelectIndustrySegment(value);
+                  }}
+                >
                   <SelectTrigger id="industry-segment" className="mt-1">
                     <SelectValue placeholder="Select an industry segment from Foundation Data" />
                   </SelectTrigger>
                   <SelectContent>
-                    {industrySegments.map((segment) => (
-                      <SelectItem key={segment.id} value={segment.id}>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {segment.code}
-                          </Badge>
-                          {segment.name}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {industrySegments.map((segment) => {
+                      console.log('IndustrySegmentSelection - Rendering segment option:', segment);
+                      return (
+                        <SelectItem key={segment.id} value={segment.id}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {segment.code}
+                            </Badge>
+                            {segment.name}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
