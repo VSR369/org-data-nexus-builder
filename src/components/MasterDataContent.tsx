@@ -24,11 +24,90 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
     onSignInComplete();
   };
 
+  console.log('MasterDataContent activeSection:', activeSection);
+
   const getSectionContent = () => {
     switch (activeSection) {
+      case 'master-data-structure':
+        return (
+          <div className="h-full overflow-y-auto">
+            <MasterDataStructureConfig />
+          </div>
+        );
+
+      case 'countries':
+        return (
+          <div className="h-full overflow-y-auto">
+            <CountryConfig />
+          </div>
+        );
+
+      case 'currencies':
+        return (
+          <div className="h-full overflow-y-auto">
+            <CurrencyConfig />
+          </div>
+        );
+
+      case 'industry-segments':
+        return (
+          <div className="h-full overflow-y-auto">
+            <IndustrySegmentConfig />
+          </div>
+        );
+
+      case 'entity-types':
+        return (
+          <div className="h-full overflow-y-auto">
+            <EntityTypeConfig />
+          </div>
+        );
+
+      case 'organization-types':
+        return (
+          <div className="h-full overflow-y-auto">
+            <OrganizationTypeConfig />
+          </div>
+        );
+
+      case 'competency-capability':
+        return (
+          <div className="h-full overflow-y-auto">
+            <CompetencyCapabilityConfig />
+          </div>
+        );
+
+      case 'reward-types':
+        return (
+          <div className="h-full overflow-y-auto">
+            <RewardTypeConfig />
+          </div>
+        );
+
+      case 'challenge-statuses':
+        return (
+          <div className="h-full overflow-y-auto">
+            <ChallengeStatusConfig />
+          </div>
+        );
+
+      case 'solution-statuses':
+        return (
+          <div className="h-full overflow-y-auto">
+            <SolutionStatusConfig />
+          </div>
+        );
+
+      case 'communication-types':
+        return (
+          <div className="h-full overflow-y-auto">
+            <CommunicationTypeConfig />
+          </div>
+        );
+
       case 'self-enrollment':
         return (
-          <div className="p-6">
+          <div className="h-full overflow-y-auto p-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -79,86 +158,9 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
           </div>
         );
 
-      case 'master-data-structure':
-        return (
-          <div className="p-6">
-            <MasterDataStructureConfig />
-          </div>
-        );
-
-      case 'countries':
-        return (
-          <div className="p-6">
-            <CountryConfig />
-          </div>
-        );
-
-      case 'currencies':
-        return (
-          <div className="p-6">
-            <CurrencyConfig />
-          </div>
-        );
-
-      case 'industry-segments':
-        return (
-          <div className="p-6">
-            <IndustrySegmentConfig />
-          </div>
-        );
-
-      case 'entity-types':
-        return (
-          <div className="p-6">
-            <EntityTypeConfig />
-          </div>
-        );
-
-      case 'organization-types':
-        return (
-          <div className="p-6">
-            <OrganizationTypeConfig />
-          </div>
-        );
-
-      case 'competency-capability':
-        return (
-          <div className="p-6">
-            <CompetencyCapabilityConfig />
-          </div>
-        );
-
-      case 'reward-types':
-        return (
-          <div className="p-6">
-            <RewardTypeConfig />
-          </div>
-        );
-
-      case 'challenge-statuses':
-        return (
-          <div className="p-6">
-            <ChallengeStatusConfig />
-          </div>
-        );
-
-      case 'solution-statuses':
-        return (
-          <div className="p-6">
-            <SolutionStatusConfig />
-          </div>
-        );
-
-      case 'communication-types':
-        return (
-          <div className="p-6">
-            <CommunicationTypeConfig />
-          </div>
-        );
-
       default:
         return (
-          <div className="p-6 space-y-6">
+          <div className="h-full overflow-y-auto p-6 space-y-6">
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                 Welcome to CoInnovator Portal
@@ -226,7 +228,7 @@ export const MasterDataContent = ({ activeSection, onSignInComplete }: MasterDat
   };
 
   return (
-    <div className="h-full overflow-auto bg-gradient-to-br from-background to-muted/20">
+    <div className="h-full bg-gradient-to-br from-background to-muted/20">
       {getSectionContent()}
     </div>
   );

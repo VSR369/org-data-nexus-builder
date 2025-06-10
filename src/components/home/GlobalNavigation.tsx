@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +51,7 @@ export const GlobalNavigation = () => {
     setIsSignInDialogOpen(true);
     // For Platform Administrator, set default to master data structure
     if (role === "Platform Administrator") {
+      console.log('Setting active section to master-data-structure for Platform Administrator');
       setActiveSection('master-data-structure');
     } else {
       setActiveSection('self-enrollment');
@@ -233,13 +233,11 @@ export const GlobalNavigation = () => {
             <SidebarProvider>
               <div className="flex h-full w-full">
                 <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-                <main className="flex-1 relative">
-                  <div className="absolute inset-0 overflow-y-auto bg-background">
-                    <MasterDataContent 
-                      activeSection={activeSection} 
-                      onSignInComplete={handleSignInComplete}
-                    />
-                  </div>
+                <main className="flex-1 relative overflow-hidden">
+                  <MasterDataContent 
+                    activeSection={activeSection} 
+                    onSignInComplete={handleSignInComplete}
+                  />
                 </main>
               </div>
             </SidebarProvider>
