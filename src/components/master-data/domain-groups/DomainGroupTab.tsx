@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,8 @@ export const DomainGroupTab: React.FC<DomainGroupTabProps> = ({
         name: formData.name.trim(),
         description: formData.description.trim(),
         industrySegmentId: selectedIndustrySegment,
-        isActive: true
+        isActive: true,
+        categories: []
       });
       setFormData({ name: '', description: '' });
       setIsAdding(false);

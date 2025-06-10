@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,8 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
         name: formData.name.trim(),
         description: formData.description.trim(),
         industrySegmentId: selectedIndustrySegment,
-        isActive: true
+        isActive: true,
+        categories: []
       });
       setFormData({ name: '', description: '' });
       setIsAdding(false);
@@ -101,7 +101,7 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
                   {industrySegments.map((segment) => (
                     <SelectItem key={segment.id} value={segment.id}>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{segment.code.toUpperCase()}</Badge>
+                        <Badge variant="secondary">{segment.code}</Badge>
                         <span>{segment.name}</span>
                       </div>
                     </SelectItem>
@@ -113,7 +113,7 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
             {selectedSegment && (
               <div className="p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <Badge variant="default">{selectedSegment.code.toUpperCase()}</Badge>
+                  <Badge variant="default">{selectedSegment.code}</Badge>
                   <span className="font-medium">{selectedSegment.name}</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
