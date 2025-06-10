@@ -38,6 +38,11 @@ const DomainGroupsConfig = () => {
     setTimeout(() => setMessage(null), 3000);
   };
 
+  // Get selected objects for hierarchical display
+  const selectedIndustrySegmentInfo = industrySegments.find(s => s.id === selectedIndustrySegment);
+  const selectedDomainGroupInfo = domainGroups.find(d => d.id === selectedDomainGroup);
+  const selectedCategoryInfo = categories.find(c => c.id === selectedCategory);
+
   return (
     <div className="space-y-6">
       <div className="text-left">
@@ -85,6 +90,8 @@ const DomainGroupsConfig = () => {
             onUpdateCategory={updateCategory}
             onDeleteCategory={deleteCategory}
             showMessage={showMessage}
+            selectedIndustrySegment={selectedIndustrySegmentInfo}
+            selectedDomainGroupInfo={selectedDomainGroupInfo}
           />
         </TabsContent>
         
@@ -96,6 +103,9 @@ const DomainGroupsConfig = () => {
             onUpdateSubCategory={updateSubCategory}
             onDeleteSubCategory={deleteSubCategory}
             showMessage={showMessage}
+            selectedIndustrySegment={selectedIndustrySegmentInfo}
+            selectedDomainGroupInfo={selectedDomainGroupInfo}
+            selectedCategoryInfo={selectedCategoryInfo}
           />
         </TabsContent>
       </Tabs>

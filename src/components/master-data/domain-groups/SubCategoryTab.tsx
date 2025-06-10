@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { SubCategory } from './types';
 
@@ -15,6 +16,9 @@ interface SubCategoryTabProps {
   onUpdateSubCategory: (id: string, updates: Partial<SubCategory>) => void;
   onDeleteSubCategory: (id: string) => void;
   showMessage: (message: string) => void;
+  selectedIndustrySegment?: { id: string; name: string; code: string };
+  selectedDomainGroupInfo?: { id: string; name: string };
+  selectedCategoryInfo?: { id: string; name: string };
 }
 
 export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
@@ -23,7 +27,10 @@ export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
   onAddSubCategory,
   onUpdateSubCategory,
   onDeleteSubCategory,
-  showMessage
+  showMessage,
+  selectedIndustrySegment,
+  selectedDomainGroupInfo,
+  selectedCategoryInfo
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,6 +86,23 @@ export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Hierarchical Context Display */}
+      {selectedIndustrySegment && selectedDomainGroupInfo && selectedCategoryInfo && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="outline">{selectedIndustrySegment.code}</Badge>
+              <span className="text-muted-foreground">→</span>
+              <span className="font-medium">{selectedIndustrySegment.name}</span>
+              <span className="text-muted-foreground">→</span>
+              <span className="font-medium">{selectedDomainGroupInfo.name}</span>
+              <span className="text-muted-foreground">→</span>
+              <Badge variant="default">{selectedCategoryInfo.name}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Sub-Categories</CardTitle>

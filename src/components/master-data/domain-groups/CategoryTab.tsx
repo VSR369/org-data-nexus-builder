@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,8 @@ interface CategoryTabProps {
   onUpdateCategory: (id: string, updates: Partial<Category>) => void;
   onDeleteCategory: (id: string) => void;
   showMessage: (message: string) => void;
+  selectedIndustrySegment?: { id: string; name: string; code: string };
+  selectedDomainGroupInfo?: { id: string; name: string };
 }
 
 export const CategoryTab: React.FC<CategoryTabProps> = ({
@@ -27,7 +30,9 @@ export const CategoryTab: React.FC<CategoryTabProps> = ({
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
-  showMessage
+  showMessage,
+  selectedIndustrySegment,
+  selectedDomainGroupInfo
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -84,6 +89,21 @@ export const CategoryTab: React.FC<CategoryTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Hierarchical Context Display */}
+      {selectedIndustrySegment && selectedDomainGroupInfo && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="outline">{selectedIndustrySegment.code}</Badge>
+              <span className="text-muted-foreground">→</span>
+              <span className="font-medium">{selectedIndustrySegment.name}</span>
+              <span className="text-muted-foreground">→</span>
+              <Badge variant="default">{selectedDomainGroupInfo.name}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Categories</CardTitle>
