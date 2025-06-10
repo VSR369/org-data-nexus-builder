@@ -18,7 +18,7 @@ export const IndustrySegmentTab: React.FC<IndustrySegmentTabProps> = ({
   onSelectIndustrySegment,
   showMessage
 }) => {
-  console.log('IndustrySegmentTab - Industry segments:', industrySegments);
+  console.log('IndustrySegmentTab - Industry segments from master data:', industrySegments);
   console.log('IndustrySegmentTab - Selected segment:', selectedIndustrySegment);
 
   return (
@@ -30,14 +30,19 @@ export const IndustrySegmentTab: React.FC<IndustrySegmentTabProps> = ({
             Select Industry Segment
           </CardTitle>
           <CardDescription>
-            Choose an industry segment to manage its domain groups
+            Choose an industry segment from master data to manage its domain groups
           </CardDescription>
         </CardHeader>
         <CardContent>
           {industrySegments.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No industry segments available</p>
+              <div className="space-y-2">
+                <p className="text-muted-foreground">No active industry segments found in master data</p>
+                <p className="text-sm text-muted-foreground">
+                  Please configure industry segments in the Industry Segments section first
+                </p>
+              </div>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -81,7 +86,7 @@ export const IndustrySegmentTab: React.FC<IndustrySegmentTabProps> = ({
           {selectedIndustrySegment && (
             <div className="mt-4 p-4 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">
-                Selected industry segment will be used for creating domain groups in the next tab.
+                Selected industry segment from master data will be used for creating domain groups.
               </p>
             </div>
           )}

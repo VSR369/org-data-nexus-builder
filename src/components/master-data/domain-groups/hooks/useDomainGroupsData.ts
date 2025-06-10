@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeIndustryData } from '../data/industryDataRegistry';
-import { mockIndustrySegments } from '../data/mockData';
 
 export const useDomainGroupsData = () => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
@@ -20,8 +19,56 @@ export const useDomainGroupsData = () => {
   }, []);
 
   const loadAllData = () => {
-    // Use the updated mock data instead of localStorage for now
-    setIndustrySegments(mockIndustrySegments);
+    // Load industry segments from master data (localStorage)
+    const savedIndustrySegments = localStorage.getItem('industrySegmentsData');
+    let loadedIndustrySegments: IndustrySegment[] = [];
+    
+    if (savedIndustrySegments) {
+      try {
+        loadedIndustrySegments = JSON.parse(savedIndustrySegments);
+        console.log('Loaded industry segments from master data:', loadedIndustrySegments);
+      } catch (error) {
+        console.error('Error parsing industry segments:', error);
+        loadedIndustrySegments = [];
+      }
+    } else {
+      // If no master data exists, initialize with default data
+      const defaultSegments: IndustrySegment[] = [
+        { 
+          id: '1', 
+          name: 'Life Sciences', 
+          code: 'LS', 
+          description: 'Pharmaceutical, biotechnology, medical devices, and healthcare research', 
+          isActive: true, 
+          createdAt: new Date().toISOString() 
+        },
+        { 
+          id: '2', 
+          name: 'Manufacturing (Smart, Discrete, Process)', 
+          code: 'MFG', 
+          description: 'Smart manufacturing, discrete manufacturing, and process manufacturing operations', 
+          isActive: true, 
+          createdAt: new Date().toISOString() 
+        },
+        { 
+          id: '3', 
+          name: 'Life Sciences & Supply Chain', 
+          code: 'LSSC', 
+          description: 'Life sciences supply chain management, logistics, and distribution', 
+          isActive: true, 
+          createdAt: new Date().toISOString() 
+        }
+      ];
+      
+      // Save default data to master data storage
+      localStorage.setItem('industrySegmentsData', JSON.stringify(defaultSegments));
+      loadedIndustrySegments = defaultSegments;
+      console.log('Initialized industry segments master data with defaults');
+    }
+    
+    // Only show active industry segments
+    const activeSegments = loadedIndustrySegments.filter(segment => segment.isActive);
+    setIndustrySegments(activeSegments);
 
     // Load domain groups
     const savedDomainGroups = localStorage.getItem('domainGroupsData');
