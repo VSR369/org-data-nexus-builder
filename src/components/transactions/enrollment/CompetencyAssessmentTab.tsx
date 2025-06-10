@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Building2, FolderTree, Target } from 'lucide-react';
 import { DomainGroupsData } from '@/types/domainGroups';
+import RatingSlider from './components/RatingSlider';
 
 interface CompetencyAssessmentTabProps {
   selectedIndustrySegment: string;
@@ -82,6 +83,17 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
 
   const hierarchicalData = getHierarchicalData();
 
+  // Get current rating for a subcategory
+  const getCurrentRating = (domainGroupName: string, categoryName: string, subCategoryName: string) => {
+    return competencyData[domainGroupName]?.[categoryName]?.[subCategoryName] || 0;
+  };
+
+  // Handle rating change
+  const handleRatingChange = (domainGroupName: string, categoryName: string, subCategoryName: string, rating: number) => {
+    console.log('Rating changed:', { domainGroupName, categoryName, subCategoryName, rating });
+    updateCompetencyData(domainGroupName, categoryName, subCategoryName, rating);
+  };
+
   if (!selectedIndustrySegment) {
     return (
       <Card>
@@ -121,12 +133,12 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Domain Group Hierarchy
+            Competency Assessment
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Evaluate your competency levels across different domain groups, categories, and sub-categories.
+            Rate your competency levels across different domain groups, categories, and sub-categories using the interactive sliders below.
           </p>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
@@ -144,7 +156,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Domain Groups Hierarchy */}
+      {/* Domain Groups Hierarchy with Rating Sliders */}
       <div className="space-y-4">
         {hierarchicalData.map((domainGroup) => (
           <Card key={domainGroup.id}>
@@ -178,15 +190,15 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                       </AccordionTrigger>
                       <AccordionContent className="pt-4">
                         {category.description && (
-                          <p className="text-muted-foreground mb-4 italic">{category.description}</p>
+                          <p className="text-muted-foreground mb-6 italic">{category.description}</p>
                         )}
                         
-                        {/* Sub-Categories */}
-                        <div className="space-y-3 ml-4">
+                        {/* Sub-Categories with Rating Sliders */}
+                        <div className="space-y-6 ml-4">
                           {category.subCategories.map((subCategory, subIndex) => (
-                            <div key={subCategory.id} className="border-l-2 border-primary/30 pl-4 py-3 bg-muted/30 rounded-r">
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-2 flex-1">
+                            <div key={subCategory.id} className="border-l-2 border-primary/30 pl-6 py-4 bg-muted/20 rounded-r-lg">
+                              <div className="mb-4">
+                                <div className="flex items-start gap-2 mb-3">
                                   <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
                                     {categoryIndex + 1}.{subIndex + 1}
                                   </span>
@@ -197,11 +209,18 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                                     )}
                                   </div>
                                 </div>
-                                <div className="ml-4">
-                                  <Badge variant="outline" className="text-xs">
-                                    Ready for Assessment
-                                  </Badge>
-                                </div>
+                              </div>
+                              
+                              {/* Rating Slider */}
+                              <div className="mt-4">
+                                <RatingSlider
+                                  subCategoryName={subCategory.name}
+                                  description={subCategory.description}
+                                  currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
+                                  onRatingChange={(rating) => 
+                                    handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
+                                  }
+                                />
                               </div>
                             </div>
                           ))}
