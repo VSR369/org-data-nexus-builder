@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { MasterDataContent } from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Database } from "lucide-react";
@@ -44,30 +44,33 @@ const MasterDataPortal = () => {
               </div>
             </div>
             
-            {isLoggedIn ? (
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-muted-foreground">Authenticated</span>
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 text-sm font-medium">A</span>
+            <div className="flex items-center space-x-4">
+              <SidebarTrigger className="lg:hidden" />
+              {isLoggedIn ? (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-muted-foreground">Authenticated</span>
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-sm font-medium">A</span>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-                <Button size="sm">
-                  Sign Up
-                </Button>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center space-x-3">
+                  <Button variant="outline" size="sm">
+                    Sign In
+                  </Button>
+                  <Button size="sm">
+                    Sign Up
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex h-[calc(100vh-4rem)] w-full">
-        <SidebarProvider>
+      {/* Main Content with Sidebar */}
+      <SidebarProvider>
+        <div className="flex h-[calc(100vh-4rem)] w-full">
           <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
@@ -77,8 +80,8 @@ const MasterDataPortal = () => {
               />
             </div>
           </main>
-        </SidebarProvider>
-      </div>
+        </div>
+      </SidebarProvider>
     </div>
   );
 };
