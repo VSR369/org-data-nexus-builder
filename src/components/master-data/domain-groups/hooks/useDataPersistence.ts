@@ -14,24 +14,24 @@ export const useDataPersistence = () => {
   }, []);
 
   const loadAllData = () => {
-    // Load industry segments from the actual master data manager (not localStorage)
+    // Load industry segments ONLY from master data (Foundation Data)
     const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
     let loadedIndustrySegments: IndustrySegment[] = [];
     
     if (savedIndustrySegments) {
       try {
         loadedIndustrySegments = JSON.parse(savedIndustrySegments);
-        console.log('Loaded industry segments from master data manager:', loadedIndustrySegments);
+        console.log('Loaded industry segments from Foundation Data master data:', loadedIndustrySegments);
       } catch (error) {
-        console.error('Error parsing industry segments from master data:', error);
+        console.error('Error parsing industry segments from Foundation Data:', error);
         loadedIndustrySegments = [];
       }
     } else {
-      console.log('No industry segments found in master data manager');
+      console.log('No industry segments found in Foundation Data master data');
       loadedIndustrySegments = [];
     }
     
-    // Only show active industry segments
+    // Only show active industry segments from Foundation Data
     const activeSegments = loadedIndustrySegments.filter(segment => segment.isActive);
     setIndustrySegments(activeSegments);
 

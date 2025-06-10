@@ -28,7 +28,7 @@ export const IndustrySegmentSelection: React.FC<IndustrySegmentSelectionProps> =
           Industry Segment Selection
         </CardTitle>
         <CardDescription>
-          Choose an industry segment from master data to create domain groups for
+          Choose an industry segment from Foundation Data master data to create domain groups for
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -37,9 +37,9 @@ export const IndustrySegmentSelection: React.FC<IndustrySegmentSelectionProps> =
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <div className="space-y-2">
-                <p className="text-muted-foreground">No active industry segments found in master data</p>
+                <p className="text-muted-foreground">No active industry segments found in Foundation Data</p>
                 <p className="text-sm text-muted-foreground">
-                  Please configure industry segments in the Industry Segments section first
+                  Please configure industry segments in Foundation Data → Industry Segments section first
                 </p>
               </div>
             </div>
@@ -49,7 +49,7 @@ export const IndustrySegmentSelection: React.FC<IndustrySegmentSelectionProps> =
                 <Label htmlFor="industry-segment">Industry Segment *</Label>
                 <Select value={selectedIndustrySegment} onValueChange={onSelectIndustrySegment}>
                   <SelectTrigger id="industry-segment" className="mt-1">
-                    <SelectValue placeholder="Select an industry segment from master data" />
+                    <SelectValue placeholder="Select an industry segment from Foundation Data" />
                   </SelectTrigger>
                   <SelectContent>
                     {industrySegments.map((segment) => (

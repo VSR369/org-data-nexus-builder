@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IndustrySegment, DomainGroup } from './types';
 import { IndustrySegmentSelection } from './components/IndustrySegmentSelection';
 import { DomainGroupCreation } from './components/DomainGroupCreation';
@@ -32,8 +32,31 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 }) => {
   const [subCategoryName, setSubCategoryName] = useState('');
   const [subCategoryDescription, setSubCategoryDescription] = useState('');
+  const [masterDataSegments, setMasterDataSegments] = useState<IndustrySegment[]>([]);
 
-  const selectedSegmentInfo = industrySegments.find(s => s.id === selectedIndustrySegment);
+  // Load industry segments from master data
+  useEffect(() => {
+    const loadMasterDataSegments = () => {
+      const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
+      if (savedIndustrySegments) {
+        try {
+          const industrySegmentsData: IndustrySegment[] = JSON.parse(savedIndustrySegments);
+          console.log('Loading industry segments from master data:', industrySegmentsData);
+          setMasterDataSegments(industrySegmentsData.filter(segment => segment.isActive));
+        } catch (error) {
+          console.error('Error parsing industry segments from master data:', error);
+          setMasterDataSegments([]);
+        }
+      } else {
+        console.log('No industry segments found in master data');
+        setMasterDataSegments([]);
+      }
+    };
+
+    loadMasterDataSegments();
+  }, []);
+
+  const selectedSegmentInfo = masterDataSegments.find(s => s.id === selectedIndustrySegment);
 
   const handleAddSubCategory = () => {
     if (!selectedCategory) {
@@ -60,7 +83,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   return (
     <div className="space-y-6">
       <IndustrySegmentSelection
-        industrySegments={industrySegments}
+        industrySegments={masterDataSegments}
         selectedIndustrySegment={selectedIndustrySegment}
         onSelectIndustrySegment={onSelectIndustrySegment}
       />
