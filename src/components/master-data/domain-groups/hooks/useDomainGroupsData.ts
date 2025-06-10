@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeIndustryData } from '../data/industryDataRegistry';
+import { mockIndustrySegments } from '../data/mockData';
 
 export const useDomainGroupsData = () => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
@@ -19,23 +20,8 @@ export const useDomainGroupsData = () => {
   }, []);
 
   const loadAllData = () => {
-    // Load industry segments from localStorage or use hardcoded defaults
-    const savedIndustrySegments = localStorage.getItem('industrySegmentsData');
-    let loadedIndustrySegments: IndustrySegment[] = [];
-    
-    if (savedIndustrySegments) {
-      try {
-        loadedIndustrySegments = JSON.parse(savedIndustrySegments);
-      } catch (error) {
-        console.error('Error parsing industry segments:', error);
-        loadedIndustrySegments = getDefaultIndustrySegments();
-      }
-    } else {
-      loadedIndustrySegments = getDefaultIndustrySegments();
-      localStorage.setItem('industrySegmentsData', JSON.stringify(loadedIndustrySegments));
-    }
-    
-    setIndustrySegments(loadedIndustrySegments);
+    // Use the updated mock data instead of localStorage for now
+    setIndustrySegments(mockIndustrySegments);
 
     // Load domain groups
     const savedDomainGroups = localStorage.getItem('domainGroupsData');
@@ -85,20 +71,6 @@ export const useDomainGroupsData = () => {
     // Initialize industry-specific data if needed
     initializeIndustryData();
   };
-
-  // Default industry segments
-  const getDefaultIndustrySegments = (): IndustrySegment[] => [
-    { id: 'banking-finance', name: 'Banking & Finance', code: 'BF', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'healthcare', name: 'Healthcare & Life Sciences', code: 'HL', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'technology', name: 'Technology & Software', code: 'TS', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'manufacturing', name: 'Manufacturing', code: 'MF', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'retail', name: 'Retail & Consumer Goods', code: 'RC', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'logistics', name: 'Logistics & Supply Chain', code: 'LS', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'energy', name: 'Energy & Utilities', code: 'EU', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'education', name: 'Education', code: 'ED', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'government', name: 'Government & Public Sector', code: 'GP', isActive: true, createdAt: new Date().toISOString() },
-    { id: 'real-estate', name: 'Real Estate & Construction', code: 'RE', isActive: true, createdAt: new Date().toISOString() }
-  ];
 
   const saveIndustrySegments = (segments: IndustrySegment[]) => {
     setIndustrySegments(segments);
