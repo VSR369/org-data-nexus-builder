@@ -27,6 +27,17 @@ export interface CompetencyCapability {
   isActive: boolean;
 }
 
+export interface CapabilityLevel {
+  id: string;
+  name: string;
+  description: string;
+  minScore: number;
+  maxScore: number;
+  color: string;
+  order: number;
+  isActive: boolean;
+}
+
 export interface CompetencyAssessment {
   groupId: string;
   categoryId: string;

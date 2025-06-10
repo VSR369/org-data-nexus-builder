@@ -1,5 +1,5 @@
 
-import { CompetencyCapability, ColorOption } from './types';
+import { CompetencyCapability, ColorOption, CapabilityLevel } from './types';
 
 export const DEFAULT_CAPABILITIES: CompetencyCapability[] = [
   {
@@ -7,7 +7,7 @@ export const DEFAULT_CAPABILITIES: CompetencyCapability[] = [
     name: 'Software Development',
     description: 'Ability to design, develop, and maintain software applications',
     category: 'technical',
-    ratingRange: '1-5',
+    ratingRange: '0-10',
     isActive: true,
     color: 'bg-blue-100 text-blue-800'
   },
@@ -16,7 +16,7 @@ export const DEFAULT_CAPABILITIES: CompetencyCapability[] = [
     name: 'Project Management',
     description: 'Planning, executing, and closing projects effectively',
     category: 'business',
-    ratingRange: '1-5',
+    ratingRange: '0-10',
     isActive: true,
     color: 'bg-green-100 text-green-800'
   },
@@ -25,7 +25,7 @@ export const DEFAULT_CAPABILITIES: CompetencyCapability[] = [
     name: 'Leadership',
     description: 'Ability to lead and inspire teams',
     category: 'behavioral',
-    ratingRange: '1-5',
+    ratingRange: '0-10',
     isActive: true,
     color: 'bg-purple-100 text-purple-800'
   },
@@ -34,7 +34,7 @@ export const DEFAULT_CAPABILITIES: CompetencyCapability[] = [
     name: 'Data Analysis',
     description: 'Analyzing and interpreting complex data sets',
     category: 'technical',
-    ratingRange: '1-5',
+    ratingRange: '0-10',
     isActive: true,
     color: 'bg-cyan-100 text-cyan-800'
   },
@@ -43,10 +43,49 @@ export const DEFAULT_CAPABILITIES: CompetencyCapability[] = [
     name: 'Communication',
     description: 'Effective verbal and written communication skills',
     category: 'behavioral',
-    ratingRange: '1-5',
+    ratingRange: '0-10',
     isActive: true,
     color: 'bg-orange-100 text-orange-800'
   }
+];
+
+export const DEFAULT_CAPABILITY_LEVELS: CapabilityLevel[] = [
+  {
+    id: '1',
+    label: 'No/Low Competency',
+    minScore: 0.0,
+    maxScore: 2.49999,
+    color: 'bg-red-100 text-red-800 border-red-300',
+    order: 1,
+    isActive: true,
+  },
+  {
+    id: '2',
+    label: 'Basic',
+    minScore: 2.5,
+    maxScore: 4.99999,
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    order: 2,
+    isActive: true,
+  },
+  {
+    id: '3',
+    label: 'Advanced',
+    minScore: 5.0,
+    maxScore: 7.49999,
+    color: 'bg-blue-100 text-blue-800 border-blue-300',
+    order: 3,
+    isActive: true,
+  },
+  {
+    id: '4',
+    label: 'Guru',
+    minScore: 7.5,
+    maxScore: 10.0,
+    color: 'bg-purple-100 text-purple-800 border-purple-300',
+    order: 4,
+    isActive: true,
+  },
 ];
 
 export const COLOR_OPTIONS: ColorOption[] = [

@@ -9,6 +9,16 @@ export interface CompetencyCapability {
   color?: string;
 }
 
+export interface CapabilityLevel {
+  id: string;
+  label: string;
+  minScore: number;
+  maxScore: number;
+  color: string;
+  order: number;
+  isActive: boolean;
+}
+
 export interface RatingScale {
   id: string;
   name: string;
@@ -26,6 +36,13 @@ export interface FormData {
   name: string;
   description: string;
   ratingRange: string;
+  color: string;
+}
+
+export interface CapabilityLevelFormData {
+  label: string;
+  minScore: number;
+  maxScore: number;
   color: string;
 }
 
