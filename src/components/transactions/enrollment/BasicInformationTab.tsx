@@ -3,6 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import IndustrySegmentSection from './IndustrySegmentSection';
 import InstitutionDetailsSection from './InstitutionDetailsSection';
 import ProviderDetailsSection from './ProviderDetailsSection';
@@ -31,6 +32,8 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
   onFormDataUpdate,
   invalidFields = new Set()
 }) => {
+  const { toast } = useToast();
+
   const handleProviderRoleChange = (role: string, checked: boolean) => {
     const currentRoles = formData.providerRoles || [];
     
@@ -59,9 +62,21 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
     }
   };
 
+  const handleInstitutionTabClick = () => {
+    if (providerType === 'individual') {
+      toast({
+        title: "Institution Details Not Available",
+        description: "You have chosen as an individual solution provider. Institution details are only available for organizations.",
+        variant: "default"
+      });
+    }
+  };
+
   const currentRoles = formData.providerRoles || [];
   const isBothSelected = currentRoles.includes('both') || 
     (currentRoles.includes('solution-provider') && currentRoles.includes('solution-assessor'));
+
+  const isInstitutionTabDisabled = providerType === 'individual';
 
   return (
     <div className="space-y-6">
@@ -135,7 +150,14 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
       <Tabs defaultValue="provider-details" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="provider-details">Provider Details</TabsTrigger>
-          <TabsTrigger value="institution-details">Institution Details</TabsTrigger>
+          <TabsTrigger 
+            value="institution-details" 
+            disabled={isInstitutionTabDisabled}
+            onClick={handleInstitutionTabClick}
+            className={isInstitutionTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            Institution Details
+          </TabsTrigger>
           <TabsTrigger value="banking-details">Banking Details</TabsTrigger>
           <TabsTrigger value="additional-info">Additional Info</TabsTrigger>
         </TabsList>
