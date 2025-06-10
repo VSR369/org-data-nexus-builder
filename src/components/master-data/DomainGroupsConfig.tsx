@@ -14,6 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { DataManager } from '@/utils/dataManager';
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
 
+// Industry Segment interface to match IndustrySegmentConfig
+interface IndustrySegment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 // Default data
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -28,6 +38,7 @@ const domainGroupsDataManager = new DataManager({
   version: 1
 });
 
+// Use the SAME data manager as IndustrySegmentConfig
 const industrySegmentDataManager = new DataManager({
   key: 'master_data_industry_segments',
   defaultData: [],
@@ -36,7 +47,7 @@ const industrySegmentDataManager = new DataManager({
 
 const DomainGroupsConfig: React.FC = () => {
   const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
-  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -63,18 +74,25 @@ const DomainGroupsConfig: React.FC = () => {
     
     setData(loadedData);
     
-    // Handle industry segments - they are stored as strings
-    const validSegments: string[] = Array.isArray(loadedSegments) 
-      ? loadedSegments.filter(segment => segment && typeof segment === 'string')
+    // Filter only active industry segments and ensure they are proper objects
+    const activeSegments: IndustrySegment[] = Array.isArray(loadedSegments) 
+      ? loadedSegments.filter((segment: any) => 
+          segment && 
+          typeof segment === 'object' && 
+          segment.id && 
+          segment.name && 
+          segment.isActive === true
+        )
       : [];
     
-    console.log('✅ Valid industry segments after filtering:', validSegments);
-    setIndustrySegments(validSegments);
+    console.log('✅ Active industry segments after filtering:', activeSegments);
+    setIndustrySegments(activeSegments);
   }, []);
   
   // Helper function to get industry segment name
   const getIndustrySegmentName = (segmentId: string): string => {
-    return segmentId || 'Unknown Segment';
+    const segment = industrySegments.find(s => s.id === segmentId);
+    return segment ? segment.name : 'Unknown Segment';
   };
 
   // Handle form submission
@@ -216,13 +234,18 @@ const DomainGroupsConfig: React.FC = () => {
                   <SelectValue placeholder="Select Industry Segment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {industrySegments.map((segment, index) => (
-                    <SelectItem key={index} value={segment}>
-                      {segment}
+                  {industrySegments.map((segment) => (
+                    <SelectItem key={segment.id} value={segment.id}>
+                      {segment.name} ({segment.code})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {industrySegments.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No active industry segments found. Please add industry segments first.
+                </p>
+              )}
             </div>
 
             {/* Field 2: Domain Group */}
