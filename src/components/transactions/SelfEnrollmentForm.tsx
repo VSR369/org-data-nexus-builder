@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { useFormState } from './enrollment/hooks/useFormState';
 import { useCompetencyState } from './enrollment/hooks/useCompetencyState';
 import { useEnrollmentSubmission } from './enrollment/hooks/useEnrollmentSubmission';
 import { useTabManagement } from './enrollment/hooks/useTabManagement';
+import { useFieldValidation } from './enrollment/hooks/useFieldValidation';
 
 const SelfEnrollmentForm = () => {
   const {
@@ -24,7 +26,6 @@ const SelfEnrollmentForm = () => {
     setProviderType,
     selectedIndustrySegment,
     setSelectedIndustrySegment,
-    isBasicDetailsComplete,
     clearDraft,
     saveDraft
   } = useFormState();
@@ -36,23 +37,49 @@ const SelfEnrollmentForm = () => {
     clearCompetencyData
   } = useCompetencyState();
 
-  const { activeTab, showValidationError, handleTabChange } = useTabManagement(isBasicDetailsComplete, selectedIndustrySegment);
+  const { activeTab, handleTabChange } = useTabManagement(selectedIndustrySegment);
+
+  const {
+    invalidFields,
+    validateAndHighlightFields,
+    clearFieldValidation,
+    clearAllValidation
+  } = useFieldValidation();
 
   const {
     handleSubmitEnrollment
-  } = useEnrollmentSubmission(isBasicDetailsComplete, hasCompetencyRatings(), () => {
-    clearDraft();
-    clearCompetencyData();
-  });
+  } = useEnrollmentSubmission(
+    formData,
+    providerType,
+    selectedIndustrySegment,
+    hasCompetencyRatings(),
+    validateAndHighlightFields,
+    () => {
+      clearDraft();
+      clearCompetencyData();
+      clearAllValidation();
+    }
+  );
 
   console.log('SelfEnrollmentForm - selectedIndustrySegment:', selectedIndustrySegment);
   console.log('SelfEnrollmentForm - providerType:', providerType);
-  console.log('SelfEnrollmentForm - isBasicDetailsComplete:', isBasicDetailsComplete);
   console.log('SelfEnrollmentForm - hasCompetencyRatings:', hasCompetencyRatings());
+  console.log('SelfEnrollmentForm - invalidFields:', Array.from(invalidFields));
 
   const handleIndustrySegmentChange = (value: string) => {
     console.log('Industry segment changed to:', value);
     setSelectedIndustrySegment(value);
+    clearFieldValidation('industrySegment');
+  };
+
+  const handleProviderTypeChange = (value: string) => {
+    setProviderType(value);
+    clearFieldValidation('providerType');
+  };
+
+  const handleFormDataUpdate = (field: string, value: string | string[]) => {
+    updateFormData(field, value);
+    clearFieldValidation(field);
   };
 
   return (
@@ -87,7 +114,7 @@ const SelfEnrollmentForm = () => {
                   {/* Individual/Institution Selection */}
                   <div className="space-y-3">
                     <Label>Provider Type *</Label>
-                    <RadioGroup value={providerType} onValueChange={setProviderType}>
+                    <RadioGroup value={providerType} onValueChange={handleProviderTypeChange}>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="individual" id="individual" />
                         <Label htmlFor="individual">Individual</Label>
@@ -97,13 +124,17 @@ const SelfEnrollmentForm = () => {
                         <Label htmlFor="institution">Institution</Label>
                       </div>
                     </RadioGroup>
+                    {invalidFields.has('providerType') && (
+                      <p className="text-sm text-destructive">Provider Type is required</p>
+                    )}
                   </div>
 
                   {/* Institution Details */}
                   {providerType === 'institution' && (
                     <InstitutionDetailsSection
                       formData={formData}
-                      updateFormData={updateFormData}
+                      updateFormData={handleFormDataUpdate}
+                      invalidFields={invalidFields}
                     />
                   )}
                 </div>
@@ -112,19 +143,20 @@ const SelfEnrollmentForm = () => {
 
                 <ProviderDetailsSection
                   formData={formData}
-                  updateFormData={updateFormData}
+                  updateFormData={handleFormDataUpdate}
+                  invalidFields={invalidFields}
                 />
 
                 <BankingDetailsSection
                   formData={formData}
-                  updateFormData={updateFormData}
+                  updateFormData={handleFormDataUpdate}
                 />
 
                 <Separator />
 
                 <AdditionalInfoSection
                   formData={formData}
-                  updateFormData={updateFormData}
+                  updateFormData={handleFormDataUpdate}
                 />
 
                 <div className="flex gap-4 pt-6">
@@ -132,7 +164,6 @@ const SelfEnrollmentForm = () => {
                     type="button" 
                     onClick={handleSubmitEnrollment}
                     className="flex-1"
-                    disabled={!isBasicDetailsComplete || !hasCompetencyRatings()}
                   >
                     Submit Enrollment
                   </Button>
@@ -145,16 +176,6 @@ const SelfEnrollmentForm = () => {
                     Save as Draft
                   </Button>
                 </div>
-                {(!isBasicDetailsComplete || !hasCompetencyRatings()) && (
-                  <div className="text-sm text-muted-foreground text-center space-y-1">
-                    {!isBasicDetailsComplete && (
-                      <p>Please complete all required fields before submitting.</p>
-                    )}
-                    {!hasCompetencyRatings() && (
-                      <p>Please complete competency ratings in Core Competencies tab before submitting.</p>
-                    )}
-                  </div>
-                )}
               </form>
             </TabsContent>
             
@@ -170,7 +191,6 @@ const SelfEnrollmentForm = () => {
                   type="button" 
                   onClick={handleSubmitEnrollment}
                   className="flex-1"
-                  disabled={!isBasicDetailsComplete || !hasCompetencyRatings()}
                 >
                   Submit Enrollment
                 </Button>
@@ -183,16 +203,6 @@ const SelfEnrollmentForm = () => {
                   Save as Draft
                 </Button>
               </div>
-              {(!isBasicDetailsComplete || !hasCompetencyRatings()) && (
-                <div className="text-sm text-muted-foreground text-center space-y-1">
-                  {!isBasicDetailsComplete && (
-                    <p>Please complete all required fields in Basic Information before submitting.</p>
-                  )}
-                  {!hasCompetencyRatings() && (
-                    <p>Please complete competency ratings before submitting.</p>
-                  )}
-                </div>
-              )}
             </TabsContent>
           </Tabs>
         </CardContent>

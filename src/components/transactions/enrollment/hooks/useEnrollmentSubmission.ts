@@ -1,27 +1,29 @@
 
 import { useToast } from "@/hooks/use-toast";
+import { FormData } from '../types';
 
 export const useEnrollmentSubmission = (
-  isBasicDetailsComplete: boolean,
-  competencyCompleted: boolean,
+  formData: FormData,
+  providerType: string,
+  selectedIndustrySegment: string,
+  hasCompetencyRatings: boolean,
+  validateAndHighlightFields: (
+    formData: FormData,
+    providerType: string,
+    selectedIndustrySegment: string,
+    hasCompetencyRatings: boolean
+  ) => { isValid: boolean; missingFields: string[] },
   clearDraft: () => void
 ) => {
   const { toast } = useToast();
 
   const handleSubmitEnrollment = () => {
-    if (!isBasicDetailsComplete) {
+    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegment, hasCompetencyRatings);
+    
+    if (!validation.isValid) {
       toast({
         title: "Required Fields Missing",
-        description: "Please complete all required fields before submitting.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!competencyCompleted) {
-      toast({
-        title: "Competency Assessment Required",
-        description: "Please complete the Competency Assessment before submitting your enrollment.",
+        description: `Please complete the following: ${validation.missingFields.join(', ')}`,
         variant: "destructive"
       });
       return;

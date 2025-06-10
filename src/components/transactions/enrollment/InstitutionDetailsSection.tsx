@@ -6,10 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { FormData } from './types';
 import { departmentsDataManager, organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
+import { cn } from "@/lib/utils";
 
 interface InstitutionDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
+  invalidFields?: Set<string>;
 }
 
 // Department master data structure that matches DepartmentConfig
@@ -22,7 +24,8 @@ interface DepartmentData {
 
 const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   formData,
-  updateFormData
+  updateFormData,
+  invalidFields = new Set()
 }) => {
   const [departmentData, setDepartmentData] = useState<DepartmentData>({
     categories: [],
@@ -168,12 +171,16 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
             placeholder="Enter organization name"
             value={formData.orgName}
             onChange={(e) => updateFormData('orgName', e.target.value)}
+            className={cn(invalidFields.has('orgName') && "border-destructive")}
           />
+          {invalidFields.has('orgName') && (
+            <p className="text-sm text-destructive">Organization Name is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="org-type">Organization Type *</Label>
           <Select value={formData.orgType} onValueChange={(value) => updateFormData('orgType', value)}>
-            <SelectTrigger>
+            <SelectTrigger className={cn(invalidFields.has('orgType') && "border-destructive")}>
               <SelectValue placeholder="Select organization type" />
             </SelectTrigger>
             <SelectContent>
@@ -184,11 +191,14 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
               ))}
             </SelectContent>
           </Select>
+          {invalidFields.has('orgType') && (
+            <p className="text-sm text-destructive">Organization Type is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="org-country">Country *</Label>
           <Select value={formData.orgCountry} onValueChange={(value) => updateFormData('orgCountry', value)}>
-            <SelectTrigger>
+            <SelectTrigger className={cn(invalidFields.has('orgCountry') && "border-destructive")}>
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
@@ -199,6 +209,9 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
               ))}
             </SelectContent>
           </Select>
+          {invalidFields.has('orgCountry') && (
+            <p className="text-sm text-destructive">Country is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="website">Official Website URL</Label>
@@ -251,7 +264,11 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
             placeholder="Enter complete registered address"
             value={formData.regAddress}
             onChange={(e) => updateFormData('regAddress', e.target.value)}
+            className={cn(invalidFields.has('regAddress') && "border-destructive")}
           />
+          {invalidFields.has('regAddress') && (
+            <p className="text-sm text-destructive">Registered Address is required</p>
+          )}
         </div>
       </div>
     </div>

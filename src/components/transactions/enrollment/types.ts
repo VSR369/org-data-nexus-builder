@@ -44,3 +44,9 @@ export interface SavedDraftData {
   activeTab: string;
   lastSaved: string;
 }
+
+export interface FormSectionProps {
+  formData: FormData;
+  updateFormData: (field: string, value: string | string[]) => void;
+  invalidFields?: Set<string>;
+}
