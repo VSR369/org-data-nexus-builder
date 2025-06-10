@@ -3,6 +3,7 @@ export interface IndustrySegment {
   id: string;
   name: string;
   code: string;
+  description?: string;
 }
 
 export interface DomainGroup {
@@ -12,6 +13,7 @@ export interface DomainGroup {
   industrySegmentId: string;
   isActive: boolean;
   createdAt: string;
+  categories: Category[];
 }
 
 export interface Category {
@@ -21,6 +23,7 @@ export interface Category {
   domainGroupId: string;
   isActive: boolean;
   createdAt: string;
+  subCategories: SubCategory[];
 }
 
 export interface SubCategory {

@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { DomainGroup, Category, SubCategory } from '../types';
+import { DomainGroup, Category, SubCategory, IndustrySegment } from '../types';
 
-const mockIndustrySegments = [
-  { id: '1', name: 'Banking, Financial Services and Insurance (BFSI)', description: 'Financial sector including banks, insurance, and investment services' },
-  { id: '2', name: 'Information Technology (IT)', description: 'Technology companies, software development, and IT services' },
-  { id: '3', name: 'Healthcare', description: 'Medical services, pharmaceuticals, and health technology' },
-  { id: '4', name: 'Retail', description: 'Consumer goods, e-commerce, and retail services' },
-  { id: '5', name: 'Manufacturing', description: 'Industrial production and manufacturing processes' },
-  { id: '6', name: 'Education', description: 'Educational institutions and learning technology' },
-  { id: '7', name: 'Government', description: 'Public sector and government services' },
-  { id: '8', name: 'Energy & Utilities', description: 'Power generation, utilities, and energy services' },
+const mockIndustrySegments: IndustrySegment[] = [
+  { id: '1', name: 'Banking, Financial Services and Insurance (BFSI)', code: 'BFSI', description: 'Financial sector including banks, insurance, and investment services' },
+  { id: '2', name: 'Information Technology (IT)', code: 'IT', description: 'Technology companies, software development, and IT services' },
+  { id: '3', name: 'Healthcare', code: 'HC', description: 'Medical services, pharmaceuticals, and health technology' },
+  { id: '4', name: 'Retail', code: 'RTL', description: 'Consumer goods, e-commerce, and retail services' },
+  { id: '5', name: 'Manufacturing', code: 'MFG', description: 'Industrial production and manufacturing processes' },
+  { id: '6', name: 'Education', code: 'EDU', description: 'Educational institutions and learning technology' },
+  { id: '7', name: 'Government', code: 'GOV', description: 'Public sector and government services' },
+  { id: '8', name: 'Energy & Utilities', code: 'ENU', description: 'Power generation, utilities, and energy services' },
 ];
 
 const defaultDomainGroupsData: DomainGroup[] = [
@@ -450,6 +450,8 @@ const defaultDomainGroupsData: DomainGroup[] = [
 export const useDomainGroupsData = () => {
   const [industrySegments] = useState(mockIndustrySegments);
   const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
+  const [selectedDomainGroup, setSelectedDomainGroup] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -489,20 +491,35 @@ export const useDomainGroupsData = () => {
     return domainGroups.filter(group => group.industrySegmentId === industrySegmentId);
   };
 
-  const addDomainGroup = (name: string, industrySegmentId: string) => {
-    const newId = `${industrySegmentId}-${Date.now()}`;
+  const getCategoriesByDomainGroup = (domainGroupId: string) => {
+    const group = domainGroups.find(g => g.id === domainGroupId);
+    return group?.categories || [];
+  };
+
+  const getSubCategoriesByCategory = (categoryId: string) => {
+    for (const group of domainGroups) {
+      const category = group.categories.find(c => c.id === categoryId);
+      if (category) {
+        return category.subCategories;
+      }
+    }
+    return [];
+  };
+
+  const addDomainGroup = (group: Omit<DomainGroup, 'id' | 'createdAt'>) => {
+    const newId = `${group.industrySegmentId}-${Date.now()}`;
     const newGroup: DomainGroup = {
+      ...group,
       id: newId,
-      name,
-      industrySegmentId,
+      createdAt: new Date().toISOString(),
       categories: []
     };
     setDomainGroups(prev => [...prev, newGroup]);
   };
 
-  const updateDomainGroup = (id: string, name: string) => {
+  const updateDomainGroup = (id: string, updates: Partial<DomainGroup>) => {
     setDomainGroups(prev => prev.map(group => 
-      group.id === id ? { ...group, name } : group
+      group.id === id ? { ...group, ...updates } : group
     ));
   };
 
@@ -510,27 +527,27 @@ export const useDomainGroupsData = () => {
     setDomainGroups(prev => prev.filter(group => group.id !== id));
   };
 
-  const addCategory = (domainGroupId: string, name: string) => {
-    const newId = `${domainGroupId}-cat-${Date.now()}`;
+  const addCategory = (category: Omit<Category, 'id' | 'createdAt'>) => {
+    const newId = `${category.domainGroupId}-cat-${Date.now()}`;
     const newCategory: Category = {
+      ...category,
       id: newId,
-      name,
-      domainGroupId,
+      createdAt: new Date().toISOString(),
       subCategories: []
     };
     
     setDomainGroups(prev => prev.map(group => 
-      group.id === domainGroupId 
+      group.id === category.domainGroupId 
         ? { ...group, categories: [...group.categories, newCategory] }
         : group
     ));
   };
 
-  const updateCategory = (categoryId: string, name: string) => {
+  const updateCategory = (id: string, updates: Partial<Category>) => {
     setDomainGroups(prev => prev.map(group => ({
       ...group,
       categories: group.categories.map(cat => 
-        cat.id === categoryId ? { ...cat, name } : cat
+        cat.id === id ? { ...cat, ...updates } : cat
       )
     })));
   };
@@ -542,32 +559,31 @@ export const useDomainGroupsData = () => {
     })));
   };
 
-  const addSubCategory = (categoryId: string, name: string, description?: string) => {
-    const newId = `${categoryId}-sub-${Date.now()}`;
+  const addSubCategory = (subCategory: Omit<SubCategory, 'id' | 'createdAt'>) => {
+    const newId = `${subCategory.categoryId}-sub-${Date.now()}`;
     const newSubCategory: SubCategory = {
+      ...subCategory,
       id: newId,
-      name,
-      categoryId,
-      description
+      createdAt: new Date().toISOString()
     };
     
     setDomainGroups(prev => prev.map(group => ({
       ...group,
       categories: group.categories.map(cat => 
-        cat.id === categoryId 
+        cat.id === subCategory.categoryId 
           ? { ...cat, subCategories: [...cat.subCategories, newSubCategory] }
           : cat
       )
     })));
   };
 
-  const updateSubCategory = (subCategoryId: string, name: string, description?: string) => {
+  const updateSubCategory = (id: string, updates: Partial<SubCategory>) => {
     setDomainGroups(prev => prev.map(group => ({
       ...group,
       categories: group.categories.map(cat => ({
         ...cat,
         subCategories: cat.subCategories.map(sub => 
-          sub.id === subCategoryId ? { ...sub, name, description } : sub
+          sub.id === id ? { ...sub, ...updates } : sub
         )
       }))
     })));
@@ -587,7 +603,13 @@ export const useDomainGroupsData = () => {
     industrySegments,
     selectedIndustrySegment,
     setSelectedIndustrySegment,
+    selectedDomainGroup,
+    setSelectedDomainGroup,
+    selectedCategory,
+    setSelectedCategory,
     domainGroups: getDomainGroupsByIndustry(selectedIndustrySegment),
+    categories: getCategoriesByDomainGroup(selectedDomainGroup),
+    subCategories: getSubCategoriesByCategory(selectedCategory),
     isLoading,
     addDomainGroup,
     updateDomainGroup,
