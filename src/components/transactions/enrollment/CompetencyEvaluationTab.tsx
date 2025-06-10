@@ -32,7 +32,8 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
     updateCompetencyData,
     hasCompetencyRatings,
     getRatedSubcategoriesCount,
-    getCompetencySummary
+    getCompetencySummary,
+    getCompetencyDataForSegment
   } = useCompetencyState();
 
   // Load industry segments from master data
@@ -67,6 +68,7 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
   useEffect(() => {
     if (selectedIndustrySegments.length > 0 && !activeSegmentTab) {
       setActiveSegmentTab(selectedIndustrySegments[0]);
+      console.log('Set active segment tab to:', selectedIndustrySegments[0]);
     }
   }, [selectedIndustrySegments, activeSegmentTab]);
 
@@ -77,6 +79,7 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
     rating: number
   ) => {
     if (activeSegmentTab) {
+      console.log('CompetencyEvaluationTab - updating competency for segment:', activeSegmentTab);
       updateCompetencyData(activeSegmentTab, domainGroup, category, subCategory, rating);
     }
   };
@@ -100,6 +103,10 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
 
   const competencySummary = getCompetencySummary();
   const ratedCount = getRatedSubcategoriesCount();
+
+  console.log('CompetencyEvaluationTab - activeSegmentTab:', activeSegmentTab);
+  console.log('CompetencyEvaluationTab - competencyData:', competencyData);
+  console.log('CompetencyEvaluationTab - selectedIndustrySegments:', selectedIndustrySegments);
 
   return (
     <div className="space-y-6">
@@ -151,7 +158,7 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
                 
                 <CompetencyAssessmentTab
                   selectedIndustrySegment={segmentId}
-                  competencyData={competencyData[segmentId] || {}}
+                  competencyData={getCompetencyDataForSegment(segmentId)}
                   updateCompetencyData={handleCompetencyUpdate}
                 />
               </TabsContent>

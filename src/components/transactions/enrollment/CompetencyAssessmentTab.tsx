@@ -31,10 +31,10 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         const savedData = localStorage.getItem('master_data_domain_groups');
         if (savedData) {
           const data = JSON.parse(savedData);
-          console.log('Loaded domain groups data:', data);
+          console.log('CompetencyAssessmentTab - Loaded domain groups data:', data);
           setDomainGroupsData(data);
         } else {
-          console.log('No domain groups found in master data');
+          console.log('CompetencyAssessmentTab - No domain groups found in master data');
           setDomainGroupsData({
             domainGroups: [],
             categories: [],
@@ -42,7 +42,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
           });
         }
       } catch (error) {
-        console.error('Error loading domain groups:', error);
+        console.error('CompetencyAssessmentTab - Error loading domain groups:', error);
         setDomainGroupsData({
           domainGroups: [],
           categories: [],
@@ -61,6 +61,8 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
 
   console.log('CompetencyAssessmentTab - selectedIndustrySegment:', selectedIndustrySegment);
   console.log('CompetencyAssessmentTab - relevantDomainGroups:', relevantDomainGroups);
+  console.log('CompetencyAssessmentTab - competencyData received:', competencyData);
+  console.log('CompetencyAssessmentTab - domainGroupsData.domainGroups length:', domainGroupsData.domainGroups.length);
 
   // Get hierarchical data with categories and subcategories - ensuring no duplicates
   const getHierarchicalData = () => {
@@ -92,15 +94,18 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   };
 
   const hierarchicalData = getHierarchicalData();
+  console.log('CompetencyAssessmentTab - hierarchicalData:', hierarchicalData);
 
   // Get current rating for a subcategory
   const getCurrentRating = (domainGroupName: string, categoryName: string, subCategoryName: string) => {
-    return competencyData[domainGroupName]?.[categoryName]?.[subCategoryName] || 0;
+    const rating = competencyData[domainGroupName]?.[categoryName]?.[subCategoryName] || 0;
+    console.log('CompetencyAssessmentTab - getCurrentRating:', { domainGroupName, categoryName, subCategoryName, rating });
+    return rating;
   };
 
   // Handle rating change
   const handleRatingChange = (domainGroupName: string, categoryName: string, subCategoryName: string, rating: number) => {
-    console.log('Rating changed:', { domainGroupName, categoryName, subCategoryName, rating });
+    console.log('CompetencyAssessmentTab - Rating changed:', { domainGroupName, categoryName, subCategoryName, rating });
     updateCompetencyData(domainGroupName, categoryName, subCategoryName, rating);
   };
 
