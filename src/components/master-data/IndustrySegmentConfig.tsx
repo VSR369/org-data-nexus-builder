@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,20 +44,28 @@ const IndustrySegmentConfig = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false); // Track if initial load is complete
 
   // Load segments from DataManager on component mount
   useEffect(() => {
     const loadedSegments = dataManager.loadData();
+    console.log('Loading industry segments from DataManager:', loadedSegments);
     setSegments(loadedSegments);
-    console.log('Loaded industry segments from DataManager:', loadedSegments);
+    setIsLoaded(true); // Mark as loaded after setting segments
+    console.log('Industry segments loaded successfully:', loadedSegments.length, 'segments');
   }, []);
 
-  // Save segments to DataManager whenever segments change (including empty arrays)
+  // Save segments to DataManager only after initial load is complete
   useEffect(() => {
-    // Always save data, even if segments is empty
+    if (!isLoaded) {
+      console.log('Skipping save - initial load not complete yet');
+      return; // Don't save during initial load
+    }
+    
+    console.log('Saving industry segments to DataManager:', segments.length, 'segments');
     dataManager.saveData(segments);
-    console.log('Saved industry segments to DataManager:', segments);
-  }, [segments]);
+    console.log('Industry segments saved successfully');
+  }, [segments, isLoaded]);
 
   const handleAddSegment = () => {
     if (newSegment.trim()) {
@@ -92,6 +101,7 @@ const IndustrySegmentConfig = () => {
 
   const handleDeleteSegment = (index: number) => {
     const updatedSegments = segments.filter((_, i) => i !== index);
+    console.log('Deleting segment. New array length:', updatedSegments.length);
     setSegments(updatedSegments);
     toast({
       title: "Success",
@@ -117,6 +127,23 @@ const IndustrySegmentConfig = () => {
       description: "Industry segments reset to default values",
     });
   };
+
+  // Show loading state until data is loaded
+  if (!isLoaded) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Industry Segments</CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Loading industry segments...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
