@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,8 +100,12 @@ const IndustrySegmentConfig: React.FC = () => {
   
   // Filter segments based on search term and active tab
   const filteredSegments = segments.filter(segment => {
-    const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          segment.code.toLowerCase().includes(searchTerm.toLowerCase());
+    // Add null checks to prevent toLowerCase errors
+    const name = segment?.name || '';
+    const code = segment?.code || '';
+    
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          code.toLowerCase().includes(searchTerm.toLowerCase());
     if (activeTab === 'all') return matchesSearch;
     if (activeTab === 'active') return matchesSearch && segment.isActive;
     if (activeTab === 'inactive') return matchesSearch && !segment.isActive;
