@@ -814,5 +814,3 @@ const DomainGroupsConfig: React.FC = () => {
 };
 
 export default DomainGroupsConfig;
-
-</edits_to_apply>
