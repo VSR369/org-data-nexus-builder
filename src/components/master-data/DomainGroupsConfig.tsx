@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,12 @@ const DomainGroupsConfig: React.FC = () => {
     console.log('📊 Loaded industry segments:', loadedSegments);
     
     setData(loadedData);
-    setIndustrySegments(loadedSegments);
+    // Filter out any empty, null, or undefined values from industry segments
+    const validSegments = Array.isArray(loadedSegments) 
+      ? loadedSegments.filter(segment => segment && typeof segment === 'string' && segment.trim() !== '')
+      : [];
+    console.log('✅ Valid industry segments after filtering:', validSegments);
+    setIndustrySegments(validSegments);
   }, []);
   
   // Helper functions
@@ -317,7 +321,7 @@ const DomainGroupsConfig: React.FC = () => {
                   <SelectValue placeholder="Filter by Industry Segment" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Industry Segments</SelectItem>
+                  <SelectItem value="all-segments">All Industry Segments</SelectItem>
                   {industrySegments.map((segment, index) => (
                     <SelectItem key={index} value={segment}>
                       {segment}
@@ -667,3 +671,5 @@ const DomainGroupsConfig: React.FC = () => {
 };
 
 export default DomainGroupsConfig;
+
+}
