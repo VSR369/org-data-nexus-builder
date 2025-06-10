@@ -67,7 +67,7 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <CommunicationTypeConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
-      case 'self-enrollment-form':
+      case 'self-enrollment':
         return <SelfEnrollmentForm onSignInComplete={onSignInComplete} />;
       case 'solution-voting-assessment':
         return <SolutionVotingAssessmentConfig />;
