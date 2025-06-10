@@ -10,23 +10,21 @@ class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
   loadData(): IndustrySegmentData {
     const rawData = super.loadData();
     
-    // Handle legacy data migration - if we get an array of strings, convert it
+    // If we get an array (legacy data), clear it and start fresh
     if (Array.isArray(rawData)) {
-      console.log('🔄 Migrating legacy industry segments data');
-      const migratedData: IndustrySegmentData = {
-        industrySegments: rawData.map((segmentName: string, index: number) => ({
-          id: (Date.now() + index).toString(),
-          industrySegment: segmentName,
-          description: ''
-        }))
-      };
-      
-      // Save the migrated data
-      this.saveData(migratedData);
-      return migratedData;
+      console.log('🗑️ Removing legacy industry segments array data');
+      this.clearData();
+      this.saveData(defaultIndustrySegmentData);
+      return defaultIndustrySegmentData;
     }
     
-    // If data is already in the correct format, return it
+    // Ensure we have the correct structure
+    if (!rawData || !rawData.industrySegments || !Array.isArray(rawData.industrySegments)) {
+      console.log('🔧 Invalid data structure, resetting to default');
+      this.saveData(defaultIndustrySegmentData);
+      return defaultIndustrySegmentData;
+    }
+    
     return rawData;
   }
 }
@@ -34,5 +32,5 @@ class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
 export const industrySegmentDataManager = new IndustrySegmentDataManager({
   key: 'master_data_industry_segments',
   defaultData: defaultIndustrySegmentData,
-  version: 1
+  version: 2 // Increment version to force data reset
 });
