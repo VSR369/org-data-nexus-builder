@@ -3,20 +3,20 @@ export interface CompetencyCapability {
   id: string;
   name: string;
   description: string;
-  color: string;
-  order: number;
-  isActive: boolean;
+  category: 'technical' | 'business' | 'behavioral';
   ratingRange: string;
+  isActive: boolean;
 }
 
-export interface ColorOption {
-  value: string;
-  label: string;
-}
-
-export interface FormData {
+export interface RatingScale {
+  id: string;
   name: string;
   description: string;
-  color: string;
-  ratingRange: string;
+  levels: RatingLevel[];
+}
+
+export interface RatingLevel {
+  value: number;
+  label: string;
+  description: string;
 }

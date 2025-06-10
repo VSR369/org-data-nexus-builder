@@ -211,7 +211,7 @@ export const GlobalNavigation = () => {
       {/* Sign In Dialog */}
       <Dialog open={isSignInDialogOpen} onOpenChange={setIsSignInDialogOpen}>
         <DialogContent 
-          className="max-w-7xl w-full h-[90vh] p-0 top-[5%] transform-none translate-x-0 translate-y-0 fixed left-[2.5%] bg-background border border-border shadow-2xl"
+          className="max-w-7xl w-full h-[90vh] p-0 top-[5%] transform-none translate-x-0 translate-y-0 fixed left-[2.5%] bg-background border border-border shadow-2xl overflow-hidden"
           style={{ 
             position: 'fixed',
             top: '5vh',
@@ -221,7 +221,7 @@ export const GlobalNavigation = () => {
             transform: 'none'
           }}
         >
-          <DialogHeader className="p-6 border-b bg-background/95 backdrop-blur-sm">
+          <DialogHeader className="p-6 border-b bg-background/95 backdrop-blur-sm shrink-0">
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
               {selectedRole === "Platform Administrator" ? "Master Data Configuration Portal" : "Master Data & Transactions Portal"}
               {selectedRole && (

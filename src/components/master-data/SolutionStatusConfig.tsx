@@ -1,82 +1,36 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface SolutionStatus {
-  id: string;
-  name: string;
-  description: string;
-  order: number;
-  isActive: boolean;
-  parentId?: string;
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const SolutionStatusConfig = () => {
   const { toast } = useToast();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newStatus, setNewStatus] = useState({ name: '', description: '', parentId: '' });
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  const [solutionStatuses, setSolutionStatuses] = useState<SolutionStatus[]>([
-    { id: '1', name: 'Solution Submission', description: 'Initial submission of solutions by participants', order: 1, isActive: true },
-    { id: '2', name: 'Solution Shortlisting / Screening', description: 'Initial review and screening of submitted solutions', order: 2, isActive: true },
-    { id: '3', name: 'Solution Selected for Full Assessment', description: 'Solutions that pass initial screening for detailed evaluation', order: 3, isActive: true },
-    { id: '4', name: 'Partial Payment Done by Client', description: 'Client has made partial payment for solution development', order: 4, isActive: true },
-    { id: '5', name: 'Solution Voting', description: 'Community or stakeholder voting phase', order: 5, isActive: true },
-    { id: '6', name: 'Solution Evaluation / Assessment', description: 'Detailed technical and business evaluation of solutions', order: 6, isActive: true },
-    { id: '7', name: 'Finalized – Investment Approved', description: 'Solution approved for investment', order: 7, isActive: true },
-    { id: '8', name: 'Finalized – Pilot / Proof-of-Concept (PoC)', description: 'Solution approved for pilot or proof-of-concept phase', order: 8, isActive: true },
-    { id: '9', name: 'Finalized – Ready for Full-Scale Implementation', description: 'Solution ready for full implementation', order: 9, isActive: true },
-    { id: '10', name: 'Finalized – Suspended', description: 'Solution implementation suspended', order: 10, isActive: true },
-    { id: '11', name: 'Selection & Reward Declaration', description: 'Final selection announcement and reward distribution', order: 11, isActive: true },
+  const [statuses, setStatuses] = useState([
+    'Draft',
+    'Submitted',
+    'Under Review',
+    'Shortlisted',
+    'Accepted',
+    'Rejected',
+    'Withdrawn',
+    'Implementation Ready'
   ]);
+  
+  const [newStatus, setNewStatus] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
-  const handleEdit = (status: SolutionStatus) => {
-    setEditingId(status.id);
-  };
-
-  const handleSave = (id: string, updatedName: string, updatedDescription: string) => {
-    setSolutionStatuses(prev => 
-      prev.map(status => 
-        status.id === id 
-          ? { ...status, name: updatedName, description: updatedDescription }
-          : status
-      )
-    );
-    setEditingId(null);
-    toast({
-      title: "Success",
-      description: "Solution status updated successfully",
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    setSolutionStatuses(prev => prev.filter(status => status.id !== id));
-    toast({
-      title: "Success",
-      description: "Solution status deleted successfully",
-    });
-  };
-
-  const handleAdd = () => {
-    if (newStatus.name.trim()) {
-      const id = Date.now().toString();
-      setSolutionStatuses(prev => [...prev, {
-        id,
-        name: newStatus.name,
-        description: newStatus.description,
-        order: prev.length + 1,
-        isActive: true,
-        parentId: newStatus.parentId || undefined
-      }]);
-      setNewStatus({ name: '', description: '', parentId: '' });
-      setShowAddForm(false);
+  const handleAddStatus = () => {
+    if (newStatus.trim()) {
+      setStatuses([...statuses, newStatus.trim()]);
+      setNewStatus('');
+      setIsAdding(false);
       toast({
         title: "Success",
         description: "Solution status added successfully",
@@ -84,146 +38,142 @@ const SolutionStatusConfig = () => {
     }
   };
 
-  const parentStatuses = solutionStatuses.filter(status => !status.parentId);
-  const getChildStatuses = (parentId: string) => 
-    solutionStatuses.filter(status => status.parentId === parentId);
+  const handleEditStatus = (index: number) => {
+    setEditingIndex(index);
+    setEditingValue(statuses[index]);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingValue.trim() && editingIndex !== null) {
+      const updatedStatuses = [...statuses];
+      updatedStatuses[editingIndex] = editingValue.trim();
+      setStatuses(updatedStatuses);
+      setEditingIndex(null);
+      setEditingValue('');
+      toast({
+        title: "Success",
+        description: "Solution status updated successfully",
+      });
+    }
+  };
+
+  const handleDeleteStatus = (index: number) => {
+    const updatedStatuses = statuses.filter((_, i) => i !== index);
+    setStatuses(updatedStatuses);
+    toast({
+      title: "Success",
+      description: "Solution status deleted successfully",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditingValue('');
+  };
+
+  const handleCancelAdd = () => {
+    setIsAdding(false);
+    setNewStatus('');
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">Solution Statuses</h2>
-          <p className="text-muted-foreground">Manage solution lifecycle status configurations</p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Solution Statuses</CardTitle>
+        <CardDescription>
+          Configure available statuses for solutions throughout their evaluation process
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Current Solution Statuses</h3>
+          <Button 
+            onClick={() => setIsAdding(true)} 
+            disabled={isAdding}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Status
+          </Button>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add Status
-        </Button>
-      </div>
 
-      {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Solution Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="newName">Status Name</Label>
+        {isAdding && (
+          <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
+            <div className="flex-1">
+              <Label htmlFor="new-status">New Solution Status</Label>
               <Input
-                id="newName"
-                value={newStatus.name}
-                onChange={(e) => setNewStatus({ ...newStatus, name: e.target.value })}
+                id="new-status"
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
                 placeholder="Enter status name"
+                className="mt-1"
               />
             </div>
-            <div>
-              <Label htmlFor="newDescription">Description</Label>
-              <Textarea
-                id="newDescription"
-                value={newStatus.description}
-                onChange={(e) => setNewStatus({ ...newStatus, description: e.target.value })}
-                placeholder="Enter status description"
-              />
-            </div>
-            <div>
-              <Label htmlFor="parentStatus">Parent Status (optional)</Label>
-              <select
-                id="parentStatus"
-                value={newStatus.parentId}
-                onChange={(e) => setNewStatus({ ...newStatus, parentId: e.target.value })}
-                className="w-full p-2 border border-input bg-background rounded-md"
-              >
-                <option value="">None (Top-level status)</option>
-                {parentStatuses.map(status => (
-                  <option key={status.id} value={status.id}>{status.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleAdd}>
-                <Save className="w-4 h-4 mr-2" />
+            <div className="flex gap-2 items-end">
+              <Button onClick={handleAddStatus} size="sm" className="flex items-center gap-1">
+                <Save className="w-3 h-3" />
                 Save
               </Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                <X className="w-4 h-4 mr-2" />
+              <Button onClick={handleCancelAdd} variant="outline" size="sm" className="flex items-center gap-1">
+                <X className="w-3 h-3" />
                 Cancel
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      <div className="grid gap-4">
-        {solutionStatuses.map((status) => (
-          <Card key={status.id}>
-            <CardContent className="p-4">
-              {editingId === status.id ? (
-                <EditStatusForm 
-                  status={status} 
-                  onSave={handleSave} 
-                  onCancel={() => setEditingId(null)} 
-                />
+        <div className="grid gap-2">
+          {statuses.map((status, index) => (
+            <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              {editingIndex === index ? (
+                <div className="flex gap-2 flex-1">
+                  <Input
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
+                    <Save className="w-3 h-3" />
+                    Save
+                  </Button>
+                  <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
+                    <X className="w-3 h-3" />
+                    Cancel
+                  </Button>
+                </div>
               ) : (
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-foreground">{status.name}</h3>
-                    <p className="text-muted-foreground mt-1">{status.description}</p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="text-sm text-muted-foreground">Order: {status.order}</span>
-                      <span className={`text-sm px-2 py-1 rounded ${status.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {status.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
+                <>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary">{index + 1}</Badge>
+                    <span className="font-medium">{status}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(status)}>
-                      <Edit2 className="w-4 h-4" />
+                    <Button
+                      onClick={() => handleEditStatus(index)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                      Edit
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(status.id)}>
-                      <Trash2 className="w-4 h-4" />
+                    <Button
+                      onClick={() => handleDeleteStatus(index)}
+                      variant="destructive"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Delete
                     </Button>
                   </div>
-                </div>
+                </>
               )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const EditStatusForm = ({ status, onSave, onCancel }: { 
-  status: SolutionStatus; 
-  onSave: (id: string, name: string, description: string) => void; 
-  onCancel: () => void; 
-}) => {
-  const [name, setName] = useState(status.name);
-  const [description, setDescription] = useState(status.description);
-
-  return (
-    <div className="space-y-3">
-      <Input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Status name"
-      />
-      <Textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Status description"
-      />
-      <div className="flex gap-2">
-        <Button size="sm" onClick={() => onSave(status.id, name, description)}>
-          <Save className="w-4 h-4 mr-2" />
-          Save
-        </Button>
-        <Button variant="outline" size="sm" onClick={onCancel}>
-          <X className="w-4 h-4 mr-2" />
-          Cancel
-        </Button>
-      </div>
-    </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

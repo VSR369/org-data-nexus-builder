@@ -1,10 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Scale, Edit } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompetencyCapability } from './types';
 
 interface RatingScaleOverviewProps {
@@ -14,62 +12,61 @@ interface RatingScaleOverviewProps {
 
 const RatingScaleOverview: React.FC<RatingScaleOverviewProps> = ({
   capabilities,
-  onUpdateRatingRange,
+  onUpdateRatingRange
 }) => {
-  const [isEditingScale, setIsEditingScale] = useState(false);
+  const ratingOptions = ['1-3', '1-5', '1-10'];
 
-  const sortedCapabilities = [...capabilities].sort((a, b) => a.order - b.order);
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'technical': return 'bg-blue-100 text-blue-800';
+      case 'business': return 'bg-green-100 text-green-800';
+      case 'behavioral': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scale className="w-5 h-5" />
-            Competency Rating Scale Overview
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditingScale(!isEditingScale)}
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            {isEditingScale ? 'Done Editing' : 'Edit Scale'}
-          </Button>
-        </CardTitle>
+        <CardTitle>Rating Scale Overview</CardTitle>
         <CardDescription>
-          The competency assessment uses a 0-10 rating scale with the following capability levels
+          Manage rating scales for different competency and capability categories
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sortedCapabilities.filter(cap => cap.isActive).map((capability) => (
-            <div key={capability.id} className="text-center p-4 border rounded-lg">
-              <Badge className={`${capability.color} mb-2`}>
-                {capability.name}
-              </Badge>
-              {isEditingScale ? (
-                <Input
+        <div className="space-y-4">
+          {capabilities.map((capability) => (
+            <div key={capability.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-4">
+                <div>
+                  <h4 className="font-medium">{capability.name}</h4>
+                  <p className="text-sm text-muted-foreground">{capability.description}</p>
+                </div>
+                <Badge className={getCategoryColor(capability.category)}>
+                  {capability.category}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Rating Scale:</span>
+                <Select
                   value={capability.ratingRange}
-                  onChange={(e) => onUpdateRatingRange(capability.id, e.target.value)}
-                  className="text-center text-sm font-medium mb-1"
-                  placeholder="e.g., 0 - 2.49999"
-                />
-              ) : (
-                <div className="text-sm font-medium mb-1">{capability.ratingRange}</div>
-              )}
-              <div className="text-xs text-muted-foreground">{capability.description}</div>
+                  onValueChange={(value) => onUpdateRatingRange(capability.id, value)}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ratingOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           ))}
         </div>
-        {isEditingScale && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-800">
-              <strong>Editing Mode:</strong> Click on any rating range above to edit it directly. 
-              Click "Done Editing" when finished.
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { SubCategory } from './types';
+import { SubCategory, IndustrySegment, DomainGroup, Category } from './types';
 
 interface SubCategoryTabProps {
   selectedCategory: string;
@@ -16,9 +16,9 @@ interface SubCategoryTabProps {
   onUpdateSubCategory: (id: string, updates: Partial<SubCategory>) => void;
   onDeleteSubCategory: (id: string) => void;
   showMessage: (message: string) => void;
-  selectedIndustrySegment?: { id: string; name: string; code: string };
-  selectedDomainGroupInfo?: { id: string; name: string };
-  selectedCategoryInfo?: { id: string; name: string };
+  selectedIndustrySegment?: IndustrySegment;
+  selectedDomainGroupInfo?: DomainGroup;
+  selectedCategoryInfo?: Category;
 }
 
 export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
@@ -86,28 +86,22 @@ export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Hierarchical Context Display */}
-      {selectedIndustrySegment && selectedDomainGroupInfo && selectedCategoryInfo && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Badge variant="outline">{selectedIndustrySegment.code}</Badge>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-medium">{selectedIndustrySegment.name}</span>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-medium">{selectedDomainGroupInfo.name}</span>
-              <span className="text-muted-foreground">→</span>
-              <Badge variant="default">{selectedCategoryInfo.name}</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Breadcrumb */}
+      <div className="text-sm text-muted-foreground">
+        <span>{selectedIndustrySegment?.name}</span>
+        <span className="mx-2">›</span>
+        <span>{selectedDomainGroupInfo?.name}</span>
+        <span className="mx-2">›</span>
+        <span>{selectedCategoryInfo?.name}</span>
+        <span className="mx-2">›</span>
+        <span className="text-foreground font-medium">Sub-Categories</span>
+      </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Sub-Categories</CardTitle>
           <CardDescription>
-            Manage sub-categories for the selected category
+            Manage sub-categories within the selected category
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -190,7 +184,10 @@ export const SubCategoryTab: React.FC<SubCategoryTabProps> = ({
                   <>
                     <div className="flex items-center gap-3 flex-1">
                       <div className="flex-1">
-                        <span className="font-medium">{subCategory.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{subCategory.name}</span>
+                          <Badge variant="outline">Active</Badge>
+                        </div>
                         {subCategory.description && (
                           <p className="text-sm text-muted-foreground mt-1">{subCategory.description}</p>
                         )}
