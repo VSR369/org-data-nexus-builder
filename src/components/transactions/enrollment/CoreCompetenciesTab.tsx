@@ -13,7 +13,26 @@ interface CoreCompetenciesTabProps {
 }
 
 // Helper function to get industry segment name from ID
+// This should match the exact same mapping used in IndustrySegmentSection
 const getIndustrySegmentName = (segmentId: string) => {
+  // Load from shared data manager to ensure consistency
+  try {
+    const { industrySegmentsDataManager } = require('@/utils/sharedDataManagers');
+    const segments = industrySegmentsDataManager.loadData();
+    
+    // Convert segment array index to ID (index + 1)
+    const segmentIndex = parseInt(segmentId) - 1;
+    
+    if (segmentIndex >= 0 && segmentIndex < segments.length) {
+      const name = segments[segmentIndex];
+      console.log(`Mapping segment ID ${segmentId} (index ${segmentIndex}) to name: ${name}`);
+      return name;
+    }
+  } catch (error) {
+    console.error('Error loading industry segments:', error);
+  }
+  
+  // Fallback mapping
   const segmentNames: { [key: string]: string } = {
     '1': 'Manufacturing',
     '2': 'Healthcare & Life Sciences', 
@@ -22,7 +41,10 @@ const getIndustrySegmentName = (segmentId: string) => {
     '5': 'Information Technology',
     '6': 'Retail & E-commerce'
   };
-  return segmentNames[segmentId] || `Segment ${segmentId}`;
+  
+  const name = segmentNames[segmentId];
+  console.log(`Fallback mapping segment ID ${segmentId} to name: ${name}`);
+  return name || `Segment ${segmentId}`;
 };
 
 const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
@@ -31,6 +53,9 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   updateCompetencyData
 }) => {
   const [activeSegmentTab, setActiveSegmentTab] = useState(selectedIndustrySegments[0] || '');
+
+  console.log('CoreCompetenciesTab - selectedIndustrySegments:', selectedIndustrySegments);
+  console.log('CoreCompetenciesTab - selected segment names:', selectedIndustrySegments.map(id => getIndustrySegmentName(id)));
 
   if (selectedIndustrySegments.length === 0) {
     return (
