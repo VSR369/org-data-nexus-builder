@@ -38,7 +38,7 @@ export const useFormState = () => {
     linkedin: '',
     articles: '',
     websites: '',
-    profileDocument: ''
+    profileDocuments: []
   });
 
   const [isBasicDetailsComplete, setIsBasicDetailsComplete] = useState(false);
@@ -82,7 +82,12 @@ export const useFormState = () => {
     
     // Only save if there's some meaningful data
     const hasData = providerType || selectedIndustrySegment || 
-      Object.values(formData).some(value => value.trim() !== '');
+      Object.values(formData).some(value => {
+        if (Array.isArray(value)) {
+          return value.length > 0;
+        }
+        return typeof value === 'string' && value.trim() !== '';
+      });
     
     if (hasData) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
@@ -97,7 +102,7 @@ export const useFormState = () => {
     console.log('Validation result changed:', isValid);
   }, [formData, providerType, selectedIndustrySegment]);
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: string, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
