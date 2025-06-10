@@ -62,7 +62,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   console.log('CompetencyAssessmentTab - selectedIndustrySegment:', selectedIndustrySegment);
   console.log('CompetencyAssessmentTab - relevantDomainGroups:', relevantDomainGroups);
 
-  // Get hierarchical data with categories and subcategories
+  // Get hierarchical data with categories and subcategories - ensuring no duplicates
   const getHierarchicalData = () => {
     return relevantDomainGroups.map(domainGroup => {
       const categories = domainGroupsData.categories.filter(
@@ -71,12 +71,22 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
       
       return {
         ...domainGroup,
-        categories: categories.map(category => ({
-          ...category,
-          subCategories: domainGroupsData.subCategories.filter(
+        categories: categories.map(category => {
+          // Get subcategories and remove any duplicates by name
+          const subCategories = domainGroupsData.subCategories.filter(
             sub => sub.categoryId === category.id && sub.isActive
-          )
-        }))
+          );
+          
+          // Remove duplicates by creating a Map with name as key
+          const uniqueSubCategories = Array.from(
+            new Map(subCategories.map(sub => [sub.name, sub])).values()
+          );
+          
+          return {
+            ...category,
+            subCategories: uniqueSubCategories
+          };
+        })
       };
     });
   };
@@ -196,7 +206,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                         {/* Sub-Categories with Rating Sliders */}
                         <div className="space-y-6 ml-4">
                           {category.subCategories.map((subCategory, subIndex) => (
-                            <div key={subCategory.id} className="border-l-2 border-primary/30 pl-6 py-4 bg-muted/20 rounded-r-lg">
+                            <div key={`${subCategory.id}-${subCategory.name}`} className="border-l-2 border-primary/30 pl-6 py-4 bg-muted/20 rounded-r-lg">
                               <div className="mb-4">
                                 <div className="flex items-start gap-2 mb-3">
                                   <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
