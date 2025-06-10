@@ -16,6 +16,10 @@ export class DataManager<T> {
     return `${this.config.key}_version`;
   }
 
+  private getInitializedKey(): string {
+    return `${this.config.key}_initialized`;
+  }
+
   private getCurrentVersion(): number {
     const stored = localStorage.getItem(this.getVersionKey());
     return stored ? parseInt(stored, 10) : 0;
@@ -23,6 +27,14 @@ export class DataManager<T> {
 
   private isVersionCurrent(): boolean {
     return this.getCurrentVersion() === this.config.version;
+  }
+
+  private isInitialized(): boolean {
+    return localStorage.getItem(this.getInitializedKey()) === 'true';
+  }
+
+  private markAsInitialized(): void {
+    localStorage.setItem(this.getInitializedKey(), 'true');
   }
 
   private updateVersion(): void {
@@ -35,11 +47,21 @@ export class DataManager<T> {
       if (!this.isVersionCurrent()) {
         this.clearData();
         this.updateVersion();
+        this.markAsInitialized();
+        this.saveData(this.config.defaultData);
         return this.config.defaultData;
       }
 
+      // If never initialized, use default data and mark as initialized
+      if (!this.isInitialized()) {
+        this.markAsInitialized();
+        this.saveData(this.config.defaultData);
+        return this.config.defaultData;
+      }
+
+      // Try to load saved data
       const stored = localStorage.getItem(this.config.key);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
         return parsed;
       }
@@ -48,6 +70,9 @@ export class DataManager<T> {
       this.clearData();
     }
     
+    // Fallback to default data
+    this.markAsInitialized();
+    this.saveData(this.config.defaultData);
     return this.config.defaultData;
   }
 
@@ -55,6 +80,7 @@ export class DataManager<T> {
     try {
       localStorage.setItem(this.config.key, JSON.stringify(data));
       this.updateVersion();
+      this.markAsInitialized();
     } catch (error) {
       console.error(`Error saving data for ${this.config.key}:`, error);
     }
@@ -63,10 +89,12 @@ export class DataManager<T> {
   clearData(): void {
     localStorage.removeItem(this.config.key);
     localStorage.removeItem(this.getVersionKey());
+    localStorage.removeItem(this.getInitializedKey());
   }
 
   resetToDefault(): T {
     this.clearData();
+    this.markAsInitialized();
     this.saveData(this.config.defaultData);
     return this.config.defaultData;
   }
@@ -84,6 +112,7 @@ export class GlobalCacheManager {
     this.keys.forEach(key => {
       localStorage.removeItem(key);
       localStorage.removeItem(`${key}_version`);
+      localStorage.removeItem(`${key}_initialized`);
     });
     console.log('All master data cache cleared');
   }

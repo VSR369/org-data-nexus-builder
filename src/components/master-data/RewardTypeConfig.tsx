@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Gift } from 'lucide-react';
+import { Plus, Edit, Trash2, Gift, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 
 interface RewardType {
   id: string;
@@ -18,18 +18,40 @@ interface RewardType {
   description: string;
 }
 
-const RewardTypeConfig = () => {
-  const [rewardTypes, setRewardTypes] = useState<RewardType[]>([
-    { id: '1', name: 'Cash Bonus', type: 'monetary', currency: 'INR', description: 'Direct cash reward for achievements' },
-    { id: '2', name: 'Achievement Certificate', type: 'non-monetary', description: 'Certificate recognizing innovation contributions' },
-    { id: '3', name: 'Gift Voucher', type: 'non-monetary', description: 'Vouchers for shopping or dining' },
-  ]);
+const defaultRewardTypes: RewardType[] = [
+  { id: '1', name: 'Cash Bonus', type: 'monetary', currency: 'INR', description: 'Direct cash reward for achievements' },
+  { id: '2', name: 'Achievement Certificate', type: 'non-monetary', description: 'Certificate recognizing innovation contributions' },
+  { id: '3', name: 'Gift Voucher', type: 'non-monetary', description: 'Vouchers for shopping or dining' },
+];
 
+const dataManager = new DataManager<RewardType[]>({
+  key: 'master_data_reward_types',
+  defaultData: defaultRewardTypes,
+  version: 1
+});
+
+GlobalCacheManager.registerKey('master_data_reward_types');
+
+const RewardTypeConfig = () => {
+  const [rewardTypes, setRewardTypes] = useState<RewardType[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentReward, setCurrentReward] = useState<Partial<RewardType>>({});
   const { toast } = useToast();
 
   const currencies = ['INR', 'USD', 'EUR', 'GBP'];
+
+  // Load reward types from DataManager on component mount
+  useEffect(() => {
+    const loadedRewardTypes = dataManager.loadData();
+    setRewardTypes(loadedRewardTypes);
+    console.log('Loaded reward types from DataManager:', loadedRewardTypes);
+  }, []);
+
+  // Save reward types to DataManager whenever rewardTypes change
+  useEffect(() => {
+    dataManager.saveData(rewardTypes);
+    console.log('Saved reward types to DataManager:', rewardTypes);
+  }, [rewardTypes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +102,17 @@ const RewardTypeConfig = () => {
     });
   };
 
+  const handleResetToDefault = () => {
+    const resetData = dataManager.resetToDefault();
+    setRewardTypes(resetData);
+    setCurrentReward({});
+    setIsEditing(false);
+    toast({
+      title: "Success",
+      description: "Reward types reset to default values",
+    });
+  };
+
   const resetForm = () => {
     setCurrentReward({});
     setIsEditing(false);
@@ -89,10 +122,21 @@ const RewardTypeConfig = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gift className="w-5 h-5" />
-            {isEditing ? 'Edit Reward Type' : 'Add New Reward Type'}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5" />
+              {isEditing ? 'Edit Reward Type' : 'Add New Reward Type'}
+            </CardTitle>
+            <Button
+              onClick={handleResetToDefault}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset to Default
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -168,7 +212,7 @@ const RewardTypeConfig = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Existing Reward Types</CardTitle>
+          <CardTitle>Existing Reward Types ({rewardTypes.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -195,6 +239,11 @@ const RewardTypeConfig = () => {
                 </div>
               </div>
             ))}
+            {rewardTypes.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No reward types found. Add one to get started.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

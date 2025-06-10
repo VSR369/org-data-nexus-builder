@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,12 +51,11 @@ const IndustrySegmentConfig = () => {
     console.log('Loaded industry segments from DataManager:', loadedSegments);
   }, []);
 
-  // Save segments to DataManager whenever segments change
+  // Save segments to DataManager whenever segments change (including empty arrays)
   useEffect(() => {
-    if (segments.length > 0) {
-      dataManager.saveData(segments);
-      console.log('Saved industry segments to DataManager:', segments);
-    }
+    // Always save data, even if segments is empty
+    dataManager.saveData(segments);
+    console.log('Saved industry segments to DataManager:', segments);
   }, [segments]);
 
   const handleAddSegment = () => {
