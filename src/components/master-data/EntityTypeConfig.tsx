@@ -1,25 +1,47 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+
+const defaultEntityTypes = [
+  'Commercial',
+  'Non-Profit Organization',
+  'Society/ Trust'
+];
+
+const dataManager = new DataManager<string[]>({
+  key: 'master_data_entity_types',
+  defaultData: defaultEntityTypes,
+  version: 1
+});
+
+GlobalCacheManager.registerKey('master_data_entity_types');
 
 const EntityTypeConfig = () => {
   const { toast } = useToast();
-  const [entityTypes, setEntityTypes] = useState([
-    'Commercial',
-    'Non-Profit Organization',
-    'Society/ Trust'
-  ]);
-  
+  const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [newEntityType, setNewEntityType] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadedTypes = dataManager.loadData();
+    setEntityTypes(loadedTypes);
+  }, []);
+
+  // Save data whenever entityTypes change
+  useEffect(() => {
+    if (entityTypes.length > 0) {
+      dataManager.saveData(entityTypes);
+    }
+  }, [entityTypes]);
 
   const handleAddEntityType = () => {
     if (newEntityType.trim()) {
@@ -71,17 +93,43 @@ const EntityTypeConfig = () => {
     setNewEntityType('');
   };
 
+  const handleResetToDefault = () => {
+    const defaultData = dataManager.resetToDefault();
+    setEntityTypes(defaultData);
+    setEditingIndex(null);
+    setEditingValue('');
+    setIsAdding(false);
+    setNewEntityType('');
+    toast({
+      title: "Success",
+      description: "Entity types reset to default values",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Organization Entity Types</CardTitle>
-        <CardDescription>
-          Configure organization entity types for legal classification
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Organization Entity Types</CardTitle>
+            <CardDescription>
+              Configure organization entity types for legal classification
+            </CardDescription>
+          </div>
+          <Button
+            onClick={handleResetToDefault}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset to Default
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Current Entity Types</h3>
+          <h3 className="text-lg font-medium">Current Entity Types ({entityTypes.length})</h3>
           <Button 
             onClick={() => setIsAdding(true)} 
             disabled={isAdding}

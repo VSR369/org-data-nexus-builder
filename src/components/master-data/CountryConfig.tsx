@@ -1,12 +1,12 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Globe } from 'lucide-react';
+import { Edit, Trash2, Globe, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 
 interface Country {
   id: string;
@@ -15,16 +15,38 @@ interface Country {
   region?: string;
 }
 
-const CountryConfig = () => {
-  const [countries, setCountries] = useState<Country[]>([
-    { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-    { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-    { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' },
-  ]);
+const defaultCountries: Country[] = [
+  { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+  { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+  { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' },
+];
 
+const dataManager = new DataManager<Country[]>({
+  key: 'master_data_countries',
+  defaultData: defaultCountries,
+  version: 1
+});
+
+GlobalCacheManager.registerKey('master_data_countries');
+
+const CountryConfig = () => {
+  const [countries, setCountries] = useState<Country[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
   const { toast } = useToast();
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadedCountries = dataManager.loadData();
+    setCountries(loadedCountries);
+  }, []);
+
+  // Save data whenever countries change
+  useEffect(() => {
+    if (countries.length > 0) {
+      dataManager.saveData(countries);
+    }
+  }, [countries]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,14 +102,34 @@ const CountryConfig = () => {
     setIsEditing(false);
   };
 
+  const handleResetToDefault = () => {
+    const defaultData = dataManager.resetToDefault();
+    setCountries(defaultData);
+    toast({
+      title: "Success",
+      description: "Countries reset to default values.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="w-5 h-5" />
-            {isEditing ? 'Edit Country' : 'Add New Country'}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5" />
+              {isEditing ? 'Edit Country' : 'Add New Country'}
+            </CardTitle>
+            <Button
+              onClick={handleResetToDefault}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset to Default
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,7 +180,7 @@ const CountryConfig = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Existing Countries</CardTitle>
+          <CardTitle>Existing Countries ({countries.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

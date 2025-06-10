@@ -1,14 +1,36 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CapabilityLevelsManagement from './competency-capability/CapabilityLevelsManagement';
 import { CapabilityLevel } from './competency-capability/types';
 import { DEFAULT_CAPABILITY_LEVELS, COLOR_OPTIONS } from './competency-capability/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+
+const dataManager = new DataManager<CapabilityLevel[]>({
+  key: 'master_data_capability_levels',
+  defaultData: DEFAULT_CAPABILITY_LEVELS,
+  version: 1
+});
+
+GlobalCacheManager.registerKey('master_data_capability_levels');
 
 const CompetencyCapabilityConfig = () => {
-  const [capabilityLevels, setCapabilityLevels] = useState<CapabilityLevel[]>(DEFAULT_CAPABILITY_LEVELS);
+  const [capabilityLevels, setCapabilityLevels] = useState<CapabilityLevel[]>([]);
   const { toast } = useToast();
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadedLevels = dataManager.loadData();
+    setCapabilityLevels(loadedLevels);
+  }, []);
+
+  // Save data whenever capabilityLevels change
+  useEffect(() => {
+    if (capabilityLevels.length > 0) {
+      dataManager.saveData(capabilityLevels);
+    }
+  }, [capabilityLevels]);
 
   return (
     <div className="space-y-6">

@@ -1,12 +1,12 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, DollarSign } from 'lucide-react';
+import { Edit, Trash2, DollarSign, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 
 interface Currency {
   id: string;
@@ -16,17 +16,39 @@ interface Currency {
   country: string;
 }
 
-const CurrencyConfig = () => {
-  const [currencies, setCurrencies] = useState<Currency[]>([
-    { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
-    { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States' },
-    { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
-    { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
-  ]);
+const defaultCurrencies: Currency[] = [
+  { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
+  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States' },
+  { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
+  { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
+];
 
+const dataManager = new DataManager<Currency[]>({
+  key: 'master_data_currencies',
+  defaultData: defaultCurrencies,
+  version: 1
+});
+
+GlobalCacheManager.registerKey('master_data_currencies');
+
+const CurrencyConfig = () => {
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCurrency, setCurrentCurrency] = useState<Partial<Currency>>({});
   const { toast } = useToast();
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadedCurrencies = dataManager.loadData();
+    setCurrencies(loadedCurrencies);
+  }, []);
+
+  // Save data whenever currencies change
+  useEffect(() => {
+    if (currencies.length > 0) {
+      dataManager.saveData(currencies);
+    }
+  }, [currencies]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,14 +104,34 @@ const CurrencyConfig = () => {
     setIsEditing(false);
   };
 
+  const handleResetToDefault = () => {
+    const defaultData = dataManager.resetToDefault();
+    setCurrencies(defaultData);
+    toast({
+      title: "Success",
+      description: "Currencies reset to default values.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            {isEditing ? 'Edit Currency' : 'Add New Currency'}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              {isEditing ? 'Edit Currency' : 'Add New Currency'}
+            </CardTitle>
+            <Button
+              onClick={handleResetToDefault}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset to Default
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -150,7 +192,7 @@ const CurrencyConfig = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Existing Currencies</CardTitle>
+          <CardTitle>Existing Currencies ({currencies.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

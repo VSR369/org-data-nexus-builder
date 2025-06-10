@@ -1,32 +1,54 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+
+const defaultOrgTypes = [
+  'Large Enterprise',
+  'Start-up',
+  'MSME',
+  'Academic Institution',
+  'Research Institution',
+  'Non-Profit Organization / NGO',
+  'Government Department / PSU',
+  'Industry Association / Consortium',
+  'Freelancer / Individual Consultant',
+  'Think Tank / Policy Institute'
+];
+
+const dataManager = new DataManager<string[]>({
+  key: 'master_data_organization_types',
+  defaultData: defaultOrgTypes,
+  version: 1
+});
+
+GlobalCacheManager.registerKey('master_data_organization_types');
 
 const OrganizationTypeConfig = () => {
   const { toast } = useToast();
-  const [orgTypes, setOrgTypes] = useState([
-    'Large Enterprise',
-    'Start-up',
-    'MSME',
-    'Academic Institution',
-    'Research Institution',
-    'Non-Profit Organization / NGO',
-    'Government Department / PSU',
-    'Industry Association / Consortium',
-    'Freelancer / Individual Consultant',
-    'Think Tank / Policy Institute'
-  ]);
-  
+  const [orgTypes, setOrgTypes] = useState<string[]>([]);
   const [newOrgType, setNewOrgType] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadedTypes = dataManager.loadData();
+    setOrgTypes(loadedTypes);
+  }, []);
+
+  // Save data whenever orgTypes change
+  useEffect(() => {
+    if (orgTypes.length > 0) {
+      dataManager.saveData(orgTypes);
+    }
+  }, [orgTypes]);
 
   const handleAddOrgType = () => {
     if (newOrgType.trim()) {
@@ -78,17 +100,43 @@ const OrganizationTypeConfig = () => {
     setNewOrgType('');
   };
 
+  const handleResetToDefault = () => {
+    const defaultData = dataManager.resetToDefault();
+    setOrgTypes(defaultData);
+    setEditingIndex(null);
+    setEditingValue('');
+    setIsAdding(false);
+    setNewOrgType('');
+    toast({
+      title: "Success",
+      description: "Organization types reset to default values",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Organization Types</CardTitle>
-        <CardDescription>
-          Configure organization types for Solution Seeking, Solution Provider, Solution Assessor, Solution Manager, and Solution Head Organizations
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Organization Types</CardTitle>
+            <CardDescription>
+              Configure organization types for Solution Seeking, Solution Provider, Solution Assessor, Solution Manager, and Solution Head Organizations
+            </CardDescription>
+          </div>
+          <Button
+            onClick={handleResetToDefault}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset to Default
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Current Organization Types</h3>
+          <h3 className="text-lg font-medium">Current Organization Types ({orgTypes.length})</h3>
           <Button 
             onClick={() => setIsAdding(true)} 
             disabled={isAdding}
