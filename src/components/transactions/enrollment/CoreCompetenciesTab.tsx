@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
 import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
@@ -122,31 +120,8 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 
   // If only one segment, show it directly without sub-tabs
   if (selectedIndustrySegments.length === 1) {
-    const progress = getSegmentProgress(selectedIndustrySegments[0]);
-    
     return (
       <TabsContent value="core-competencies" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Selected Industry Segment</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Rate your competencies for the selected industry segment. You can edit and modify ratings at any time.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="text-base px-4 py-2">
-                {getIndustrySegmentName(selectedIndustrySegments[0])}
-              </Badge>
-              {progress.total > 0 && (
-                <Badge variant="outline" className="text-sm">
-                  {progress.completed}/{progress.total} Competencies Rated
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
         <CompetencyAssessmentTab
           selectedIndustrySegment={selectedIndustrySegments[0]}
           competencyData={competencyData[selectedIndustrySegments[0]] || {}}
@@ -161,35 +136,6 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
   // Multiple segments - show tabbed interface with progress indicators
   return (
     <TabsContent value="core-competencies" className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Selected Industry Segments</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Rate your competencies for each selected industry segment. Click on the tabs below to switch between segments. 
-            You can edit and modify ratings at any time for any segment.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {selectedIndustrySegments.map((segmentId) => {
-              const progress = getSegmentProgress(segmentId);
-              return (
-                <div key={segmentId} className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-base px-4 py-2">
-                    {getIndustrySegmentName(segmentId)}
-                  </Badge>
-                  {progress.total > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {progress.completed}/{progress.total}
-                    </Badge>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs value={activeSegmentTab} onValueChange={setActiveSegmentTab} className="w-full">
         <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${selectedIndustrySegments.length}, 1fr)` }}>
           {selectedIndustrySegments.map((segmentId) => {
@@ -213,29 +159,6 @@ const CoreCompetenciesTab: React.FC<CoreCompetenciesTabProps> = ({
 
         {selectedIndustrySegments.map((segmentId) => (
           <TabsContent key={segmentId} value={segmentId} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Competency Assessment: {getIndustrySegmentName(segmentId)}</span>
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const progress = getSegmentProgress(segmentId);
-                      return progress.total > 0 ? (
-                        <Badge variant="outline">
-                          {progress.completed}/{progress.total} Rated ({Math.round((progress.completed / progress.total) * 100)}%)
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">Not Started</Badge>
-                      );
-                    })()}
-                  </div>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Rate your competency level for each domain area. You can modify these ratings at any time.
-                </p>
-              </CardHeader>
-            </Card>
-            
             <CompetencyAssessmentTab
               selectedIndustrySegment={segmentId}
               competencyData={competencyData[segmentId] || {}}
