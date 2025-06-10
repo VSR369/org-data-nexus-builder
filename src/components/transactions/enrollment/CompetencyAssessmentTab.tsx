@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 interface IndustrySegment {
   id: string;
@@ -87,41 +87,12 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Load industry segments from master data
+    // Load industry segments from shared DataManager
     const loadIndustrySegments = () => {
-      const savedSegments = localStorage.getItem('industrySegments');
-      let segments: string[] = [];
+      console.log('📥 CompetencyAssessmentTab: Loading segments from shared DataManager...');
       
-      if (savedSegments) {
-        try {
-          segments = JSON.parse(savedSegments);
-        } catch (error) {
-          console.error('Error parsing saved segments:', error);
-          // Default segments if parsing fails
-          segments = [
-            'Banking, Financial Services & Insurance (BFSI)',
-            'Retail & E-Commerce',
-            'Healthcare & Life Sciences',
-            'Information Technology & Software Services',
-            'Telecommunications',
-            'Education & EdTech',
-            'Manufacturing (Smart / Discrete / Process)',
-            'Logistics & Supply Chain'
-          ];
-        }
-      } else {
-        // Default segments if none saved
-        segments = [
-          'Banking, Financial Services & Insurance (BFSI)',
-          'Retail & E-Commerce',
-          'Healthcare & Life Sciences',
-          'Information Technology & Software Services',
-          'Telecommunications',
-          'Education & EdTech',
-          'Manufacturing (Smart / Discrete / Process)',
-          'Logistics & Supply Chain'
-        ];
-      }
+      const segments = industrySegmentsDataManager.loadData();
+      console.log('📋 CompetencyAssessmentTab: Loaded segments:', segments);
 
       // Convert to IndustrySegment format
       const segmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
@@ -154,6 +125,18 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
 
     loadIndustrySegments();
     loadDomainGroups();
+
+    // Listen for industry segments updates
+    const handleIndustrySegmentsUpdated = () => {
+      console.log('🔄 CompetencyAssessmentTab: Received industry segments update');
+      loadIndustrySegments();
+    };
+
+    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
+
+    return () => {
+      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
+    };
   }, []);
 
   console.log('CompetencyAssessmentTab - selectedIndustrySegment:', selectedIndustrySegment);

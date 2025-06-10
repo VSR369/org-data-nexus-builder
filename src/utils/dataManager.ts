@@ -1,4 +1,3 @@
-
 interface DataManagerConfig<T> {
   key: string;
   defaultData: T;
@@ -179,7 +178,7 @@ export class GlobalCacheManager {
     // Also clear old keys that might be lingering
     localStorage.removeItem('industrySegments');
     
-    console.log('All master data cache cleared');
+    console.log('All master data cache cleared, including old keys');
   }
 
   static getStoredKeys(): string[] {

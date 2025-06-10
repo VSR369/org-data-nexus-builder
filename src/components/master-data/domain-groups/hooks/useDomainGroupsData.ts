@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeDomainGroupsData, refreshSegmentData, getCachedDomainGroupsForSegment } from '../utils/dataInitializer';
 import { clearAllCacheData } from '../data/industryDataRegistry';
 import { useDomainGroupOperations } from './useDomainGroupOperations';
+import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 export const useDomainGroupsData = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
@@ -30,74 +30,39 @@ export const useDomainGroupsData = () => {
   useEffect(() => {
     const loadData = () => {
       try {
-        console.log('Loading complete domain groups data with new registry system...');
+        console.log('Loading complete domain groups data with shared DataManager...');
         
-        // Get industry segments from localStorage or use defaults
-        let segments: IndustrySegment[] = [];
-        const savedMasterSegments = localStorage.getItem('industrySegments');
+        // Get industry segments from shared DataManager
+        const segments = industrySegmentsDataManager.loadData();
+        console.log('Found industry segments from shared DataManager:', segments);
         
-        if (savedMasterSegments) {
-          try {
-            const parsedSegments = JSON.parse(savedMasterSegments);
-            console.log('Found industry segments in master data:', parsedSegments);
-            
-            if (Array.isArray(parsedSegments)) {
-              if (typeof parsedSegments[0] === 'string') {
-                segments = parsedSegments.map((segment, index) => ({
-                  id: (index + 1).toString(),
-                  name: segment,
-                  code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
-                  description: `Industry segment: ${segment}`
-                }));
-              } else {
-                segments = parsedSegments;
-              }
-            }
-          } catch (error) {
-            console.error('Error parsing industry segments:', error);
+        let segmentObjects: IndustrySegment[] = [];
+        
+        if (Array.isArray(segments) && segments.length > 0) {
+          if (typeof segments[0] === 'string') {
+            segmentObjects = segments.map((segment, index) => ({
+              id: (index + 1).toString(),
+              name: segment,
+              code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
+              description: `Industry segment: ${segment}`
+            }));
+          } else {
+            segmentObjects = segments;
           }
         }
         
-        // Use defaults if no segments found
-        if (segments.length === 0) {
-          const defaultSegments = [
-            'Banking, Financial Services & Insurance (BFSI)',
-            'Retail & E-Commerce',
-            'Healthcare & Life Sciences',
-            'Information Technology & Software Services',
-            'Telecommunications',
-            'Education & EdTech',
-            'Manufacturing (Smart / Discrete / Process)',
-            'Logistics & Supply Chain',
-            'Media, Entertainment & OTT',
-            'Energy & Utilities (Power, Oil & Gas, Renewables)',
-            'Automotive & Mobility',
-            'Real Estate & Smart Infrastructure',
-            'Travel, Tourism & Hospitality',
-            'Agriculture & AgriTech',
-            'Public Sector & e-Governance'
-          ];
-          
-          segments = defaultSegments.map((segment, index) => ({
-            id: (index + 1).toString(),
-            name: segment,
-            code: segment.split(' ')[0].substring(0, 4).toUpperCase(),
-            description: `Industry segment: ${segment}`
-          }));
-        }
-        
-        setIndustrySegments(segments);
-        console.log('Loaded industry segments:', segments);
+        setIndustrySegments(segmentObjects);
+        console.log('Loaded industry segments:', segmentObjects);
 
         // Force initialize with fresh data using new registry system
         console.log('Force initializing fresh domain groups data with registry...');
-        const initializedData = initializeDomainGroupsData(segments);
+        const initializedData = initializeDomainGroupsData(segmentObjects);
         console.log('Fresh initialized domain groups data from registry:', initializedData);
         
         setAllDomainGroups(initializedData);
 
         // Set default active segment to Manufacturing if available
-        const manufacturingSegment = segments.find(segment => 
+        const manufacturingSegment = segmentObjects.find(segment => 
           segment.name.toLowerCase().includes('manufacturing')
         );
         
@@ -106,7 +71,7 @@ export const useDomainGroupsData = () => {
           console.log('Set active segment to Manufacturing:', manufacturingSegment.id);
         } else {
           // Fallback to Life Sciences or first segment
-          const lifeSciencesSegment = segments.find(segment => 
+          const lifeSciencesSegment = segmentObjects.find(segment => 
             segment.name.toLowerCase().includes('healthcare') || 
             segment.name.toLowerCase().includes('life sciences')
           );
@@ -114,8 +79,8 @@ export const useDomainGroupsData = () => {
           if (lifeSciencesSegment && !activeIndustrySegment) {
             setActiveIndustrySegment(lifeSciencesSegment.id);
             console.log('Set active segment to Life Sciences:', lifeSciencesSegment.id);
-          } else if (segments.length > 0 && !activeIndustrySegment) {
-            setActiveIndustrySegment(segments[0].id);
+          } else if (segmentObjects.length > 0 && !activeIndustrySegment) {
+            setActiveIndustrySegment(segmentObjects[0].id);
           }
         }
 
@@ -127,6 +92,18 @@ export const useDomainGroupsData = () => {
     };
 
     loadData();
+
+    // Listen for industry segments updates
+    const handleIndustrySegmentsUpdated = () => {
+      console.log('🔄 useDomainGroupsData: Received industry segments update, reloading...');
+      loadData();
+    };
+
+    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
+
+    return () => {
+      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated);
+    };
   }, []);
 
   // Update filtered domain groups when active industry segment changes

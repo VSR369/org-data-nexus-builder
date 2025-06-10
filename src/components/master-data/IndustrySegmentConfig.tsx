@@ -6,35 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
-
-const defaultSegments = [
-  'Banking, Financial Services & Insurance (BFSI)',
-  'Retail & E-Commerce',
-  'Healthcare & Life Sciences',
-  'Information Technology & Software Services',
-  'Telecommunications',
-  'Education & EdTech',
-  'Manufacturing (Smart / Discrete / Process)',
-  'Logistics & Supply Chain',
-  'Media, Entertainment & OTT',
-  'Energy & Utilities (Power, Oil & Gas, Renewables)',
-  'Automotive & Mobility',
-  'Real Estate & Smart Infrastructure',
-  'Travel, Tourism & Hospitality',
-  'Agriculture & AgriTech',
-  'Public Sector & e-Governance'
-];
-
-// Create data manager instance
-const dataManager = new DataManager<string[]>({
-  key: 'master_data_industry_segments',
-  defaultData: defaultSegments,
-  version: 1
-});
-
-// Register with global cache manager
-GlobalCacheManager.registerKey('master_data_industry_segments');
+import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 const IndustrySegmentConfig = () => {
   const { toast } = useToast();
@@ -45,15 +17,15 @@ const IndustrySegmentConfig = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load segments from DataManager on component mount
+  // Load segments from shared DataManager on component mount
   useEffect(() => {
-    console.log(`🚀 IndustrySegmentConfig: Starting initial load...`);
+    console.log(`🚀 IndustrySegmentConfig: Starting initial load with shared DataManager...`);
     
     // Debug current localStorage state first
-    dataManager.debugCurrentState();
+    industrySegmentsDataManager.debugCurrentState();
     
-    const loadedSegments = dataManager.loadData();
-    console.log(`📥 IndustrySegmentConfig: Loaded segments from DataManager:`, loadedSegments);
+    const loadedSegments = industrySegmentsDataManager.loadData();
+    console.log(`📥 IndustrySegmentConfig: Loaded segments from shared DataManager:`, loadedSegments);
     console.log(`📊 Loaded segments count: ${loadedSegments.length}`);
     
     setSegments(loadedSegments);
@@ -62,7 +34,7 @@ const IndustrySegmentConfig = () => {
     console.log(`✅ IndustrySegmentConfig: Initial load complete, segments set to:`, loadedSegments);
   }, []);
 
-  // Save segments to DataManager - only after initial load is complete
+  // Save segments to shared DataManager - only after initial load is complete
   useEffect(() => {
     if (isLoading) {
       console.log(`⏸️ IndustrySegmentConfig: Skipping save - still loading`);
@@ -70,8 +42,11 @@ const IndustrySegmentConfig = () => {
     }
     
     console.log(`💾 IndustrySegmentConfig: Auto-saving segments (${segments.length} items):`, segments);
-    dataManager.saveData(segments);
+    industrySegmentsDataManager.saveData(segments);
     console.log(`✅ IndustrySegmentConfig: Auto-save complete`);
+    
+    // Trigger custom event to notify other components
+    window.dispatchEvent(new CustomEvent('industrySegmentsUpdated', { detail: segments }));
   }, [segments, isLoading]);
 
   const handleAddSegment = () => {
@@ -132,7 +107,7 @@ const IndustrySegmentConfig = () => {
 
   const handleResetToDefault = () => {
     console.log(`🔄 IndustrySegmentConfig: Resetting to default data`);
-    const resetData = dataManager.resetToDefault();
+    const resetData = industrySegmentsDataManager.resetToDefault();
     setSegments(resetData);
     toast({
       title: "Success",
@@ -170,15 +145,7 @@ const IndustrySegmentConfig = () => {
           <h3 className="text-lg font-medium">Current Industry Segments</h3>
           <div className="flex gap-2">
             <Button 
-              onClick={() => {
-                console.log(`🔄 IndustrySegmentConfig: Resetting to default data`);
-                const resetData = dataManager.resetToDefault();
-                setSegments(resetData);
-                toast({
-                  title: "Success",
-                  description: "Industry segments reset to default values",
-                });
-              }}
+              onClick={handleResetToDefault}
               variant="outline"
               className="flex items-center gap-2"
             >
@@ -193,16 +160,6 @@ const IndustrySegmentConfig = () => {
               Add Segment
             </Button>
           </div>
-        </div>
-
-        {/* Debug info - remove this after testing */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-          <p><strong>Debug Info:</strong></p>
-          <p>• Segments count: {segments.length}</p>
-          <p>• Loading: {isLoading ? 'Yes' : 'No'}</p>
-          <p>• First segment: {segments[0] || 'None'}</p>
-          <p>• Last segment: {segments[segments.length - 1] || 'None'}</p>
-          <p>• Raw segments: {JSON.stringify(segments)}</p>
         </div>
 
         {isAdding && (
@@ -283,7 +240,7 @@ const IndustrySegmentConfig = () => {
 
         {segments.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">No industry segments configured. This is valid - you can add segments or reset to defaults.</p>
+            <p className="text-muted-foreground">No industry segments configured. You can add segments or reset to defaults.</p>
           </div>
         )}
       </CardContent>

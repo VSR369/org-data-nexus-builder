@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { industrySegmentsDataManager } from '@/utils/sharedDataManagers';
 
 interface IndustrySegment {
   id: string;
@@ -22,41 +23,12 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
 
   useEffect(() => {
-    // Load industry segments from master data
+    // Load industry segments from shared DataManager
     const loadIndustrySegments = () => {
-      const savedSegments = localStorage.getItem('industrySegments');
-      let segments: string[] = [];
+      console.log('📥 IndustrySegmentSection: Loading segments from shared DataManager...');
       
-      if (savedSegments) {
-        try {
-          segments = JSON.parse(savedSegments);
-        } catch (error) {
-          console.error('Error parsing saved segments:', error);
-          // Default segments if parsing fails
-          segments = [
-            'Banking, Financial Services & Insurance (BFSI)',
-            'Retail & E-Commerce',
-            'Healthcare & Life Sciences',
-            'Information Technology & Software Services',
-            'Telecommunications',
-            'Education & EdTech',
-            'Manufacturing (Smart / Discrete / Process)',
-            'Logistics & Supply Chain'
-          ];
-        }
-      } else {
-        // Default segments if none saved
-        segments = [
-          'Banking, Financial Services & Insurance (BFSI)',
-          'Retail & E-Commerce',
-          'Healthcare & Life Sciences',
-          'Information Technology & Software Services',
-          'Telecommunications',
-          'Education & EdTech',
-          'Manufacturing (Smart / Discrete / Process)',
-          'Logistics & Supply Chain'
-        ];
-      }
+      const segments = industrySegmentsDataManager.loadData();
+      console.log('📋 IndustrySegmentSection: Loaded segments:', segments);
 
       // Convert to IndustrySegment format
       const segmentObjects: IndustrySegment[] = segments.map((segment, index) => ({
@@ -67,10 +39,22 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
       }));
 
       setIndustrySegments(segmentObjects);
-      console.log('Loaded industry segments for enrollment:', segmentObjects);
+      console.log('✅ IndustrySegmentSection: Converted to segment objects:', segmentObjects);
     };
 
     loadIndustrySegments();
+
+    // Listen for industry segments updates from master data
+    const handleIndustrySegmentsUpdated = (event: CustomEvent) => {
+      console.log('🔄 IndustrySegmentSection: Received industry segments update:', event.detail);
+      loadIndustrySegments();
+    };
+
+    window.addEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated as EventListener);
+
+    return () => {
+      window.removeEventListener('industrySegmentsUpdated', handleIndustrySegmentsUpdated as EventListener);
+    };
   }, []);
 
   const selectedSegment = industrySegments.find(segment => segment.id === selectedIndustrySegment);
