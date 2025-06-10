@@ -2,6 +2,7 @@
 import { DomainGroup, IndustrySegment } from '../types';
 import { defaultDomainGroupsData } from '../data/defaultDomainGroups';
 import { lifeSciencesDomainGroups } from '../data/lifeSciencesDomainGroups';
+import { manufacturingDomainGroups } from '../data/manufacturingDomainGroups';
 
 const defaultSegments = [
   'Banking, Financial Services & Insurance (BFSI)',
@@ -32,11 +33,22 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
                           segment.name.toLowerCase().includes('healthcare') ||
                           segment.name.toLowerCase().includes('life sciences');
     
+    // Check if this is Manufacturing segment
+    const isManufacturing = segment.name === 'Manufacturing (Smart / Discrete / Process)' ||
+                           segment.name.toLowerCase().includes('manufacturing');
+    
     console.log('Is Life Sciences segment?', isLifeSciences, 'for segment:', segment.name);
+    console.log('Is Manufacturing segment?', isManufacturing, 'for segment:', segment.name);
     
-    const sourceData = isLifeSciences ? lifeSciencesDomainGroups : defaultDomainGroupsData;
+    let sourceData = defaultDomainGroupsData;
     
-    console.log('Using data source:', isLifeSciences ? 'lifeSciencesDomainGroups' : 'defaultDomainGroupsData');
+    if (isLifeSciences) {
+      sourceData = lifeSciencesDomainGroups;
+    } else if (isManufacturing) {
+      sourceData = manufacturingDomainGroups;
+    }
+    
+    console.log('Using data source:', isLifeSciences ? 'lifeSciencesDomainGroups' : isManufacturing ? 'manufacturingDomainGroups' : 'defaultDomainGroupsData');
     console.log('Source data has', sourceData.length, 'groups');
     
     sourceData.forEach(group => {
