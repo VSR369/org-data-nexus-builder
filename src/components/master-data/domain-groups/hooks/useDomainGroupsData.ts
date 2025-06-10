@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeDomainGroupsData } from '../utils/dataInitializer';
@@ -32,6 +31,9 @@ export const useDomainGroupsData = () => {
     const loadData = () => {
       try {
         console.log('Loading domain groups data...');
+        
+        // Clear any existing domain groups data to force refresh
+        localStorage.removeItem('domainGroupsData');
         
         // Try multiple possible keys for industry segments master data
         let segments: IndustrySegment[] = [];
@@ -113,7 +115,7 @@ export const useDomainGroupsData = () => {
     };
 
     loadData();
-  }, []);
+  }, []); // Remove activeIndustrySegment dependency to avoid infinite loops
 
   // Save data when it changes
   useEffect(() => {

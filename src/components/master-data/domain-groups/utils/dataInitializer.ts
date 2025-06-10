@@ -25,9 +25,19 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
   const allData: DomainGroup[] = [];
   
   segments.forEach(segment => {
+    console.log('Processing segment:', segment.name);
+    
     // Check if this is Healthcare & Life Sciences segment
-    const isLifeSciences = segment.name === 'Healthcare & Life Sciences';
+    const isLifeSciences = segment.name === 'Healthcare & Life Sciences' || 
+                          segment.name.toLowerCase().includes('healthcare') ||
+                          segment.name.toLowerCase().includes('life sciences');
+    
+    console.log('Is Life Sciences segment?', isLifeSciences, 'for segment:', segment.name);
+    
     const sourceData = isLifeSciences ? lifeSciencesDomainGroups : defaultDomainGroupsData;
+    
+    console.log('Using data source:', isLifeSciences ? 'lifeSciencesDomainGroups' : 'defaultDomainGroupsData');
+    console.log('Source data has', sourceData.length, 'groups');
     
     sourceData.forEach(group => {
       const newGroup: DomainGroup = {
@@ -46,9 +56,11 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
         }))
       };
       allData.push(newGroup);
+      console.log('Added group:', newGroup.name, 'for segment:', segment.name);
     });
   });
   
+  console.log('Total domain groups created:', allData.length);
   return allData;
 };
 
