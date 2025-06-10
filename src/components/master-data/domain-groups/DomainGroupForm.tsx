@@ -51,12 +51,29 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
     setIndustrySegmentData(loadedIndustryData);
   }, []);
 
+  // Get industry segments that already have domain groups
+  const getUsedIndustrySegmentIds = () => {
+    return new Set(data.domainGroups.map(dg => dg.industrySegmentId));
+  };
+
+  const usedIndustrySegmentIds = getUsedIndustrySegmentIds();
+
   const handleSubmit = () => {
     // Validate required fields
     if (!formData.industrySegmentId || !formData.domainGroupName || !formData.categoryName || !formData.subCategoryName) {
       toast({
         title: "Validation Error",
         description: "Industry Segment, Domain Group Name, Category Name, and Sub Category Name are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if industry segment already has domain groups
+    if (usedIndustrySegmentIds.has(formData.industrySegmentId)) {
+      toast({
+        title: "Validation Error",
+        description: "This industry segment already has domain groups configured. Please select a different industry segment.",
         variant: "destructive"
       });
       return;
@@ -162,13 +179,33 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
                 <SelectValue placeholder="Select an industry segment" />
               </SelectTrigger>
               <SelectContent>
-                {industrySegmentData.industrySegments.map((segment) => (
-                  <SelectItem key={segment.id} value={segment.id}>
-                    {segment.industrySegment}
-                  </SelectItem>
-                ))}
+                {industrySegmentData.industrySegments.map((segment) => {
+                  const isUsed = usedIndustrySegmentIds.has(segment.id);
+                  return (
+                    <SelectItem 
+                      key={segment.id} 
+                      value={segment.id}
+                      disabled={isUsed}
+                      className={isUsed ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span>{segment.industrySegment}</span>
+                        {isUsed && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (Already configured)
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
+            {usedIndustrySegmentIds.size > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Industry segments with existing hierarchies are disabled
+              </p>
+            )}
           </div>
 
           {/* Domain Group Name */}
