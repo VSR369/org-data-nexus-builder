@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeIndustryData } from '../data/industryDataRegistry';
@@ -7,6 +8,11 @@ export const useDomainGroupsData = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  
+  // Selection state
+  const [selectedIndustrySegment, setSelectedIndustrySegment] = useState<string>('');
+  const [selectedDomainGroup, setSelectedDomainGroup] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   useEffect(() => {
     loadAllData();
@@ -114,15 +120,120 @@ export const useDomainGroupsData = () => {
     localStorage.setItem('subCategoriesData', JSON.stringify(subCats));
   };
 
+  // Domain Group CRUD operations
+  const addDomainGroup = (group: Omit<DomainGroup, 'id' | 'createdAt' | 'categories'>) => {
+    const newGroup: DomainGroup = {
+      ...group,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      categories: []
+    };
+    const updatedGroups = [...domainGroups, newGroup];
+    saveDomainGroups(updatedGroups);
+  };
+
+  const updateDomainGroup = (id: string, updates: Partial<DomainGroup>) => {
+    const updatedGroups = domainGroups.map(group =>
+      group.id === id ? { ...group, ...updates } : group
+    );
+    saveDomainGroups(updatedGroups);
+  };
+
+  const deleteDomainGroup = (id: string) => {
+    const updatedGroups = domainGroups.filter(group => group.id !== id);
+    saveDomainGroups(updatedGroups);
+    
+    // Also remove related categories and subcategories
+    const updatedCategories = categories.filter(cat => cat.domainGroupId !== id);
+    saveCategories(updatedCategories);
+    
+    const categoryIds = categories.filter(cat => cat.domainGroupId === id).map(cat => cat.id);
+    const updatedSubCategories = subCategories.filter(subCat => !categoryIds.includes(subCat.categoryId));
+    saveSubCategories(updatedSubCategories);
+  };
+
+  // Category CRUD operations
+  const addCategory = (category: Omit<Category, 'id' | 'createdAt' | 'subCategories'>) => {
+    const newCategory: Category = {
+      ...category,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      subCategories: []
+    };
+    const updatedCategories = [...categories, newCategory];
+    saveCategories(updatedCategories);
+  };
+
+  const updateCategory = (id: string, updates: Partial<Category>) => {
+    const updatedCategories = categories.map(category =>
+      category.id === id ? { ...category, ...updates } : category
+    );
+    saveCategories(updatedCategories);
+  };
+
+  const deleteCategory = (id: string) => {
+    const updatedCategories = categories.filter(category => category.id !== id);
+    saveCategories(updatedCategories);
+    
+    // Also remove related subcategories
+    const updatedSubCategories = subCategories.filter(subCat => subCat.categoryId !== id);
+    saveSubCategories(updatedSubCategories);
+  };
+
+  // SubCategory CRUD operations
+  const addSubCategory = (subCategory: Omit<SubCategory, 'id' | 'createdAt'>) => {
+    const newSubCategory: SubCategory = {
+      ...subCategory,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    const updatedSubCategories = [...subCategories, newSubCategory];
+    saveSubCategories(updatedSubCategories);
+  };
+
+  const updateSubCategory = (id: string, updates: Partial<SubCategory>) => {
+    const updatedSubCategories = subCategories.map(subCategory =>
+      subCategory.id === id ? { ...subCategory, ...updates } : subCategory
+    );
+    saveSubCategories(updatedSubCategories);
+  };
+
+  const deleteSubCategory = (id: string) => {
+    const updatedSubCategories = subCategories.filter(subCategory => subCategory.id !== id);
+    saveSubCategories(updatedSubCategories);
+  };
+
   return {
+    // Data
     industrySegments,
     domainGroups,
     categories,
     subCategories,
+    
+    // Selection state
+    selectedIndustrySegment,
+    selectedDomainGroup,
+    selectedCategory,
+    setSelectedIndustrySegment,
+    setSelectedDomainGroup,
+    setSelectedCategory,
+    
+    // Save functions
     saveIndustrySegments,
     saveDomainGroups,
     saveCategories,
     saveSubCategories,
-    loadAllData
+    loadAllData,
+    
+    // CRUD operations
+    addDomainGroup,
+    updateDomainGroup,
+    deleteDomainGroup,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addSubCategory,
+    updateSubCategory,
+    deleteSubCategory
   };
 };

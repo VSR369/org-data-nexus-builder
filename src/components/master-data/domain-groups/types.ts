@@ -4,6 +4,8 @@ export interface IndustrySegment {
   name: string;
   code: string;
   description?: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface DomainGroup {

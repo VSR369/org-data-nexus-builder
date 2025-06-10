@@ -66,6 +66,13 @@ export const getDomainGroupsForIndustry = (industrySegmentId: string, industrySe
   return [];
 };
 
+// Function to initialize industry data - added this missing function
+export const initializeIndustryData = () => {
+  console.log('Initializing industry data...');
+  // This function can be used to perform any initialization logic if needed
+  // For now, it's just a placeholder to satisfy the import
+};
+
 // Function to clear cache for a specific industry segment
 export const clearIndustryCacheData = (industrySegmentId: string) => {
   const cacheKey = `domainGroups_${industrySegmentId}`;
