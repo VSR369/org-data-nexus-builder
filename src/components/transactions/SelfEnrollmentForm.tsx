@@ -85,7 +85,7 @@ const SelfEnrollmentForm = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Solution Provider Enrollment</CardTitle>
+          <CardTitle>Provider & Assessor Enrollment</CardTitle>
           <CardDescription>
             Register as a Solution Provider to showcase your expertise and connect with organizations
             {isSubmitted && (
