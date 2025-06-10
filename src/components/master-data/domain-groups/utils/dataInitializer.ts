@@ -5,19 +5,11 @@ import { lifeSciencesDomainGroups } from '../data/lifeSciencesDomainGroups';
 export const initializeDomainGroupsData = (industrySegments: IndustrySegment[]): DomainGroup[] => {
   console.log('Initializing domain groups data for segments:', industrySegments);
   
-  // Check if we have saved data
-  const savedData = localStorage.getItem('domainGroupsData');
-  if (savedData) {
-    try {
-      const parsed = JSON.parse(savedData);
-      console.log('Found saved domain groups data:', parsed);
-      return parsed;
-    } catch (error) {
-      console.error('Error parsing saved domain groups data:', error);
-    }
-  }
+  // Clear any existing cached data to force refresh
+  localStorage.removeItem('domainGroupsData');
+  console.log('Cleared cached domain groups data to force refresh');
 
-  // Initialize with default data
+  // Initialize with fresh data
   const allDomainGroups: DomainGroup[] = [];
 
   // Find the Life Sciences industry segment
@@ -56,5 +48,10 @@ export const initializeDomainGroupsData = (industrySegments: IndustrySegment[]):
   });
 
   console.log('Initialized complete domain groups data:', allDomainGroups);
+  
+  // Save the fresh data to localStorage
+  localStorage.setItem('domainGroupsData', JSON.stringify(allDomainGroups));
+  console.log('Saved fresh domain groups data to localStorage');
+  
   return allDomainGroups;
 };

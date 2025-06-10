@@ -88,9 +88,10 @@ export const useDomainGroupsData = () => {
         setIndustrySegments(segments);
         console.log('Loaded industry segments:', segments);
 
-        // Initialize complete domain groups data
+        // Force initialize with fresh Life Sciences data
+        console.log('Force initializing fresh domain groups data...');
         const initializedData = initializeDomainGroupsData(segments);
-        console.log('Initialized complete domain groups data:', initializedData);
+        console.log('Fresh initialized domain groups data:', initializedData);
         
         setAllDomainGroups(initializedData);
 
@@ -132,13 +133,13 @@ export const useDomainGroupsData = () => {
     }
   }, [activeIndustrySegment, allDomainGroups]);
 
-  // Save data when it changes
+  // Save data when it changes (but not on initial load to avoid overwriting fresh data)
   useEffect(() => {
-    if (allDomainGroups.length > 0) {
+    if (allDomainGroups.length > 0 && !isLoading) {
       localStorage.setItem('domainGroupsData', JSON.stringify(allDomainGroups));
-      console.log('Saved domain groups to localStorage');
+      console.log('Saved updated domain groups to localStorage');
     }
-  }, [allDomainGroups]);
+  }, [allDomainGroups, isLoading]);
 
   // Get filtered data based on selections
   const categories = activeDomainGroup 
