@@ -3,8 +3,6 @@ import React from 'react';
 import { Slider } from "@/components/ui/slider";
 
 interface RatingSliderProps {
-  subCategoryName: string;
-  description?: string;
   currentRating: number;
   onRatingChange: (rating: number) => void;
 }
