@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain } from 'lucide-react';
+import { Briefcase, Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -65,6 +66,11 @@ const organizationMenuItems = [
 const challengeMenuItems = [
   {
     id: 'master-data-structure',
+    title: 'Master Data Structure',
+    icon: Database,
+  },
+  {
+    id: 'domain-groups',
     title: 'Domain Groups',
     icon: Database,
   },
@@ -79,8 +85,8 @@ const challengeMenuItems = [
     icon: Award,
   },
   {
-    id: 'competency-capability',
-    title: 'Competency Capability',
+    id: 'competency-capabilities',
+    title: 'Competency & Capabilities',
     icon: Brain,
   },
 ];
@@ -97,14 +103,14 @@ const systemMenuItems = [
     icon: Gift,
   },
   {
-    id: 'pricing-config',
+    id: 'pricing',
     title: 'Pricing Configuration',
     icon: CreditCard,
   },
   {
-    id: 'voting-assessment',
-    title: 'Voting & Assessment Config',
-    icon: Target,
+    id: 'solution-voting-assessment',
+    title: 'Solution Voting & Assessment',
+    icon: Vote,
   },
   {
     id: 'events-calendar',
