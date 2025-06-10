@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -208,30 +207,13 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Industry Segment: {industrySegmentName}</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Rate your competencies for the domain groups, categories, and sub-categories below
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Badge variant="secondary" className="text-base px-4 py-2">
-            {industrySegmentName}
-          </Badge>
-        </CardContent>
-      </Card>
-
       {relevantDomainGroups.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-semibold mb-2">Competency Structure</h3>
             <p className="text-muted-foreground">
-              No domain groups found for industry segment: {industrySegmentName}. 
+              No domain groups found for this industry segment. 
               Please configure domain groups for this industry segment in the master data.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Looking for industry segment ID: {selectedIndustrySegment}
             </p>
           </CardContent>
         </Card>
