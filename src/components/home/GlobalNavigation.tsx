@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Menu, X, User, Settings, LogOut, Sparkles } from "lucide-react";
+import { Search, Menu, X, User, Settings, LogOut, Sparkles, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -25,6 +26,7 @@ export const GlobalNavigation = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('self-enrollment');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   const navigationItems = [
     { label: "Home", href: "/" },
@@ -35,13 +37,25 @@ export const GlobalNavigation = () => {
     { label: "Resources", href: "/resources" },
   ];
 
-  const handleSignIn = () => {
+  const userRoles = [
+    "Solution Provider",
+    "Solution Seeker", 
+    "Solution Manager",
+    "Solution Head",
+    "Solution Assessor",
+    "Client Administrator",
+    "Platform Administrator"
+  ];
+
+  const handleRoleSelection = (role: string) => {
+    setSelectedRole(role);
     setIsSignInDialogOpen(true);
   };
 
   const handleSignInComplete = () => {
     setIsLoggedIn(true);
     setIsSignInDialogOpen(false);
+    setSelectedRole(null);
   };
 
   return (
@@ -119,13 +133,28 @@ export const GlobalNavigation = () => {
                 </DropdownMenu>
               ) : (
                 <div className="flex items-center space-x-3">
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleSignIn}
-                    className="hover:bg-primary/10 hover:text-primary transition-colors"
-                  >
-                    Sign In
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
+                      >
+                        Sign In
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56 bg-background/95 backdrop-blur-md border border-primary/20 shadow-xl" align="end">
+                      {userRoles.map((role) => (
+                        <DropdownMenuItem 
+                          key={role}
+                          onClick={() => handleRoleSelection(role)}
+                          className="hover:bg-primary/10 cursor-pointer"
+                        >
+                          {role}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button className="bg-gradient-to-r from-primary via-blue-600 to-purple-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                     Sign Up
                   </Button>
@@ -179,6 +208,9 @@ export const GlobalNavigation = () => {
           <DialogHeader className="p-6 border-b">
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
               Master Data & Transactions Portal
+              {selectedRole && (
+                <span className="text-lg text-muted-foreground ml-2">- {selectedRole}</span>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
