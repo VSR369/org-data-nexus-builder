@@ -1,14 +1,12 @@
 
 import React from 'react';
-import { TabsContent } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import IndustrySegmentSection from './IndustrySegmentSection';
 import InstitutionDetailsSection from './InstitutionDetailsSection';
 import ProviderDetailsSection from './ProviderDetailsSection';
 import BankingDetailsSection from './BankingDetailsSection';
 import AdditionalInfoSection from './AdditionalInfoSection';
+import ProviderIdSection from './ProviderIdSection';
 import { FormData } from './types';
 
 interface BasicInformationTabProps {
@@ -19,7 +17,7 @@ interface BasicInformationTabProps {
   onProviderTypeChange: (value: string) => void;
   formData: FormData;
   onFormDataUpdate: (field: string, value: string | string[]) => void;
-  invalidFields: Set<string>;
+  invalidFields?: Set<string>;
 }
 
 const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
@@ -30,72 +28,61 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
   onProviderTypeChange,
   formData,
   onFormDataUpdate,
-  invalidFields
+  invalidFields = new Set()
 }) => {
   return (
-    <TabsContent value="basic-details" className="space-y-8">
-      <form className="space-y-8">
-        <IndustrySegmentSection
-          selectedIndustrySegments={selectedIndustrySegments}
-          onAddIndustrySegment={onAddIndustrySegment}
-          onRemoveIndustrySegment={onRemoveIndustrySegment}
-        />
+    <div className="space-y-6">
+      <ProviderIdSection providerId={formData.providerId} />
+      
+      <IndustrySegmentSection
+        selectedIndustrySegments={selectedIndustrySegments}
+        onAddIndustrySegment={onAddIndustrySegment}
+        onRemoveIndustrySegment={onRemoveIndustrySegment}
+        providerType={providerType}
+        onProviderTypeChange={onProviderTypeChange}
+        invalidFields={invalidFields}
+      />
 
-        <Separator />
+      <Tabs defaultValue="provider-details" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="provider-details">Provider Details</TabsTrigger>
+          <TabsTrigger value="institution-details">Institution Details</TabsTrigger>
+          <TabsTrigger value="banking-details">Banking Details</TabsTrigger>
+          <TabsTrigger value="additional-info">Additional Info</TabsTrigger>
+        </TabsList>
 
-        {/* Solution Provider Enrollment Details */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold">Solution Provider Enrollment Details</h3>
-          
-          {/* Individual/Institution Selection */}
-          <div className="space-y-3">
-            <Label>Provider Type *</Label>
-            <RadioGroup value={providerType} onValueChange={onProviderTypeChange}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="individual" id="individual" />
-                <Label htmlFor="individual">Individual</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="institution" id="institution" />
-                <Label htmlFor="institution">Institution</Label>
-              </div>
-            </RadioGroup>
-            {invalidFields.has('providerType') && (
-              <p className="text-sm text-destructive">Provider Type is required</p>
-            )}
-          </div>
+        <TabsContent value="provider-details" className="mt-6">
+          <ProviderDetailsSection
+            formData={formData}
+            updateFormData={onFormDataUpdate}
+            invalidFields={invalidFields}
+          />
+        </TabsContent>
 
-          {/* Institution Details */}
-          {providerType === 'institution' && (
-            <InstitutionDetailsSection
-              formData={formData}
-              updateFormData={onFormDataUpdate}
-              invalidFields={invalidFields}
-            />
-          )}
-        </div>
+        <TabsContent value="institution-details" className="mt-6">
+          <InstitutionDetailsSection
+            formData={formData}
+            updateFormData={onFormDataUpdate}
+            providerType={providerType}
+            invalidFields={invalidFields}
+          />
+        </TabsContent>
 
-        <Separator />
+        <TabsContent value="banking-details" className="mt-6">
+          <BankingDetailsSection
+            formData={formData}
+            updateFormData={onFormDataUpdate}
+          />
+        </TabsContent>
 
-        <ProviderDetailsSection
-          formData={formData}
-          updateFormData={onFormDataUpdate}
-          invalidFields={invalidFields}
-        />
-
-        <BankingDetailsSection
-          formData={formData}
-          updateFormData={onFormDataUpdate}
-        />
-
-        <Separator />
-
-        <AdditionalInfoSection
-          formData={formData}
-          updateFormData={onFormDataUpdate}
-        />
-      </form>
-    </TabsContent>
+        <TabsContent value="additional-info" className="mt-6">
+          <AdditionalInfoSection
+            formData={formData}
+            updateFormData={onFormDataUpdate}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

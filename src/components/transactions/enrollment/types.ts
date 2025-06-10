@@ -1,5 +1,8 @@
 
 export interface FormData {
+  // Unique identifier for the solution provider
+  providerId: string;
+  
   // Institution fields (conditional)
   orgName: string;
   orgType: string;
