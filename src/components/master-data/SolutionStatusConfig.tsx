@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,14 +10,17 @@ import { useToast } from "@/hooks/use-toast";
 const SolutionStatusConfig = () => {
   const { toast } = useToast();
   const [statuses, setStatuses] = useState([
-    'Draft',
-    'Submitted',
-    'Under Review',
-    'Shortlisted',
-    'Accepted',
-    'Rejected',
-    'Withdrawn',
-    'Implementation Ready'
+    'Solution Submission Phase',
+    'Solution Shortlisting / Screening',
+    'Solution Selected for Full Assessment',
+    'Partial Payment Done by Client (if applicable to model)',
+    'Solution Voting (if applicable)',
+    'Solution Evaluation / Assessment',
+    'Finalized – Investment Approved',
+    'Finalized – Pilot / Proof-of-Concept (PoC)',
+    'Finalized – Ready for Full-Scale Implementation',
+    'Finalized – Suspended',
+    'Selection & Reward Declaration'
   ]);
   
   const [newStatus, setNewStatus] = useState('');
