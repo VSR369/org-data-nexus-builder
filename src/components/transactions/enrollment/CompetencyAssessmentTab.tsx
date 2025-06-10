@@ -24,7 +24,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     subCategories: []
   });
 
-  // Load domain groups from master data
+  // Load domain groups from master data with periodic refresh
   useEffect(() => {
     const loadDomainGroups = () => {
       try {
@@ -51,7 +51,26 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
       }
     };
 
+    // Load initially
     loadDomainGroups();
+
+    // Set up periodic refresh to catch updates from master data
+    const interval = setInterval(loadDomainGroups, 2000);
+
+    // Also listen for storage events (when another tab updates the data)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'master_data_domain_groups') {
+        console.log('CompetencyAssessmentTab - Storage change detected, reloading domain groups');
+        loadDomainGroups();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Filter domain groups by selected industry segment
@@ -226,8 +245,6 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                               
                               {/* Rating Slider - integrated into subcategory display */}
                               <RatingSlider
-                                subCategoryName={subCategory.name}
-                                description={subCategory.description}
                                 currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
                                 onRatingChange={(rating) => 
                                   handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)

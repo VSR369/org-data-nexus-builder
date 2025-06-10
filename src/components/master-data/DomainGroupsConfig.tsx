@@ -25,7 +25,20 @@ const DomainGroupsConfig: React.FC = () => {
   }, []);
 
   const handleDataUpdate = (newData: DomainGroupsData) => {
+    console.log('🔄 DomainGroupsConfig: Updating data:', newData);
+    console.log('📊 New data structure:', {
+      domainGroups: newData.domainGroups?.length || 0,
+      categories: newData.categories?.length || 0,
+      subCategories: newData.subCategories?.length || 0
+    });
+    
+    // Save the data through the data manager
+    domainGroupsDataManager.saveData(newData);
+    
+    // Update local state
     setData(newData);
+    
+    console.log('✅ Domain groups data saved and state updated');
   };
 
   return (
