@@ -3,10 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EnrollmentTabs from './enrollment/EnrollmentTabs';
 import BasicInformationTab from './enrollment/BasicInformationTab';
-import CoreCompetenciesTab from './enrollment/CoreCompetenciesTab';
 import EnrollmentActions from './enrollment/EnrollmentActions';
 import { useFormState } from './enrollment/hooks/useFormState';
-import { useCompetencyState } from './enrollment/hooks/useCompetencyState';
 import { useEnrollmentSubmission } from './enrollment/hooks/useEnrollmentSubmission';
 import { useTabManagement } from './enrollment/hooks/useTabManagement';
 import { useFieldValidation } from './enrollment/hooks/useFieldValidation';
@@ -27,13 +25,6 @@ const SelfEnrollmentForm = () => {
     saveDraft
   } = useFormState();
 
-  const {
-    competencyData,
-    updateCompetencyData,
-    hasCompetencyRatings,
-    clearCompetencyData
-  } = useCompetencyState();
-
   const { activeTab, handleTabChange } = useTabManagement();
 
   const {
@@ -50,7 +41,7 @@ const SelfEnrollmentForm = () => {
     formData,
     providerType,
     selectedIndustrySegments,
-    hasCompetencyRatings(),
+    false, // No competency ratings needed
     isSubmitted,
     validateAndHighlightFields,
     markAsSubmitted,
@@ -62,7 +53,6 @@ const SelfEnrollmentForm = () => {
 
   console.log('SelfEnrollmentForm - selectedIndustrySegments:', selectedIndustrySegments);
   console.log('SelfEnrollmentForm - providerType:', providerType);
-  console.log('SelfEnrollmentForm - hasCompetencyRatings:', hasCompetencyRatings());
   console.log('SelfEnrollmentForm - isSubmitted:', isSubmitted);
   console.log('SelfEnrollmentForm - invalidFields:', Array.from(invalidFields));
 
@@ -91,14 +81,6 @@ const SelfEnrollmentForm = () => {
     }
   };
 
-  const handleCompetencyUpdate = (industrySegment: string, domainGroup: string, category: string, subCategory: string, rating: number) => {
-    updateCompetencyData(industrySegment, domainGroup, category, subCategory, rating);
-    // Reset submission status if user modifies competency data after submission
-    if (isSubmitted) {
-      resetSubmissionStatus();
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -111,7 +93,7 @@ const SelfEnrollmentForm = () => {
                 ✓ Successfully submitted! Your data is preserved and you can edit and resubmit anytime.
               </span>
             )}
-            {!isSubmitted && selectedIndustrySegments.length > 0 && hasCompetencyRatings() && (
+            {!isSubmitted && selectedIndustrySegments.length > 0 && (
               <span className="block mt-2 text-blue-600 font-medium">
                 💾 Your data is automatically saved. You can safely refresh or return later to continue.
               </span>
@@ -119,7 +101,7 @@ const SelfEnrollmentForm = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <EnrollmentTabs activeTab={activeTab} onTabChange={handleTabChange}>
+          <div className="space-y-6">
             <BasicInformationTab
               selectedIndustrySegments={selectedIndustrySegments}
               onAddIndustrySegment={handleAddIndustrySegment}
@@ -131,18 +113,12 @@ const SelfEnrollmentForm = () => {
               invalidFields={invalidFields}
             />
             
-            {/* Core Competencies Tab - completely independent, no basic info data passed */}
-            <CoreCompetenciesTab
-              competencyData={competencyData}
-              updateCompetencyData={handleCompetencyUpdate}
-            />
-            
             <EnrollmentActions
               onSubmitEnrollment={isSubmitted ? handleResubmit : handleSubmitEnrollment}
               onSaveDraft={saveDraft}
               isSubmitted={isSubmitted}
             />
-          </EnrollmentTabs>
+          </div>
         </CardContent>
       </Card>
     </div>
