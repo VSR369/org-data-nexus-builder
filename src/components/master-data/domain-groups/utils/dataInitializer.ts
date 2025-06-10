@@ -1,6 +1,7 @@
 
 import { DomainGroup, IndustrySegment } from '../types';
 import { defaultDomainGroupsData } from '../data/defaultDomainGroups';
+import { lifeSciencesDomainGroups } from '../data/lifeSciencesDomainGroups';
 
 const defaultSegments = [
   'Banking, Financial Services & Insurance (BFSI)',
@@ -24,7 +25,11 @@ export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainG
   const allData: DomainGroup[] = [];
   
   segments.forEach(segment => {
-    defaultDomainGroupsData.forEach(group => {
+    // Check if this is Healthcare & Life Sciences segment
+    const isLifeSciences = segment.name === 'Healthcare & Life Sciences';
+    const sourceData = isLifeSciences ? lifeSciencesDomainGroups : defaultDomainGroupsData;
+    
+    sourceData.forEach(group => {
       const newGroup: DomainGroup = {
         ...group,
         id: `${segment.id}-${group.id}`,
