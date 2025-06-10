@@ -14,18 +14,21 @@ export const useDataPersistence = () => {
   }, []);
 
   const loadAllData = () => {
-    // Load industry segments from master data (localStorage)
-    const savedIndustrySegments = localStorage.getItem('industrySegmentsData');
+    // Load industry segments from the actual master data manager (not localStorage)
+    const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
     let loadedIndustrySegments: IndustrySegment[] = [];
     
     if (savedIndustrySegments) {
       try {
         loadedIndustrySegments = JSON.parse(savedIndustrySegments);
-        console.log('Loaded industry segments from master data:', loadedIndustrySegments);
+        console.log('Loaded industry segments from master data manager:', loadedIndustrySegments);
       } catch (error) {
-        console.error('Error parsing industry segments:', error);
+        console.error('Error parsing industry segments from master data:', error);
         loadedIndustrySegments = [];
       }
+    } else {
+      console.log('No industry segments found in master data manager');
+      loadedIndustrySegments = [];
     }
     
     // Only show active industry segments
@@ -83,7 +86,8 @@ export const useDataPersistence = () => {
 
   const saveIndustrySegments = (segments: IndustrySegment[]) => {
     setIndustrySegments(segments);
-    localStorage.setItem('industrySegmentsData', JSON.stringify(segments));
+    // Save to the master data manager key, not the old localStorage key
+    localStorage.setItem('master_data_industry_segments', JSON.stringify(segments));
   };
 
   const saveDomainGroups = (groups: DomainGroup[]) => {

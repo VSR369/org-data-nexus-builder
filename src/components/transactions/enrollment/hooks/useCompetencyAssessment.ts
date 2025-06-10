@@ -1,6 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { mockIndustrySegments } from '../../../master-data/domain-groups/data/mockData';
+
+interface IndustrySegment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 interface DomainGroup {
   id: string;
@@ -13,13 +21,31 @@ interface DomainGroup {
 }
 
 export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Load domain groups from master data
-    const loadDomainGroups = () => {
+    // Load industry segments and domain groups from master data
+    const loadData = () => {
+      // Load industry segments from master data manager
+      const savedIndustrySegments = localStorage.getItem('master_data_industry_segments');
+      if (savedIndustrySegments) {
+        try {
+          const industrySegmentsData: IndustrySegment[] = JSON.parse(savedIndustrySegments);
+          console.log('Loaded industry segments from master data:', industrySegmentsData);
+          setIndustrySegments(industrySegmentsData.filter(segment => segment.isActive));
+        } catch (error) {
+          console.error('Error parsing industry segments data:', error);
+          setIndustrySegments([]);
+        }
+      } else {
+        console.log('No industry segments data found in master data');
+        setIndustrySegments([]);
+      }
+
+      // Load domain groups from master data
       const savedDomainGroups = localStorage.getItem('domainGroupsData');
       if (savedDomainGroups) {
         try {
@@ -48,7 +74,7 @@ export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
       }
     };
 
-    loadDomainGroups();
+    loadData();
   }, []);
 
   // Get relevant domain groups for the selected industry segment
@@ -84,12 +110,12 @@ export const useCompetencyAssessment = (selectedIndustrySegment: string) => {
 
   // Helper function to get industry segment name
   const getIndustrySegmentName = (segmentId: string) => {
-    const segment = mockIndustrySegments.find(s => s.id === segmentId);
+    const segment = industrySegments.find(s => s.id === segmentId);
     return segment ? segment.name : `Industry Segment ${segmentId}`;
   };
 
   return {
-    industrySegments: mockIndustrySegments,
+    industrySegments,
     domainGroups,
     relevantDomainGroups,
     expandedGroups,
