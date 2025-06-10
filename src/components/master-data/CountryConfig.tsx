@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,40 +26,6 @@ const CountryConfig = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
   const { toast } = useToast();
-
-  // Load and convert data from shared manager
-  useEffect(() => {
-    try {
-      const sharedCountries = countriesDataManager.loadData();
-      console.log('Loaded shared countries:', sharedCountries);
-      
-      // Convert string array to Country objects if needed
-      if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
-        if (typeof sharedCountries[0] === 'string') {
-          // Convert string array to Country objects
-          const convertedCountries = sharedCountries.map((countryName, index) => ({
-            id: (index + 1).toString(),
-            name: countryName,
-            code: getCountryCode(countryName),
-            region: getCountryRegion(countryName)
-          }));
-          setCountries(convertedCountries);
-        } else {
-          // Already in correct format
-          setCountries(sharedCountries as Country[]);
-        }
-      } else {
-        // Use default countries if no data
-        setCountries(defaultCountries);
-        // Save default countries to shared manager as string array
-        const countryNames = defaultCountries.map(c => c.name);
-        countriesDataManager.saveData(countryNames);
-      }
-    } catch (error) {
-      console.error('Error loading countries:', error);
-      setCountries(defaultCountries);
-    }
-  }, []);
 
   // Helper functions to get country codes and regions
   const getCountryCode = (countryName: string): string => {
@@ -108,6 +73,35 @@ const CountryConfig = () => {
     };
     return regionMap[countryName] || 'Unknown';
   };
+
+  // Load and convert data from shared manager
+  useEffect(() => {
+    try {
+      const sharedCountries = countriesDataManager.loadData();
+      console.log('Loaded shared countries:', sharedCountries);
+      
+      // Since countriesDataManager always returns string[], convert to Country objects
+      if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
+        // Convert string array to Country objects
+        const convertedCountries = sharedCountries.map((countryName, index) => ({
+          id: (index + 1).toString(),
+          name: countryName,
+          code: getCountryCode(countryName),
+          region: getCountryRegion(countryName)
+        }));
+        setCountries(convertedCountries);
+      } else {
+        // Use default countries if no data
+        setCountries(defaultCountries);
+        // Save default countries to shared manager as string array
+        const countryNames = defaultCountries.map(c => c.name);
+        countriesDataManager.saveData(countryNames);
+      }
+    } catch (error) {
+      console.error('Error loading countries:', error);
+      setCountries(defaultCountries);
+    }
+  }, []);
 
   // Save countries to shared manager whenever countries change
   useEffect(() => {
