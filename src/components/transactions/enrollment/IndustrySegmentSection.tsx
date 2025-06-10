@@ -60,7 +60,7 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
         {/* Provider Type Selection */}
         <div className="space-y-4">
           <div>
-            <Label className="text-base font-medium">Provider Type *</Label>
+            <Label className="text-base font-medium">Representation *</Label>
             <p className="text-sm text-muted-foreground mb-3">
               Select whether you are registering as an individual or organization
             </p>
@@ -82,7 +82,7 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
           </RadioGroup>
           
           {invalidFields.has('providerType') && (
-            <p className="text-sm text-destructive">Please select a provider type</p>
+            <p className="text-sm text-destructive">Please select a representation type</p>
           )}
         </div>
 
