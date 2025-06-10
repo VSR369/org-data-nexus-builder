@@ -114,6 +114,18 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
           const domainGroupsData: DomainGroup[] = JSON.parse(savedDomainGroups);
           console.log('Loaded domain groups from master data:', domainGroupsData);
           setDomainGroups(domainGroupsData);
+          
+          // Initialize all groups and categories as expanded
+          const allGroupIds = new Set(domainGroupsData.map(group => group.id));
+          const allCategoryIds = new Set(
+            domainGroupsData.flatMap(group => 
+              group.categories.map(category => category.id)
+            )
+          );
+          
+          setExpandedGroups(allGroupIds);
+          setExpandedCategories(allCategoryIds);
+          
         } catch (error) {
           console.error('Error parsing domain groups data:', error);
           setDomainGroups([]);
