@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,7 @@ const IndustrySegmentConfig = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load segments from DataManager on component mount
   useEffect(() => {
@@ -58,22 +57,22 @@ const IndustrySegmentConfig = () => {
     console.log(`📊 Loaded segments count: ${loadedSegments.length}`);
     
     setSegments(loadedSegments);
-    setIsInitialLoadComplete(true);
+    setIsLoading(false);
     
     console.log(`✅ IndustrySegmentConfig: Initial load complete, segments set to:`, loadedSegments);
   }, []);
 
   // Save segments to DataManager - only after initial load is complete
   useEffect(() => {
-    if (!isInitialLoadComplete) {
-      console.log(`⏸️ IndustrySegmentConfig: Skipping save - initial load not complete yet`);
+    if (isLoading) {
+      console.log(`⏸️ IndustrySegmentConfig: Skipping save - still loading`);
       return;
     }
     
     console.log(`💾 IndustrySegmentConfig: Auto-saving segments (${segments.length} items):`, segments);
     dataManager.saveData(segments);
     console.log(`✅ IndustrySegmentConfig: Auto-save complete`);
-  }, [segments, isInitialLoadComplete]);
+  }, [segments, isLoading]);
 
   const handleAddSegment = () => {
     if (newSegment.trim()) {
@@ -142,7 +141,7 @@ const IndustrySegmentConfig = () => {
   };
 
   // Show loading state until data is loaded
-  if (!isInitialLoadComplete) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -171,7 +170,15 @@ const IndustrySegmentConfig = () => {
           <h3 className="text-lg font-medium">Current Industry Segments</h3>
           <div className="flex gap-2">
             <Button 
-              onClick={handleResetToDefault}
+              onClick={() => {
+                console.log(`🔄 IndustrySegmentConfig: Resetting to default data`);
+                const resetData = dataManager.resetToDefault();
+                setSegments(resetData);
+                toast({
+                  title: "Success",
+                  description: "Industry segments reset to default values",
+                });
+              }}
               variant="outline"
               className="flex items-center gap-2"
             >
@@ -192,9 +199,10 @@ const IndustrySegmentConfig = () => {
         <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
           <p><strong>Debug Info:</strong></p>
           <p>• Segments count: {segments.length}</p>
-          <p>• Initial load complete: {isInitialLoadComplete ? 'Yes' : 'No'}</p>
+          <p>• Loading: {isLoading ? 'Yes' : 'No'}</p>
           <p>• First segment: {segments[0] || 'None'}</p>
           <p>• Last segment: {segments[segments.length - 1] || 'None'}</p>
+          <p>• Raw segments: {JSON.stringify(segments)}</p>
         </div>
 
         {isAdding && (
@@ -275,7 +283,7 @@ const IndustrySegmentConfig = () => {
 
         {segments.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">No industry segments found. Add one to get started.</p>
+            <p className="text-muted-foreground">No industry segments configured. This is valid - you can add segments or reset to defaults.</p>
           </div>
         )}
       </CardContent>

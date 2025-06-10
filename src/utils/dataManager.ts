@@ -1,3 +1,4 @@
+
 interface DataManagerConfig<T> {
   key: string;
   defaultData: T;
@@ -46,14 +47,14 @@ export class DataManager<T> {
     console.log(`Is initialized: ${this.isInitialized()}, Is version current: ${this.isVersionCurrent()}`);
     
     try {
-      // Check if version is current, if not, clear old data
+      // Check if version is current, if not, clear old data and use defaults
       if (!this.isVersionCurrent()) {
         console.log(`❌ Version mismatch for ${this.config.key}. Clearing old data and using defaults.`);
         this.clearData();
         this.updateVersion();
         this.markAsInitialized();
         this.saveData(this.config.defaultData);
-        console.log(`=== DataManager.loadData() END - Returned default data ===`);
+        console.log(`=== DataManager.loadData() END - Returned default data (version mismatch) ===`);
         return this.config.defaultData;
       }
 
@@ -66,7 +67,8 @@ export class DataManager<T> {
         return this.config.defaultData;
       }
 
-      // Try to load saved data
+      // At this point, we know it's initialized and version is current
+      // Try to load saved data - even if it's an empty array, that's valid user data
       const stored = localStorage.getItem(this.config.key);
       console.log(`📦 Raw stored data for ${this.config.key}:`, stored);
       
@@ -74,16 +76,27 @@ export class DataManager<T> {
         const parsed = JSON.parse(stored);
         console.log(`✅ Successfully parsed data for ${this.config.key}:`, parsed);
         console.log(`📊 Data type: ${typeof parsed}, Array: ${Array.isArray(parsed)}, Length: ${Array.isArray(parsed) ? parsed.length : 'N/A'}`);
-        console.log(`=== DataManager.loadData() END - Returned stored data ===`);
+        
+        // IMPORTANT: Even if it's an empty array, that's valid user data - don't fallback to defaults
+        console.log(`=== DataManager.loadData() END - Returned stored data (including empty arrays) ===`);
         return parsed;
       }
+
+      // Only fall back to defaults if there's truly no data stored and we somehow got here
+      console.log(`⚠️ No stored data found for initialized ${this.config.key}, this should not happen normally`);
+      
     } catch (error) {
       console.error(`❌ Error loading data for ${this.config.key}:`, error);
+      console.log(`🔧 Clearing corrupted data and using defaults`);
       this.clearData();
+      this.markAsInitialized();
+      this.saveData(this.config.defaultData);
+      console.log(`=== DataManager.loadData() END - Returned default data (error recovery) ===`);
+      return this.config.defaultData;
     }
     
-    // Fallback to default data
-    console.log(`⚠️ Falling back to default data for ${this.config.key}`);
+    // Final fallback - should rarely be reached
+    console.log(`⚠️ Unexpected fallback to default data for ${this.config.key}`);
     this.markAsInitialized();
     this.saveData(this.config.defaultData);
     console.log(`=== DataManager.loadData() END - Returned fallback default data ===`);
@@ -104,6 +117,7 @@ export class DataManager<T> {
       this.markAsInitialized();
       
       console.log(`✅ Data saved successfully for ${this.config.key}`);
+      console.log(`🔍 Verification - Initialized: ${this.isInitialized()}, Version: ${this.getCurrentVersion()}`);
       
       // Verify the save worked
       const verification = localStorage.getItem(this.config.key);
