@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,8 +58,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
       name: domainGroupName.trim(),
       description: domainGroupDescription.trim() || undefined,
       industrySegmentId: selectedIndustrySegment,
-      isActive: true,
-      categories: []
+      isActive: true
     });
 
     setDomainGroupName('');

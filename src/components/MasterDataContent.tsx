@@ -24,6 +24,7 @@ import EventsCalendarConfig from './master-data/EventsCalendarConfig';
 import SelfEnrollmentForm from './transactions/SelfEnrollmentForm';
 import SolutionVotingAssessmentConfig from './voting-assessment/SolutionVotingAssessmentConfig';
 import GlobalCacheManagerComponent from './master-data/GlobalCacheManager';
+import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -44,6 +45,8 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <CountryConfig />;
       case 'currencies':
         return <CurrencyConfig />;
+      case 'industry-segments':
+        return <IndustrySegmentConfig />;
       case 'departments':
         return <DepartmentConfig />;
       case 'domain-groups':

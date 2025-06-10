@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2 } from 'lucide-react';
+import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2, Factory } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -37,6 +36,11 @@ const foundationMenuItems = [
     id: 'currencies',
     title: 'Currencies',
     icon: DollarSign,
+  },
+  {
+    id: 'industry-segments',
+    title: 'Industry Segments',
+    icon: Factory,
   },
 ];
 
