@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 interface EnrollmentActionsProps {
   onSubmitEnrollment: () => void;
   onSaveDraft: () => void;
+  isSubmitted?: boolean;
 }
 
 const EnrollmentActions: React.FC<EnrollmentActionsProps> = ({
   onSubmitEnrollment,
-  onSaveDraft
+  onSaveDraft,
+  isSubmitted = false
 }) => {
   return (
     <div className="flex gap-4 pt-6">
@@ -17,8 +19,9 @@ const EnrollmentActions: React.FC<EnrollmentActionsProps> = ({
         type="button" 
         onClick={onSubmitEnrollment}
         className="flex-1"
+        variant={isSubmitted ? "outline" : "default"}
       >
-        Submit Enrollment
+        {isSubmitted ? "Edit & Resubmit" : "Submit Enrollment"}
       </Button>
       <Button 
         type="button" 

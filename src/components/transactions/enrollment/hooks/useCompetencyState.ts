@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CompetencyData {
   [domainGroup: string]: {
@@ -9,8 +9,37 @@ interface CompetencyData {
   };
 }
 
+const COMPETENCY_STORAGE_KEY = 'solution-provider-competency-draft';
+
+// Function to load saved competency data synchronously
+const loadSavedCompetencyData = () => {
+  try {
+    const savedData = localStorage.getItem(COMPETENCY_STORAGE_KEY);
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      console.log('Loading saved competency data synchronously:', parsedData);
+      return parsedData;
+    }
+  } catch (error) {
+    console.error('Error loading saved competency data:', error);
+  }
+  return {};
+};
+
 export const useCompetencyState = () => {
-  const [competencyData, setCompetencyData] = useState<CompetencyData>({});
+  // Load saved competency data synchronously during initialization
+  const savedCompetencyData = loadSavedCompetencyData();
+  const [competencyData, setCompetencyData] = useState<CompetencyData>(savedCompetencyData);
+
+  // Auto-save competency data
+  useEffect(() => {
+    const hasData = Object.keys(competencyData).length > 0;
+    
+    if (hasData) {
+      localStorage.setItem(COMPETENCY_STORAGE_KEY, JSON.stringify(competencyData));
+      console.log('Auto-saved competency data:', competencyData);
+    }
+  }, [competencyData]);
 
   const updateCompetencyData = (
     domainGroup: string, 
@@ -43,6 +72,7 @@ export const useCompetencyState = () => {
 
   const clearCompetencyData = () => {
     setCompetencyData({});
+    localStorage.removeItem(COMPETENCY_STORAGE_KEY);
   };
 
   // Get total number of subcategories that have been rated

@@ -29,6 +29,7 @@ export const useFormState = () => {
   
   const [providerType, setProviderType] = useState(savedData?.providerType || '');
   const [selectedIndustrySegment, setSelectedIndustrySegment] = useState(savedData?.selectedIndustrySegment || '');
+  const [isSubmitted, setIsSubmitted] = useState(savedData?.isSubmitted || false);
   
   const [formData, setFormData] = useState<FormData>(savedData?.formData || {
     // Institution fields (conditional)
@@ -68,6 +69,7 @@ export const useFormState = () => {
   useEffect(() => {
     if (savedData) {
       console.log('Restored draft data - Industry segment:', savedData.selectedIndustrySegment);
+      console.log('Restored submission status:', savedData.isSubmitted);
       toast({
         title: "Draft Restored",
         description: "Your previously saved draft has been restored.",
@@ -75,12 +77,13 @@ export const useFormState = () => {
     }
   }, [toast]);
 
-  // Auto-save functionality with industry segment
+  // Auto-save functionality with industry segment and submission status
   useEffect(() => {
     const saveData = {
       formData,
       providerType,
       selectedIndustrySegment,
+      isSubmitted,
       lastSaved: new Date().toISOString()
     };
     
@@ -95,9 +98,9 @@ export const useFormState = () => {
     
     if (hasData) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
-      console.log('Auto-saved draft data with industry segment:', selectedIndustrySegment);
+      console.log('Auto-saved draft data with submission status:', isSubmitted);
     }
-  }, [formData, providerType, selectedIndustrySegment]);
+  }, [formData, providerType, selectedIndustrySegment, isSubmitted]);
 
   // Check validation whenever form data, provider type, or industry segment changes
   useEffect(() => {
@@ -115,6 +118,7 @@ export const useFormState = () => {
 
   const clearDraft = () => {
     localStorage.removeItem(STORAGE_KEY);
+    setIsSubmitted(false);
     console.log('Draft cleared from storage');
   };
 
@@ -123,16 +127,25 @@ export const useFormState = () => {
       formData,
       providerType,
       selectedIndustrySegment,
+      isSubmitted,
       lastSaved: new Date().toISOString()
     };
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
-    console.log('Manual draft save with industry segment:', selectedIndustrySegment);
+    console.log('Manual draft save with industry segment and submission status:', selectedIndustrySegment, isSubmitted);
     
     toast({
       title: "Draft Saved",
       description: "Your enrollment has been saved as a draft",
     });
+  };
+
+  const markAsSubmitted = () => {
+    setIsSubmitted(true);
+  };
+
+  const resetSubmissionStatus = () => {
+    setIsSubmitted(false);
   };
 
   return {
@@ -143,6 +156,9 @@ export const useFormState = () => {
     selectedIndustrySegment,
     setSelectedIndustrySegment,
     isBasicDetailsComplete,
+    isSubmitted,
+    markAsSubmitted,
+    resetSubmissionStatus,
     clearDraft,
     saveDraft
   };

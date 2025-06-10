@@ -19,6 +19,9 @@ const SelfEnrollmentForm = () => {
     setProviderType,
     selectedIndustrySegment,
     setSelectedIndustrySegment,
+    isSubmitted,
+    markAsSubmitted,
+    resetSubmissionStatus,
     clearDraft,
     saveDraft
   } = useFormState();
@@ -40,13 +43,17 @@ const SelfEnrollmentForm = () => {
   } = useFieldValidation();
 
   const {
-    handleSubmitEnrollment
+    handleSubmitEnrollment,
+    handleResubmit
   } = useEnrollmentSubmission(
     formData,
     providerType,
     selectedIndustrySegment,
     hasCompetencyRatings(),
+    isSubmitted,
     validateAndHighlightFields,
+    markAsSubmitted,
+    resetSubmissionStatus,
     () => {
       clearDraft();
       clearCompetencyData();
@@ -57,6 +64,7 @@ const SelfEnrollmentForm = () => {
   console.log('SelfEnrollmentForm - selectedIndustrySegment:', selectedIndustrySegment);
   console.log('SelfEnrollmentForm - providerType:', providerType);
   console.log('SelfEnrollmentForm - hasCompetencyRatings:', hasCompetencyRatings());
+  console.log('SelfEnrollmentForm - isSubmitted:', isSubmitted);
   console.log('SelfEnrollmentForm - invalidFields:', Array.from(invalidFields));
 
   const handleIndustrySegmentChange = (value: string) => {
@@ -73,6 +81,18 @@ const SelfEnrollmentForm = () => {
   const handleFormDataUpdate = (field: string, value: string | string[]) => {
     updateFormData(field, value);
     clearFieldValidation(field);
+    // Reset submission status if user modifies data after submission
+    if (isSubmitted) {
+      resetSubmissionStatus();
+    }
+  };
+
+  const handleCompetencyUpdate = (domainGroup: string, category: string, subCategory: string, rating: number) => {
+    updateCompetencyData(domainGroup, category, subCategory, rating);
+    // Reset submission status if user modifies competency data after submission
+    if (isSubmitted) {
+      resetSubmissionStatus();
+    }
   };
 
   return (
@@ -82,6 +102,11 @@ const SelfEnrollmentForm = () => {
           <CardTitle>Solution Provider Enrollment</CardTitle>
           <CardDescription>
             Register as a Solution Provider to showcase your expertise and connect with organizations
+            {isSubmitted && (
+              <span className="block mt-2 text-green-600 font-medium">
+                ✓ Successfully submitted! You can still modify and resubmit if needed.
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,12 +124,13 @@ const SelfEnrollmentForm = () => {
             <CoreCompetenciesTab
               selectedIndustrySegment={selectedIndustrySegment}
               competencyData={competencyData}
-              updateCompetencyData={updateCompetencyData}
+              updateCompetencyData={handleCompetencyUpdate}
             />
             
             <EnrollmentActions
-              onSubmitEnrollment={handleSubmitEnrollment}
+              onSubmitEnrollment={isSubmitted ? handleResubmit : handleSubmitEnrollment}
               onSaveDraft={saveDraft}
+              isSubmitted={isSubmitted}
             />
           </EnrollmentTabs>
         </CardContent>
