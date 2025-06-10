@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, X, ChevronRight, ChevronDown, FolderOpen, Folder, FileText, ArrowLeft } from 'lucide-react';
+import { Plus, Save, X, ChevronRight, ChevronDown, ChevronUp, FolderOpen, Folder, FileText, ArrowLeft } from 'lucide-react';
 import { DomainGroup, Category, IndustrySegment } from './types';
 
 interface QuickAddFormProps {
@@ -51,6 +51,8 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   const [viewMode, setViewMode] = useState<'add' | 'explore'>('add');
   const [selectedGroupForExplore, setSelectedGroupForExplore] = useState<DomainGroup | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [showExistingGroups, setShowExistingGroups] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const toggleCategoryExpansion = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -127,6 +129,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
     }
 
     resetForm();
+    setShowAddForm(false);
   };
 
   const handleGroupOnlyAdd = () => {
@@ -145,6 +148,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 
     showMessage('Domain Group added successfully');
     resetForm();
+    setShowAddForm(false);
   };
 
   const handleCategoryOnlyAdd = () => {
@@ -162,6 +166,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 
     showMessage('Category added successfully');
     resetForm();
+    setShowAddForm(false);
   };
 
   const handleSubCategoryOnlyAdd = () => {
@@ -179,6 +184,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 
     showMessage('Sub-Category added successfully');
     resetForm();
+    setShowAddForm(false);
   };
 
   const categories = formData.selectedDomainGroup 
@@ -301,14 +307,51 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 
       {selectedIndustrySegment && (
         <>
-          {/* Existing Domain Groups */}
-          {domainGroups.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Existing Domain Groups</CardTitle>
-                <CardDescription>Click on any domain group to explore its categories and sub-categories</CardDescription>
-              </CardHeader>
-              <CardContent>
+          {/* Add Domain Group Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Domain Groups</CardTitle>
+                  <CardDescription>Add new domain groups or explore existing ones</CardDescription>
+                </div>
+                <Button 
+                  onClick={() => setShowAddForm(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Domain Group
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Toggle for Existing Groups */}
+              {domainGroups.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Existing Domain Groups ({domainGroups.length})</h3>
+                  <Button
+                    onClick={() => setShowExistingGroups(!showExistingGroups)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    {showExistingGroups ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        Hide Groups
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        Show Groups
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Existing Domain Groups */}
+              {domainGroups.length > 0 && showExistingGroups && (
                 <div className="grid gap-3">
                   {domainGroups.map((group) => (
                     <div 
@@ -337,214 +380,234 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+
+              {domainGroups.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FolderOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No domain groups found. Click "Add Domain Group" to get started.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Quick Add Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Add Options</CardTitle>
-              <CardDescription>Choose what you want to add</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Add Mode Selection */}
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  onClick={() => setAddMode('complete')}
-                  variant={addMode === 'complete' ? 'default' : 'outline'}
-                  size="sm"
-                >
-                  Complete Hierarchy
-                </Button>
-                <Button
-                  onClick={() => setAddMode('group-only')}
-                  variant={addMode === 'group-only' ? 'default' : 'outline'}
-                  size="sm"
-                >
-                  Domain Group Only
-                </Button>
-                <Button
-                  onClick={() => setAddMode('category-only')}
-                  variant={addMode === 'category-only' ? 'default' : 'outline'}
-                  size="sm"
-                >
-                  Category Only
-                </Button>
-                <Button
-                  onClick={() => setAddMode('subcategory-only')}
-                  variant={addMode === 'subcategory-only' ? 'default' : 'outline'}
-                  size="sm"
-                >
-                  Sub-Category Only
-                </Button>
-              </div>
-
-              {/* Form Fields Based on Mode */}
-              <div className="space-y-4">
-                {/* Complete Hierarchy or Group Only */}
-                {(addMode === 'complete' || addMode === 'group-only') && (
-                  <div className="p-4 border rounded-lg bg-blue-50 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                      <h4 className="font-medium">Domain Group</h4>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="group-name">Group Name *</Label>
-                        <Input
-                          id="group-name"
-                          value={formData.groupName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
-                          placeholder="e.g., Strategy, Innovation & Growth"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="group-description">Group Description</Label>
-                        <Textarea
-                          id="group-description"
-                          value={formData.groupDescription}
-                          onChange={(e) => setFormData(prev => ({ ...prev, groupDescription: e.target.value }))}
-                          placeholder="Describe the domain group"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
+          {showAddForm && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Quick Add Options</CardTitle>
+                    <CardDescription>Choose what you want to add</CardDescription>
                   </div>
-                )}
+                  <Button
+                    onClick={() => setShowAddForm(false)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Add Mode Selection */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    onClick={() => setAddMode('complete')}
+                    variant={addMode === 'complete' ? 'default' : 'outline'}
+                    size="sm"
+                  >
+                    Complete Hierarchy
+                  </Button>
+                  <Button
+                    onClick={() => setAddMode('group-only')}
+                    variant={addMode === 'group-only' ? 'default' : 'outline'}
+                    size="sm"
+                  >
+                    Domain Group Only
+                  </Button>
+                  <Button
+                    onClick={() => setAddMode('category-only')}
+                    variant={addMode === 'category-only' ? 'default' : 'outline'}
+                    size="sm"
+                  >
+                    Category Only
+                  </Button>
+                  <Button
+                    onClick={() => setAddMode('subcategory-only')}
+                    variant={addMode === 'subcategory-only' ? 'default' : 'outline'}
+                    size="sm"
+                  >
+                    Sub-Category Only
+                  </Button>
+                </div>
 
-                {/* Category Selection for Category/Sub-Category Only */}
-                {(addMode === 'category-only' || addMode === 'subcategory-only') && (
-                  <div className="space-y-4">
+                {/* Form Fields Based on Mode */}
+                <div className="space-y-4">
+                  {/* Complete Hierarchy or Group Only */}
+                  {(addMode === 'complete' || addMode === 'group-only') && (
+                    <div className="p-4 border rounded-lg bg-blue-50 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <h4 className="font-medium">Domain Group</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="group-name">Group Name *</Label>
+                          <Input
+                            id="group-name"
+                            value={formData.groupName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, groupName: e.target.value }))}
+                            placeholder="e.g., Strategy, Innovation & Growth"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="group-description">Group Description</Label>
+                          <Textarea
+                            id="group-description"
+                            value={formData.groupDescription}
+                            onChange={(e) => setFormData(prev => ({ ...prev, groupDescription: e.target.value }))}
+                            placeholder="Describe the domain group"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category Selection for Category/Sub-Category Only */}
+                  {(addMode === 'category-only' || addMode === 'subcategory-only') && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="existing-domain-group">Select Domain Group</Label>
+                        <Select value={formData.selectedDomainGroup} onValueChange={(value) => 
+                          setFormData(prev => ({ ...prev, selectedDomainGroup: value, selectedCategory: '' }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select existing domain group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {domainGroups.map((group) => (
+                              <SelectItem key={group.id} value={group.id}>
+                                {group.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category for Complete or Category Only */}
+                  {(addMode === 'complete' || addMode === 'category-only') && (
+                    <div className="p-4 border rounded-lg bg-green-50 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <ChevronRight className="w-4 h-4" />
+                        <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                        <h4 className="font-medium">Category</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="category-name">Category Name {addMode === 'category-only' ? '*' : ''}</Label>
+                          <Input
+                            id="category-name"
+                            value={formData.categoryName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, categoryName: e.target.value }))}
+                            placeholder="e.g., Strategic Vision & Business Planning"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="category-description">Category Description</Label>
+                          <Textarea
+                            id="category-description"
+                            value={formData.categoryDescription}
+                            onChange={(e) => setFormData(prev => ({ ...prev, categoryDescription: e.target.value }))}
+                            placeholder="Describe the category"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category Selection for Sub-Category Only */}
+                  {addMode === 'subcategory-only' && formData.selectedDomainGroup && (
                     <div>
-                      <Label htmlFor="existing-domain-group">Select Domain Group</Label>
-                      <Select value={formData.selectedDomainGroup} onValueChange={(value) => 
-                        setFormData(prev => ({ ...prev, selectedDomainGroup: value, selectedCategory: '' }))}>
+                      <Label htmlFor="existing-category">Select Category</Label>
+                      <Select value={formData.selectedCategory} onValueChange={(value) => 
+                        setFormData(prev => ({ ...prev, selectedCategory: value }))}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select existing domain group" />
+                          <SelectValue placeholder="Select existing category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {domainGroups.map((group) => (
-                            <SelectItem key={group.id} value={group.id}>
-                              {group.name}
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Category for Complete or Category Only */}
-                {(addMode === 'complete' || addMode === 'category-only') && (
-                  <div className="p-4 border rounded-lg bg-green-50 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <ChevronRight className="w-4 h-4" />
-                      <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                      <h4 className="font-medium">Category</h4>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="category-name">Category Name {addMode === 'category-only' ? '*' : ''}</Label>
-                        <Input
-                          id="category-name"
-                          value={formData.categoryName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, categoryName: e.target.value }))}
-                          placeholder="e.g., Strategic Vision & Business Planning"
-                        />
+                  {/* Sub-Category for Complete or Sub-Category Only */}
+                  {(addMode === 'complete' || addMode === 'subcategory-only') && (
+                    <div className="p-4 border rounded-lg bg-purple-50 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4" />
+                        <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                        <h4 className="font-medium">Sub-Category</h4>
                       </div>
-                      <div>
-                        <Label htmlFor="category-description">Category Description</Label>
-                        <Textarea
-                          id="category-description"
-                          value={formData.categoryDescription}
-                          onChange={(e) => setFormData(prev => ({ ...prev, categoryDescription: e.target.value }))}
-                          placeholder="Describe the category"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Category Selection for Sub-Category Only */}
-                {addMode === 'subcategory-only' && formData.selectedDomainGroup && (
-                  <div>
-                    <Label htmlFor="existing-category">Select Category</Label>
-                    <Select value={formData.selectedCategory} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, selectedCategory: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select existing category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Sub-Category for Complete or Sub-Category Only */}
-                {(addMode === 'complete' || addMode === 'subcategory-only') && (
-                  <div className="p-4 border rounded-lg bg-purple-50 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <ChevronRight className="w-4 h-4" />
-                      <ChevronRight className="w-4 h-4" />
-                      <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
-                      <h4 className="font-medium">Sub-Category</h4>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="subcategory-name">Sub-Category Name {addMode === 'subcategory-only' ? '*' : ''}</Label>
-                        <Input
-                          id="subcategory-name"
-                          value={formData.subCategoryName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, subCategoryName: e.target.value }))}
-                          placeholder="e.g., Clinical & Scientific Mission Alignment"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="subcategory-description">Sub-Category Description</Label>
-                        <Textarea
-                          id="subcategory-description"
-                          value={formData.subCategoryDescription}
-                          onChange={(e) => setFormData(prev => ({ ...prev, subCategoryDescription: e.target.value }))}
-                          placeholder="Describe the sub-category"
-                          rows={2}
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="subcategory-name">Sub-Category Name {addMode === 'subcategory-only' ? '*' : ''}</Label>
+                          <Input
+                            id="subcategory-name"
+                            value={formData.subCategoryName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, subCategoryName: e.target.value }))}
+                            placeholder="e.g., Clinical & Scientific Mission Alignment"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="subcategory-description">Sub-Category Description</Label>
+                          <Textarea
+                            id="subcategory-description"
+                            value={formData.subCategoryDescription}
+                            onChange={(e) => setFormData(prev => ({ ...prev, subCategoryDescription: e.target.value }))}
+                            placeholder="Describe the sub-category"
+                            rows={2}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-4">
-                  <Button 
-                    onClick={
-                      addMode === 'complete' ? handleCompleteAdd :
-                      addMode === 'group-only' ? handleGroupOnlyAdd :
-                      addMode === 'category-only' ? handleCategoryOnlyAdd :
-                      handleSubCategoryOnlyAdd
-                    }
-                    className="flex items-center gap-1"
-                  >
-                    <Save className="w-4 h-4" />
-                    {addMode === 'complete' ? 'Add Complete Hierarchy' :
-                     addMode === 'group-only' ? 'Add Domain Group' :
-                     addMode === 'category-only' ? 'Add Category' :
-                     'Add Sub-Category'}
-                  </Button>
-                  <Button onClick={resetForm} variant="outline">
-                    <X className="w-4 h-4" />
-                    Clear Form
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      onClick={
+                        addMode === 'complete' ? handleCompleteAdd :
+                        addMode === 'group-only' ? handleGroupOnlyAdd :
+                        addMode === 'category-only' ? handleCategoryOnlyAdd :
+                        handleSubCategoryOnlyAdd
+                      }
+                      className="flex items-center gap-1"
+                    >
+                      <Save className="w-4 h-4" />
+                      {addMode === 'complete' ? 'Add Complete Hierarchy' :
+                       addMode === 'group-only' ? 'Add Domain Group' :
+                       addMode === 'category-only' ? 'Add Category' :
+                       'Add Sub-Category'}
+                    </Button>
+                    <Button onClick={resetForm} variant="outline">
+                      <X className="w-4 h-4" />
+                      Clear Form
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>
