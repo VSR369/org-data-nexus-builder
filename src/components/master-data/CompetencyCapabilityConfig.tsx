@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Brain, Scale } from 'lucide-react';
+import { Plus, Pencil, Trash2, Brain, Scale, Edit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface CompetencyCapability {
@@ -64,6 +64,7 @@ const CompetencyCapabilityConfig = () => {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCapability, setEditingCapability] = useState<CompetencyCapability | null>(null);
+  const [isEditingScale, setIsEditingScale] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -152,6 +153,12 @@ const CompetencyCapabilityConfig = () => {
     ));
   };
 
+  const handleUpdateRatingRange = (id: string, newRange: string) => {
+    setCapabilities(prev => prev.map(cap => 
+      cap.id === id ? { ...cap, ratingRange: newRange } : cap
+    ));
+  };
+
   const sortedCapabilities = [...capabilities].sort((a, b) => a.order - b.order);
 
   return (
@@ -159,9 +166,19 @@ const CompetencyCapabilityConfig = () => {
       {/* Rating Scale Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="w-5 h-5" />
-            Competency Rating Scale Overview
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="w-5 h-5" />
+              Competency Rating Scale Overview
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingScale(!isEditingScale)}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {isEditingScale ? 'Done Editing' : 'Edit Scale'}
+            </Button>
           </CardTitle>
           <CardDescription>
             The competency assessment uses a 0-10 rating scale with the following capability levels
@@ -174,11 +191,28 @@ const CompetencyCapabilityConfig = () => {
                 <Badge className={`${capability.color} mb-2`}>
                   {capability.name}
                 </Badge>
-                <div className="text-sm font-medium mb-1">{capability.ratingRange}</div>
+                {isEditingScale ? (
+                  <Input
+                    value={capability.ratingRange}
+                    onChange={(e) => handleUpdateRatingRange(capability.id, e.target.value)}
+                    className="text-center text-sm font-medium mb-1"
+                    placeholder="e.g., 0 - 2.49999"
+                  />
+                ) : (
+                  <div className="text-sm font-medium mb-1">{capability.ratingRange}</div>
+                )}
                 <div className="text-xs text-muted-foreground">{capability.description}</div>
               </div>
             ))}
           </div>
+          {isEditingScale && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Editing Mode:</strong> Click on any rating range above to edit it directly. 
+                Click "Done Editing" when finished.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
