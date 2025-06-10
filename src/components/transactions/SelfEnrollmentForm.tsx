@@ -131,7 +131,6 @@ const SelfEnrollmentForm = () => {
             />
             
             <CoreCompetenciesTab
-              selectedIndustrySegments={selectedIndustrySegments}
               competencyData={competencyData}
               updateCompetencyData={handleCompetencyUpdate}
             />
