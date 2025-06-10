@@ -8,7 +8,7 @@ import { useDomainGroupsData } from './domain-groups/hooks/useDomainGroupsData';
 
 const DomainGroupsConfig = () => {
   const [message, setMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('domain-groups');
+  const [activeTab, setActiveTab] = useState('domain-groups-creation');
   
   const {
     industrySegments,
@@ -54,26 +54,11 @@ const DomainGroupsConfig = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="domain-groups">Domain Groups</TabsTrigger>
-          <TabsTrigger value="quick-add">Domain Group Hierarchy Creation</TabsTrigger>
+          <TabsTrigger value="domain-groups-creation">Domain Groups Creation</TabsTrigger>
+          <TabsTrigger value="domain-group-hierarchy">Domain Group Hierarchy</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="domain-groups" className="space-y-4">
-          <DomainGroupsManagement
-            industrySegments={industrySegments}
-            selectedIndustrySegment={selectedIndustrySegment}
-            onSelectIndustrySegment={setSelectedIndustrySegment}
-            domainGroups={domainGroups}
-            selectedDomainGroup={selectedDomainGroup}
-            onSelectDomainGroup={setSelectedDomainGroup}
-            onAddDomainGroup={addDomainGroup}
-            onUpdateDomainGroup={updateDomainGroup}
-            onDeleteDomainGroup={deleteDomainGroup}
-            showMessage={showMessage}
-          />
-        </TabsContent>
-        
-        <TabsContent value="quick-add" className="space-y-4">
+        <TabsContent value="domain-groups-creation" className="space-y-4">
           <QuickAddForm
             industrySegments={industrySegments}
             domainGroups={domainGroups}
@@ -84,6 +69,21 @@ const DomainGroupsConfig = () => {
             onAddDomainGroup={addDomainGroup}
             onAddCategory={addCategory}
             onAddSubCategory={addSubCategory}
+            showMessage={showMessage}
+          />
+        </TabsContent>
+        
+        <TabsContent value="domain-group-hierarchy" className="space-y-4">
+          <DomainGroupsManagement
+            industrySegments={industrySegments}
+            selectedIndustrySegment={selectedIndustrySegment}
+            onSelectIndustrySegment={setSelectedIndustrySegment}
+            domainGroups={domainGroups}
+            selectedDomainGroup={selectedDomainGroup}
+            onSelectDomainGroup={setSelectedDomainGroup}
+            onAddDomainGroup={addDomainGroup}
+            onUpdateDomainGroup={updateDomainGroup}
+            onDeleteDomainGroup={deleteDomainGroup}
             showMessage={showMessage}
           />
         </TabsContent>
