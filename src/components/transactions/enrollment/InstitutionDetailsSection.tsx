@@ -24,11 +24,6 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   const [countries, setCountries] = useState<string[]>([]);
   const departmentData = useDepartmentData();
 
-  // Only show institution details for organization provider type
-  if (providerType !== 'organization') {
-    return null;
-  }
-
   useEffect(() => {
     // Load organization types
     const orgTypes = organizationTypesDataManager.loadData();
@@ -38,6 +33,11 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
     const countryList = countriesDataManager.loadData();
     setCountries(countryList);
   }, []);
+
+  // Only show institution details for organization provider type
+  if (providerType !== 'organization') {
+    return null;
+  }
 
   const availableSubCategories = formData.departmentCategory 
     ? departmentData.subcategories[formData.departmentCategory] || []
