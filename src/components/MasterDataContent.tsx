@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +23,7 @@ import SelfEnrollmentForm from './transactions/SelfEnrollmentForm';
 import SolutionVotingAssessmentConfig from './voting-assessment/SolutionVotingAssessmentConfig';
 import GlobalCacheManagerComponent from './master-data/GlobalCacheManager';
 import DomainGroupsConfig from './master-data/DomainGroupsConfig';
+import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -44,6 +44,8 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <CountryConfig />;
       case 'currencies':
         return <CurrencyConfig />;
+      case 'industry-segments':
+        return <IndustrySegmentConfig />;
       case 'domain-groups':
         return <DomainGroupsConfig />;
       case 'departments':
@@ -87,3 +89,5 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
     </div>
   );
 };
+
+export default MasterDataContent;
