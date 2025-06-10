@@ -37,7 +37,8 @@ export const useFormState = () => {
     ifsc: '',
     linkedin: '',
     articles: '',
-    websites: ''
+    websites: '',
+    profileDocument: ''
   });
 
   const [isBasicDetailsComplete, setIsBasicDetailsComplete] = useState(false);

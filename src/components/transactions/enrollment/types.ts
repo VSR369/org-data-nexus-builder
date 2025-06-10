@@ -1,4 +1,3 @@
-
 export interface FormData {
   // Institution fields (conditional)
   orgName: string;
@@ -26,6 +25,7 @@ export interface FormData {
   linkedin: string;
   articles: string;
   websites: string;
+  profileDocument: string;
 }
 
 export interface FormValidationProps {
