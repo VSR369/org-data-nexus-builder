@@ -8,76 +8,68 @@ export const useFieldValidation = () => {
   const validateAndHighlightFields = (
     formData: FormData,
     providerType: string,
-    selectedIndustrySegment: string,
+    selectedIndustrySegments: string[],
     hasCompetencyRatings: boolean
-  ): { isValid: boolean; missingFields: string[] } => {
+  ) => {
+    const requiredFields = ['firstName', 'lastName', 'email', 'mobile', 'password', 'confirmPassword', 'providerCountry', 'pinCode', 'address'];
     const missingFields: string[] = [];
     const newInvalidFields = new Set<string>();
 
-    // Check if industry segment and provider type are selected
-    if (!selectedIndustrySegment) {
-      missingFields.push('Industry Segment');
-    }
-    
+    // Check provider type
     if (!providerType) {
       missingFields.push('Provider Type');
       newInvalidFields.add('providerType');
     }
 
-    const requiredFields: { [key: string]: string } = {
-      firstName: 'First Name',
-      lastName: 'Last Name', 
-      email: 'Email',
-      mobile: 'Mobile',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-      providerCountry: 'Provider Country',
-      pinCode: 'Pin Code'
-    };
-
-    // Add institution fields if provider type is institution
-    if (providerType === 'institution') {
-      requiredFields.orgName = 'Organization Name';
-      requiredFields.orgType = 'Organization Type';
-      requiredFields.orgCountry = 'Organization Country';
-      requiredFields.regAddress = 'Registered Address';
+    // Check industry segments
+    if (selectedIndustrySegments.length === 0) {
+      missingFields.push('Industry Segment');
+      newInvalidFields.add('industrySegment');
     }
 
-    // Check all required fields
-    for (const [field, label] of Object.entries(requiredFields)) {
-      const value = formData[field as keyof FormData];
-      if (Array.isArray(value)) {
-        continue; // Skip array fields
-      }
-      if (!value || value.trim() === '') {
-        missingFields.push(label);
+    // Check institution fields if provider type is institution
+    if (providerType === 'institution') {
+      const institutionFields = ['orgName', 'orgType', 'orgCountry', 'regAddress', 'departmentCategory', 'departmentSubCategory'];
+      institutionFields.forEach(field => {
+        if (!formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '') {
+          missingFields.push(field);
+          newInvalidFields.add(field);
+        }
+      });
+    }
+
+    // Check required provider details
+    requiredFields.forEach(field => {
+      if (!formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '') {
+        missingFields.push(field);
         newInvalidFields.add(field);
       }
-    }
+    });
 
     // Check password confirmation
-    if (formData.password !== formData.confirmPassword && formData.password && formData.confirmPassword) {
-      missingFields.push('Password confirmation must match');
+    if (formData.password !== formData.confirmPassword) {
+      missingFields.push('Password confirmation');
       newInvalidFields.add('confirmPassword');
     }
 
-    // Check competency ratings
-    if (!hasCompetencyRatings) {
-      missingFields.push('Competency ratings in Core Competencies tab');
+    // Check if competency ratings exist for selected industry segments
+    if (!hasCompetencyRatings && selectedIndustrySegments.length > 0) {
+      missingFields.push('Core Competency Ratings for selected industry segments');
+      newInvalidFields.add('competencyRatings');
     }
 
     setInvalidFields(newInvalidFields);
-    
+
     return {
       isValid: missingFields.length === 0,
       missingFields
     };
   };
 
-  const clearFieldValidation = (fieldName: string) => {
+  const clearFieldValidation = (field: string) => {
     setInvalidFields(prev => {
       const newSet = new Set(prev);
-      newSet.delete(fieldName);
+      newSet.delete(field);
       return newSet;
     });
   };

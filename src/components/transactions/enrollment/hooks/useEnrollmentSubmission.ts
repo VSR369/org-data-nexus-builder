@@ -5,13 +5,13 @@ import { FormData } from '../types';
 export const useEnrollmentSubmission = (
   formData: FormData,
   providerType: string,
-  selectedIndustrySegment: string,
+  selectedIndustrySegments: string[],
   hasCompetencyRatings: boolean,
   isSubmitted: boolean,
   validateAndHighlightFields: (
     formData: FormData,
     providerType: string,
-    selectedIndustrySegment: string,
+    selectedIndustrySegments: string[],
     hasCompetencyRatings: boolean
   ) => { isValid: boolean; missingFields: string[] },
   markAsSubmitted: () => void,
@@ -31,7 +31,7 @@ export const useEnrollmentSubmission = (
       return;
     }
 
-    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegment, hasCompetencyRatings);
+    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments, hasCompetencyRatings);
     
     if (!validation.isValid) {
       toast({
@@ -47,7 +47,7 @@ export const useEnrollmentSubmission = (
     
     toast({
       title: "Success",
-      description: "Solution Provider enrollment submitted successfully",
+      description: "Solution Provider enrollment submitted successfully. All data has been saved and will persist across sessions.",
     });
   };
 
@@ -57,7 +57,7 @@ export const useEnrollmentSubmission = (
     
     toast({
       title: "Ready for Edit",
-      description: "You can now modify your enrollment and submit again.",
+      description: "You can now modify your enrollment and submit again. All existing data is preserved.",
     });
   };
 

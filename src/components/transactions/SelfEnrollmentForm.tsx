@@ -109,7 +109,12 @@ const SelfEnrollmentForm = () => {
             Register as a Solution Provider to showcase your expertise and connect with organizations
             {isSubmitted && (
               <span className="block mt-2 text-green-600 font-medium">
-                ✓ Successfully submitted! You can still modify and resubmit if needed.
+                ✓ Successfully submitted! Your data is saved and will persist across sessions. You can still modify and resubmit if needed.
+              </span>
+            )}
+            {!isSubmitted && selectedIndustrySegments.length > 0 && hasCompetencyRatings() && (
+              <span className="block mt-2 text-blue-600 font-medium">
+                💾 Your data is automatically saved. You can safely refresh or return later to continue.
               </span>
             )}
           </CardDescription>
@@ -146,3 +151,5 @@ const SelfEnrollmentForm = () => {
 };
 
 export default SelfEnrollmentForm;
+
+</initial_code>

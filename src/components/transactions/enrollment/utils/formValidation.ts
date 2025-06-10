@@ -4,45 +4,32 @@ import { FormData } from '../types';
 export const validateRequiredFields = (
   formData: FormData,
   providerType: string,
-  selectedIndustrySegment: string
+  selectedIndustrySegments: string[]
 ): boolean => {
-  console.log('Validation check:', { formData, providerType, selectedIndustrySegment });
-  
-  // Check if industry segment and provider type are selected first
-  if (!selectedIndustrySegment || !providerType) {
-    console.log('Missing industry segment or provider type');
-    return false;
-  }
+  // Check provider type
+  if (!providerType) return false;
 
-  const requiredFields = [
-    'firstName', 'lastName', 'email', 'mobile', 'password', 'confirmPassword',
-    'providerCountry', 'pinCode'
-  ];
+  // Check industry segments - at least one should be selected
+  if (selectedIndustrySegments.length === 0) return false;
 
-  // Add institution fields if provider type is institution
+  // Check institution fields if provider type is institution
   if (providerType === 'institution') {
-    requiredFields.push('orgName', 'orgType', 'orgCountry', 'regAddress');
-  }
-
-  // Check all required fields
-  for (const field of requiredFields) {
-    const value = formData[field as keyof FormData];
-    if (Array.isArray(value)) {
-      // Skip array fields in required validation (they're optional)
-      continue;
-    }
-    if (!value || value.trim() === '') {
-      console.log(`Missing required field: ${field}`);
+    const institutionFields = ['orgName', 'orgType', 'orgCountry', 'regAddress', 'departmentCategory', 'departmentSubCategory'];
+    if (institutionFields.some(field => !formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '')) {
       return false;
     }
   }
 
-  // Check password confirmation
-  if (formData.password !== formData.confirmPassword) {
-    console.log('Password confirmation mismatch');
+  // Check required provider details
+  const requiredFields = ['firstName', 'lastName', 'email', 'mobile', 'password', 'confirmPassword', 'providerCountry', 'pinCode', 'address'];
+  if (requiredFields.some(field => !formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '')) {
     return false;
   }
 
-  console.log('All validation checks passed');
+  // Check password confirmation
+  if (formData.password !== formData.confirmPassword) {
+    return false;
+  }
+
   return true;
 };

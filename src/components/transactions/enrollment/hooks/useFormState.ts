@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { FormData } from '../types';
 import { validateRequiredFields } from '../utils/formValidation';
@@ -72,7 +71,7 @@ export const useFormState = () => {
       console.log('Restored submission status:', savedData.isSubmitted);
       toast({
         title: "Draft Restored",
-        description: "Your previously saved draft has been restored.",
+        description: "Your previously saved enrollment data has been restored, including all industry segments and competency ratings.",
       });
     }
   }, [toast]);
@@ -99,16 +98,15 @@ export const useFormState = () => {
     if (hasData) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
       console.log('Auto-saved draft data with submission status:', isSubmitted);
+      console.log('Auto-saved industry segments:', selectedIndustrySegments);
     }
   }, [formData, providerType, selectedIndustrySegments, isSubmitted]);
 
   // Check validation whenever form data, provider type, or industry segments change
   useEffect(() => {
-    // For backward compatibility, use the first industry segment for validation
-    const primaryIndustrySegment = selectedIndustrySegments[0] || '';
-    const isValid = validateRequiredFields(formData, providerType, primaryIndustrySegment);
+    const isValid = validateRequiredFields(formData, providerType, selectedIndustrySegments);
     setIsBasicDetailsComplete(isValid);
-    console.log('Validation result changed:', isValid);
+    console.log('Validation result changed:', isValid, 'for segments:', selectedIndustrySegments);
   }, [formData, providerType, selectedIndustrySegments]);
 
   const updateFormData = (field: string, value: string | string[]) => {
@@ -148,7 +146,7 @@ export const useFormState = () => {
     
     toast({
       title: "Draft Saved",
-      description: "Your enrollment has been saved as a draft",
+      description: "Your enrollment has been saved as a draft, including all industry segments and competency data",
     });
   };
 
