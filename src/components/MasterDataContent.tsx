@@ -13,7 +13,6 @@ import EntityTypeConfig from './master-data/EntityTypeConfig';
 import CountryConfig from './master-data/CountryConfig';
 import CurrencyConfig from './master-data/CurrencyConfig';
 import DepartmentConfig from './master-data/DepartmentConfig';
-import DomainGroupsConfig from './master-data/DomainGroupsConfig';
 import CompetencyCapabilityConfig from './master-data/CompetencyCapabilityConfig';
 import ChallengeStatusConfig from './master-data/ChallengeStatusConfig';
 import SolutionStatusConfig from './master-data/SolutionStatusConfig';
@@ -49,8 +48,6 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <IndustrySegmentConfig />;
       case 'departments':
         return <DepartmentConfig />;
-      case 'domain-groups':
-        return <DomainGroupsConfig />;
       case 'competency-capabilities':
         return <CompetencyCapabilityConfig />;
       case 'challenge-statuses':
