@@ -102,7 +102,7 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
   const selectedSegmentInfo = industrySegments.find(s => s.id === selectedIndustrySegment);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Industry Segment Selection */}
       <Card>
         <CardHeader>
@@ -134,91 +134,19 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
 
       {selectedIndustrySegment && (
         <>
-          {/* Complete Tree Structure View */}
+          {/* Complete Domain Structure Tree View */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FolderOpen className="h-5 w-5" />
-                Complete Domain Structure
-              </CardTitle>
-              <CardDescription>
-                Full hierarchical view of the selected industry segment
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Folder className="h-4 w-4 text-blue-600" />
-                  <span>{selectedSegmentInfo?.name}</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5" />
+                    Domain Groups Structure - {selectedSegmentInfo?.name}
+                  </CardTitle>
+                  <CardDescription>
+                    Complete hierarchical view with expandable groups, categories, and sub-categories
+                  </CardDescription>
                 </div>
-                <div className="ml-6 space-y-1">
-                  {domainGroups.map((group) => (
-                    <Collapsible
-                      key={group.id}
-                      open={expandedGroups.has(group.id)}
-                      onOpenChange={() => toggleGroupExpansion(group.id)}
-                    >
-                      <CollapsibleTrigger className="flex items-center gap-2 text-sm hover:bg-muted/50 p-1 rounded w-full text-left">
-                        {expandedGroups.has(group.id) ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )}
-                        <FolderOpen className="h-3 w-3 text-green-600" />
-                        <span className={selectedDomainGroup === group.id ? "font-semibold text-primary" : ""}>{group.name}</span>
-                        <Badge variant="outline" className="ml-auto text-xs">
-                          {group.categories?.length || 0} categories
-                        </Badge>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="ml-6 mt-1 space-y-1">
-                        {group.categories?.map((category) => (
-                          <Collapsible
-                            key={category.id}
-                            open={expandedCategories.has(category.id)}
-                            onOpenChange={() => toggleCategoryExpansion(category.id)}
-                          >
-                            <CollapsibleTrigger className="flex items-center gap-2 text-xs hover:bg-muted/30 p-1 rounded w-full text-left">
-                              {expandedCategories.has(category.id) ? (
-                                <ChevronDown className="h-2 w-2" />
-                              ) : (
-                                <ChevronRight className="h-2 w-2" />
-                              )}
-                              <Folder className="h-2 w-2 text-orange-600" />
-                              <span>{category.name}</span>
-                              <Badge variant="outline" className="ml-auto text-xs">
-                                {category.subCategories?.length || 0} sub-categories
-                              </Badge>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="ml-6 mt-1 space-y-1">
-                              {category.subCategories?.map((subCategory) => (
-                                <div key={subCategory.id} className="flex items-center gap-2 text-xs text-muted-foreground p-1">
-                                  <div className="w-2 h-2 border-l border-b border-muted-foreground/30 ml-1"></div>
-                                  <FileText className="h-2 w-2 text-purple-600" />
-                                  <span>{subCategory.name}</span>
-                                </div>
-                              ))}
-                            </CollapsibleContent>
-                          </Collapsible>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Domain Groups Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Domain Groups Management</CardTitle>
-              <CardDescription>
-                Manage domain groups for {selectedSegmentInfo?.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Current Domain Groups ({domainGroups.length})</h3>
                 <Button 
                   onClick={() => setIsAdding(true)} 
                   disabled={isAdding}
@@ -228,9 +156,10 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
                   Add Domain Group
                 </Button>
               </div>
-
+            </CardHeader>
+            <CardContent className="space-y-4">
               {isAdding && (
-                <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                <div className="p-4 border rounded-lg bg-muted/50 space-y-4 mb-4">
                   <div>
                     <Label htmlFor="new-domain-group-name">Domain Group Name</Label>
                     <Input
@@ -264,92 +193,167 @@ export const DomainGroupsManagement: React.FC<DomainGroupsManagementProps> = ({
                 </div>
               )}
 
-              <div className="grid gap-2">
-                {domainGroups.map((group) => (
-                  <div key={group.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    {editingId === group.id ? (
-                      <div className="flex gap-2 flex-1 space-y-2">
-                        <div className="flex-1 space-y-2">
-                          <Input
-                            value={formData.name}
-                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Domain group name"
-                          />
-                          <Textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Description"
-                          />
-                        </div>
-                        <div className="flex gap-2 items-start">
-                          <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
-                            <Save className="w-3 h-3" />
-                            Save
-                          </Button>
-                          <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
-                            <X className="w-3 h-3" />
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div 
-                          className="flex items-center gap-3 flex-1 cursor-pointer"
-                          onClick={() => {
-                            onSelectDomainGroup(group.id);
-                            showMessage(`Selected domain group: ${group.name}`);
-                          }}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{group.name}</span>
-                              {selectedDomainGroup === group.id && (
-                                <Badge variant="default">Selected</Badge>
-                              )}
-                            </div>
-                            {group.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              Categories: {group.categories?.length || 0}
-                            </p>
+              {/* Domain Groups Tree Structure */}
+              <div className="space-y-3">
+                {domainGroups.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FolderOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No domain groups found. Add one to get started.</p>
+                  </div>
+                ) : (
+                  domainGroups.map((group) => (
+                    <div key={group.id} className="border rounded-lg">
+                      {editingId === group.id ? (
+                        <div className="p-4 space-y-4">
+                          <div>
+                            <Label>Group Name</Label>
+                            <Input
+                              value={formData.name}
+                              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Domain group name"
+                            />
+                          </div>
+                          <div>
+                            <Label>Description</Label>
+                            <Textarea
+                              value={formData.description}
+                              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="Description"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
+                              <Save className="w-3 h-3" />
+                              Save
+                            </Button>
+                            <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
+                              <X className="w-3 h-3" />
+                              Cancel
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => handleEdit(group)}
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1"
+                      ) : (
+                        <>
+                          {/* Domain Group Header */}
+                          <Collapsible
+                            open={expandedGroups.has(group.id)}
+                            onOpenChange={() => toggleGroupExpansion(group.id)}
                           >
-                            <Edit className="w-3 h-3" />
-                            Edit
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              onDeleteDomainGroup(group.id);
-                              showMessage('Domain group deleted successfully');
-                            }}
-                            variant="destructive"
-                            size="sm"
-                            className="flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Delete
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
+                            <div className="flex items-center justify-between p-4">
+                              <CollapsibleTrigger className="flex items-center gap-2 text-left flex-1 hover:bg-muted/50 p-2 rounded">
+                                {expandedGroups.has(group.id) ? (
+                                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                                )}
+                                <FolderOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-semibold text-lg">{group.name}</div>
+                                  {group.description && (
+                                    <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {group.categories?.length || 0} categories
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {group.categories?.reduce((total, cat) => total + (cat.subCategories?.length || 0), 0)} sub-categories
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => handleEdit(group)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    onDeleteDomainGroup(group.id);
+                                    showMessage('Domain group deleted successfully');
+                                  }}
+                                  variant="destructive"
+                                  size="sm"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
 
-              {domainGroups.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No domain groups found. Add one to get started.</p>
-                </div>
-              )}
+                            {/* Categories and Sub-Categories */}
+                            <CollapsibleContent>
+                              <div className="pl-8 pr-4 pb-4 space-y-2">
+                                {group.categories?.length === 0 ? (
+                                  <div className="text-sm text-muted-foreground italic py-2">
+                                    No categories found in this domain group.
+                                  </div>
+                                ) : (
+                                  group.categories?.map((category) => (
+                                    <Collapsible
+                                      key={category.id}
+                                      open={expandedCategories.has(category.id)}
+                                      onOpenChange={() => toggleCategoryExpansion(category.id)}
+                                    >
+                                      <div className="border rounded-md bg-muted/30">
+                                        <CollapsibleTrigger className="flex items-center gap-2 p-3 hover:bg-muted/50 rounded-md w-full text-left">
+                                          {expandedCategories.has(category.id) ? (
+                                            <ChevronDown className="h-3 w-3" />
+                                          ) : (
+                                            <ChevronRight className="h-3 w-3" />
+                                          )}
+                                          <Folder className="h-4 w-4 text-green-600" />
+                                          <div className="flex-1">
+                                            <div className="font-medium">{category.name}</div>
+                                            {category.description && (
+                                              <p className="text-xs text-muted-foreground mt-1">{category.description}</p>
+                                            )}
+                                          </div>
+                                          <Badge variant="outline" className="text-xs">
+                                            {category.subCategories?.length || 0} sub-categories
+                                          </Badge>
+                                        </CollapsibleTrigger>
+                                        
+                                        <CollapsibleContent>
+                                          <div className="pl-6 pr-3 pb-3 space-y-1">
+                                            {category.subCategories?.length === 0 ? (
+                                              <div className="text-xs text-muted-foreground italic py-1">
+                                                No sub-categories found in this category.
+                                              </div>
+                                            ) : (
+                                              category.subCategories?.map((subCategory) => (
+                                                <div key={subCategory.id} className="flex items-start gap-2 p-2 bg-background rounded border">
+                                                  <FileText className="h-3 w-3 text-purple-600 mt-1 flex-shrink-0" />
+                                                  <div className="flex-1">
+                                                    <div className="font-medium text-sm">{subCategory.name}</div>
+                                                    {subCategory.description && (
+                                                      <div className="text-xs text-muted-foreground mt-1">{subCategory.description}</div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))
+                                            )}
+                                          </div>
+                                        </CollapsibleContent>
+                                      </div>
+                                    </Collapsible>
+                                  ))
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         </>
