@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,46 +24,30 @@ interface IndustrySegment {
   createdAt: string;
 }
 
-// Default industry segments
+// Default industry segments - only the three you specified
 const defaultIndustrySegments: IndustrySegment[] = [
   {
     id: '1',
-    name: 'Banking & Financial Services',
-    code: 'BFSI',
-    description: 'Banking, financial services, and insurance sector',
+    name: 'Life Sciences',
+    code: 'LS',
+    description: 'Life sciences and biotechnology sector',
     isActive: true,
     createdAt: new Date().toISOString()
   },
   {
     id: '2',
-    name: 'Healthcare & Life Sciences',
-    code: 'HLS',
-    description: 'Healthcare providers, pharmaceuticals, and life sciences',
+    name: 'Logistics & Supply Chain',
+    code: 'LSC',
+    description: 'Logistics and supply chain management',
     isActive: true,
     createdAt: new Date().toISOString()
   },
   {
     id: '3',
-    name: 'Information Technology',
-    code: 'IT',
-    description: 'Software, hardware, and IT services',
-    isActive: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    name: 'Retail & Consumer Goods',
-    code: 'RCG',
-    description: 'Retail, e-commerce, and consumer products',
-    isActive: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '5',
-    name: 'Manufacturing',
+    name: 'Manufacturing (Smart, Discrete, Process)',
     code: 'MFG',
-    description: 'Manufacturing and industrial sector',
-    isActive: false,
+    description: 'Smart manufacturing, discrete and process manufacturing',
+    isActive: true,
     createdAt: new Date().toISOString()
   }
 ];
