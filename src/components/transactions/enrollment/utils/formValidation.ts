@@ -15,7 +15,7 @@ export const validateRequiredFields = (
   // Check industry segments - at least one should be selected
   if (selectedIndustrySegments.length === 0) return false;
 
-  // Check institution fields if provider type is institution
+  // Check institution fields if provider type is organization
   if (providerType === 'organization') {
     const institutionFields = ['orgName', 'orgType', 'orgCountry', 'regAddress', 'departmentCategory', 'departmentSubCategory'];
     if (institutionFields.some(field => !formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '')) {

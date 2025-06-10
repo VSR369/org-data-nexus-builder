@@ -5,11 +5,39 @@ import { FormData } from '../types';
 export const useFieldValidation = () => {
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
 
+  const getFieldDisplayName = (field: string): string => {
+    const fieldNameMap: { [key: string]: string } = {
+      'providerRoles': 'Provider Role',
+      'providerType': 'Representation (Individual/Organization)',
+      'industrySegment': 'Industry Segment',
+      'orgName': 'Organization Name',
+      'orgType': 'Organization Type',
+      'orgCountry': 'Organization Country',
+      'regAddress': 'Registered Address',
+      'departmentCategory': 'Department Category',
+      'departmentSubCategory': 'Department Sub Category',
+      'firstName': 'First Name',
+      'lastName': 'Last Name',
+      'email': 'Email',
+      'mobile': 'Mobile',
+      'password': 'Password',
+      'confirmPassword': 'Confirm Password',
+      'providerCountry': 'Provider Country',
+      'pinCode': 'Pin Code',
+      'address': 'Address',
+      'bankAccount': 'Bank Account Number',
+      'bankName': 'Bank Name',
+      'branch': 'Branch',
+      'ifsc': 'IFSC Code'
+    };
+    
+    return fieldNameMap[field] || field;
+  };
+
   const validateAndHighlightFields = (
     formData: FormData,
     providerType: string,
-    selectedIndustrySegments: string[],
-    hasCompetencyRatings: boolean
+    selectedIndustrySegments: string[]
   ) => {
     const requiredFields = ['firstName', 'lastName', 'email', 'mobile', 'password', 'confirmPassword', 'providerCountry', 'pinCode', 'address'];
     const missingFields: string[] = [];
@@ -17,19 +45,19 @@ export const useFieldValidation = () => {
 
     // Check if provider roles are selected
     if (!formData.providerRoles || formData.providerRoles.length === 0) {
-      missingFields.push('Provider Role');
+      missingFields.push(getFieldDisplayName('providerRoles'));
       newInvalidFields.add('providerRoles');
     }
 
     // Check provider type
     if (!providerType) {
-      missingFields.push('Provider Type');
+      missingFields.push(getFieldDisplayName('providerType'));
       newInvalidFields.add('providerType');
     }
 
     // Check industry segments
     if (selectedIndustrySegments.length === 0) {
-      missingFields.push('Industry Segment');
+      missingFields.push(getFieldDisplayName('industrySegment'));
       newInvalidFields.add('industrySegment');
     }
 
@@ -38,7 +66,7 @@ export const useFieldValidation = () => {
       const institutionFields = ['orgName', 'orgType', 'orgCountry', 'regAddress', 'departmentCategory', 'departmentSubCategory'];
       institutionFields.forEach(field => {
         if (!formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '') {
-          missingFields.push(field);
+          missingFields.push(getFieldDisplayName(field));
           newInvalidFields.add(field);
         }
       });
@@ -47,21 +75,30 @@ export const useFieldValidation = () => {
     // Check required provider details
     requiredFields.forEach(field => {
       if (!formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '') {
-        missingFields.push(field);
+        missingFields.push(getFieldDisplayName(field));
         newInvalidFields.add(field);
       }
     });
 
     // Check password confirmation
     if (formData.password !== formData.confirmPassword) {
-      missingFields.push('Password confirmation');
+      missingFields.push('Password confirmation must match');
       newInvalidFields.add('confirmPassword');
     }
 
-    // Check if competency ratings exist for selected industry segments
-    if (!hasCompetencyRatings && selectedIndustrySegments.length > 0) {
-      missingFields.push('Core Competency Ratings for selected industry segments');
-      newInvalidFields.add('competencyRatings');
+    // Check banking details - only if any banking field is filled, then all must be filled
+    const bankingFields = ['bankAccount', 'bankName', 'branch', 'ifsc'];
+    const filledBankingFields = bankingFields.filter(field => 
+      formData[field as keyof FormData] && (formData[field as keyof FormData] as string).trim() !== ''
+    );
+    
+    if (filledBankingFields.length > 0 && filledBankingFields.length < bankingFields.length) {
+      bankingFields.forEach(field => {
+        if (!formData[field as keyof FormData] || (formData[field as keyof FormData] as string).trim() === '') {
+          missingFields.push(getFieldDisplayName(field));
+          newInvalidFields.add(field);
+        }
+      });
     }
 
     console.log('Validation found these invalid fields:', Array.from(newInvalidFields));

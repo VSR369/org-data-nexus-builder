@@ -5,13 +5,11 @@ export const useEnrollmentSubmission = (
   formData: FormData,
   providerType: string,
   selectedIndustrySegments: string[],
-  hasCompetencyRatings: boolean,
   isSubmitted: boolean,
   validateAndHighlightFields: (
     formData: FormData,
     providerType: string,
-    selectedIndustrySegments: string[],
-    hasCompetencyRatings: boolean
+    selectedIndustrySegments: string[]
   ) => { isValid: boolean; missingFields: string[] },
   markAsSubmitted: () => void,
   resetSubmissionStatus: () => void,
@@ -30,7 +28,7 @@ export const useEnrollmentSubmission = (
       return;
     }
 
-    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments, hasCompetencyRatings);
+    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments);
     
     if (!validation.isValid) {
       const formattedMissingFields = validation.missingFields.join(', ');
@@ -53,7 +51,7 @@ export const useEnrollmentSubmission = (
   };
 
   const handleResubmit = () => {
-    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments, hasCompetencyRatings);
+    const validation = validateAndHighlightFields(formData, providerType, selectedIndustrySegments);
     
     if (!validation.isValid) {
       const formattedMissingFields = validation.missingFields.join(', ');

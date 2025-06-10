@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EnrollmentTabs from './enrollment/EnrollmentTabs';
@@ -41,7 +40,6 @@ const SelfEnrollmentForm = () => {
     formData,
     providerType,
     selectedIndustrySegments,
-    false, // No competency ratings needed
     isSubmitted,
     validateAndHighlightFields,
     markAsSubmitted,
