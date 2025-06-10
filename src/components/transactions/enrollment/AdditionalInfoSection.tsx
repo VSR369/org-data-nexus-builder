@@ -9,11 +9,13 @@ import { FormData } from './types';
 interface AdditionalInfoSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string | string[]) => void;
+  invalidFields?: Set<string>;
 }
 
 const AdditionalInfoSection: React.FC<AdditionalInfoSectionProps> = ({
   formData,
-  updateFormData
+  updateFormData,
+  invalidFields = new Set()
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 

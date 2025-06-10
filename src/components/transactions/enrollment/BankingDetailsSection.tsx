@@ -7,11 +7,13 @@ import { FormData } from './types';
 interface BankingDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
+  invalidFields?: Set<string>;
 }
 
 const BankingDetailsSection: React.FC<BankingDetailsSectionProps> = ({
   formData,
-  updateFormData
+  updateFormData,
+  invalidFields = new Set()
 }) => {
   return (
     <div className="space-y-4">

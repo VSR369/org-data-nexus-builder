@@ -9,11 +9,13 @@ import { FormData } from './types';
 interface ProviderDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
+  invalidFields?: Set<string>;
 }
 
 const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
   formData,
-  updateFormData
+  updateFormData,
+  invalidFields = new Set()
 }) => {
   return (
     <div className="space-y-6">
@@ -26,7 +28,11 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Enter first name"
             value={formData.firstName}
             onChange={(e) => updateFormData('firstName', e.target.value)}
+            className={invalidFields.has('firstName') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('firstName') && (
+            <p className="text-sm text-destructive">First Name is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="last-name">Last Name *</Label>
@@ -35,7 +41,11 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Enter last name"
             value={formData.lastName}
             onChange={(e) => updateFormData('lastName', e.target.value)}
+            className={invalidFields.has('lastName') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('lastName') && (
+            <p className="text-sm text-destructive">Last Name is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email ID *</Label>
@@ -45,7 +55,11 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Enter email address"
             value={formData.email}
             onChange={(e) => updateFormData('email', e.target.value)}
+            className={invalidFields.has('email') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('email') && (
+            <p className="text-sm text-destructive">Email is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="mobile">Mobile Number *</Label>
@@ -54,7 +68,11 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Enter mobile number"
             value={formData.mobile}
             onChange={(e) => updateFormData('mobile', e.target.value)}
+            className={invalidFields.has('mobile') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('mobile') && (
+            <p className="text-sm text-destructive">Mobile Number is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password *</Label>
@@ -64,7 +82,11 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Enter password"
             value={formData.password}
             onChange={(e) => updateFormData('password', e.target.value)}
+            className={invalidFields.has('password') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('password') && (
+            <p className="text-sm text-destructive">Password is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirm-password">Confirm Password *</Label>
@@ -74,12 +96,21 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Confirm password"
             value={formData.confirmPassword}
             onChange={(e) => updateFormData('confirmPassword', e.target.value)}
+            className={invalidFields.has('confirmPassword') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('confirmPassword') && (
+            <p className="text-sm text-destructive">
+              {formData.password !== formData.confirmPassword && formData.password && formData.confirmPassword 
+                ? 'Password confirmation must match' 
+                : 'Confirm Password is required'
+              }
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="provider-country">Country *</Label>
           <Select value={formData.providerCountry} onValueChange={(value) => updateFormData('providerCountry', value)}>
-            <SelectTrigger>
+            <SelectTrigger className={invalidFields.has('providerCountry') ? 'border-destructive' : ''}>
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
@@ -90,6 +121,9 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
               <SelectItem value="au">Australia</SelectItem>
             </SelectContent>
           </Select>
+          {invalidFields.has('providerCountry') && (
+            <p className="text-sm text-destructive">Country is required</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="pin-code">Pin Code *</Label>
@@ -98,7 +132,11 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
             placeholder="Enter pin code"
             value={formData.pinCode}
             onChange={(e) => updateFormData('pinCode', e.target.value)}
+            className={invalidFields.has('pinCode') ? 'border-destructive' : ''}
           />
+          {invalidFields.has('pinCode') && (
+            <p className="text-sm text-destructive">Pin Code is required</p>
+          )}
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="address">Address</Label>
