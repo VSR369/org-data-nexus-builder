@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -145,6 +144,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
         providerType={providerType}
         onProviderTypeChange={onProviderTypeChange}
         invalidFields={invalidFields}
+        providerRoles={formData.providerRoles}
       />
 
       <Tabs defaultValue="provider-details" className="w-full">

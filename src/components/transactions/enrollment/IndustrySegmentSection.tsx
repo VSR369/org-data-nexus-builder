@@ -15,6 +15,7 @@ interface IndustrySegmentSectionProps {
   providerType: string;
   onProviderTypeChange: (value: string) => void;
   invalidFields?: Set<string>;
+  providerRoles?: string[];
 }
 
 const industrySegments = [
@@ -36,7 +37,8 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
   onRemoveIndustrySegment,
   providerType,
   onProviderTypeChange,
-  invalidFields = new Set()
+  invalidFields = new Set(),
+  providerRoles = []
 }) => {
   const [newSegment, setNewSegment] = React.useState('');
 
@@ -51,10 +53,28 @@ const IndustrySegmentSection: React.FC<IndustrySegmentSectionProps> = ({
     segment => !selectedIndustrySegments.includes(segment.id)
   );
 
+  // Determine the heading based on selected roles
+  const getHeading = () => {
+    const currentRoles = providerRoles || [];
+    const hasProvider = currentRoles.includes('solution-provider');
+    const hasAssessor = currentRoles.includes('solution-assessor');
+    const hasBoth = currentRoles.includes('both') || (hasProvider && hasAssessor);
+
+    if (hasBoth) {
+      return "Provider & Assessor Both Roles Information";
+    } else if (hasAssessor) {
+      return "Assessor Information";
+    } else if (hasProvider) {
+      return "Provider Information";
+    } else {
+      return "Provider Information"; // Default heading
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Provider Information</CardTitle>
+        <CardTitle>{getHeading()}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Provider Type Selection */}
