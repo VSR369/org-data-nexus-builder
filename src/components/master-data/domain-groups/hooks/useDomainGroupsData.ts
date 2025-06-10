@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { DomainGroup, IndustrySegment } from '../types';
+import { DomainGroup, IndustrySegment, Category, SubCategory } from '../types';
 import { initializeDomainGroupsData } from '../utils/dataInitializer';
+import { useDomainGroupOperations } from './useDomainGroupOperations';
 
 export const useDomainGroupsData = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
@@ -12,6 +13,19 @@ export const useDomainGroupsData = () => {
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [activeSubCategory, setActiveSubCategory] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'industry' | 'domain' | 'category' | 'subcategory'>('industry');
+
+  // Get domain group operations
+  const {
+    addDomainGroup,
+    updateDomainGroup,
+    deleteDomainGroup,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addSubCategory,
+    updateSubCategory,
+    deleteSubCategory
+  } = useDomainGroupOperations(domainGroups, setDomainGroups);
 
   // Load initial data
   useEffect(() => {
@@ -56,7 +70,7 @@ export const useDomainGroupsData = () => {
     };
 
     loadData();
-  }, []); // Remove activeIndustrySegment dependency to avoid conditional hook calls
+  }, []);
 
   // Save data when it changes
   useEffect(() => {
@@ -70,8 +84,21 @@ export const useDomainGroupsData = () => {
     setDomainGroups(newDomainGroups);
   };
 
+  // Get filtered data based on selections
+  const filteredDomainGroups = domainGroups.filter(group => 
+    group.industrySegmentId === activeIndustrySegment
+  );
+
+  const categories = activeDomainGroup 
+    ? domainGroups.find(group => group.id === activeDomainGroup)?.categories || []
+    : [];
+
+  const subCategories = activeCategory
+    ? categories.find(cat => cat.id === activeCategory)?.subCategories || []
+    : [];
+
   return {
-    domainGroups,
+    domainGroups: filteredDomainGroups,
     industrySegments,
     isLoading,
     activeIndustrySegment,
@@ -85,5 +112,23 @@ export const useDomainGroupsData = () => {
     activeTab,
     setActiveTab,
     updateDomainGroups,
+    // Additional properties needed by DomainGroupsConfig
+    categories,
+    subCategories,
+    selectedIndustrySegment: activeIndustrySegment,
+    selectedDomainGroup: activeDomainGroup,
+    selectedCategory: activeCategory,
+    setSelectedIndustrySegment: setActiveIndustrySegment,
+    setSelectedDomainGroup: setActiveDomainGroup,
+    setSelectedCategory: setActiveCategory,
+    addDomainGroup,
+    updateDomainGroup,
+    deleteDomainGroup,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addSubCategory,
+    updateSubCategory,
+    deleteSubCategory
   };
 };

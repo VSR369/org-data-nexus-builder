@@ -20,6 +20,33 @@ const defaultSegments = [
   'Public Sector & e-Governance'
 ];
 
+export const initializeDomainGroupsData = (segments: IndustrySegment[]): DomainGroup[] => {
+  const allData: DomainGroup[] = [];
+  
+  segments.forEach(segment => {
+    defaultDomainGroupsData.forEach(group => {
+      const newGroup: DomainGroup = {
+        ...group,
+        id: `${segment.id}-${group.id}`,
+        industrySegmentId: segment.id,
+        categories: group.categories.map(category => ({
+          ...category,
+          id: `${segment.id}-${category.id}`,
+          domainGroupId: `${segment.id}-${group.id}`,
+          subCategories: category.subCategories.map(subCategory => ({
+            ...subCategory,
+            id: `${segment.id}-${subCategory.id}`,
+            categoryId: `${segment.id}-${category.id}`
+          }))
+        }))
+      };
+      allData.push(newGroup);
+    });
+  });
+  
+  return allData;
+};
+
 export const initializeDataForAllSegments = (): DomainGroup[] => {
   // Get industry segments from localStorage or use defaults
   const savedSegments = localStorage.getItem('industrySegments');
@@ -44,28 +71,5 @@ export const initializeDataForAllSegments = (): DomainGroup[] => {
     description: `Industry segment: ${segment}`
   }));
 
-  const allData: DomainGroup[] = [];
-  
-  industrySegmentObjects.forEach(segment => {
-    defaultDomainGroupsData.forEach(group => {
-      const newGroup: DomainGroup = {
-        ...group,
-        id: `${segment.id}-${group.id}`,
-        industrySegmentId: segment.id,
-        categories: group.categories.map(category => ({
-          ...category,
-          id: `${segment.id}-${category.id}`,
-          domainGroupId: `${segment.id}-${group.id}`,
-          subCategories: category.subCategories.map(subCategory => ({
-            ...subCategory,
-            id: `${segment.id}-${subCategory.id}`,
-            categoryId: `${segment.id}-${category.id}`
-          }))
-        }))
-      };
-      allData.push(newGroup);
-    });
-  });
-  
-  return allData;
+  return initializeDomainGroupsData(industrySegmentObjects);
 };
