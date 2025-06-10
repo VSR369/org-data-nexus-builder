@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,34 +8,59 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
+const defaultSegments = [
+  'Banking, Financial Services & Insurance (BFSI)',
+  'Retail & E-Commerce',
+  'Healthcare & Life Sciences',
+  'Information Technology & Software Services',
+  'Telecommunications',
+  'Education & EdTech',
+  'Manufacturing (Smart / Discrete / Process)',
+  'Logistics & Supply Chain',
+  'Media, Entertainment & OTT',
+  'Energy & Utilities (Power, Oil & Gas, Renewables)',
+  'Automotive & Mobility',
+  'Real Estate & Smart Infrastructure',
+  'Travel, Tourism & Hospitality',
+  'Agriculture & AgriTech',
+  'Public Sector & e-Governance'
+];
+
 const IndustrySegmentConfig = () => {
   const { toast } = useToast();
-  const [segments, setSegments] = useState([
-    'Banking, Financial Services & Insurance (BFSI)',
-    'Retail & E-Commerce',
-    'Healthcare & Life Sciences',
-    'Information Technology & Software Services',
-    'Telecommunications',
-    'Education & EdTech',
-    'Manufacturing (Smart / Discrete / Process)',
-    'Logistics & Supply Chain',
-    'Media, Entertainment & OTT',
-    'Energy & Utilities (Power, Oil & Gas, Renewables)',
-    'Automotive & Mobility',
-    'Real Estate & Smart Infrastructure',
-    'Travel, Tourism & Hospitality',
-    'Agriculture & AgriTech',
-    'Public Sector & e-Governance'
-  ]);
-  
+  const [segments, setSegments] = useState<string[]>([]);
   const [newSegment, setNewSegment] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
+  // Load segments from localStorage on component mount
+  useEffect(() => {
+    const savedSegments = localStorage.getItem('industrySegments');
+    if (savedSegments) {
+      try {
+        const parsedSegments = JSON.parse(savedSegments);
+        setSegments(parsedSegments);
+      } catch (error) {
+        console.error('Error parsing saved segments:', error);
+        setSegments(defaultSegments);
+      }
+    } else {
+      setSegments(defaultSegments);
+    }
+  }, []);
+
+  // Save segments to localStorage whenever segments change
+  useEffect(() => {
+    if (segments.length > 0) {
+      localStorage.setItem('industrySegments', JSON.stringify(segments));
+    }
+  }, [segments]);
+
   const handleAddSegment = () => {
     if (newSegment.trim()) {
-      setSegments([...segments, newSegment.trim()]);
+      const updatedSegments = [...segments, newSegment.trim()];
+      setSegments(updatedSegments);
       setNewSegment('');
       setIsAdding(false);
       toast({
@@ -83,6 +108,14 @@ const IndustrySegmentConfig = () => {
     setNewSegment('');
   };
 
+  const handleResetToDefault = () => {
+    setSegments(defaultSegments);
+    toast({
+      title: "Success",
+      description: "Industry segments reset to default values",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -94,14 +127,23 @@ const IndustrySegmentConfig = () => {
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Current Industry Segments</h3>
-          <Button 
-            onClick={() => setIsAdding(true)} 
-            disabled={isAdding}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Segment
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleResetToDefault}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              Reset to Default
+            </Button>
+            <Button 
+              onClick={() => setIsAdding(true)} 
+              disabled={isAdding}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Segment
+            </Button>
+          </div>
         </div>
 
         {isAdding && (
@@ -131,7 +173,7 @@ const IndustrySegmentConfig = () => {
 
         <div className="grid gap-2">
           {segments.map((segment, index) => (
-            <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+            <div key={`${segment}-${index}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
               {editingIndex === index ? (
                 <div className="flex gap-2 flex-1">
                   <Input
@@ -179,6 +221,12 @@ const IndustrySegmentConfig = () => {
             </div>
           ))}
         </div>
+
+        {segments.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No industry segments found. Add one to get started.</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
