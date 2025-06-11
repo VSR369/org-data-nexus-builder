@@ -75,6 +75,15 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
         <p className="text-muted-foreground">
           Configure the industry segment and domain group for your hierarchy
         </p>
+        {domainGroupName && (
+          <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+            <p className="text-sm text-muted-foreground">Creating Domain Group:</p>
+            <p className="font-semibold text-primary">{domainGroupName}</p>
+            {selectedSegment && (
+              <p className="text-xs text-muted-foreground">in {selectedSegment.industrySegment}</p>
+            )}
+          </div>
+        )}
       </div>
 
       <Card>
@@ -84,7 +93,7 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="industry-segment">Industry Segment *</Label>
-            <Select onValueChange={handleIndustrySegmentChange} value={wizardData.selectedIndustrySegment}>
+            <Select value={wizardData.selectedIndustrySegment || ""} onValueChange={handleIndustrySegmentChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select an industry segment" />
               </SelectTrigger>
