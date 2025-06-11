@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { DataManager } from '@/utils/dataManager';
+import { industrySegmentDataManager } from '@/components/master-data/industry-segments/industrySegmentDataManager';
 
 interface Country {
   id: string;
@@ -21,7 +21,7 @@ interface Country {
 
 interface IndustrySegment {
   id: string;
-  name: string;
+  industrySegment: string;
   description?: string;
 }
 
@@ -42,13 +42,7 @@ interface FormData {
   phoneNumber: string;
 }
 
-// Data managers
-const industrySegmentDataManager = new DataManager<IndustrySegment[]>({
-  key: 'master_data_industry_segments',
-  defaultData: [],
-  version: 1
-});
-
+// Data manager for entity types
 const entityTypeDataManager = new DataManager<string[]>({
   key: 'master_data_entity_types',
   defaultData: ['Commercial', 'Non-Profit Organization', 'Society', 'Trust'],
@@ -87,11 +81,16 @@ const SeekerRegistration = () => {
   // Load master data
   useEffect(() => {
     const loadedCountries = countriesDataManager.loadData();
-    const loadedIndustrySegments = industrySegmentDataManager.loadData();
+    const loadedIndustrySegmentData = industrySegmentDataManager.loadData();
     const loadedEntityTypes = entityTypeDataManager.loadData();
 
+    console.log('🔍 SeekerRegistration - Loaded industry segment data from master data:', loadedIndustrySegmentData);
+    console.log('🔍 SeekerRegistration - Loaded countries from master data:', loadedCountries);
+    console.log('🔍 SeekerRegistration - Loaded entity types from master data:', loadedEntityTypes);
+
     setCountries(loadedCountries);
-    setIndustrySegments(loadedIndustrySegments);
+    // Extract the industrySegments array from the loaded data structure
+    setIndustrySegments(loadedIndustrySegmentData.industrySegments || []);
     setEntityTypes(loadedEntityTypes);
   }, []);
 
@@ -224,8 +223,8 @@ const SeekerRegistration = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {industrySegments.map((segment) => (
-                          <SelectItem key={segment.id} value={segment.name}>
-                            {segment.name}
+                          <SelectItem key={segment.id} value={segment.industrySegment}>
+                            {segment.industrySegment}
                           </SelectItem>
                         ))}
                       </SelectContent>
