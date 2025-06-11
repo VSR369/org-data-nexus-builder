@@ -50,9 +50,9 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
       const { newDomainGroups, newCategories, newSubCategories } = createLifeSciencesHierarchyData();
       
       const updatedData: DomainGroupsData = {
-        domainGroups: [...data.domainGroups, ...newDomainGroups],
-        categories: [...data.categories, ...newCategories],
-        subCategories: [...data.subCategories, ...newSubCategories]
+        domainGroups: [...(data.domainGroups || []), ...newDomainGroups],
+        categories: [...(data.categories || []), ...newCategories],
+        subCategories: [...(data.subCategories || []), ...newSubCategories]
       };
       
       console.log('✅ Life Sciences hierarchy created:', {
@@ -99,14 +99,32 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
 
   // Get hierarchical data grouped by industry segment
   const getGroupedHierarchicalData = () => {
+    if (!data.domainGroups || data.domainGroups.length === 0) {
+      console.log('⚠️ No domain groups found in data');
+      return {};
+    }
+
+    console.log('🔍 Processing hierarchical data with:', {
+      domainGroups: data.domainGroups.length,
+      categories: data.categories.length,
+      subCategories: data.subCategories.length
+    });
+
     const hierarchicalData = data.domainGroups.map(domainGroup => {
       const categories = data.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+      console.log(`📂 Domain Group "${domainGroup.name}" has ${categories.length} categories`);
+      
       return {
         ...domainGroup,
-        categories: categories.map(category => ({
-          ...category,
-          subCategories: data.subCategories.filter(sub => sub.categoryId === category.id)
-        }))
+        categories: categories.map(category => {
+          const subCategories = data.subCategories.filter(sub => sub.categoryId === category.id);
+          console.log(`📁 Category "${category.name}" has ${subCategories.length} sub-categories`);
+          
+          return {
+            ...category,
+            subCategories
+          };
+        })
       };
     });
 
@@ -120,20 +138,23 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
       return acc;
     }, {} as Record<string, typeof hierarchicalData>);
 
+    console.log('🗂️ Grouped data:', Object.keys(grouped).map(key => `${key}: ${grouped[key].length} groups`));
     return grouped;
   };
 
   const groupedData = getGroupedHierarchicalData();
+  const hasData = Object.keys(groupedData).length > 0;
 
   console.log('🎯 BulkDomainGroupCreator: Render decision:', {
     hierarchyExists,
+    hasData,
     dataHasDomainGroups: data.domainGroups?.length > 0
   });
 
   return (
     <div className="space-y-6">
       {/* Existing Hierarchies Display */}
-      {hierarchyExists && (
+      {hasData && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -259,7 +280,7 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
         </Button>
 
         {/* Quick Create Life Sciences Button - only show if no Life Sciences exists */}
-        {!hierarchyExists && (
+        {!hasData && (
           <Card className="flex-1 border-2 border-dashed border-primary/30 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -299,6 +320,22 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
           </Card>
         )}
       </div>
+
+      {/* Debug Information */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="bg-gray-50">
+          <CardHeader>
+            <CardTitle className="text-sm">Debug Information</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs space-y-2">
+            <div>Domain Groups: {data.domainGroups?.length || 0}</div>
+            <div>Categories: {data.categories?.length || 0}</div>
+            <div>Sub-Categories: {data.subCategories?.length || 0}</div>
+            <div>Hierarchy Exists: {hierarchyExists.toString()}</div>
+            <div>Has Data: {hasData.toString()}</div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
