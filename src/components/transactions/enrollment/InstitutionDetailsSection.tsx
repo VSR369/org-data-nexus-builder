@@ -7,6 +7,13 @@ import OrganizationForm from './components/OrganizationForm';
 import DepartmentSelector from './components/DepartmentSelector';
 import { useState, useEffect } from 'react';
 
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+  region?: string;
+}
+
 interface InstitutionDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
@@ -29,9 +36,10 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
     const orgTypes = organizationTypesDataManager.loadData() as string[];
     setOrganizationTypes(orgTypes);
 
-    // Load countries
-    const countryList = countriesDataManager.loadData() as string[];
-    setCountries(countryList);
+    // Load countries and transform Country[] to string[]
+    const countryData = countriesDataManager.loadData() as Country[];
+    const countryNames = countryData.map(country => country.name);
+    setCountries(countryNames);
   }, []);
 
   // Only show institution details for organization provider type
