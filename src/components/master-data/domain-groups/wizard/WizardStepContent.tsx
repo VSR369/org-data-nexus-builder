@@ -24,6 +24,13 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
   onSubmit,
   onValidationChange
 }) => {
+  // For Excel uploads, skip step 1 (DomainGroupSetup) if we have Excel data
+  const shouldSkipDomainGroupSetup = wizardData.dataSource === 'excel' && 
+                                     wizardData.excelData && 
+                                     wizardData.excelData.data.length > 0;
+
+  console.log('WizardStepContent: Current step:', currentStep, 'Data source:', wizardData.dataSource, 'Should skip setup:', shouldSkipDomainGroupSetup);
+
   switch (currentStep) {
     case 0:
       return (
@@ -34,6 +41,21 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
         />
       );
     case 1:
+      // For Excel uploads with data, auto-validate this step
+      if (shouldSkipDomainGroupSetup) {
+        React.useEffect(() => {
+          onValidationChange(1, true);
+        }, []);
+        
+        return (
+          <div className="text-center p-8">
+            <p className="text-muted-foreground">
+              Domain group information will be extracted from your Excel file.
+            </p>
+          </div>
+        );
+      }
+      
       return (
         <DomainGroupSetup
           wizardData={wizardData}

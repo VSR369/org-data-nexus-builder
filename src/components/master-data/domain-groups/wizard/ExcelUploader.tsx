@@ -29,24 +29,49 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({
     const file = acceptedFiles[0];
     if (!file) return;
 
+    console.log('ExcelUploader: Processing file:', file.name);
     setUploadedFile(file);
     setIsProcessing(true);
     setProcessingStatus('idle');
 
     try {
       const parsedData = await parseExcelFile(file);
+      console.log('ExcelUploader: Parsed data:', parsedData);
       
       if (parsedData.errors.length > 0) {
         setProcessingStatus('error');
         onValidationChange(false);
+        console.log('ExcelUploader: Validation errors found:', parsedData.errors);
       } else {
         setProcessingStatus('success');
         onValidationChange(true);
+        
+        // Auto-populate wizard data from Excel
+        if (parsedData.data.length > 0) {
+          const firstRow = parsedData.data[0];
+          console.log('ExcelUploader: Auto-populating from first row:', firstRow);
+          
+          // Load industry segments to find matching ID
+          const industryData = industrySegmentDataManager.loadData();
+          const matchingSegment = industryData.industrySegments?.find(
+            segment => segment.industrySegment === firstRow.industrySegment
+          );
+          
+          const updates: Partial<WizardData> = {
+            excelData: parsedData,
+            selectedDomainGroup: firstRow.domainGroup
+          };
+          
+          if (matchingSegment) {
+            updates.selectedIndustrySegment = matchingSegment.id;
+          }
+          
+          onUpdate(updates);
+          console.log('ExcelUploader: Updated wizard data with:', updates);
+        }
       }
-
-      onUpdate({ excelData: parsedData });
     } catch (error) {
-      console.error('Error processing Excel file:', error);
+      console.error('ExcelUploader: Error processing Excel file:', error);
       setProcessingStatus('error');
       onValidationChange(false);
     } finally {
@@ -67,7 +92,6 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({
     try {
       const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
       
-      // Fix: Use the correct property name 'industrySegment' instead of 'name'
       const templateData = industrySegments.map(segment => ({
         industrySegment: segment.industrySegment
       }));
@@ -86,14 +110,18 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error generating template:', error);
+      console.error('ExcelUploader: Error generating template:', error);
     }
   };
 
   const clearFile = () => {
     setUploadedFile(null);
     setProcessingStatus('idle');
-    onUpdate({ excelData: undefined });
+    onUpdate({ 
+      excelData: undefined,
+      selectedIndustrySegment: '',
+      selectedDomainGroup: undefined
+    });
     onValidationChange(false);
   };
 

@@ -2,20 +2,20 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle, AlertTriangle, Download, Save } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CheckCircle, AlertCircle, ChevronDown, ChevronRight, Save } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
-import { DomainGroupsData } from '@/types/domainGroups';
+import { DomainGroupsData, DomainGroup, Category, SubCategory } from '@/types/domainGroups';
+import { domainGroupsDataManager } from '../domainGroupsDataManager';
 import { industrySegmentDataManager } from '../industrySegmentDataManager';
-import { exportHierarchyToExcel } from '@/utils/excelProcessing';
 
 interface ReviewAndSubmitProps {
   wizardData: WizardData;
   existingData: DomainGroupsData;
   onUpdate: (updates: Partial<WizardData>) => void;
-  onSubmit: (data: DomainGroupsData) => void;
+  onSubmit: (newData: DomainGroupsData) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 
@@ -26,312 +26,313 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
   onSubmit,
   onValidationChange
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitProgress, setSubmitProgress] = useState(0);
-  const [previewData, setPreviewData] = useState<DomainGroupsData | null>(null);
+  const [processedData, setProcessedData] = useState<DomainGroupsData | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Generate preview data and validate
-    const generatedData = generateHierarchyData();
-    setPreviewData(generatedData);
-    
-    const isValid = generatedData.domainGroups.length > 0 && 
-                   generatedData.categories.length > 0 && 
-                   generatedData.subCategories.length > 0;
-    onValidationChange(isValid);
-  }, [wizardData, onValidationChange]);
-
-  const generateHierarchyData = (): DomainGroupsData => {
-    const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
-    const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
-    
-    if (!selectedSegment) {
-      return { domainGroups: [], categories: [], subCategories: [] };
+    // Process the Excel data into proper domain groups structure
+    if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
+      processExcelData();
+    } else {
+      onValidationChange(false);
     }
+  }, [wizardData.excelData, wizardData.dataSource]);
 
-    const domainGroups: any[] = [];
-    const categories: any[] = [];
-    const subCategories: any[] = [];
-
-    if (wizardData.dataSource === 'excel' && wizardData.excelData) {
-      // Process Excel data
-      const groupedData = new Map<string, any>();
+  const processExcelData = () => {
+    console.log('ReviewAndSubmit: Processing Excel data');
+    setIsProcessing(true);
+    
+    try {
+      const excelData = wizardData.excelData!.data;
+      const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
       
-      wizardData.excelData.data.forEach(row => {
-        const domainGroupKey = row.domainGroup;
+      // Group data by domain group
+      const domainGroupMap = new Map<string, {
+        industrySegment: string;
+        domainGroup: string;
+        domainGroupDescription?: string;
+        categories: Map<string, {
+          category: string;
+          categoryDescription?: string;
+          subCategories: Array<{
+            subCategory: string;
+            subCategoryDescription?: string;
+            isActive: boolean;
+          }>;
+        }>;
+      }>();
+
+      excelData.forEach(row => {
+        const dgKey = `${row.industrySegment}-${row.domainGroup}`;
         
-        if (!groupedData.has(domainGroupKey)) {
-          groupedData.set(domainGroupKey, {
+        if (!domainGroupMap.has(dgKey)) {
+          domainGroupMap.set(dgKey, {
+            industrySegment: row.industrySegment,
             domainGroup: row.domainGroup,
-            domainGroupDescription: row.domainGroupDescription || '',
+            domainGroupDescription: row.domainGroupDescription,
             categories: new Map()
           });
         }
         
-        const domainGroupData = groupedData.get(domainGroupKey);
-        const categoryKey = row.category;
+        const dg = domainGroupMap.get(dgKey)!;
+        const catKey = row.category;
         
-        if (!domainGroupData.categories.has(categoryKey)) {
-          domainGroupData.categories.set(categoryKey, {
+        if (!dg.categories.has(catKey)) {
+          dg.categories.set(catKey, {
             category: row.category,
-            categoryDescription: row.categoryDescription || '',
+            categoryDescription: row.categoryDescription,
             subCategories: []
           });
         }
         
-        domainGroupData.categories.get(categoryKey).subCategories.push({
+        dg.categories.get(catKey)!.subCategories.push({
           subCategory: row.subCategory,
-          subCategoryDescription: row.subCategoryDescription || '',
+          subCategoryDescription: row.subCategoryDescription,
           isActive: row.isActive
         });
       });
 
-      // Convert to arrays
-      let domainGroupId = 1;
-      let categoryId = 1;
-      let subCategoryId = 1;
+      // Convert to proper data structure
+      const newDomainGroups: DomainGroup[] = [];
+      const newCategories: Category[] = [];
+      const newSubCategories: SubCategory[] = [];
 
-      groupedData.forEach((domainGroupData) => {
-        const dg = {
-          id: domainGroupId.toString(),
-          name: domainGroupData.domainGroup,
-          description: domainGroupData.domainGroupDescription,
-          industrySegmentId: wizardData.selectedIndustrySegment,
-          industrySegmentName: selectedSegment.industrySegment,
-          isActive: true
-        };
-        domainGroups.push(dg);
-
-        domainGroupData.categories.forEach((categoryData: any) => {
-          const cat = {
-            id: categoryId.toString(),
-            name: categoryData.category,
-            description: categoryData.categoryDescription,
-            domainGroupId: dg.id,
-            isActive: true
-          };
-          categories.push(cat);
-
-          categoryData.subCategories.forEach((subCategoryData: any) => {
-            subCategories.push({
-              id: subCategoryId.toString(),
-              name: subCategoryData.subCategory,
-              description: subCategoryData.subCategoryDescription,
-              categoryId: cat.id,
-              isActive: subCategoryData.isActive
-            });
-            subCategoryId++;
-          });
-          categoryId++;
+      domainGroupMap.forEach((dgData, dgKey) => {
+        const industrySegment = industrySegments.find(
+          seg => seg.industrySegment === dgData.industrySegment
+        );
+        
+        const domainGroupId = `dg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        newDomainGroups.push({
+          id: domainGroupId,
+          name: dgData.domainGroup,
+          description: dgData.domainGroupDescription,
+          industrySegmentId: industrySegment?.id || '',
+          industrySegmentName: dgData.industrySegment,
+          isActive: true,
+          createdAt: new Date().toISOString()
         });
-        domainGroupId++;
+
+        dgData.categories.forEach((catData, catKey) => {
+          const categoryId = `cat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          
+          newCategories.push({
+            id: categoryId,
+            name: catData.category,
+            description: catData.categoryDescription,
+            domainGroupId: domainGroupId,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          });
+
+          catData.subCategories.forEach(subCat => {
+            newSubCategories.push({
+              id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              name: subCat.subCategory,
+              description: subCat.subCategoryDescription,
+              categoryId: categoryId,
+              isActive: subCat.isActive,
+              createdAt: new Date().toISOString()
+            });
+          });
+        });
       });
-    } else if (wizardData.dataSource === 'manual' && wizardData.manualData) {
-      // Process manual data
-      // ... manual data processing logic would go here
-    }
 
-    return { domainGroups, categories, subCategories };
-  };
-
-  const handleSubmit = async () => {
-    if (!previewData) return;
-
-    setIsSubmitting(true);
-    setSubmitProgress(0);
-
-    try {
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setSubmitProgress(prev => Math.min(prev + 20, 90));
-      }, 200);
-
-      // Merge with existing data
-      const mergedData: DomainGroupsData = {
-        domainGroups: [...(existingData.domainGroups || []), ...previewData.domainGroups],
-        categories: [...(existingData.categories || []), ...previewData.categories],
-        subCategories: [...(existingData.subCategories || []), ...previewData.subCategories]
+      const processedData: DomainGroupsData = {
+        domainGroups: newDomainGroups,
+        categories: newCategories,
+        subCategories: newSubCategories
       };
 
-      clearInterval(progressInterval);
-      setSubmitProgress(100);
-
-      // Wait a moment for visual feedback
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      onSubmit(mergedData);
+      console.log('ReviewAndSubmit: Processed data:', processedData);
+      setProcessedData(processedData);
+      onValidationChange(true);
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error('ReviewAndSubmit: Error processing Excel data:', error);
+      onValidationChange(false);
     } finally {
-      setIsSubmitting(false);
-      setTimeout(() => setSubmitProgress(0), 1000);
+      setIsProcessing(false);
     }
   };
 
-  const downloadPreview = () => {
-    if (!previewData) return;
-
-    try {
-      const excelBuffer = exportHierarchyToExcel(previewData);
-      const blob = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `domain-groups-preview-${Date.now()}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download error:', error);
+  const handleSubmit = () => {
+    if (processedData) {
+      console.log('ReviewAndSubmit: Submitting processed data');
+      
+      // Merge with existing data
+      const mergedData: DomainGroupsData = {
+        domainGroups: [...existingData.domainGroups, ...processedData.domainGroups],
+        categories: [...existingData.categories, ...processedData.categories],
+        subCategories: [...existingData.subCategories, ...processedData.subCategories]
+      };
+      
+      // Save to data manager
+      domainGroupsDataManager.saveData(mergedData);
+      
+      // Call parent submit handler
+      onSubmit(mergedData);
     }
   };
 
-  const getStats = () => {
-    if (!previewData) return { domainGroups: 0, categories: 0, subCategories: 0 };
-    
-    return {
-      domainGroups: previewData.domainGroups.length,
-      categories: previewData.categories.length,
-      subCategories: previewData.subCategories.length
-    };
+  const toggleGroupExpansion = (groupId: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId);
+    } else {
+      newExpanded.add(groupId);
+    }
+    setExpandedGroups(newExpanded);
   };
 
-  const stats = getStats();
-  const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
-  const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
+  if (isProcessing) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="w-8 h-8 mx-auto mb-4 animate-spin" />
+        <p className="text-muted-foreground">Processing your Excel data...</p>
+      </div>
+    );
+  }
+
+  if (!processedData) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Unable to process the data. Please check your inputs and try again.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-xl font-semibold mb-2">Review & Submit</h2>
         <p className="text-muted-foreground">
-          Review your domain group hierarchy before saving
+          Review the processed hierarchy before saving to database
         </p>
       </div>
 
-      {/* Summary Card */}
+      {/* Summary */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-600" />
-            Hierarchy Summary
+            Import Summary
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">1</div>
-              <div className="text-sm text-muted-foreground">Industry Segment</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.domainGroups}</div>
+              <div className="text-2xl font-bold text-primary">
+                {processedData.domainGroups.length}
+              </div>
               <div className="text-sm text-muted-foreground">Domain Groups</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.categories}</div>
+              <div className="text-2xl font-bold text-primary">
+                {processedData.categories.length}
+              </div>
               <div className="text-sm text-muted-foreground">Categories</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.subCategories}</div>
+              <div className="text-2xl font-bold text-primary">
+                {processedData.subCategories.length}
+              </div>
               <div className="text-sm text-muted-foreground">Sub-Categories</div>
             </div>
           </div>
-
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Industry Segment:</p>
-                <p className="text-sm text-muted-foreground">{selectedSegment?.industrySegment}</p>
-              </div>
-              <Badge variant="secondary">Ready to Save</Badge>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Data Source Info */}
+      {/* Hierarchy Preview */}
       <Card>
         <CardHeader>
-          <CardTitle>Data Source Information</CardTitle>
+          <CardTitle>Hierarchy Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Data Source:</span>
-              <Badge variant="outline">
-                {wizardData.dataSource === 'excel' && 'Excel Upload'}
-                {wizardData.dataSource === 'manual' && 'Manual Entry'}
-                {wizardData.dataSource === 'template' && 'Template'}
-              </Badge>
-            </div>
-            
-            {wizardData.dataSource === 'excel' && wizardData.excelData && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Processed Rows:</span>
-                <span className="text-sm">{wizardData.excelData.data.length}</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Preview Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              onClick={downloadPreview} 
-              variant="outline" 
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download Preview
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Warnings */}
-      {existingData.domainGroups.length > 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            This hierarchy will be added to your existing domain groups. 
-            Make sure there are no conflicts with existing data.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Submit */}
-      <Card>
-        <CardContent className="pt-6">
           <div className="space-y-4">
-            <Button 
-              onClick={handleSubmit}
-              disabled={!previewData || isSubmitting}
-              className="w-full flex items-center gap-2"
-              size="lg"
-            >
-              <Save className="w-4 h-4" />
-              {isSubmitting ? 'Saving...' : 'Save Domain Group Hierarchy'}
-            </Button>
-
-            {isSubmitting && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Saving hierarchy...</span>
-                  <span>{submitProgress}%</span>
+            {processedData.domainGroups.map((domainGroup) => {
+              const categories = processedData.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+              
+              return (
+                <div key={domainGroup.id} className="border rounded-lg">
+                  <Collapsible 
+                    open={expandedGroups.has(domainGroup.id)}
+                    onOpenChange={() => toggleGroupExpansion(domainGroup.id)}
+                  >
+                    <CollapsibleTrigger className="w-full p-4 text-left hover:bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
+                          <div>
+                            <h4 className="font-medium">{domainGroup.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {domainGroup.industrySegmentName} • {categories.length} categories
+                            </p>
+                          </div>
+                        </div>
+                        {expandedGroups.has(domainGroup.id) ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </div>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent className="px-4 pb-4">
+                      <div className="space-y-2 ml-6">
+                        {categories.map((category) => {
+                          const subCategories = processedData.subCategories.filter(sub => sub.categoryId === category.id);
+                          
+                          return (
+                            <div key={category.id} className="border-l-2 border-primary/20 pl-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
+                                <span className="font-medium text-sm">{category.name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {subCategories.length} sub-categories
+                                </Badge>
+                              </div>
+                              <div className="space-y-1 ml-6">
+                                {subCategories.map((subCategory, index) => (
+                                  <div key={subCategory.id} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-sm">
+                                    <span className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs font-medium shrink-0">
+                                      {index + 1}
+                                    </span>
+                                    <div>
+                                      <div className="font-medium">{subCategory.name}</div>
+                                      {subCategory.description && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          {subCategory.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
-                <Progress value={submitProgress} className="w-full" />
-              </div>
-            )}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
+      {/* Submit Button */}
+      <div className="flex justify-center">
+        <Button onClick={handleSubmit} size="lg" className="flex items-center gap-2">
+          <Save className="w-5 h-5" />
+          Save to Database
+        </Button>
+      </div>
     </div>
   );
 };

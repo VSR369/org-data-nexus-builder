@@ -24,7 +24,7 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   const [steps, setSteps] = useState(WIZARD_STEPS);
   const [wizardData, setWizardData] = useState<WizardData>({
     step: 0,
-    dataSource: '' as any, // Initialize as empty to force selection
+    dataSource: '' as any,
     selectedIndustrySegment: '',
     isValid: false
   });
@@ -58,17 +58,35 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   const handleNext = () => {
     if (currentStep < steps.length - 1 && canProceed()) {
       console.log('ExcelUploadWizard: Moving to next step from', currentStep, 'to', currentStep + 1);
-      setCurrentStep(prev => prev + 1);
-      updateWizardData({ step: currentStep + 1 });
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      updateWizardData({ step: nextStep });
+      
+      // For Excel uploads, auto-advance through certain steps
+      if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
+        if (nextStep === 1) {
+          // Auto-validate step 1 for Excel uploads
+          setTimeout(() => {
+            markStepCompleted(1, true);
+          }, 100);
+        }
+      }
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
       console.log('ExcelUploadWizard: Moving to previous step from', currentStep, 'to', currentStep - 1);
-      setCurrentStep(prev => prev - 1);
-      updateWizardData({ step: currentStep - 1 });
+      const prevStep = currentStep - 1;
+      setCurrentStep(prevStep);
+      updateWizardData({ step: prevStep });
     }
+  };
+
+  const handleSubmit = (newData: DomainGroupsData) => {
+    console.log('ExcelUploadWizard: Submitting data and closing wizard');
+    onDataUpdate(newData);
+    onCancel(); // Close the wizard
   };
 
   return (
@@ -89,7 +107,7 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
             wizardData={wizardData}
             existingData={data}
             onUpdate={updateWizardData}
-            onSubmit={onDataUpdate}
+            onSubmit={handleSubmit}
             onValidationChange={markStepCompleted}
           />
         </div>

@@ -30,11 +30,50 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
     setIndustrySegments(loadedData.industrySegments || []);
   }, []);
 
+  // Auto-populate from Excel data if available
   useEffect(() => {
-    // Validate step
-    const isValid = wizardData.selectedIndustrySegment && domainGroupName.trim().length > 0;
+    if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
+      const firstRow = wizardData.excelData.data[0];
+      console.log('DomainGroupSetup: Auto-populating from Excel data:', firstRow);
+      
+      // Find matching industry segment
+      const matchingSegment = industrySegments.find(
+        segment => segment.industrySegment === firstRow.industrySegment
+      );
+      
+      if (matchingSegment) {
+        onUpdate({ selectedIndustrySegment: matchingSegment.id });
+      }
+      
+      if (firstRow.domainGroup) {
+        setDomainGroupName(firstRow.domainGroup);
+        onUpdate({ selectedDomainGroup: firstRow.domainGroup });
+      }
+      
+      if (firstRow.domainGroupDescription) {
+        setDomainGroupDescription(firstRow.domainGroupDescription);
+      }
+    }
+  }, [wizardData.excelData, industrySegments, wizardData.dataSource, onUpdate]);
+
+  useEffect(() => {
+    // Validate step based on data source
+    let isValid = false;
+    
+    if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
+      // For Excel uploads, validate if we have the required data in Excel
+      const hasIndustrySegment = wizardData.excelData.data.some(row => row.industrySegment);
+      const hasDomainGroup = wizardData.excelData.data.some(row => row.domainGroup);
+      isValid = hasIndustrySegment && hasDomainGroup;
+      console.log('DomainGroupSetup: Excel validation:', { hasIndustrySegment, hasDomainGroup, isValid });
+    } else {
+      // For manual entry, validate manual inputs
+      isValid = wizardData.selectedIndustrySegment && domainGroupName.trim().length > 0;
+      console.log('DomainGroupSetup: Manual validation:', { selectedIndustrySegment: wizardData.selectedIndustrySegment, domainGroupName, isValid });
+    }
+    
     onValidationChange(isValid);
-  }, [wizardData.selectedIndustrySegment, domainGroupName, onValidationChange]);
+  }, [wizardData.selectedIndustrySegment, domainGroupName, wizardData.dataSource, wizardData.excelData, onValidationChange]);
 
   const handleIndustrySegmentChange = (value: string) => {
     onUpdate({ selectedIndustrySegment: value });
@@ -47,6 +86,46 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
 
   const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
 
+  // Show different UI for Excel uploads
+  if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
+    const firstRow = wizardData.excelData.data[0];
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Domain Group Setup</h2>
+          <p className="text-muted-foreground">
+            Configuration extracted from your Excel file
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Excel Data Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Industry Segment</Label>
+                <p className="text-sm font-medium">{firstRow.industrySegment}</p>
+              </div>
+              <div>
+                <Label>Domain Group</Label>
+                <p className="text-sm font-medium">{firstRow.domainGroup}</p>
+              </div>
+            </div>
+            {firstRow.domainGroupDescription && (
+              <div>
+                <Label>Description</Label>
+                <p className="text-sm text-muted-foreground">{firstRow.domainGroupDescription}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show manual form for non-Excel uploads
   return (
     <div className="space-y-6">
       <div className="text-center">
