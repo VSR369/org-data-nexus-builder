@@ -46,8 +46,8 @@ export const GlobalNavigation = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation - Always visible */}
-          <div className="hidden lg:flex items-center space-x-1">
+          {/* Desktop Navigation - Show at medium screens and up */}
+          <div className="hidden md:flex items-center space-x-1">
             {navigationItems.map((item) => (
               <Link
                 key={item.label}
@@ -60,7 +60,7 @@ export const GlobalNavigation = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="hidden xl:flex items-center space-x-4 flex-1 max-w-md mx-8">
+          <div className="hidden lg:flex items-center space-x-4 flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -97,7 +97,7 @@ export const GlobalNavigation = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="hidden sm:flex items-center space-x-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline">
@@ -119,7 +119,7 @@ export const GlobalNavigation = () => {
             )}
 
             {/* Master Data Portal Link */}
-            <Link to="/master-data">
+            <Link to="/master-data" className="hidden sm:block">
               <Button 
                 className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
               >
@@ -132,7 +132,7 @@ export const GlobalNavigation = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
@@ -144,9 +144,10 @@ export const GlobalNavigation = () => {
           </div>
         </div>
 
-        {/* Mobile Menu - Always show navigation items */}
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t bg-white py-4 space-y-2">
+          <div className="md:hidden border-t bg-white py-4 space-y-2">
+            {/* Search Bar for Mobile */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -183,6 +184,14 @@ export const GlobalNavigation = () => {
                     {role}
                   </button>
                 ))}
+                <div className="mt-2 pt-2 border-t">
+                  <button
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium"
+                  >
+                    Sign Up
+                  </button>
+                </div>
               </div>
             )}
             
@@ -195,6 +204,37 @@ export const GlobalNavigation = () => {
               <Database className="inline h-4 w-4 mr-2" />
               Master Data Portal
             </Link>
+            
+            {/* User Profile section when logged in */}
+            {isLoggedIn && (
+              <div className="px-4 py-2 border-t pt-4 mt-4">
+                <p className="text-sm font-medium text-gray-900 mb-2">Account:</p>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  <User className="inline mr-2 h-4 w-4" />
+                  Profile
+                </button>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  <Settings className="inline mr-2 h-4 w-4" />
+                  Settings
+                </button>
+                <button
+                  onClick={() => {
+                    setIsLoggedIn(false);
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  <LogOut className="inline mr-2 h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
