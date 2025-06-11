@@ -25,6 +25,13 @@ export const GlobalNavigation = () => {
     { label: "Resources", href: "/resources" },
   ];
 
+  const signInRoles = [
+    "Solution Seeker",
+    "Solution Manager", 
+    "Solution Head",
+    "Solution Assessor"
+  ];
+
   return (
     <nav className="sticky top-0 z-[60] bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-6">
@@ -91,9 +98,20 @@ export const GlobalNavigation = () => {
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-3">
-                <Button variant="outline">
-                  Sign In
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      Sign In
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-48" align="end">
+                    {signInRoles.map((role) => (
+                      <DropdownMenuItem key={role} onClick={() => setIsLoggedIn(true)}>
+                        {role}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button>
                   Sign Up
                 </Button>
@@ -146,6 +164,21 @@ export const GlobalNavigation = () => {
                 {item.label}
               </Link>
             ))}
+            <div className="px-4 py-2">
+              <p className="text-sm font-medium text-gray-900 mb-2">Sign In As:</p>
+              {signInRoles.map((role) => (
+                <button
+                  key={role}
+                  onClick={() => {
+                    setIsLoggedIn(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
             <Link
               to="/master-data"
               className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium"
