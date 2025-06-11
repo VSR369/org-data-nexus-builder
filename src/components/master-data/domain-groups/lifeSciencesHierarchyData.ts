@@ -21,141 +21,138 @@ export const createLifeSciencesHierarchyData = () => {
     createdAt: timestamp
   });
 
-  // Category 1.1: R&D Strategy & Portfolio Management
+  // Category 1.1: Strategic Vision & Portfolio Planning
   const cat1_1Id = `${baseId}_cat1_1`;
   newCategories.push({
     id: cat1_1Id,
-    name: 'R&D Strategy & Portfolio Management',
-    description: 'Research and development strategy and portfolio optimization',
+    name: 'Strategic Vision & Portfolio Planning',
+    description: 'Strategic planning and portfolio optimization for life sciences',
     domainGroupId: group1Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 1.1
   newSubCategories.push(
     {
       id: `${baseId}_sub1_1_1`,
-      name: 'Therapeutic Area Prioritization',
-      description: 'Selecting high-impact disease areas based on unmet needs, market opportunity, and scientific feasibility',
+      name: 'Therapeutic Area Strategy',
+      description: 'Aligning R&D and commercial focus areas with unmet medical needs and global health priorities',
       categoryId: cat1_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_1_2`,
-      name: 'Pipeline Portfolio Optimization',
-      description: 'Balancing risk, cost, and timelines across clinical and preclinical assets',
+      name: 'Pipeline & Portfolio Management',
+      description: 'Balancing short-term commercial products with long-term R&D pipeline across discovery, preclinical, and clinical stages',
       categoryId: cat1_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_1_3`,
-      name: 'Innovation Sourcing & Partnerships',
-      description: 'Leveraging academic, biotech, and technology partnerships for R&D acceleration',
+      name: 'Global Market Access Strategy',
+      description: 'Planning for differentiated access and reimbursement across regulated and emerging markets',
       categoryId: cat1_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_1_4`,
-      name: 'Translational Research Strategy',
-      description: 'Bridging discovery science with clinical development for faster bench-to-bedside outcomes',
+      name: 'Scenario Planning for Health Trends',
+      description: 'Preparing for disruptions due to pandemics, healthcare reforms, or demographic shifts',
       categoryId: cat1_1Id,
       isActive: true,
       createdAt: timestamp
     }
   );
 
-  // Category 1.2: Commercial Strategy & Market Access
+  // Category 1.2: Business Model Innovation in Healthcare Delivery
   const cat1_2Id = `${baseId}_cat1_2`;
   newCategories.push({
     id: cat1_2Id,
-    name: 'Commercial Strategy & Market Access',
-    description: 'Commercial strategy development and market access planning',
+    name: 'Business Model Innovation in Healthcare Delivery',
+    description: 'Innovation in healthcare delivery models and business approaches',
     domainGroupId: group1Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 1.2
   newSubCategories.push(
     {
       id: `${baseId}_sub1_2_1`,
-      name: 'Launch Planning & Readiness',
-      description: 'Designing go-to-market plans for new drug or device launches across geographies',
+      name: 'Value-Based Healthcare Models',
+      description: 'Designing commercial models linked to patient outcomes and therapy effectiveness',
       categoryId: cat1_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_2_2`,
-      name: 'Pricing & Reimbursement Models',
-      description: 'Aligning product pricing strategies with payer expectations and HTA requirements',
+      name: 'Precision Medicine & Companion Diagnostics',
+      description: 'Integrating biomarkers, genomics, and AI into therapeutic product development',
       categoryId: cat1_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_2_3`,
-      name: 'Market Access & Real-World Evidence (RWE)',
-      description: 'Generating post-market data to support access and long-term adoption',
+      name: 'Partner Ecosystem (CDMOs, CROs, HealthTech)',
+      description: 'Structuring collaborations across outsourced R&D, manufacturing, and digital health enablers',
       categoryId: cat1_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_2_4`,
-      name: 'Patient-Centric Value Proposition',
-      description: 'Defining compelling value for patients, caregivers, and clinicians',
+      name: 'Sustainability in Pharma Supply Chain',
+      description: 'Reducing environmental impact across packaging, cold chain, and waste disposal',
       categoryId: cat1_2Id,
       isActive: true,
       createdAt: timestamp
     }
   );
 
-  // Category 1.3: Business Model Innovation & Global Expansion
+  // Category 1.3: Health Outcomes & Value Realization
   const cat1_3Id = `${baseId}_cat1_3`;
   newCategories.push({
     id: cat1_3Id,
-    name: 'Business Model Innovation & Global Expansion',
-    description: 'Innovation in business models and global market expansion strategies',
+    name: 'Health Outcomes & Value Realization',
+    description: 'Measuring and optimizing health outcomes and value delivery',
     domainGroupId: group1Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 1.3
   newSubCategories.push(
     {
       id: `${baseId}_sub1_3_1`,
-      name: 'Precision Medicine & Digital Therapeutics',
-      description: 'Integrating personalized healthcare into product offerings',
+      name: 'Real-World Evidence & HEOR',
+      description: 'Leveraging real-world data for pricing, access, and post-market surveillance',
       categoryId: cat1_3Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_3_2`,
-      name: 'Emerging Market Strategy',
-      description: 'Expanding presence and affordability in underserved regions',
+      name: 'Patient-Centric Trial Design',
+      description: 'Designing clinical trials around convenience, safety, and real-world adherence',
       categoryId: cat1_3Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_3_3`,
-      name: 'Ecosystem Collaborations (CROs, Tech, Academia)',
-      description: 'Structuring multi-stakeholder collaborations to scale discovery and delivery',
+      name: 'Risk-Sharing Agreements',
+      description: 'Structuring payor contracts based on therapeutic efficacy or usage-based pricing',
       categoryId: cat1_3Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub1_3_4`,
-      name: 'New Revenue Streams (Companion Apps, Data Licensing)',
-      description: 'Monetizing digital and data assets to diversify revenue sources',
+      name: 'Therapy Lifecycle Value Assessment',
+      description: 'Measuring value across discovery, development, launch, and maturity stages',
       categoryId: cat1_3Id,
       isActive: true,
       createdAt: timestamp
@@ -174,142 +171,185 @@ export const createLifeSciencesHierarchyData = () => {
     createdAt: timestamp
   });
 
-  // Category 2.1: Clinical & Regulatory Operations
+  // Category 2.1: R&D and Clinical Development Excellence
   const cat2_1Id = `${baseId}_cat2_1`;
   newCategories.push({
     id: cat2_1Id,
-    name: 'Clinical & Regulatory Operations',
-    description: 'Clinical trial operations and regulatory compliance management',
+    name: 'R&D and Clinical Development Excellence',
+    description: 'Research and development and clinical trial excellence',
     domainGroupId: group2Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 2.1
   newSubCategories.push(
     {
       id: `${baseId}_sub2_1_1`,
-      name: 'Clinical Trial Design & Execution',
-      description: 'Managing all trial phases with regulatory and ethical compliance',
+      name: 'Clinical Trial Operations',
+      description: 'Managing site selection, patient recruitment, and trial logistics globally',
       categoryId: cat2_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_1_2`,
-      name: 'Regulatory Submissions & Approvals',
-      description: 'Navigating FDA, EMA, CDSCO, and other authorities to gain timely approvals',
+      name: 'Pharmacovigilance & Safety Monitoring',
+      description: 'Ensuring ongoing drug safety through surveillance and compliance',
       categoryId: cat2_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_1_3`,
-      name: 'Safety & Pharmacovigilance Operations',
-      description: 'Monitoring adverse events and ensuring patient safety across the lifecycle',
+      name: 'Regulatory Affairs & Submissions',
+      description: 'Preparing and managing global regulatory filings and interactions',
       categoryId: cat2_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_1_4`,
-      name: 'Clinical Data Management',
-      description: 'Capturing, cleaning, and locking data efficiently across trial sites',
+      name: 'Lab Information Management Systems (LIMS)',
+      description: 'Managing experimental data and digital lab workflows',
       categoryId: cat2_1Id,
       isActive: true,
       createdAt: timestamp
     }
   );
 
-  // Category 2.2: Manufacturing, Quality & Supply Chain
+  // Category 2.2: Manufacturing & Supply Chain Operations
   const cat2_2Id = `${baseId}_cat2_2`;
   newCategories.push({
     id: cat2_2Id,
-    name: 'Manufacturing, Quality & Supply Chain',
-    description: 'Manufacturing operations, quality management, and supply chain optimization',
+    name: 'Manufacturing & Supply Chain Operations',
+    description: 'Manufacturing operations and supply chain management',
     domainGroupId: group2Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 2.2
   newSubCategories.push(
     {
       id: `${baseId}_sub2_2_1`,
-      name: 'GMP Manufacturing & Tech Transfer',
-      description: 'Adhering to Good Manufacturing Practices and transferring validated processes',
+      name: 'GMP Compliance & Quality Control',
+      description: 'Ensuring all production processes meet Good Manufacturing Practices',
       categoryId: cat2_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_2_2`,
-      name: 'Quality Assurance & Control (QA/QC)',
-      description: 'Enforcing regulatory-compliant and risk-based quality frameworks',
+      name: 'Technology Transfer & Scale-Up',
+      description: 'Transitioning from lab-scale to commercial-scale production seamlessly',
       categoryId: cat2_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_2_3`,
-      name: 'Cold Chain & Global Logistics',
-      description: 'Managing temperature-sensitive supply chains across continents',
+      name: 'Cold Chain & Specialty Logistics',
+      description: 'Managing temperature-sensitive biologics and vaccines across geographies',
       categoryId: cat2_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_2_4`,
-      name: 'Digital Supply Chain Planning',
-      description: 'Leveraging AI/ML for demand forecasting, inventory visibility, and responsiveness',
+      name: 'Supply Chain Risk Management',
+      description: 'Mitigating disruptions due to regulatory, geopolitical, or supplier risks',
       categoryId: cat2_2Id,
       isActive: true,
       createdAt: timestamp
     }
   );
 
-  // Category 2.3: ESG & Risk Management in Life Sciences
+  // Category 2.3: Commercial & Market Operations
   const cat2_3Id = `${baseId}_cat2_3`;
   newCategories.push({
     id: cat2_3Id,
-    name: 'ESG & Risk Management in Life Sciences',
-    description: 'Environmental, social, and governance practices with risk management',
+    name: 'Commercial & Market Operations',
+    description: 'Commercial operations and market engagement strategies',
     domainGroupId: group2Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 2.3
   newSubCategories.push(
     {
       id: `${baseId}_sub2_3_1`,
-      name: 'Environmental Compliance (Waste, Emissions)',
-      description: 'Managing pharmaceutical effluents, emissions, and sustainability targets',
+      name: 'Omnichannel HCP Engagement',
+      description: 'Creating integrated digital and in-person strategies for physician engagement',
       categoryId: cat2_3Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_3_2`,
-      name: 'Ethical Clinical Practices & Transparency',
-      description: 'Upholding integrity in trial disclosures, consent, and publication ethics',
+      name: 'Medical Affairs & Scientific Communications',
+      description: 'Providing accurate, compliant, and evidence-based scientific content',
       categoryId: cat2_3Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_3_3`,
-      name: 'Global Regulatory Risk Monitoring',
-      description: 'Tracking and mitigating compliance risk across geographies',
+      name: 'KOL & Investigator Relationship Management',
+      description: 'Building and managing expert networks to guide development and education',
       categoryId: cat2_3Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub2_3_4`,
-      name: 'Responsible Sourcing & Supply Assurance',
-      description: 'Ensuring ethical and resilient supplier networks',
+      name: 'Market Access Execution & Pricing',
+      description: 'Implementing reimbursement, tendering, and value-pricing strategies globally',
       categoryId: cat2_3Id,
+      isActive: true,
+      createdAt: timestamp
+    }
+  );
+
+  // Category 2.4: Risk, Compliance & Sustainability
+  const cat2_4Id = `${baseId}_cat2_4`;
+  newCategories.push({
+    id: cat2_4Id,
+    name: 'Risk, Compliance & Sustainability',
+    description: 'Risk management, compliance, and sustainability practices',
+    domainGroupId: group2Id,
+    isActive: true,
+    createdAt: timestamp
+  });
+
+  newSubCategories.push(
+    {
+      id: `${baseId}_sub2_4_1`,
+      name: 'GxP Audits & Regulatory Readiness',
+      description: 'Conducting internal audits and preparing for global regulatory inspections',
+      categoryId: cat2_4Id,
+      isActive: true,
+      createdAt: timestamp
+    },
+    {
+      id: `${baseId}_sub2_4_2`,
+      name: 'Ethical Clinical Research Governance',
+      description: 'Ensuring ethical approvals, informed consent, and patient rights',
+      categoryId: cat2_4Id,
+      isActive: true,
+      createdAt: timestamp
+    },
+    {
+      id: `${baseId}_sub2_4_3`,
+      name: 'Green Chemistry & Sustainable Manufacturing',
+      description: 'Minimizing environmental harm in formulation and packaging',
+      categoryId: cat2_4Id,
+      isActive: true,
+      createdAt: timestamp
+    },
+    {
+      id: `${baseId}_sub2_4_4`,
+      name: 'Product Stewardship & Traceability',
+      description: 'Tracking products through serialization, anti-counterfeiting, and recall readiness',
+      categoryId: cat2_4Id,
       isActive: true,
       createdAt: timestamp
     }
@@ -327,95 +367,139 @@ export const createLifeSciencesHierarchyData = () => {
     createdAt: timestamp
   });
 
-  // Category 3.1: Scientific Talent & Capability Development
+  // Category 3.1: Scientific Talent & Workforce Management
   const cat3_1Id = `${baseId}_cat3_1`;
   newCategories.push({
     id: cat3_1Id,
-    name: 'Scientific Talent & Capability Development',
-    description: 'Development of scientific talent and specialized capabilities',
+    name: 'Scientific Talent & Workforce Management',
+    description: 'Scientific talent development and workforce management',
     domainGroupId: group3Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 3.1
   newSubCategories.push(
     {
       id: `${baseId}_sub3_1_1`,
-      name: 'Researcher Upskilling & Certification',
-      description: 'Offering continuous training in genomics, biologics, AI for drug discovery, etc',
+      name: 'Functional Capability Building (R&D, Regulatory, PV)',
+      description: 'Training teams in scientific writing, safety, compliance, and discovery',
       categoryId: cat3_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub3_1_2`,
-      name: 'Clinical & Regulatory Workforce Training',
-      description: 'Building specialized knowledge in trial conduct, GCP, ICH, and local regulations',
+      name: 'Cross-Functional Collaboration Models',
+      description: 'Enabling effective collaboration across Clinical, Regulatory, Commercial, and Medical',
       categoryId: cat3_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub3_1_3`,
-      name: 'Digital & Data Literacy for Pharma Professionals',
-      description: 'Empowering cross-functional teams with analytics and digital capabilities',
+      name: 'Culture of Quality & Integrity',
+      description: 'Embedding ethical and patient-first culture in all operations',
       categoryId: cat3_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub3_1_4`,
-      name: 'Functional Career Pathways & Mobility',
-      description: 'Creating structured career advancement across R&D, commercial, and manufacturing',
+      name: 'Scientific Leadership Development',
+      description: 'Grooming future leaders with both technical and strategic acumen',
       categoryId: cat3_1Id,
       isActive: true,
       createdAt: timestamp
     }
   );
 
-  // Category 3.2: Change Management & Culture Transformation
+  // Category 3.2: Organizational Design & Change Enablement
   const cat3_2Id = `${baseId}_cat3_2`;
   newCategories.push({
     id: cat3_2Id,
-    name: 'Change Management & Culture Transformation',
-    description: 'Organizational change management and culture transformation initiatives',
+    name: 'Organizational Design & Change Enablement',
+    description: 'Organizational design and change management capabilities',
     domainGroupId: group3Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 3.2
   newSubCategories.push(
     {
       id: `${baseId}_sub3_2_1`,
-      name: 'Organizational Change for Digital Adoption',
-      description: 'Driving culture shifts in adopting automation, cloud, and AI systems',
+      name: 'Functional & Matrix Governance Models',
+      description: 'Structuring high-regulation orgs to ensure accountability and speed',
       categoryId: cat3_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub3_2_2`,
-      name: 'Diversity in Research & Inclusion Programs',
-      description: 'Promoting gender, geography, and population diversity in clinical and organizational roles',
+      name: 'Regulatory Communication Protocols',
+      description: 'Standardizing communication with internal QA, legal, and external agencies',
       categoryId: cat3_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub3_2_3`,
-      name: 'Leadership Development in Regulated Environments',
-      description: 'Cultivating ethical, agile leaders in compliance-driven sectors',
+      name: 'Shared GxP Services',
+      description: 'Centralizing Quality, Compliance, and Document Control functions for consistency',
       categoryId: cat3_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub3_2_4`,
-      name: 'Global Collaboration Culture',
-      description: 'Enhancing virtual and cross-border teamwork in clinical and commercial operations',
+      name: 'Change Management in Global Trials & Launches',
+      description: 'Managing transitions during global trial rollouts or therapeutic launches',
       categoryId: cat3_2Id,
+      isActive: true,
+      createdAt: timestamp
+    }
+  );
+
+  // Category 3.3: Digital Upskilling & Adoption in Pharma
+  const cat3_3Id = `${baseId}_cat3_3`;
+  newCategories.push({
+    id: cat3_3Id,
+    name: 'Digital Upskilling & Adoption in Pharma',
+    description: 'Digital transformation and upskilling initiatives',
+    domainGroupId: group3Id,
+    isActive: true,
+    createdAt: timestamp
+  });
+
+  newSubCategories.push(
+    {
+      id: `${baseId}_sub3_3_1`,
+      name: 'Scientific Informatics Tools Training',
+      description: 'Training on ELNs, LIMS, SAS, and molecular modeling software',
+      categoryId: cat3_3Id,
+      isActive: true,
+      createdAt: timestamp
+    },
+    {
+      id: `${baseId}_sub3_3_2`,
+      name: 'Digital Lab & Virtual Trials Enablement',
+      description: 'Supporting digitalization of labs and patient-centric trial operations',
+      categoryId: cat3_3Id,
+      isActive: true,
+      createdAt: timestamp
+    },
+    {
+      id: `${baseId}_sub3_3_3`,
+      name: 'Workforce Automation in Regulatory & Safety',
+      description: 'Implementing automation in document review, case processing, and labelling',
+      categoryId: cat3_3Id,
+      isActive: true,
+      createdAt: timestamp
+    },
+    {
+      id: `${baseId}_sub3_3_4`,
+      name: 'Employee Engagement in Remote Research Teams',
+      description: 'Tools and practices to keep distributed scientific teams productive and connected',
+      categoryId: cat3_3Id,
       isActive: true,
       createdAt: timestamp
     }
@@ -433,142 +517,93 @@ export const createLifeSciencesHierarchyData = () => {
     createdAt: timestamp
   });
 
-  // Category 4.1: Digital R&D & Smart Labs
+  // Category 4.1: Life Sciences Digital Architecture
   const cat4_1Id = `${baseId}_cat4_1`;
   newCategories.push({
     id: cat4_1Id,
-    name: 'Digital R&D & Smart Labs',
-    description: 'Digital research and development with smart laboratory solutions',
+    name: 'Life Sciences Digital Architecture',
+    description: 'Digital architecture and platform solutions for life sciences',
     domainGroupId: group4Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 4.1
   newSubCategories.push(
     {
       id: `${baseId}_sub4_1_1`,
-      name: 'Electronic Lab Notebooks (ELNs) & LIMS',
-      description: 'Digitizing experiment tracking and data recording in research labs',
+      name: 'GxP-Compliant Cloud Platforms',
+      description: 'Designing secure, validated cloud environments for R&D and clinical operations',
       categoryId: cat4_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub4_1_2`,
-      name: 'AI in Drug Discovery & Biomarker Research',
-      description: 'Applying AI/ML to accelerate molecule identification and precision targeting',
+      name: 'IoT & Smart Factory Enablement',
+      description: 'Using IoT for real-time visibility into production, utilities, and equipment',
       categoryId: cat4_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub4_1_3`,
-      name: 'Simulation & In Silico Modeling',
-      description: 'Reducing wet lab time through predictive modeling and virtual screening',
+      name: 'Data Lakes for Clinical & Safety Data',
+      description: 'Integrating structured/unstructured data from diverse trial and lab systems',
       categoryId: cat4_1Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub4_1_4`,
-      name: 'Knowledge Graphs & Ontologies',
-      description: 'Structuring and connecting biological knowledge for reuse and insight generation',
+      name: 'Digital Twin in Bioprocessing',
+      description: 'Simulating biological systems for faster scale-up and quality control',
       categoryId: cat4_1Id,
       isActive: true,
       createdAt: timestamp
     }
   );
 
-  // Category 4.2: Connected Health & Real-World Technologies
+  // Category 4.2: AI, Analytics & Decision Intelligence
   const cat4_2Id = `${baseId}_cat4_2`;
   newCategories.push({
     id: cat4_2Id,
-    name: 'Connected Health & Real-World Technologies',
-    description: 'Connected health solutions and real-world technology applications',
+    name: 'AI, Analytics & Decision Intelligence',
+    description: 'Artificial intelligence, analytics, and decision support systems',
     domainGroupId: group4Id,
     isActive: true,
     createdAt: timestamp
   });
 
-  // Sub-categories for 4.2
   newSubCategories.push(
     {
       id: `${baseId}_sub4_2_1`,
-      name: 'Companion Apps & Smart Devices',
-      description: 'Integrating digital tools with therapeutics to improve adherence and outcomes',
+      name: 'Predictive Analytics for Trial Outcomes',
+      description: 'Forecasting trial success, patient dropout, and protocol adherence',
       categoryId: cat4_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub4_2_2`,
-      name: 'Real-World Data (RWD) Platforms',
-      description: 'Collecting and leveraging longitudinal, observational health data at scale',
+      name: 'NLP for Regulatory Intelligence',
+      description: 'Extracting insights from global regulatory guidelines and peer-reviewed literature',
       categoryId: cat4_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub4_2_3`,
-      name: 'Digital Biomarkers & Remote Monitoring',
-      description: 'Capturing health signals continuously to support trials and care',
+      name: 'Companion Algorithms & Digital Therapeutics',
+      description: 'Developing software-as-a-medical-device (SaMD) for clinical support',
       categoryId: cat4_2Id,
       isActive: true,
       createdAt: timestamp
     },
     {
       id: `${baseId}_sub4_2_4`,
-      name: 'Virtual Trials & Decentralized Study Models',
-      description: 'Reaching patients directly through remote participation platforms',
+      name: 'Real-Time Dashboards for PV, Clinical, QA',
+      description: 'Operational dashboards for near real-time insights and compliance metrics',
       categoryId: cat4_2Id,
-      isActive: true,
-      createdAt: timestamp
-    }
-  );
-
-  // Category 4.3: Core IT, Data & Security in Regulated Environments
-  const cat4_3Id = `${baseId}_cat4_3`;
-  newCategories.push({
-    id: cat4_3Id,
-    name: 'Core IT, Data & Security in Regulated Environments',
-    description: 'IT infrastructure, data management, and security in regulated environments',
-    domainGroupId: group4Id,
-    isActive: true,
-    createdAt: timestamp
-  });
-
-  // Sub-categories for 4.3
-  newSubCategories.push(
-    {
-      id: `${baseId}_sub4_3_1`,
-      name: 'GxP-Compliant IT Systems',
-      description: 'Implementing validated and auditable systems for compliance-critical operations',
-      categoryId: cat4_3Id,
-      isActive: true,
-      createdAt: timestamp
-    },
-    {
-      id: `${baseId}_sub4_3_2`,
-      name: 'Data Privacy & Security (HIPAA, GDPR)',
-      description: 'Safeguarding patient and trial data under global data protection laws',
-      categoryId: cat4_3Id,
-      isActive: true,
-      createdAt: timestamp
-    },
-    {
-      id: `${baseId}_sub4_3_3`,
-      name: 'Cloud & AI Infrastructure for Life Sciences',
-      description: 'Building scalable and secure digital infrastructure for compute-intensive use cases',
-      categoryId: cat4_3Id,
-      isActive: true,
-      createdAt: timestamp
-    },
-    {
-      id: `${baseId}_sub4_3_4`,
-      name: 'Interoperability & Integration Frameworks',
-      description: 'Ensuring seamless data flow across lab, clinical, commercial, and regulatory systems',
-      categoryId: cat4_3Id,
       isActive: true,
       createdAt: timestamp
     }
