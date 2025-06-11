@@ -33,11 +33,11 @@ export class DataManager<T> {
     return localStorage.getItem(this.getInitializedKey()) === 'true';
   }
 
-  private markAsInitialized(): void {
+  protected markAsInitialized(): void {
     localStorage.setItem(this.getInitializedKey(), 'true');
   }
 
-  private updateVersion(): void {
+  protected updateVersion(): void {
     localStorage.setItem(this.getVersionKey(), this.config.version.toString());
   }
 

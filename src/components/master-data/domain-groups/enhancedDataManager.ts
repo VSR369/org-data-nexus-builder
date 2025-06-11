@@ -20,6 +20,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
         if (this.validateDataStructure(parsed)) {
           // Mark as initialized to prevent any clearing
           this.markAsInitialized();
+          this.updateVersion();
           
           console.log(`=== Enhanced DataManager.loadData() END - Success for ${this.config.key} ===`);
           return parsed;
@@ -37,6 +38,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
       // Only use defaults if absolutely no data exists
       console.log('⚠️ No data found, using defaults');
       this.markAsInitialized();
+      this.updateVersion();
       console.log(`=== Enhanced DataManager.loadData() END - Defaults for ${this.config.key} ===`);
       return this.config.defaultData;
       
@@ -72,6 +74,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
       const jsonString = JSON.stringify(data);
       localStorage.setItem(this.config.key, jsonString);
       this.markAsInitialized();
+      this.updateVersion();
       
       // Clean up old keys to prevent confusion
       this.cleanupOldKeys();
@@ -108,12 +111,5 @@ export class EnhancedDataManager<T> extends DataManager<T> {
   // Method to be overridden by specific implementations to check for valid content
   protected hasValidContent(data: T): boolean {
     return !!data;
-  }
-
-  private markAsInitialized(): void {
-    const initKey = `${this.config.key}_initialized`;
-    const versionKey = `${this.config.key}_version`;
-    localStorage.setItem(initKey, 'true');
-    localStorage.setItem(versionKey, this.config.version.toString());
   }
 }
