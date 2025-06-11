@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Upload, Edit, Zap } from 'lucide-react';
+import { Upload, Edit, Target } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
 
 interface DataSourceSelectorProps {
@@ -19,12 +19,15 @@ const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
   onValidationChange
 }) => {
   const handleDataSourceChange = (value: 'manual' | 'excel' | 'template') => {
+    console.log('DataSourceSelector: Changing data source to:', value);
     onUpdate({ dataSource: value });
     onValidationChange(true);
   };
 
   React.useEffect(() => {
-    onValidationChange(!!wizardData.dataSource);
+    const isValid = !!wizardData.dataSource;
+    console.log('DataSourceSelector: Validation check:', { dataSource: wizardData.dataSource, isValid });
+    onValidationChange(isValid);
   }, [wizardData.dataSource, onValidationChange]);
 
   return (
@@ -37,7 +40,7 @@ const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
       </div>
 
       <RadioGroup 
-        value={wizardData.dataSource} 
+        value={wizardData.dataSource || ''} 
         onValueChange={handleDataSourceChange}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
@@ -112,7 +115,7 @@ const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
             }`}>
               <CardHeader className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Zap className="w-6 h-6 text-purple-600" />
+                  <Target className="w-6 h-6 text-purple-600" />
                 </div>
                 <CardTitle className="text-lg">Quick Templates</CardTitle>
               </CardHeader>

@@ -24,16 +24,24 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   const [steps, setSteps] = useState(WIZARD_STEPS);
   const [wizardData, setWizardData] = useState<WizardData>({
     step: 0,
-    dataSource: 'manual',
+    dataSource: '' as any, // Initialize as empty to force selection
     selectedIndustrySegment: '',
     isValid: false
   });
 
+  console.log('ExcelUploadWizard: Current wizard data:', wizardData);
+
   const updateWizardData = (updates: Partial<WizardData>) => {
-    setWizardData(prev => ({ ...prev, ...updates }));
+    console.log('ExcelUploadWizard: Updating wizard data with:', updates);
+    setWizardData(prev => {
+      const newData = { ...prev, ...updates };
+      console.log('ExcelUploadWizard: New wizard data:', newData);
+      return newData;
+    });
   };
 
   const markStepCompleted = (stepIndex: number, isValid: boolean) => {
+    console.log('ExcelUploadWizard: Marking step', stepIndex, 'as', isValid ? 'valid' : 'invalid');
     setSteps(prev => prev.map((step, index) => 
       index === stepIndex 
         ? { ...step, isValid, isCompleted: isValid }
@@ -42,11 +50,14 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   };
 
   const canProceed = () => {
-    return steps[currentStep]?.isValid || false;
+    const canMove = steps[currentStep]?.isValid || false;
+    console.log('ExcelUploadWizard: Can proceed?', canMove, 'for step', currentStep);
+    return canMove;
   };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1 && canProceed()) {
+      console.log('ExcelUploadWizard: Moving to next step from', currentStep, 'to', currentStep + 1);
       setCurrentStep(prev => prev + 1);
       updateWizardData({ step: currentStep + 1 });
     }
@@ -54,6 +65,7 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
 
   const handlePrevious = () => {
     if (currentStep > 0) {
+      console.log('ExcelUploadWizard: Moving to previous step from', currentStep, 'to', currentStep - 1);
       setCurrentStep(prev => prev - 1);
       updateWizardData({ step: currentStep - 1 });
     }

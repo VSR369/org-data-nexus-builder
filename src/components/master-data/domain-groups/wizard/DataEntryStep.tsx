@@ -16,9 +16,12 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
   onUpdate,
   onValidationChange
 }) => {
+  console.log('DataEntryStep: Rendering with dataSource:', wizardData.dataSource);
+
   const renderDataEntryComponent = () => {
     switch (wizardData.dataSource) {
       case 'excel':
+        console.log('DataEntryStep: Rendering ExcelUploader');
         return (
           <ExcelUploader
             wizardData={wizardData}
@@ -27,6 +30,7 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
           />
         );
       case 'manual':
+        console.log('DataEntryStep: Rendering ManualDataEntry');
         return (
           <ManualDataEntry
             wizardData={wizardData}
@@ -35,6 +39,7 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
           />
         );
       case 'template':
+        console.log('DataEntryStep: Rendering TemplateSelector');
         return (
           <TemplateSelector
             wizardData={wizardData}
@@ -43,7 +48,14 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
           />
         );
       default:
-        return null;
+        console.log('DataEntryStep: No valid dataSource, showing fallback');
+        return (
+          <div className="text-center p-8">
+            <p className="text-muted-foreground">
+              Please select a data source method in the previous step.
+            </p>
+          </div>
+        );
     }
   };
 
@@ -54,11 +66,13 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
           {wizardData.dataSource === 'excel' && 'Upload Excel File'}
           {wizardData.dataSource === 'manual' && 'Manual Data Entry'}
           {wizardData.dataSource === 'template' && 'Select Template'}
+          {!wizardData.dataSource && 'Data Entry'}
         </h2>
         <p className="text-muted-foreground">
           {wizardData.dataSource === 'excel' && 'Upload your Excel file with domain group hierarchy'}
           {wizardData.dataSource === 'manual' && 'Add categories and sub-categories manually'}
           {wizardData.dataSource === 'template' && 'Choose from pre-built industry templates'}
+          {!wizardData.dataSource && 'Configure your data entry method first'}
         </p>
       </div>
 
