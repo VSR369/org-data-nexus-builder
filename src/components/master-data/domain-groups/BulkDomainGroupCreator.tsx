@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { checkLifeSciencesExists } from './lifeSciencesExistenceChecker';
 import HierarchyExistsMessage from './HierarchyExistsMessage';
-import DomainGroupForm from './DomainGroupForm';
 
 interface BulkDomainGroupCreatorProps {
   data: DomainGroupsData;
@@ -19,8 +18,8 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
 
   // Check if any domain groups exist
   useEffect(() => {
-    console.log('🔄 Checking for existing hierarchies...');
-    console.log('📊 Current data state:', {
+    console.log('🔄 BulkDomainGroupCreator: Checking for existing hierarchies...');
+    console.log('📊 BulkDomainGroupCreator: Current data state:', {
       domainGroups: data.domainGroups?.length || 0,
       categories: data.categories?.length || 0,
       subCategories: data.subCategories?.length || 0
@@ -29,32 +28,28 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
     const exists = data.domainGroups && data.domainGroups.length > 0;
     setHierarchyExists(exists);
     
-    console.log('📊 Hierarchy existence result:', exists);
+    console.log('📊 BulkDomainGroupCreator: Hierarchy existence result:', exists);
   }, [data, forceRefresh]);
 
   const handleDataUpdate = (newData: DomainGroupsData) => {
-    console.log('🔄 Data update received');
+    console.log('🔄 BulkDomainGroupCreator: Data update received');
     onDataUpdate(newData);
     setForceRefresh(prev => prev + 1);
   };
 
-  console.log('🎯 Render decision:', {
+  console.log('🎯 BulkDomainGroupCreator: Render decision:', {
     hierarchyExists,
     dataHasDomainGroups: data.domainGroups?.length > 0
   });
 
-  // Show exists message if hierarchy exists
+  // Only show the hierarchy exists message if hierarchy exists
+  // Don't render anything if no hierarchy exists - let DomainGroupsConfig handle the creation form
   if (hierarchyExists) {
     return <HierarchyExistsMessage data={data} />;
   }
 
-  // Show simple domain group creation form
-  return (
-    <DomainGroupForm 
-      data={data} 
-      onDataUpdate={handleDataUpdate}
-    />
-  );
+  // Return null when no hierarchies exist - DomainGroupsConfig will handle showing the creation form
+  return null;
 };
 
 export default BulkDomainGroupCreator;

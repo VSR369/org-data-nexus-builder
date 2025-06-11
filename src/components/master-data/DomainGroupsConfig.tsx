@@ -260,14 +260,13 @@ const DomainGroupsConfig: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
                 <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
+                <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
               </CardContent>
             </Card>
           ) : (
             <>
               <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
-              <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
             </>
           )}
         </div>
