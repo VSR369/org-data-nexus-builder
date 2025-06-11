@@ -75,6 +75,19 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
           )}
         </div>
         <div className="space-y-2">
+          <Label htmlFor="user-id">User ID *</Label>
+          <Input 
+            id="user-id" 
+            placeholder="Enter user ID"
+            value={formData.userId}
+            onChange={(e) => updateFormData('userId', e.target.value)}
+            className={invalidFields.has('userId') ? 'border-destructive' : ''}
+          />
+          {invalidFields.has('userId') && (
+            <p className="text-sm text-destructive">User ID is required</p>
+          )}
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="password">Password *</Label>
           <Input 
             id="password" 
