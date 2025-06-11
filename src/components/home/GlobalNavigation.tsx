@@ -154,6 +154,7 @@ export const GlobalNavigation = () => {
                 className="pl-10 bg-gray-50"
               />
             </div>
+            {/* Always show navigation items in mobile menu */}
             {navigationItems.map((item) => (
               <Link
                 key={item.label}
@@ -164,21 +165,26 @@ export const GlobalNavigation = () => {
                 {item.label}
               </Link>
             ))}
-            <div className="px-4 py-2">
-              <p className="text-sm font-medium text-gray-900 mb-2">Sign In As:</p>
-              {signInRoles.map((role) => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    setIsLoggedIn(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
+            
+            {/* Show sign-in options only if not logged in */}
+            {!isLoggedIn && (
+              <div className="px-4 py-2">
+                <p className="text-sm font-medium text-gray-900 mb-2">Sign In As:</p>
+                {signInRoles.map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => {
+                      setIsLoggedIn(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            )}
+            
             <Link
               to="/master-data"
               className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium"
