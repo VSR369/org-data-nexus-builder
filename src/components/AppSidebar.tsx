@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -95,6 +96,11 @@ const systemMenuItems = [
     id: 'reward-types',
     title: 'Reward Types',
     icon: Gift,
+  },
+  {
+    id: 'seeker-membership-fee',
+    title: 'Seeker Membership Fee',
+    icon: Users,
   },
   {
     id: 'pricing',
