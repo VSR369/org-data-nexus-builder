@@ -17,7 +17,7 @@ const SignUp = () => {
       navigate('/seeker-registration');
     } else if (selectedRole === 'contributor') {
       // Navigate to contributor enrollment flow
-      console.log('Navigating to Contributor registration');
+      navigate('/contributor-enrollment');
     }
   };
 

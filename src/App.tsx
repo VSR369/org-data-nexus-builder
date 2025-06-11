@@ -13,6 +13,7 @@ import SeekerMembership from "./pages/SeekerMembership";
 import SeekerRegistration from "./pages/SeekerRegistration";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
 import MasterDataPortal from "./pages/MasterDataPortal";
+import ContributorEnrollment from "./pages/ContributorEnrollment";
 import Challenges from "./pages/Challenges";
 import Solutions from "./pages/Solutions";
 import Events from "./pages/Events";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/seeker-membership" element={<SeekerMembership />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/seeker-registration" element={<SeekerRegistration />} />
+          <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
           <Route path="/register" element={<OrganizationRegistration />} />
           <Route path="/master-data" element={<MasterDataPortal />} />
           <Route path="/challenges" element={<Challenges />} />
