@@ -14,9 +14,9 @@ const SignIn = () => {
   const handleContinue = () => {
     if (selectedRole === 'seeker') {
       navigate('/seeker-login');
-    } else if (selectedRole === 'provider') {
-      // Navigate to provider login (to be implemented)
-      console.log('Navigating to Solution Provider login');
+    } else if (selectedRole === 'contributor') {
+      // Navigate to contributor login (to be implemented)
+      console.log('Navigating to Contributor login');
     }
   };
 
@@ -66,22 +66,22 @@ const SignIn = () => {
                 </div>
               </div>
 
-              {/* Solution Provider Option */}
+              {/* Contributor Option */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                selectedRole === 'provider' 
+                selectedRole === 'contributor' 
                   ? 'border-purple-500 bg-purple-50' 
                   : 'border-gray-200 hover:border-gray-300'
               }`}>
                 <div className="flex items-start space-x-3">
-                  <RadioGroupItem value="provider" id="provider" className="mt-1" />
+                  <RadioGroupItem value="contributor" id="contributor" className="mt-1" />
                   <div className="flex-1">
-                    <Label htmlFor="provider" className="cursor-pointer">
+                    <Label htmlFor="contributor" className="cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         <Users className="h-5 w-5 text-purple-600" />
-                        <span className="font-semibold text-gray-900">Solution Provider</span>
+                        <span className="font-semibold text-gray-900">Contributor</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Sign in to offer solutions and showcase your expertise
+                        Sign in as a contributor. A contributor could be a solution provider or solution assessor who offers expertise and evaluates solutions.
                       </p>
                     </Label>
                   </div>
