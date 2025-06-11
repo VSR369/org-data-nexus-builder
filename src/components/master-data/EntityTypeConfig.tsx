@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,25 +34,30 @@ const EntityTypeConfig = () => {
   // Load data on component mount
   useEffect(() => {
     const loadedTypes = dataManager.loadData();
+    console.log('🔍 EntityTypeConfig - Loaded data:', loadedTypes);
     setEntityTypes(loadedTypes);
   }, []);
 
-  // Save data whenever entityTypes change
-  useEffect(() => {
-    if (entityTypes.length > 0) {
-      dataManager.saveData(entityTypes);
-    }
-  }, [entityTypes]);
-
   const handleAddEntityType = () => {
     if (newEntityType.trim()) {
-      setEntityTypes([...entityTypes, newEntityType.trim()]);
+      const updatedEntityTypes = [...entityTypes, newEntityType.trim()];
+      console.log('➕ EntityTypeConfig - Adding new type:', newEntityType.trim());
+      console.log('📝 EntityTypeConfig - Updated array:', updatedEntityTypes);
+      
+      // Save data immediately
+      dataManager.saveData(updatedEntityTypes);
+      
+      // Update state
+      setEntityTypes(updatedEntityTypes);
       setNewEntityType('');
       setIsAdding(false);
+      
       toast({
         title: "Success",
         description: "Entity type added successfully",
       });
+      
+      console.log('✅ EntityTypeConfig - Entity type added and saved');
     }
   };
 
@@ -64,23 +70,45 @@ const EntityTypeConfig = () => {
     if (editingValue.trim() && editingIndex !== null) {
       const updatedEntityTypes = [...entityTypes];
       updatedEntityTypes[editingIndex] = editingValue.trim();
+      
+      console.log('✏️ EntityTypeConfig - Editing type at index:', editingIndex);
+      console.log('📝 EntityTypeConfig - Updated array:', updatedEntityTypes);
+      
+      // Save data immediately
+      dataManager.saveData(updatedEntityTypes);
+      
+      // Update state
       setEntityTypes(updatedEntityTypes);
       setEditingIndex(null);
       setEditingValue('');
+      
       toast({
         title: "Success",
         description: "Entity type updated successfully",
       });
+      
+      console.log('✅ EntityTypeConfig - Entity type edited and saved');
     }
   };
 
   const handleDeleteEntityType = (index: number) => {
     const updatedEntityTypes = entityTypes.filter((_, i) => i !== index);
+    
+    console.log('🗑️ EntityTypeConfig - Deleting type at index:', index);
+    console.log('📝 EntityTypeConfig - Updated array:', updatedEntityTypes);
+    
+    // Save data immediately
+    dataManager.saveData(updatedEntityTypes);
+    
+    // Update state
     setEntityTypes(updatedEntityTypes);
+    
     toast({
       title: "Success",
       description: "Entity type deleted successfully",
     });
+    
+    console.log('✅ EntityTypeConfig - Entity type deleted and saved');
   };
 
   const handleCancelEdit = () => {
@@ -95,15 +123,20 @@ const EntityTypeConfig = () => {
 
   const handleResetToDefault = () => {
     const defaultData = dataManager.resetToDefault();
+    console.log('🔄 EntityTypeConfig - Reset to default:', defaultData);
+    
     setEntityTypes(defaultData);
     setEditingIndex(null);
     setEditingValue('');
     setIsAdding(false);
     setNewEntityType('');
+    
     toast({
       title: "Success",
       description: "Entity types reset to default values",
     });
+    
+    console.log('✅ EntityTypeConfig - Reset completed');
   };
 
   return (
