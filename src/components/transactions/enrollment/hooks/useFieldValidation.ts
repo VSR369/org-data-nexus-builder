@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { FormData } from '../types';
 
@@ -7,7 +6,7 @@ export const useFieldValidation = () => {
 
   const getFieldDisplayName = (field: string): string => {
     const fieldNameMap: { [key: string]: string } = {
-      'providerRoles': 'Provider Role',
+      'providerRoles': 'Contributor Role',
       'providerType': 'Representation (Individual/Organization)',
       'industrySegment': 'Industry Segment',
       'orgName': 'Organization Name',
@@ -28,7 +27,8 @@ export const useFieldValidation = () => {
       'bankAccount': 'Bank Account Number',
       'bankName': 'Bank Name',
       'branch': 'Branch',
-      'ifsc': 'IFSC Code'
+      'ifsc': 'IFSC Code',
+      'userId': 'User ID'
     };
     
     return fieldNameMap[field] || field;
