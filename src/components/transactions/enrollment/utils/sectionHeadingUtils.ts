@@ -6,12 +6,12 @@ export const getSectionHeading = (providerRoles?: string[]) => {
   const hasBoth = currentRoles.includes('both') || (hasProvider && hasAssessor);
 
   if (hasBoth) {
-    return "Provider & Assessor Both Roles Information";
+    return "Solution Provider & Assessor Details";
   } else if (hasAssessor) {
-    return "Assessor Information";
+    return "Assessor Details";
   } else if (hasProvider) {
-    return "Provider Information";
+    return "Solution Provider Details";
   } else {
-    return "Provider Information"; // Default heading
+    return "Contributor Details"; // Default heading when no role is selected
   }
 };

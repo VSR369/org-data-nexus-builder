@@ -1,25 +1,29 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FormData } from './types';
+import { getSectionHeading } from './utils/sectionHeadingUtils';
 
 interface ProviderDetailsSectionProps {
   formData: FormData;
   updateFormData: (field: string, value: string) => void;
   invalidFields?: Set<string>;
+  providerRoles?: string[];
 }
 
 const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
   formData,
   updateFormData,
-  invalidFields = new Set()
+  invalidFields = new Set(),
+  providerRoles = []
 }) => {
+  const sectionHeading = getSectionHeading(providerRoles);
+
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Contributor Details</h3>
+      <h3 className="text-lg font-semibold">{sectionHeading}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first-name">First Name *</Label>

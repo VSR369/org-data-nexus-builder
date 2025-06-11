@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -122,10 +121,10 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Provider Role Selection */}
+      {/* Contributor Role Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Provider Role</CardTitle>
+          <CardTitle className="text-base">Contributor Role</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -173,7 +172,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
           </div>
           
           {invalidFields.has('providerRoles') && (
-            <p className="text-sm text-destructive mt-2">Please select at least one provider role</p>
+            <p className="text-sm text-destructive mt-2">Please select at least one contributor role</p>
           )}
         </CardContent>
       </Card>
@@ -256,6 +255,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
         formData={formData}
         updateFormData={onFormDataUpdate}
         invalidFields={invalidFields}
+        providerRoles={formData.providerRoles}
       />
 
       {providerType === 'organization' && (
