@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Edit, Trash2, Plus, Users, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface MembershipFeeEntry {
   id: string;
+  country: string;
   entityType: string;
   quarterlyAmount: number;
   quarterlyCurrency: string;
@@ -23,11 +26,19 @@ interface MembershipFeeEntry {
   createdAt: string;
 }
 
+interface Currency {
+  id: string;
+  code: string;
+  name: string;
+  symbol: string;
+  country: string;
+}
+
 // Default data structure
 const defaultMembershipFees: MembershipFeeEntry[] = [];
 
 // Data managers for currencies and entity types
-const currencyDataManager = new DataManager<any[]>({
+const currencyDataManager = new DataManager<Currency[]>({
   key: 'master_data_currencies',
   defaultData: [],
   version: 1
@@ -49,7 +60,8 @@ GlobalCacheManager.registerKey('master_data_seeker_membership_fees');
 
 const SeekerMembershipFeeConfig = () => {
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
-  const [currencies, setCurrencies] = useState<any[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [currentEntry, setCurrentEntry] = useState<Partial<MembershipFeeEntry>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -59,10 +71,16 @@ const SeekerMembershipFeeConfig = () => {
   useEffect(() => {
     const loadedFees = membershipFeeDataManager.loadData();
     const loadedCurrencies = currencyDataManager.loadData();
+    const loadedCountries = countriesDataManager.loadData();
     const loadedEntityTypes = entityTypeDataManager.loadData();
+    
+    console.log('🔍 SeekerMembershipFeeConfig - Loaded countries from master data:', loadedCountries);
+    console.log('🔍 SeekerMembershipFeeConfig - Loaded currencies from master data:', loadedCurrencies);
+    console.log('🔍 SeekerMembershipFeeConfig - Loaded entity types from master data:', loadedEntityTypes);
     
     setMembershipFees(loadedFees);
     setCurrencies(loadedCurrencies);
+    setCountries(loadedCountries);
     setEntityTypes(loadedEntityTypes);
   }, []);
 
@@ -73,10 +91,51 @@ const SeekerMembershipFeeConfig = () => {
     }
   }, [membershipFees]);
 
+  // Auto-populate currency when country is selected
+  const handleCountryChange = (selectedCountry: string) => {
+    console.log('🌍 Country selected:', selectedCountry);
+    
+    // Find the currency for the selected country from master data
+    const countryCurrency = currencies.find(currency => 
+      currency.country.toLowerCase() === selectedCountry.toLowerCase()
+    );
+    
+    console.log('💰 Found currency for country:', countryCurrency);
+    
+    if (countryCurrency) {
+      setCurrentEntry(prev => ({
+        ...prev,
+        country: selectedCountry,
+        quarterlyCurrency: countryCurrency.code,
+        halfYearlyCurrency: countryCurrency.code,
+        annualCurrency: countryCurrency.code
+      }));
+      
+      toast({
+        title: "Currency Auto-Selected",
+        description: `${countryCurrency.code} (${countryCurrency.name}) has been auto-selected for ${selectedCountry}`,
+      });
+    } else {
+      setCurrentEntry(prev => ({
+        ...prev,
+        country: selectedCountry,
+        quarterlyCurrency: '',
+        halfYearlyCurrency: '',
+        annualCurrency: ''
+      }));
+      
+      toast({
+        title: "No Currency Found",
+        description: `No currency mapping found for ${selectedCountry}. Please select currencies manually.`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentEntry.entityType || 
+    if (!currentEntry.country || !currentEntry.entityType || 
         !currentEntry.quarterlyAmount || !currentEntry.quarterlyCurrency ||
         !currentEntry.halfYearlyAmount || !currentEntry.halfYearlyCurrency ||
         !currentEntry.annualAmount || !currentEntry.annualCurrency) {
@@ -88,15 +147,17 @@ const SeekerMembershipFeeConfig = () => {
       return;
     }
 
-    // Check if entry already exists for this entity type
+    // Check if entry already exists for this country and entity type combination
     const existingEntry = membershipFees.find(fee => 
-      fee.entityType === currentEntry.entityType && fee.id !== currentEntry.id
+      fee.country === currentEntry.country && 
+      fee.entityType === currentEntry.entityType && 
+      fee.id !== currentEntry.id
     );
 
     if (existingEntry && !isEditing) {
       toast({
         title: "Error",
-        description: "Membership fee configuration already exists for this entity type.",
+        description: "Membership fee configuration already exists for this country and entity type combination.",
         variant: "destructive",
       });
       return;
@@ -181,21 +242,40 @@ const SeekerMembershipFeeConfig = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="entityType">Entity Type *</Label>
-              <Select
-                value={currentEntry.entityType}
-                onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, entityType: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select entity type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {entityTypes.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="country">Country *</Label>
+                <Select
+                  value={currentEntry.country}
+                  onValueChange={handleCountryChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="entityType">Entity Type *</Label>
+                <Select
+                  value={currentEntry.entityType}
+                  onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, entityType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select entity type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {entityTypes.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -333,6 +413,7 @@ const SeekerMembershipFeeConfig = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Country</TableHead>
                     <TableHead>Entity Type</TableHead>
                     <TableHead>Quarterly</TableHead>
                     <TableHead>Half Yearly</TableHead>
@@ -345,7 +426,10 @@ const SeekerMembershipFeeConfig = () => {
                   {membershipFees.map((fee) => (
                     <TableRow key={fee.id}>
                       <TableCell>
-                        <Badge variant="outline">{fee.entityType}</Badge>
+                        <Badge variant="outline">{fee.country}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{fee.entityType}</Badge>
                       </TableCell>
                       <TableCell>{formatCurrency(fee.quarterlyAmount, fee.quarterlyCurrency)}</TableCell>
                       <TableCell>{formatCurrency(fee.halfYearlyAmount, fee.halfYearlyCurrency)}</TableCell>
@@ -374,3 +458,4 @@ const SeekerMembershipFeeConfig = () => {
 };
 
 export default SeekerMembershipFeeConfig;
+
