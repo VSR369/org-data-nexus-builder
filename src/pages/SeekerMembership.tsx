@@ -55,11 +55,30 @@ const SeekerMembership = () => {
 
   // Load master data
   useEffect(() => {
+    console.log('🔄 SeekerMembership - Loading master data...');
+    
     const loadedEntityTypes = entityTypeDataManager.loadData();
     const loadedMembershipFees = membershipFeeDataManager.loadData();
     
-    console.log('🔍 SeekerMembership - Loaded entity types:', loadedEntityTypes);
-    console.log('🔍 SeekerMembership - Loaded membership fees:', loadedMembershipFees);
+    console.log('🔍 SeekerMembership - Raw loaded entity types:', loadedEntityTypes);
+    console.log('🔍 SeekerMembership - Raw loaded membership fees:', loadedMembershipFees);
+    console.log('🔍 SeekerMembership - Membership fees length:', loadedMembershipFees?.length || 0);
+    
+    // Check if we have any membership fee data
+    if (loadedMembershipFees && loadedMembershipFees.length > 0) {
+      console.log('✅ Found membership fee configurations:', loadedMembershipFees);
+      loadedMembershipFees.forEach((fee, index) => {
+        console.log(`📋 Fee ${index + 1}:`, {
+          entityType: fee.entityType,
+          country: fee.country,
+          quarterly: `${fee.quarterlyCurrency} ${fee.quarterlyAmount}`,
+          halfYearly: `${fee.halfYearlyCurrency} ${fee.halfYearlyAmount}`,
+          annual: `${fee.annualCurrency} ${fee.annualAmount}`
+        });
+      });
+    } else {
+      console.log('❌ No membership fee configurations found');
+    }
     
     setEntityTypes(loadedEntityTypes);
     setMembershipFees(loadedMembershipFees);
@@ -67,20 +86,33 @@ const SeekerMembership = () => {
     // Auto-select first entity type if available
     if (loadedEntityTypes.length > 0) {
       setSelectedEntityType(loadedEntityTypes[0]);
+      console.log('🎯 Auto-selected entity type:', loadedEntityTypes[0]);
     }
   }, []);
 
   // Get membership fee options for selected entity type
   const getMembershipOptions = () => {
-    if (!selectedEntityType) return null;
+    console.log('🔍 Getting membership options for entity type:', selectedEntityType);
+    console.log('🔍 Available membership fees:', membershipFees);
+    
+    if (!selectedEntityType) {
+      console.log('❌ No entity type selected');
+      return null;
+    }
     
     // Find membership fee configuration for the selected entity type
-    const feeConfig = membershipFees.find(fee => fee.entityType === selectedEntityType);
+    const feeConfig = membershipFees.find(fee => {
+      console.log(`🔍 Checking fee config: ${fee.entityType} === ${selectedEntityType}?`, fee.entityType === selectedEntityType);
+      return fee.entityType === selectedEntityType;
+    });
     
     if (!feeConfig) {
       console.log('❌ No membership fee configuration found for entity type:', selectedEntityType);
+      console.log('📋 Available entity types in fees:', membershipFees.map(f => f.entityType));
       return null;
     }
+    
+    console.log('✅ Found fee configuration:', feeConfig);
     
     return {
       quarterly: {
@@ -206,6 +238,25 @@ const SeekerMembership = () => {
                 </div>
               </div>
 
+              {/* Debug Information */}
+              <div className="space-y-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-blue-800">Debug Information:</h4>
+                <p className="text-sm text-blue-700">Entity Types Available: {entityTypes.length} ({entityTypes.join(', ')})</p>
+                <p className="text-sm text-blue-700">Membership Fees Loaded: {membershipFees.length}</p>
+                {membershipFees.length > 0 && (
+                  <div className="text-sm text-blue-700">
+                    <p>Available Fee Configurations:</p>
+                    <ul className="list-disc list-inside ml-4">
+                      {membershipFees.map(fee => (
+                        <li key={fee.id}>
+                          {fee.country} - {fee.entityType}: Q{fee.quarterlyAmount} {fee.quarterlyCurrency}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
               {/* Entity Type Selection */}
               <div className="space-y-4">
                 <Label className="text-lg font-semibold">Entity Type *</Label>
@@ -270,6 +321,23 @@ const SeekerMembership = () => {
                     ⚠️ No membership fee configuration found for "{selectedEntityType}". 
                     Please contact administrator to set up pricing for this entity type.
                   </p>
+                  <p className="text-sm text-yellow-700 mt-2">
+                    You may need to configure membership fees in the Master Data Portal first.
+                  </p>
+                </div>
+              )}
+
+              {membershipFees.length === 0 && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800">
+                    ❌ No membership fee configurations found in master data. 
+                    Please set up membership fees in the Master Data Portal before proceeding.
+                  </p>
+                  <Link to="/master-data" className="inline-block mt-2">
+                    <Button variant="outline" size="sm">
+                      Go to Master Data Portal
+                    </Button>
+                  </Link>
                 </div>
               )}
 
@@ -278,7 +346,7 @@ const SeekerMembership = () => {
                 <Button 
                   type="submit" 
                   className="flex-1"
-                  disabled={!selectedEntityType || !selectedPlan || isLoading}
+                  disabled={!selectedEntityType || !selectedPlan || isLoading || membershipFees.length === 0}
                 >
                   {isLoading ? 'Processing...' : 'Submit Registration'}
                 </Button>
