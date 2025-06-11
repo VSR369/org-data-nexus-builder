@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Building, Upload, Globe, Users, Phone, Mail } from 'lucide-react';
+import { ArrowLeft, Building, Upload, Globe, Users, Phone, Mail, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { countriesDataManager } from '@/utils/sharedDataManagers';
@@ -40,6 +40,8 @@ interface FormData {
   email: string;
   countryCode: string;
   phoneNumber: string;
+  password: string;
+  confirmPassword: string;
 }
 
 // Data manager for entity types
@@ -64,7 +66,9 @@ const SeekerRegistration = () => {
     contactPersonName: '',
     email: '',
     countryCode: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    password: '',
+    confirmPassword: ''
   });
 
   const [countries, setCountries] = useState<Country[]>([]);
@@ -123,6 +127,8 @@ const SeekerRegistration = () => {
     if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.countryCode) newErrors.countryCode = 'Country code is required';
     if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (!formData.password) newErrors.password = 'Password is required';
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm password is required';
 
     // Email validation
     if (formData.email && !validateEmail(formData.email)) {
@@ -137,6 +143,16 @@ const SeekerRegistration = () => {
     // Phone number validation
     if (formData.phoneNumber && !/^\d+$/.test(formData.phoneNumber)) {
       newErrors.phoneNumber = 'Phone number must contain only digits';
+    }
+
+    // Password validation
+    if (formData.password && formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     setErrors(newErrors);
@@ -458,6 +474,38 @@ const SeekerRegistration = () => {
                       />
                     </div>
                     {errors.phoneNumber && <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password">Password *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        className={`pl-10 ${errors.password ? 'border-red-500' : ''}`}
+                        placeholder="Enter password"
+                      />
+                    </div>
+                    {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        className={`pl-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                        placeholder="Confirm password"
+                      />
+                    </div>
+                    {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                   </div>
                 </div>
               </div>
