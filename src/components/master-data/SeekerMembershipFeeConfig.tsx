@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,16 +89,64 @@ const SeekerMembershipFeeConfig = () => {
     }
   }, [membershipFees]);
 
+  // Helper function to find currency by country with better matching
+  const findCurrencyByCountry = (selectedCountry: string): Currency | undefined => {
+    console.log('🔍 Looking for currency for country:', selectedCountry);
+    console.log('🔍 Available currencies:', currencies);
+    
+    // First try exact match
+    let currency = currencies.find(curr => 
+      curr.country.toLowerCase() === selectedCountry.toLowerCase()
+    );
+    
+    if (currency) {
+      console.log('✅ Found exact match:', currency);
+      return currency;
+    }
+    
+    // Try partial matches for common variations
+    const countryMappings: { [key: string]: string } = {
+      'United States': 'United States',
+      'United States of America': 'United States', 
+      'USA': 'United States',
+      'US': 'United States',
+      'UK': 'United Kingdom',
+      'Britain': 'United Kingdom',
+      'Great Britain': 'United Kingdom'
+    };
+    
+    const mappedCountry = countryMappings[selectedCountry];
+    if (mappedCountry) {
+      currency = currencies.find(curr => 
+        curr.country.toLowerCase() === mappedCountry.toLowerCase()
+      );
+      if (currency) {
+        console.log('✅ Found mapped match:', currency);
+        return currency;
+      }
+    }
+    
+    // Try contains match (for cases like "United States" vs "United States of America")
+    currency = currencies.find(curr => 
+      curr.country.toLowerCase().includes(selectedCountry.toLowerCase()) ||
+      selectedCountry.toLowerCase().includes(curr.country.toLowerCase())
+    );
+    
+    if (currency) {
+      console.log('✅ Found partial match:', currency);
+      return currency;
+    }
+    
+    console.log('❌ No currency found for country:', selectedCountry);
+    return undefined;
+  };
+
   // Auto-populate currency when country is selected
   const handleCountryChange = (selectedCountry: string) => {
     console.log('🌍 Country selected:', selectedCountry);
     
     // Find the currency for the selected country from master data
-    const countryCurrency = currencies.find(currency => 
-      currency.country.toLowerCase() === selectedCountry.toLowerCase()
-    );
-    
-    console.log('💰 Found currency for country:', countryCurrency);
+    const countryCurrency = findCurrencyByCountry(selectedCountry);
     
     if (countryCurrency) {
       setCurrentEntry(prev => ({
@@ -458,4 +504,3 @@ const SeekerMembershipFeeConfig = () => {
 };
 
 export default SeekerMembershipFeeConfig;
-
