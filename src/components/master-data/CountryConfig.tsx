@@ -15,12 +15,6 @@ interface Country {
   region?: string;
 }
 
-const defaultCountries: Country[] = [
-  { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-  { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-  { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' },
-];
-
 const CountryConfig = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -74,41 +68,33 @@ const CountryConfig = () => {
     return regionMap[countryName] || 'Unknown';
   };
 
-  // Load and convert data from shared manager
+  // Load data from shared manager - now expects Country[] directly
   useEffect(() => {
     try {
       const sharedCountries = countriesDataManager.loadData();
-      console.log('Loaded shared countries:', sharedCountries);
+      console.log('🌍 CountryConfig - Loaded countries from shared manager:', sharedCountries);
       
-      // Since countriesDataManager always returns string[], convert to Country objects
+      // The shared manager now returns Country[] directly
       if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
-        // Convert string array to Country objects
-        const convertedCountries = sharedCountries.map((countryName, index) => ({
-          id: (index + 1).toString(),
-          name: countryName,
-          code: getCountryCode(countryName),
-          region: getCountryRegion(countryName)
-        }));
-        setCountries(convertedCountries);
+        setCountries(sharedCountries);
       } else {
-        // Use default countries if no data
-        setCountries(defaultCountries);
-        // Save default countries to shared manager as string array
-        const countryNames = defaultCountries.map(c => c.name);
-        countriesDataManager.saveData(countryNames);
+        // This should not happen with the updated data manager, but keeping as safety
+        console.log('⚠️ No countries data, using shared manager defaults');
+        const defaultData = countriesDataManager.resetToDefault();
+        setCountries(defaultData);
       }
     } catch (error) {
-      console.error('Error loading countries:', error);
-      setCountries(defaultCountries);
+      console.error('❌ Error loading countries:', error);
+      const defaultData = countriesDataManager.resetToDefault();
+      setCountries(defaultData);
     }
   }, []);
 
   // Save countries to shared manager whenever countries change
   useEffect(() => {
     if (countries.length > 0) {
-      const countryNames = countries.map(country => country.name);
-      countriesDataManager.saveData(countryNames);
-      console.log('Saved countries to shared manager:', countryNames);
+      countriesDataManager.saveData(countries);
+      console.log('💾 CountryConfig - Saved countries to shared manager:', countries);
     }
   }, [countries]);
 
@@ -167,9 +153,8 @@ const CountryConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    setCountries(defaultCountries);
-    const countryNames = defaultCountries.map(c => c.name);
-    countriesDataManager.saveData(countryNames);
+    const defaultData = countriesDataManager.resetToDefault();
+    setCountries(defaultData);
     toast({
       title: "Success",
       description: "Countries reset to default values.",

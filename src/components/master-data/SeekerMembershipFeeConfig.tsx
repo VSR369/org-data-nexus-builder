@@ -32,6 +32,13 @@ interface Currency {
   country: string;
 }
 
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+  region?: string;
+}
+
 // Default data structure
 const defaultMembershipFees: MembershipFeeEntry[] = [];
 
@@ -59,7 +66,7 @@ GlobalCacheManager.registerKey('master_data_seeker_membership_fees');
 const SeekerMembershipFeeConfig = () => {
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [countries, setCountries] = useState<string[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [currentEntry, setCurrentEntry] = useState<Partial<MembershipFeeEntry>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -69,7 +76,7 @@ const SeekerMembershipFeeConfig = () => {
   useEffect(() => {
     const loadedFees = membershipFeeDataManager.loadData();
     const loadedCurrencies = currencyDataManager.loadData();
-    const loadedCountries = countriesDataManager.loadData();
+    const loadedCountries = countriesDataManager.loadData(); // Now returns Country[]
     const loadedEntityTypes = entityTypeDataManager.loadData();
     
     console.log('🔍 SeekerMembershipFeeConfig - Loaded countries from master data:', loadedCountries);
@@ -78,7 +85,7 @@ const SeekerMembershipFeeConfig = () => {
     
     setMembershipFees(loadedFees);
     setCurrencies(loadedCurrencies);
-    setCountries(loadedCountries);
+    setCountries(loadedCountries); // Now using Country[] directly
     setEntityTypes(loadedEntityTypes);
   }, []);
 
@@ -300,7 +307,9 @@ const SeekerMembershipFeeConfig = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {countries.map((country) => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                      <SelectItem key={country.id} value={country.name}>
+                        {country.name} ({country.code})
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
