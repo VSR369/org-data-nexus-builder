@@ -3,9 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Building2, FolderTree, Target } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Building2, FolderTree, Target, RefreshCw, ExternalLink } from 'lucide-react';
 import { DomainGroupsData } from '@/types/domainGroups';
+import { domainGroupsDataManager } from '../../master-data/domain-groups/domainGroupsDataManager';
 import RatingSlider from './components/RatingSlider';
+import { useToast } from "@/hooks/use-toast";
 
 interface CompetencyAssessmentTabProps {
   selectedIndustrySegment: string;
@@ -23,55 +26,57 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     categories: [],
     subCategories: []
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Load domain groups from master data with periodic refresh
+  // Enhanced data loading with better persistence detection
   useEffect(() => {
-    const loadDomainGroups = () => {
-      try {
-        const savedData = localStorage.getItem('master_data_domain_groups');
-        if (savedData) {
-          const data = JSON.parse(savedData);
-          console.log('CompetencyAssessmentTab - Loaded domain groups data:', data);
-          setDomainGroupsData(data);
-        } else {
-          console.log('CompetencyAssessmentTab - No domain groups found in master data');
-          setDomainGroupsData({
-            domainGroups: [],
-            categories: [],
-            subCategories: []
-          });
-        }
-      } catch (error) {
-        console.error('CompetencyAssessmentTab - Error loading domain groups:', error);
-        setDomainGroupsData({
-          domainGroups: [],
-          categories: [],
-          subCategories: []
-        });
-      }
-    };
-
-    // Load initially
-    loadDomainGroups();
-
-    // Set up periodic refresh to catch updates from master data
-    const interval = setInterval(loadDomainGroups, 2000);
-
-    // Also listen for storage events (when another tab updates the data)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'master_data_domain_groups') {
-        console.log('CompetencyAssessmentTab - Storage change detected, reloading domain groups');
-        loadDomainGroups();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    loadDomainGroupsData();
   }, []);
+
+  const loadDomainGroupsData = () => {
+    console.log('CompetencyAssessmentTab - Enhanced data loading...');
+    setIsLoading(true);
+    
+    try {
+      const data = domainGroupsDataManager.loadData();
+      console.log('CompetencyAssessmentTab - Enhanced loaded data:', data);
+      
+      // Validate data structure
+      const validData = {
+        domainGroups: Array.isArray(data.domainGroups) ? data.domainGroups : [],
+        categories: Array.isArray(data.categories) ? data.categories : [],
+        subCategories: Array.isArray(data.subCategories) ? data.subCategories : []
+      };
+      
+      setDomainGroupsData(validData);
+      
+      console.log('CompetencyAssessmentTab - Data loaded successfully:', {
+        domainGroups: validData.domainGroups.length,
+        categories: validData.categories.length,
+        subCategories: validData.subCategories.length
+      });
+      
+    } catch (error) {
+      console.error('CompetencyAssessmentTab - Error loading data:', error);
+      setDomainGroupsData({
+        domainGroups: [],
+        categories: [],
+        subCategories: []
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefreshData = () => {
+    console.log('CompetencyAssessmentTab - Manual refresh requested');
+    loadDomainGroupsData();
+    toast({
+      title: "Refreshed",
+      description: "Domain groups data refreshed from master data."
+    });
+  };
 
   // Filter domain groups by selected industry segment
   const relevantDomainGroups = domainGroupsData.domainGroups.filter(
@@ -140,20 +145,64 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     );
   }
 
-  if (hierarchicalData.length === 0) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <div className="flex flex-col items-center gap-4">
-            <FolderTree className="w-12 h-12 text-muted-foreground" />
-            <div>
-              <p className="text-muted-foreground font-medium">
-                No domain groups found for this industry segment
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Please configure domain groups in Master Data first.
-              </p>
+          <div className="flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            <span>Loading domain groups...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (hierarchicalData.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center space-y-4">
+            <div className="flex flex-col items-center gap-4">
+              <FolderTree className="w-12 h-12 text-muted-foreground" />
+              <div>
+                <p className="text-muted-foreground font-medium">
+                  No domain groups found for this industry segment
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Domain groups must be configured in Master Data first.
+                </p>
+              </div>
             </div>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button 
+                onClick={handleRefreshData}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh Data
+              </Button>
+              
+              <Button 
+                onClick={() => window.open('/master-data?section=domain-groups', '_blank')}
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Configure Domain Groups
+              </Button>
+            </div>
+            
+            <Card className="bg-blue-50 border-blue-200 max-w-md mx-auto">
+              <CardContent className="pt-4">
+                <p className="text-sm text-blue-700">
+                  <strong>Quick Setup:</strong> Go to Master Data → Domain Groups to create your 
+                  industry-specific competency hierarchy. Once created, the data will be available 
+                  here immediately.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
@@ -165,10 +214,23 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Competency Assessment
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Competency Assessment
+              </CardTitle>
+            </div>
+            <Button 
+              onClick={handleRefreshData}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">

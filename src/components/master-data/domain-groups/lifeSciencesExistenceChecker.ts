@@ -10,101 +10,91 @@ export const checkLifeSciencesExists = (data: DomainGroupsData): boolean => {
     rawData: data
   });
 
-  // Ensure we have valid data structure
-  if (!data || !data.domainGroups || !Array.isArray(data.domainGroups)) {
-    console.log('❌ Invalid data structure - no domain groups array');
-    return false;
-  }
-
   // Check if we have any domain groups at all
-  if (data.domainGroups.length === 0) {
+  if (!data.domainGroups || data.domainGroups.length === 0) {
     console.log('❌ No domain groups found');
+    
+    // Also check localStorage directly for any domain groups data
+    try {
+      const directCheck = localStorage.getItem('master_data_domain_groups');
+      if (directCheck) {
+        const parsed = JSON.parse(directCheck);
+        if (parsed && parsed.domainGroups && parsed.domainGroups.length > 0) {
+          console.log('✅ Found domain groups in direct localStorage check');
+          return true;
+        }
+      }
+    } catch (error) {
+      console.log('❌ Direct localStorage check failed:', error);
+    }
+    
     return false;
   }
 
-  // Enhanced check for Life Sciences existence with multiple criteria
-  const lifeSciencesExists = data.domainGroups.some(dg => {
-    const byIndustrySegmentName = dg.industrySegmentName === 'Life Sciences';
-    const byIndustrySegmentId = dg.industrySegmentId === '1';
-    const byNameIncludes = dg.name && dg.name.toLowerCase().includes('life sciences');
+  // Check if any domain group matches Life Sciences patterns
+  const lifeSciencesPatterns = [
+    'life sciences',
+    'lifesciences', 
+    'healthcare',
+    'pharmaceutical',
+    'biotech',
+    'medical'
+  ];
+
+  const hasLifeSciencesGroup = data.domainGroups.some(group => {
+    const groupName = group.name?.toLowerCase() || '';
+    const industryName = group.industrySegmentName?.toLowerCase() || '';
     
-    console.log('🔍 Checking domain group:', {
-      id: dg.id,
-      name: dg.name,
-      industrySegmentName: dg.industrySegmentName,
-      industrySegmentId: dg.industrySegmentId,
-      byIndustrySegmentName,
-      byIndustrySegmentId,
-      byNameIncludes,
-      matches: byIndustrySegmentName || byIndustrySegmentId || byNameIncludes
-    });
-
-    return byIndustrySegmentName || byIndustrySegmentId || byNameIncludes;
+    const matchesPattern = lifeSciencesPatterns.some(pattern => 
+      groupName.includes(pattern) || industryName.includes(pattern)
+    );
+    
+    console.log(`🔍 Checking group "${group.name}" (industry: "${group.industrySegmentName}"): ${matchesPattern}`);
+    return matchesPattern;
   });
 
-  // Check for complete hierarchy - categories and subcategories
-  const hasCategories = data.categories && data.categories.length > 0;
-  const hasSubCategories = data.subCategories && data.subCategories.length > 0;
+  // Also check if we have the standard Life Sciences structure
+  const hasStandardStructure = data.domainGroups.some(group => 
+    ['Strategy', 'Operations', 'People & Culture', 'Technology'].includes(group.name)
+  );
+
+  const exists = hasLifeSciencesGroup || hasStandardStructure;
   
-  // For Life Sciences, we expect at least some categories and subcategories
-  const hasCompleteHierarchy = lifeSciencesExists && hasCategories && hasSubCategories;
-
-  console.log('📋 Enhanced existence check results:', {
-    lifeSciencesExists,
-    hasCategories,
-    hasSubCategories,
-    hasCompleteHierarchy,
-    categoriesCount: data.categories?.length || 0,
-    subCategoriesCount: data.subCategories?.length || 0,
-    finalResult: hasCompleteHierarchy
+  console.log('📊 Life Sciences existence analysis:', {
+    hasLifeSciencesGroup,
+    hasStandardStructure,
+    totalGroups: data.domainGroups.length,
+    exists
   });
-
+  
   console.log('🔍 === Enhanced Life Sciences Existence Check END ===');
-  
-  return hasCompleteHierarchy;
+  return exists;
 };
 
-// Enhanced validation function
-export const validateLifeSciencesHierarchy = (data: DomainGroupsData): {
-  exists: boolean;
-  isComplete: boolean;
-  missingParts: string[];
-  details: any;
-} => {
-  const exists = data.domainGroups?.some(
-    dg => dg.industrySegmentName === 'Life Sciences' || 
-          dg.industrySegmentId === '1' ||
-          (dg.name && dg.name.toLowerCase().includes('life sciences'))
-  ) || false;
-
-  const missingParts: string[] = [];
+// Enhanced function to check if ANY domain groups exist (not just Life Sciences)
+export const checkAnyDomainGroupsExist = (data: DomainGroupsData): boolean => {
+  console.log('🔍 === Check Any Domain Groups Exist ===');
   
-  if (!exists) {
-    missingParts.push('Life Sciences Domain Groups');
-  }
-  
-  if (!data.categories || data.categories.length === 0) {
-    missingParts.push('Categories');
-  }
-  
-  if (!data.subCategories || data.subCategories.length === 0) {
-    missingParts.push('Sub-Categories');
+  // Check current data
+  if (data.domainGroups && data.domainGroups.length > 0) {
+    console.log('✅ Domain groups found in current data:', data.domainGroups.length);
+    return true;
   }
 
-  const isComplete = exists && data.categories?.length > 0 && data.subCategories?.length > 0;
+  // Check localStorage directly
+  try {
+    const stored = localStorage.getItem('master_data_domain_groups');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.domainGroups && parsed.domainGroups.length > 0) {
+        console.log('✅ Domain groups found in localStorage:', parsed.domainGroups.length);
+        return true;
+      }
+    }
+  } catch (error) {
+    console.log('❌ Error checking localStorage:', error);
+  }
 
-  const details = {
-    domainGroupsCount: data.domainGroups?.length || 0,
-    categoriesCount: data.categories?.length || 0,
-    subCategoriesCount: data.subCategories?.length || 0,
-    lifeSciencesDomainGroups: data.domainGroups?.filter(dg => 
-      dg.industrySegmentName === 'Life Sciences' || 
-      dg.industrySegmentId === '1' ||
-      (dg.name && dg.name.toLowerCase().includes('life sciences'))
-    ) || []
-  };
-
-  console.log('🔍 Validation results:', { exists, isComplete, missingParts, details });
-
-  return { exists, isComplete, missingParts, details };
+  console.log('❌ No domain groups found anywhere');
+  return false;
 };
