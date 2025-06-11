@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Edit } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
+import { TreePine, FileSpreadsheet, Upload } from 'lucide-react';
 
 interface DataSourceSelectorProps {
   wizardData: WizardData;
@@ -16,60 +17,78 @@ const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
   onUpdate,
   onValidationChange
 }) => {
-  React.useEffect(() => {
-    // Auto-select manual entry as the only option
-    if (!wizardData.dataSource) {
-      onUpdate({ dataSource: 'manual' });
-      onValidationChange(true);
-    }
-  }, [wizardData.dataSource, onUpdate, onValidationChange]);
+  useEffect(() => {
+    // Since we only support manual entry, mark as valid if manual is selected
+    const isValid = wizardData.dataSource === 'manual';
+    console.log('DataSourceSelector: Validation check:', { dataSource: wizardData.dataSource, isValid });
+    onValidationChange(isValid);
+  }, [wizardData.dataSource, onValidationChange]);
 
-  const handleDataSourceChange = () => {
-    onUpdate({ dataSource: 'manual' });
-    onValidationChange(true);
+  const handleDataSourceChange = (value: string) => {
+    console.log('DataSourceSelector: Data source changed to:', value);
+    onUpdate({ dataSource: value as 'manual' });
   };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2">Manual Domain Group Creation</h2>
+        <h2 className="text-xl font-semibold mb-2">Select Data Entry Method</h2>
         <p className="text-muted-foreground">
-          Create your domain group hierarchy step by step using guided forms
+          Choose how you want to create your domain group hierarchy
         </p>
       </div>
 
-      <div className="flex justify-center">
-        <div className="w-full max-w-md">
-          <Label htmlFor="manual" className="cursor-pointer">
-            <Card className="border-2 border-primary bg-primary/5">
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Edit className="w-6 h-6 text-blue-600" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Entry Options</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup 
+            value={wizardData.dataSource} 
+            onValueChange={handleDataSourceChange}
+            className="space-y-4"
+          >
+            <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value="manual" id="manual" />
+              <Label htmlFor="manual" className="flex items-center space-x-3 cursor-pointer flex-1">
+                <TreePine className="w-5 h-5 text-primary" />
+                <div>
+                  <div className="font-medium">Manual Entry</div>
+                  <div className="text-sm text-muted-foreground">
+                    Create categories and sub-categories manually using forms
+                  </div>
                 </div>
-                <CardTitle className="text-lg">Manual Entry</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground text-center">
-                  Create your hierarchy step by step using forms. 
-                  Perfect for controlled setup with guidance and validation.
-                </p>
-                <div className="mt-4 space-y-1 text-xs text-muted-foreground">
-                  <div>• Step-by-step guidance</div>
-                  <div>• Duplicate detection</div>
-                  <div>• Real-time validation</div>
-                </div>
-              </CardContent>
-            </Card>
-          </Label>
-        </div>
-      </div>
+              </Label>
+            </div>
 
-      <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-        <h3 className="font-medium mb-2">Manual Entry Selected</h3>
-        <p className="text-sm text-muted-foreground">
-          You'll create your hierarchy using step-by-step forms with guidance and validation.
-        </p>
-      </div>
+            <div className="flex items-center space-x-3 p-4 border rounded-lg opacity-50">
+              <RadioGroupItem value="excel" id="excel" disabled />
+              <Label htmlFor="excel" className="flex items-center space-x-3 cursor-not-allowed flex-1">
+                <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium text-muted-foreground">Excel Upload</div>
+                  <div className="text-sm text-muted-foreground">
+                    Upload data from Excel file (Coming Soon)
+                  </div>
+                </div>
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-3 p-4 border rounded-lg opacity-50">
+              <RadioGroupItem value="template" id="template" disabled />
+              <Label htmlFor="template" className="flex items-center space-x-3 cursor-not-allowed flex-1">
+                <Upload className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium text-muted-foreground">Template Upload</div>
+                  <div className="text-sm text-muted-foreground">
+                    Upload using predefined template (Coming Soon)
+                  </div>
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
+        </CardContent>
+      </Card>
     </div>
   );
 };
