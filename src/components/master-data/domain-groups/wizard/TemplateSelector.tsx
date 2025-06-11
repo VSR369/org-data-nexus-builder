@@ -62,7 +62,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onUpdate,
   onValidationChange
 }) => {
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(wizardData.selectedTemplate || null);
   const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
 
   useEffect(() => {

@@ -152,7 +152,7 @@ const parseBoolean = (value: any): boolean => {
   return true; // Default to active
 };
 
-export const generateExcelTemplate = (industrySegments: any[]): Uint8Array => {
+export const generateExcelTemplate = (industrySegments: { industrySegment: string }[]): Uint8Array => {
   const templateData = [
     EXCEL_TEMPLATE_HEADERS,
     // Add sample row for each industry segment

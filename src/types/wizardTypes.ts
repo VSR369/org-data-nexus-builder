@@ -37,6 +37,7 @@ export interface WizardData {
   dataSource: 'manual' | 'excel' | 'template';
   selectedIndustrySegment: string;
   selectedDomainGroup?: string;
+  selectedTemplate?: string;
   excelData?: ParsedExcelData;
   manualData?: {
     domainGroups: any[];
