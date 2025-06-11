@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,6 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
     
     // Update wizard data
     const manualData = {
-      domainGroups: wizardData.manualData?.domainGroups || [],
       categories: categories.filter(cat => cat.name.trim()).map(cat => ({
         name: cat.name,
         description: cat.description
@@ -67,7 +67,7 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
     };
     
     onUpdate({ manualData });
-  }, [categories, onUpdate, onValidationChange, wizardData.manualData?.domainGroups]);
+  }, [categories, onUpdate, onValidationChange]);
 
   const addCategory = () => {
     const newId = (categories.length + 1).toString();
