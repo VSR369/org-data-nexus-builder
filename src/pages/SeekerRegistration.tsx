@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Building, Upload, Globe, Users, Phone, Mail, Lock } from 'lucide-react';
+import { ArrowLeft, Building, Upload, Globe, Users, Phone, Mail, Lock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { countriesDataManager } from '@/utils/sharedDataManagers';
@@ -40,6 +41,7 @@ interface FormData {
   email: string;
   countryCode: string;
   phoneNumber: string;
+  userId: string;
   password: string;
   confirmPassword: string;
 }
@@ -67,6 +69,7 @@ const SeekerRegistration = () => {
     email: '',
     countryCode: '',
     phoneNumber: '',
+    userId: '',
     password: '',
     confirmPassword: ''
   });
@@ -127,6 +130,7 @@ const SeekerRegistration = () => {
     if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.countryCode) newErrors.countryCode = 'Country code is required';
     if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (!formData.userId) newErrors.userId = 'User ID is required';
     if (!formData.password) newErrors.password = 'Password is required';
     if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm password is required';
 
@@ -474,6 +478,21 @@ const SeekerRegistration = () => {
                       />
                     </div>
                     {errors.phoneNumber && <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="userId">User ID *</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="userId"
+                        value={formData.userId}
+                        onChange={(e) => handleInputChange('userId', e.target.value)}
+                        className={`pl-10 ${errors.userId ? 'border-red-500' : ''}`}
+                        placeholder="Enter user ID"
+                      />
+                    </div>
+                    {errors.userId && <p className="text-red-500 text-sm mt-1">{errors.userId}</p>}
                   </div>
 
                   <div>
