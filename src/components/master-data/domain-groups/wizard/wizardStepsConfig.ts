@@ -3,21 +3,21 @@ import { WizardStep } from '@/types/wizardTypes';
 
 export const WIZARD_STEPS: WizardStep[] = [
   {
-    id: 'source',
+    id: 'data-source',
     title: 'Data Source',
-    description: 'Choose how to add your domain groups',
+    description: 'Select manual entry method',
     isValid: false,
     isCompleted: false
   },
   {
-    id: 'setup',
-    title: 'Domain Group Setup',
+    id: 'domain-setup',
+    title: 'Domain Setup',
     description: 'Configure industry segment and domain group',
     isValid: false,
     isCompleted: false
   },
   {
-    id: 'entry',
+    id: 'data-entry',
     title: 'Data Entry',
     description: 'Add categories and sub-categories',
     isValid: false,
@@ -26,7 +26,7 @@ export const WIZARD_STEPS: WizardStep[] = [
   {
     id: 'review',
     title: 'Review & Submit',
-    description: 'Review and submit your hierarchy',
+    description: 'Review and save your hierarchy',
     isValid: false,
     isCompleted: false
   }

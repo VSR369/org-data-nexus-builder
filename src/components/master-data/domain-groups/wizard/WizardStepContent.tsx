@@ -4,7 +4,7 @@ import { WizardData } from '@/types/wizardTypes';
 import { DomainGroupsData } from '@/types/domainGroups';
 import DataSourceSelector from './DataSourceSelector';
 import DomainGroupSetup from './DomainGroupSetup';
-import DataEntryStep from './DataEntryStep';
+import ManualDataEntry from './ManualDataEntry';
 import ReviewAndSubmit from './ReviewAndSubmit';
 
 interface WizardStepContentProps {
@@ -24,12 +24,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
   onSubmit,
   onValidationChange
 }) => {
-  // For Excel uploads, skip step 1 (DomainGroupSetup) if we have Excel data
-  const shouldSkipDomainGroupSetup = wizardData.dataSource === 'excel' && 
-                                     wizardData.excelData && 
-                                     wizardData.excelData.data.length > 0;
-
-  console.log('WizardStepContent: Current step:', currentStep, 'Data source:', wizardData.dataSource, 'Should skip setup:', shouldSkipDomainGroupSetup);
+  console.log('WizardStepContent: Current step:', currentStep, 'Data source:', wizardData.dataSource);
 
   switch (currentStep) {
     case 0:
@@ -41,21 +36,6 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
         />
       );
     case 1:
-      // For Excel uploads with data, auto-validate this step
-      if (shouldSkipDomainGroupSetup) {
-        React.useEffect(() => {
-          onValidationChange(1, true);
-        }, []);
-        
-        return (
-          <div className="text-center p-8">
-            <p className="text-muted-foreground">
-              Domain group information will be extracted from your Excel file.
-            </p>
-          </div>
-        );
-      }
-      
       return (
         <DomainGroupSetup
           wizardData={wizardData}
@@ -65,7 +45,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
       );
     case 2:
       return (
-        <DataEntryStep
+        <ManualDataEntry
           wizardData={wizardData}
           onUpdate={onUpdate}
           onValidationChange={(isValid) => onValidationChange(2, isValid)}

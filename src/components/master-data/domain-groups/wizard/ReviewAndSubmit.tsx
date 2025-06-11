@@ -31,112 +31,71 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Process the Excel data into proper domain groups structure
-    if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
-      processExcelData();
+    // Process the manual data into proper domain groups structure
+    if (wizardData.dataSource === 'manual' && wizardData.manualData) {
+      processManualData();
     } else {
       onValidationChange(false);
     }
-  }, [wizardData.excelData, wizardData.dataSource]);
+  }, [wizardData.manualData, wizardData.dataSource, wizardData.selectedIndustrySegment, wizardData.selectedDomainGroup]);
 
-  const processExcelData = () => {
-    console.log('ReviewAndSubmit: Processing Excel data');
+  const processManualData = () => {
+    console.log('ReviewAndSubmit: Processing manual data');
     setIsProcessing(true);
     
     try {
-      const excelData = wizardData.excelData!.data;
       const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
+      const selectedSegment = industrySegments.find(seg => seg.id === wizardData.selectedIndustrySegment);
       
-      // Group data by domain group
-      const domainGroupMap = new Map<string, {
-        industrySegment: string;
-        domainGroup: string;
-        domainGroupDescription?: string;
-        categories: Map<string, {
-          category: string;
-          categoryDescription?: string;
-          subCategories: Array<{
-            subCategory: string;
-            subCategoryDescription?: string;
-            isActive: boolean;
-          }>;
-        }>;
-      }>();
+      if (!selectedSegment || !wizardData.selectedDomainGroup || !wizardData.manualData) {
+        onValidationChange(false);
+        return;
+      }
 
-      excelData.forEach(row => {
-        const dgKey = `${row.industrySegment}-${row.domainGroup}`;
-        
-        if (!domainGroupMap.has(dgKey)) {
-          domainGroupMap.set(dgKey, {
-            industrySegment: row.industrySegment,
-            domainGroup: row.domainGroup,
-            domainGroupDescription: row.domainGroupDescription,
-            categories: new Map()
-          });
-        }
-        
-        const dg = domainGroupMap.get(dgKey)!;
-        const catKey = row.category;
-        
-        if (!dg.categories.has(catKey)) {
-          dg.categories.set(catKey, {
-            category: row.category,
-            categoryDescription: row.categoryDescription,
-            subCategories: []
-          });
-        }
-        
-        dg.categories.get(catKey)!.subCategories.push({
-          subCategory: row.subCategory,
-          subCategoryDescription: row.subCategoryDescription,
-          isActive: row.isActive
-        });
-      });
+      const timestamp = new Date().toISOString();
+      const domainGroupId = `dg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Convert to proper data structure
-      const newDomainGroups: DomainGroup[] = [];
+      // Create Domain Group
+      const newDomainGroups: DomainGroup[] = [{
+        id: domainGroupId,
+        name: wizardData.selectedDomainGroup,
+        description: wizardData.manualData.domainGroupDescription,
+        industrySegmentId: selectedSegment.id,
+        industrySegmentName: selectedSegment.industrySegment,
+        isActive: true,
+        createdAt: timestamp
+      }];
+
+      // Create Categories and Sub-Categories
       const newCategories: Category[] = [];
       const newSubCategories: SubCategory[] = [];
 
-      domainGroupMap.forEach((dgData, dgKey) => {
-        const industrySegment = industrySegments.find(
-          seg => seg.industrySegment === dgData.industrySegment
-        );
+      wizardData.manualData.categories?.forEach((catData, catIndex) => {
+        if (!catData.name.trim()) return;
+
+        const categoryId = `cat-${Date.now()}-${catIndex}-${Math.random().toString(36).substr(2, 9)}`;
         
-        const domainGroupId = `dg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        newDomainGroups.push({
-          id: domainGroupId,
-          name: dgData.domainGroup,
-          description: dgData.domainGroupDescription,
-          industrySegmentId: industrySegment?.id || '',
-          industrySegmentName: dgData.industrySegment,
+        newCategories.push({
+          id: categoryId,
+          name: catData.name,
+          description: catData.description,
+          domainGroupId: domainGroupId,
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: timestamp
         });
 
-        dgData.categories.forEach((catData, catKey) => {
-          const categoryId = `cat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          
-          newCategories.push({
-            id: categoryId,
-            name: catData.category,
-            description: catData.categoryDescription,
-            domainGroupId: domainGroupId,
-            isActive: true,
-            createdAt: new Date().toISOString()
-          });
-
-          catData.subCategories.forEach(subCat => {
+        // Add sub-categories for this category
+        wizardData.manualData?.subCategories?.forEach((subData, subIndex) => {
+          if (subData.categoryName === catData.name && subData.name.trim()) {
             newSubCategories.push({
-              id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              name: subCat.subCategory,
-              description: subCat.subCategoryDescription,
+              id: `sub-${Date.now()}-${catIndex}-${subIndex}-${Math.random().toString(36).substr(2, 9)}`,
+              name: subData.name,
+              description: subData.description,
               categoryId: categoryId,
-              isActive: subCat.isActive,
-              createdAt: new Date().toISOString()
+              isActive: true,
+              createdAt: timestamp
             });
-          });
+          }
         });
       });
 
@@ -146,11 +105,11 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
         subCategories: newSubCategories
       };
 
-      console.log('ReviewAndSubmit: Processed data:', processedData);
+      console.log('ReviewAndSubmit: Processed manual data:', processedData);
       setProcessedData(processedData);
       onValidationChange(true);
     } catch (error) {
-      console.error('ReviewAndSubmit: Error processing Excel data:', error);
+      console.error('ReviewAndSubmit: Error processing manual data:', error);
       onValidationChange(false);
     } finally {
       setIsProcessing(false);
@@ -190,7 +149,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
     return (
       <div className="text-center p-8">
         <AlertCircle className="w-8 h-8 mx-auto mb-4 animate-spin" />
-        <p className="text-muted-foreground">Processing your Excel data...</p>
+        <p className="text-muted-foreground">Processing your manual data...</p>
       </div>
     );
   }
@@ -220,7 +179,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-600" />
-            Import Summary
+            Creation Summary
           </CardTitle>
         </CardHeader>
         <CardContent>

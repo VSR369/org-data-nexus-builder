@@ -9,13 +9,13 @@ import WizardProgressBar from './WizardProgressBar';
 import WizardNavigation from './WizardNavigation';
 import WizardStepContent from './WizardStepContent';
 
-interface ExcelUploadWizardProps {
+interface ManualEntryWizardProps {
   data: DomainGroupsData;
   onDataUpdate: (newData: DomainGroupsData) => void;
   onCancel: () => void;
 }
 
-const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
+const ManualEntryWizard: React.FC<ManualEntryWizardProps> = ({
   data,
   onDataUpdate,
   onCancel
@@ -24,24 +24,24 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   const [steps, setSteps] = useState(WIZARD_STEPS);
   const [wizardData, setWizardData] = useState<WizardData>({
     step: 0,
-    dataSource: '' as any,
+    dataSource: 'manual',
     selectedIndustrySegment: '',
     isValid: false
   });
 
-  console.log('ExcelUploadWizard: Current wizard data:', wizardData);
+  console.log('ManualEntryWizard: Current wizard data:', wizardData);
 
   const updateWizardData = (updates: Partial<WizardData>) => {
-    console.log('ExcelUploadWizard: Updating wizard data with:', updates);
+    console.log('ManualEntryWizard: Updating wizard data with:', updates);
     setWizardData(prev => {
       const newData = { ...prev, ...updates };
-      console.log('ExcelUploadWizard: New wizard data:', newData);
+      console.log('ManualEntryWizard: New wizard data:', newData);
       return newData;
     });
   };
 
   const markStepCompleted = (stepIndex: number, isValid: boolean) => {
-    console.log('ExcelUploadWizard: Marking step', stepIndex, 'as', isValid ? 'valid' : 'invalid');
+    console.log('ManualEntryWizard: Marking step', stepIndex, 'as', isValid ? 'valid' : 'invalid');
     setSteps(prev => prev.map((step, index) => 
       index === stepIndex 
         ? { ...step, isValid, isCompleted: isValid }
@@ -51,32 +51,22 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
 
   const canProceed = () => {
     const canMove = steps[currentStep]?.isValid || false;
-    console.log('ExcelUploadWizard: Can proceed?', canMove, 'for step', currentStep);
+    console.log('ManualEntryWizard: Can proceed?', canMove, 'for step', currentStep);
     return canMove;
   };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1 && canProceed()) {
-      console.log('ExcelUploadWizard: Moving to next step from', currentStep, 'to', currentStep + 1);
+      console.log('ManualEntryWizard: Moving to next step from', currentStep, 'to', currentStep + 1);
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
       updateWizardData({ step: nextStep });
-      
-      // For Excel uploads, auto-advance through certain steps
-      if (wizardData.dataSource === 'excel' && wizardData.excelData?.data.length > 0) {
-        if (nextStep === 1) {
-          // Auto-validate step 1 for Excel uploads
-          setTimeout(() => {
-            markStepCompleted(1, true);
-          }, 100);
-        }
-      }
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      console.log('ExcelUploadWizard: Moving to previous step from', currentStep, 'to', currentStep - 1);
+      console.log('ManualEntryWizard: Moving to previous step from', currentStep, 'to', currentStep - 1);
       const prevStep = currentStep - 1;
       setCurrentStep(prevStep);
       updateWizardData({ step: prevStep });
@@ -84,7 +74,7 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   };
 
   const handleSubmit = (newData: DomainGroupsData) => {
-    console.log('ExcelUploadWizard: Submitting data and closing wizard');
+    console.log('ManualEntryWizard: Submitting data and closing wizard');
     onDataUpdate(newData);
     onCancel(); // Close the wizard
   };
@@ -124,4 +114,4 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   );
 };
 
-export default ExcelUploadWizard;
+export default ManualEntryWizard;
