@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
+import { IndustrySegment } from '@/types/industrySegments';
+import { industrySegmentDataManager } from '../industrySegmentDataManager';
 import { Category, SubCategory } from './types';
 import CategoryCard from './CategoryCard';
 import EntrySummary from './EntrySummary';
@@ -27,6 +28,13 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
       subCategories: [{ id: '1', name: '', description: '' }]
     }
   ]);
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+
+  useEffect(() => {
+    // Load industry segments to get the selected segment name
+    const loadedData = industrySegmentDataManager.loadData();
+    setIndustrySegments(loadedData.industrySegments || []);
+  }, []);
 
   useEffect(() => {
     // Validate the manual data
@@ -123,8 +131,27 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
     }));
   };
 
+  const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
+  const domainGroupName = wizardData.selectedDomainGroup || '';
+
   return (
     <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-2">Categories & Sub-Categories</h2>
+        <p className="text-muted-foreground">
+          Add categories and sub-categories for your domain group
+        </p>
+        {domainGroupName && (
+          <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+            <p className="text-sm text-muted-foreground">Creating Domain Group:</p>
+            <p className="font-semibold text-primary">{domainGroupName}</p>
+            {selectedSegment && (
+              <p className="text-xs text-muted-foreground">in {selectedSegment.industrySegment}</p>
+            )}
+          </div>
+        )}
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
