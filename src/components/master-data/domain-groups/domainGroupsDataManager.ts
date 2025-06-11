@@ -39,8 +39,7 @@ class EnhancedDomainGroupsManager extends DataManager<DomainGroupsData> {
             Array.isArray(parsed.subCategories)) {
           
           // Mark as initialized without version checking to prevent clearing
-          localStorage.setItem(this.getInitializedKey(), 'true');
-          localStorage.setItem(this.getVersionKey(), this.config.version.toString());
+          this.markAsInitialized();
           
           console.log('=== Enhanced DomainGroupsManager.loadData() END - Success ===');
           return parsed;
@@ -139,17 +138,11 @@ class EnhancedDomainGroupsManager extends DataManager<DomainGroupsData> {
     return null;
   }
 
-  private getVersionKey(): string {
-    return `${this.config.key}_version`;
-  }
-
-  private getInitializedKey(): string {
-    return `${this.config.key}_initialized`;
-  }
-
   private markAsInitialized(): void {
-    localStorage.setItem(this.getInitializedKey(), 'true');
-    localStorage.setItem(this.getVersionKey(), this.config.version.toString());
+    const initKey = `${this.config.key}_initialized`;
+    const versionKey = `${this.config.key}_version`;
+    localStorage.setItem(initKey, 'true');
+    localStorage.setItem(versionKey, this.config.version.toString());
   }
 
   // Enhanced save that also cleans up old keys
