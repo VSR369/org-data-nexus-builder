@@ -85,9 +85,9 @@ const SelfEnrollmentForm = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Provider & Assessor Enrollment</CardTitle>
+          <CardTitle>Contributor Enrollment</CardTitle>
           <CardDescription>
-            Register as a Solution Provider to showcase your expertise and connect with organizations
+            Register as a Contributor to showcase your expertise and connect with organizations. Contributors can be solution providers or solution assessors.
             {isSubmitted && (
               <span className="block mt-2 text-green-600 font-medium">
                 ✓ Successfully submitted! Your data is preserved and you can edit and resubmit anytime.

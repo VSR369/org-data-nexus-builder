@@ -46,7 +46,7 @@ export const useEnrollmentSubmission = (
     
     toast({
       title: "Success",
-      description: "Solution Provider enrollment submitted successfully. All data has been saved and will persist across sessions. You can edit and resubmit anytime.",
+      description: "Contributor enrollment submitted successfully. All data has been saved and will persist across sessions. You can edit and resubmit anytime.",
     });
   };
 
@@ -69,7 +69,7 @@ export const useEnrollmentSubmission = (
     
     toast({
       title: "Success",
-      description: "Solution Provider enrollment updated and resubmitted successfully. All data remains preserved.",
+      description: "Contributor enrollment updated and resubmitted successfully. All data remains preserved.",
     });
   };
 

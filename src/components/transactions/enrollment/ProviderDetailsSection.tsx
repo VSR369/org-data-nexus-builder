@@ -19,7 +19,7 @@ const ProviderDetailsSection: React.FC<ProviderDetailsSectionProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Solution Provider Details</h3>
+      <h3 className="text-lg font-semibold">Contributor Details</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first-name">First Name *</Label>
