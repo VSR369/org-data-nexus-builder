@@ -5,7 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import SeekerLogin from "./pages/SeekerLogin";
+import SeekerDashboard from "./pages/SeekerDashboard";
+import SeekerMembership from "./pages/SeekerMembership";
 import SeekerRegistration from "./pages/SeekerRegistration";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
 import MasterDataPortal from "./pages/MasterDataPortal";
@@ -26,6 +30,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/seeker-login" element={<SeekerLogin />} />
+          <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
+          <Route path="/seeker-membership" element={<SeekerMembership />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/seeker-registration" element={<SeekerRegistration />} />
           <Route path="/register" element={<OrganizationRegistration />} />
