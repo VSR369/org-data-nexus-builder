@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +25,7 @@ import SolutionVotingAssessmentConfig from './voting-assessment/SolutionVotingAs
 import GlobalCacheManagerComponent from './master-data/GlobalCacheManager';
 import DomainGroupsConfig from './master-data/DomainGroupsConfig';
 import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
+import SeekerMembershipFeeConfig from './master-data/SeekerMembershipFeeConfig';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -60,6 +62,8 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <RewardTypeConfig />;
       case 'pricing':
         return <PricingConfig />;
+      case 'seeker-membership-fee':
+        return <SeekerMembershipFeeConfig />;
       case 'communication-types':
         return <CommunicationTypeConfig />;
       case 'events-calendar':
