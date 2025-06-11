@@ -157,7 +157,7 @@ export const generateExcelTemplate = (industrySegments: any[]): Uint8Array => {
     EXCEL_TEMPLATE_HEADERS,
     // Add sample row for each industry segment
     ...industrySegments.map(segment => [
-      segment.name,
+      segment.industrySegment,
       'Sample Domain Group',
       'Description for domain group',
       'Sample Category',

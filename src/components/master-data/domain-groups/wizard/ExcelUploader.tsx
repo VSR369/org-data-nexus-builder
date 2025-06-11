@@ -49,7 +49,7 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({
       if (selectedSegmentData) {
         // Filter and validate data against selected industry segment
         const filteredData = parsedData.data.filter(row => 
-          row.industrySegment === selectedSegmentData.name
+          row.industrySegment === selectedSegmentData.industrySegment
         );
         
         if (filteredData.length === 0) {
@@ -57,7 +57,7 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({
             row: 0,
             column: 'A',
             field: 'industrySegment',
-            message: `No data found for selected industry segment: ${selectedSegmentData.name}`,
+            message: `No data found for selected industry segment: ${selectedSegmentData.industrySegment}`,
             severity: 'error'
           });
         }
@@ -114,7 +114,7 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `domain-groups-template-${selectedSegment?.name || 'all'}.xlsx`;
+      a.download = `domain-groups-template-${selectedSegment?.industrySegment || 'all'}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
