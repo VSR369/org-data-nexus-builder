@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, UserCheck, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
+import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -18,14 +18,6 @@ interface AppSidebarProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
 }
-
-const transactionMenuItems = [
-  {
-    id: 'self-enrollment',
-    title: 'Provider and Assessor Enrollment',
-    icon: UserCheck,
-  },
-];
 
 const foundationMenuItems = [
   {
@@ -154,26 +146,6 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Transactions</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {transactionMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && !isOnRegistrationPage}
-                    className="w-full justify-start cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         <SidebarGroup>
           <SidebarGroupLabel>Foundation Data</SidebarGroupLabel>
           <SidebarGroupContent>

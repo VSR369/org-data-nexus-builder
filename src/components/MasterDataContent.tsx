@@ -20,7 +20,6 @@ import RewardTypeConfig from './master-data/RewardTypeConfig';
 import PricingConfig from './master-data/PricingConfig';
 import CommunicationTypeConfig from './master-data/CommunicationTypeConfig';
 import EventsCalendarConfig from './master-data/EventsCalendarConfig';
-import SelfEnrollmentForm from './transactions/SelfEnrollmentForm';
 import SolutionVotingAssessmentConfig from './voting-assessment/SolutionVotingAssessmentConfig';
 import GlobalCacheManagerComponent from './master-data/GlobalCacheManager';
 import DomainGroupsConfig from './master-data/DomainGroupsConfig';
@@ -68,8 +67,6 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <CommunicationTypeConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
-      case 'self-enrollment':
-        return <SelfEnrollmentForm />;
       case 'solution-voting-assessment':
         return <SolutionVotingAssessmentConfig />;
       case 'global-cache-manager':
