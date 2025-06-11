@@ -21,8 +21,10 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
   onValidationChange
 }) => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
-  const [domainGroupName, setDomainGroupName] = useState('');
-  const [domainGroupDescription, setDomainGroupDescription] = useState('');
+
+  // Get values from wizardData or use empty strings as defaults
+  const domainGroupName = wizardData.selectedDomainGroup || '';
+  const domainGroupDescription = wizardData.manualData?.domainGroupDescription || '';
 
   useEffect(() => {
     // Load industry segments from master data
@@ -31,9 +33,9 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
   }, []);
 
   useEffect(() => {
-    // Validate manual inputs
+    // Validate inputs - require industry segment and domain group name
     const isValid = wizardData.selectedIndustrySegment && domainGroupName.trim().length > 0;
-    console.log('DomainGroupSetup: Manual validation:', { 
+    console.log('DomainGroupSetup: Validation:', { 
       selectedIndustrySegment: wizardData.selectedIndustrySegment, 
       domainGroupName, 
       isValid 
@@ -43,12 +45,25 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
   }, [wizardData.selectedIndustrySegment, domainGroupName, onValidationChange]);
 
   const handleIndustrySegmentChange = (value: string) => {
+    console.log('DomainGroupSetup: Industry segment changed to:', value);
     onUpdate({ selectedIndustrySegment: value });
   };
 
   const handleDomainGroupNameChange = (value: string) => {
-    setDomainGroupName(value);
+    console.log('DomainGroupSetup: Domain group name changed to:', value);
     onUpdate({ selectedDomainGroup: value });
+  };
+
+  const handleDomainGroupDescriptionChange = (value: string) => {
+    console.log('DomainGroupSetup: Domain group description changed to:', value);
+    onUpdate({ 
+      manualData: {
+        ...wizardData.manualData,
+        domainGroupDescription: value,
+        categories: wizardData.manualData?.categories || [],
+        subCategories: wizardData.manualData?.subCategories || []
+      }
+    });
   };
 
   const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
@@ -110,7 +125,7 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
             <Textarea
               id="domain-group-description"
               value={domainGroupDescription}
-              onChange={(e) => setDomainGroupDescription(e.target.value)}
+              onChange={(e) => handleDomainGroupDescriptionChange(e.target.value)}
               placeholder="Enter domain group description"
               rows={3}
             />
