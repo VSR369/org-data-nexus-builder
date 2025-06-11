@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
-import DomainGroupForm from './domain-groups/DomainGroupForm';
 import DomainGroupDisplay from './domain-groups/DomainGroupDisplay';
-import BulkDomainGroupCreator from './domain-groups/BulkDomainGroupCreator';
+import ExcelUploadWizard from './domain-groups/wizard/ExcelUploadWizard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FolderTree, Building2, Target, BarChart3, RefreshCw } from 'lucide-react';
+import { Plus, FolderTree, Building2, Target, BarChart3, RefreshCw, Upload } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 const defaultDomainGroupsData: DomainGroupsData = {
@@ -18,7 +17,7 @@ const defaultDomainGroupsData: DomainGroupsData = {
 
 const DomainGroupsConfig: React.FC = () => {
   const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
-  const [showCreationForms, setShowCreationForms] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -46,19 +45,19 @@ const DomainGroupsConfig: React.FC = () => {
       
       // Only show creation forms if no data exists
       const hasData = validData.domainGroups.length > 0;
-      setShowCreationForms(!hasData);
+      setShowWizard(!hasData);
       
       console.log('✅ Enhanced domain groups data loaded successfully:', {
         domainGroups: validData.domainGroups.length,
         categories: validData.categories.length,
         subCategories: validData.subCategories.length,
-        showCreationForms: !hasData
+        showWizard: !hasData
       });
       
     } catch (error) {
       console.error('❌ Error loading domain groups data:', error);
       setData(defaultDomainGroupsData);
-      setShowCreationForms(true);
+      setShowWizard(true);
       
       toast({
         title: "Warning",
@@ -94,7 +93,7 @@ const DomainGroupsConfig: React.FC = () => {
       
       // Hide creation forms after successful creation
       if (validatedData.domainGroups.length > 0) {
-        setShowCreationForms(false);
+        setShowWizard(false);
       }
       
       console.log('✅ Enhanced domain groups data saved and state updated');
@@ -155,6 +154,19 @@ const DomainGroupsConfig: React.FC = () => {
     );
   }
 
+  // Show wizard if explicitly requested or no data exists
+  if (showWizard || !hasExistingHierarchies) {
+    return (
+      <div className="space-y-6">
+        <ExcelUploadWizard
+          data={data}
+          onDataUpdate={handleDataUpdate}
+          onCancel={() => setShowWizard(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -162,10 +174,7 @@ const DomainGroupsConfig: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Domain Group Hierarchies</h1>
           <p className="text-muted-foreground">
-            {hasExistingHierarchies 
-              ? "Manage your domain group hierarchies and create new ones"
-              : "Create domain group hierarchy for competency evaluation"
-            }
+            Manage your domain group hierarchies with Excel upload, manual entry, or templates
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -178,165 +187,139 @@ const DomainGroupsConfig: React.FC = () => {
             <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
-          {hasExistingHierarchies && (
-            <Button 
-              onClick={() => setShowCreationForms(!showCreationForms)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add New Hierarchy
-            </Button>
-          )}
+          <Button 
+            onClick={() => setShowWizard(true)}
+            className="flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Create New Hierarchy
+          </Button>
         </div>
       </div>
 
       {/* Status Banner */}
-      {hasExistingHierarchies ? (
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <FolderTree className="w-4 h-4 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-green-900">Hierarchies Configured Successfully</h3>
-                <p className="text-sm text-green-700">
-                  Your domain group hierarchies are saved and ready for use in competency evaluations. 
-                  Data is persisted across sessions and page refreshes.
-                </p>
-              </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                {stats.domainGroupsCount} Saved
-              </Badge>
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <FolderTree className="w-4 h-4 text-green-600" />
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Target className="w-4 h-4 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-blue-900">No Hierarchies Found</h3>
-                <p className="text-sm text-blue-700">
-                  Create your domain group hierarchy to enable competency evaluations. 
-                  Use the simple form below to add domain groups, categories, and sub-categories.
-                </p>
-              </div>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                Get Started
-              </Badge>
+            <div className="flex-1">
+              <h3 className="font-medium text-green-900">Hierarchies Configured Successfully</h3>
+              <p className="text-sm text-green-700">
+                Your domain group hierarchies are saved and ready for use. Use the wizard to add more hierarchies 
+                with Excel upload, manual entry, or pre-built templates.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              {stats.domainGroupsCount} Active
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Creation Forms Section */}
-      {(!hasExistingHierarchies || showCreationForms) && (
-        <div className="space-y-6">
-          {hasExistingHierarchies ? (
-            <Card className="border-2 border-primary/20 bg-primary/5">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Add New Domain Group Hierarchy
-                    </CardTitle>
-                    <CardDescription>
-                      Create additional hierarchies for different industry segments or domain groups
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowCreationForms(false)}
-                  >
-                    Hide
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
-                <BulkDomainGroupCreator data={data} onDataUpdate={handleDataUpdate} />
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
-            </>
-          )}
-        </div>
-      )}
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>
+            Choose how you'd like to add more domain group hierarchies
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2"
+              onClick={() => setShowWizard(true)}
+            >
+              <Upload className="w-6 h-6" />
+              <span className="text-sm">Excel Upload</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2"
+              onClick={() => setShowWizard(true)}
+            >
+              <Plus className="w-6 h-6" />
+              <span className="text-sm">Manual Entry</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2"
+              onClick={() => setShowWizard(true)}
+            >
+              <Target className="w-6 h-6" />
+              <span className="text-sm">Use Template</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Overview Stats Card */}
-      {hasExistingHierarchies && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Hierarchy Overview
-            </CardTitle>
-            <CardDescription>
-              Current state of your domain group hierarchies (persisted across sessions)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{stats.industrySegmentsCount}</div>
-                <div className="text-sm text-muted-foreground">Industry Segments</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.domainGroupsCount}</div>
-                <div className="text-sm text-muted-foreground">Domain Groups</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.categoriesCount}</div>
-                <div className="text-sm text-muted-foreground">Categories</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{stats.subCategoriesCount}</div>
-                <div className="text-sm text-muted-foreground">Sub-Categories</div>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Hierarchy Overview
+          </CardTitle>
+          <CardDescription>
+            Current state of your domain group hierarchies (persisted across sessions)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{stats.industrySegmentsCount}</div>
+              <div className="text-sm text-muted-foreground">Industry Segments</div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{stats.domainGroupsCount}</div>
+              <div className="text-sm text-muted-foreground">Domain Groups</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{stats.categoriesCount}</div>
+              <div className="text-sm text-muted-foreground">Categories</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{stats.subCategoriesCount}</div>
+              <div className="text-sm text-muted-foreground">Sub-Categories</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Existing Hierarchies Display */}
-      {hasExistingHierarchies && (
-        <DomainGroupDisplay data={data} onDataUpdate={handleDataUpdate} />
-      )}
+      <DomainGroupDisplay data={data} onDataUpdate={handleDataUpdate} />
 
       {/* Help Section */}
       <Card className="bg-muted/30">
         <CardHeader>
-          <CardTitle className="text-base">How It Works</CardTitle>
+          <CardTitle className="text-base">Enhanced Features</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-medium mt-0.5">1</div>
             <div>
-              <p className="font-medium text-sm">Create Hierarchies</p>
-              <p className="text-xs text-muted-foreground">Use the simple form to add Industry Segment → Domain Group → Category → Sub Category</p>
+              <p className="font-medium text-sm">Excel Upload</p>
+              <p className="text-xs text-muted-foreground">Bulk upload hundreds of categories and sub-categories in seconds with validation</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-medium mt-0.5">2</div>
             <div>
-              <p className="font-medium text-sm">Data Persistence</p>
-              <p className="text-xs text-muted-foreground">All data is automatically saved and persists across sessions, page refreshes, and navigation</p>
+              <p className="font-medium text-sm">Industry Templates</p>
+              <p className="text-xs text-muted-foreground">Pre-built hierarchies for Life Sciences, BFSI, Healthcare, and more</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-medium mt-0.5">3</div>
             <div>
-              <p className="font-medium text-sm">Use in Evaluations</p>
-              <p className="text-xs text-muted-foreground">Navigate to Sign-up → Contributor Enrollment → Competency Evaluation to use these hierarchies</p>
+              <p className="font-medium text-sm">Smart Validation</p>
+              <p className="text-xs text-muted-foreground">Automated validation against configured industry segments and duplicate detection</p>
             </div>
           </div>
         </CardContent>
