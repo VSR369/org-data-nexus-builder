@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Users, Target, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
   const [selectedRole, setSelectedRole] = useState<string>('');
+  const navigate = useNavigate();
 
   const handleContinue = () => {
     if (selectedRole === 'seeker') {
-      // Navigate to organization registration or seeker-specific flow
-      console.log('Navigating to Solution Seeker registration');
+      // Navigate to Solution Seeker organization registration
+      navigate('/seeker-registration');
     } else if (selectedRole === 'provider') {
       // Navigate to provider enrollment flow
       console.log('Navigating to Solution Provider registration');
