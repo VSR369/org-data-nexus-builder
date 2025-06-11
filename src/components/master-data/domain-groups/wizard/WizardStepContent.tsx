@@ -2,7 +2,6 @@
 import React from 'react';
 import { WizardData } from '@/types/wizardTypes';
 import { DomainGroupsData } from '@/types/domainGroups';
-import DataSourceSelector from './DataSourceSelector';
 import DomainGroupSetup from './DomainGroupSetup';
 import ManualDataEntry from './ManualDataEntry';
 import ReviewAndSubmit from './ReviewAndSubmit';
@@ -29,7 +28,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
   switch (currentStep) {
     case 0:
       return (
-        <DataSourceSelector
+        <DomainGroupSetup
           wizardData={wizardData}
           onUpdate={onUpdate}
           onValidationChange={(isValid) => onValidationChange(0, isValid)}
@@ -37,7 +36,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
       );
     case 1:
       return (
-        <DomainGroupSetup
+        <ManualDataEntry
           wizardData={wizardData}
           onUpdate={onUpdate}
           onValidationChange={(isValid) => onValidationChange(1, isValid)}
@@ -45,20 +44,12 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
       );
     case 2:
       return (
-        <ManualDataEntry
-          wizardData={wizardData}
-          onUpdate={onUpdate}
-          onValidationChange={(isValid) => onValidationChange(2, isValid)}
-        />
-      );
-    case 3:
-      return (
         <ReviewAndSubmit
           wizardData={wizardData}
           existingData={existingData}
           onUpdate={onUpdate}
           onSubmit={onSubmit}
-          onValidationChange={(isValid) => onValidationChange(3, isValid)}
+          onValidationChange={(isValid) => onValidationChange(2, isValid)}
         />
       );
     default:

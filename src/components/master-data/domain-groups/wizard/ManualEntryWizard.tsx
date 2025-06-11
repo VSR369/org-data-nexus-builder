@@ -20,11 +20,12 @@ const ManualEntryWizard: React.FC<ManualEntryWizardProps> = ({
   onDataUpdate,
   onCancel
 }) => {
+  // Start at step 0 (Domain Group Setup) since we skip data source selection
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState(WIZARD_STEPS);
   const [wizardData, setWizardData] = useState<WizardData>({
     step: 0,
-    dataSource: 'manual',
+    dataSource: 'manual', // Pre-set to manual since user clicked manual entry wizard
     selectedIndustrySegment: '',
     isValid: false
   });
