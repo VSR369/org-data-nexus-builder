@@ -2,51 +2,18 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { WizardData, WizardStep } from '@/types/wizardTypes';
+import { WizardData } from '@/types/wizardTypes';
 import { DomainGroupsData } from '@/types/domainGroups';
-import DataSourceSelector from './DataSourceSelector';
-import DomainGroupSetup from './DomainGroupSetup';
-import DataEntryStep from './DataEntryStep';
-import ReviewAndSubmit from './ReviewAndSubmit';
+import { WIZARD_STEPS } from './wizardStepsConfig';
+import WizardProgressBar from './WizardProgressBar';
+import WizardNavigation from './WizardNavigation';
+import WizardStepContent from './WizardStepContent';
 
 interface ExcelUploadWizardProps {
   data: DomainGroupsData;
   onDataUpdate: (newData: DomainGroupsData) => void;
   onCancel: () => void;
 }
-
-const WIZARD_STEPS: WizardStep[] = [
-  {
-    id: 'source',
-    title: 'Data Source',
-    description: 'Choose how to add your domain groups',
-    isValid: false,
-    isCompleted: false
-  },
-  {
-    id: 'setup',
-    title: 'Domain Group Setup',
-    description: 'Configure industry segment and domain group',
-    isValid: false,
-    isCompleted: false
-  },
-  {
-    id: 'entry',
-    title: 'Data Entry',
-    description: 'Add categories and sub-categories',
-    isValid: false,
-    isCompleted: false
-  },
-  {
-    id: 'review',
-    title: 'Review & Submit',
-    description: 'Review and submit your hierarchy',
-    isValid: false,
-    isCompleted: false
-  }
-];
 
 const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
   data,
@@ -92,49 +59,6 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
     }
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <DataSourceSelector
-            wizardData={wizardData}
-            onUpdate={updateWizardData}
-            onValidationChange={(isValid) => markStepCompleted(0, isValid)}
-          />
-        );
-      case 1:
-        return (
-          <DomainGroupSetup
-            wizardData={wizardData}
-            onUpdate={updateWizardData}
-            onValidationChange={(isValid) => markStepCompleted(1, isValid)}
-          />
-        );
-      case 2:
-        return (
-          <DataEntryStep
-            wizardData={wizardData}
-            onUpdate={updateWizardData}
-            onValidationChange={(isValid) => markStepCompleted(2, isValid)}
-          />
-        );
-      case 3:
-        return (
-          <ReviewAndSubmit
-            wizardData={wizardData}
-            existingData={data}
-            onUpdate={updateWizardData}
-            onSubmit={onDataUpdate}
-            onValidationChange={(isValid) => markStepCompleted(3, isValid)}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  const progressValue = ((currentStep + 1) / steps.length) * 100;
-
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
@@ -143,60 +67,28 @@ const ExcelUploadWizard: React.FC<ExcelUploadWizardProps> = ({
           <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         </CardTitle>
         
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <Progress value={progressValue} className="w-full" />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            {steps.map((step, index) => (
-              <div 
-                key={step.id}
-                className={`flex flex-col items-center ${
-                  index === currentStep ? 'text-primary font-medium' : ''
-                } ${step.isCompleted ? 'text-green-600' : ''}`}
-              >
-                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                  index === currentStep 
-                    ? 'border-primary bg-primary text-primary-foreground' 
-                    : step.isCompleted 
-                      ? 'border-green-600 bg-green-600 text-white'
-                      : 'border-muted'
-                }`}>
-                  {index + 1}
-                </div>
-                <span className="mt-1 text-xs text-center">{step.title}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <WizardProgressBar steps={steps} currentStep={currentStep} />
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Current Step Content */}
         <div className="min-h-96">
-          {renderStepContent()}
+          <WizardStepContent
+            currentStep={currentStep}
+            wizardData={wizardData}
+            existingData={data}
+            onUpdate={updateWizardData}
+            onSubmit={onDataUpdate}
+            onValidationChange={markStepCompleted}
+          />
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
-          </Button>
-
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed() || currentStep === steps.length - 1}
-            className="flex items-center gap-2"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
+        <WizardNavigation
+          currentStep={currentStep}
+          totalSteps={steps.length}
+          canProceed={canProceed()}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+        />
       </CardContent>
     </Card>
   );
