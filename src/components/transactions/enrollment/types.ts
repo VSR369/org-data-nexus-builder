@@ -13,6 +13,7 @@ export interface FormData {
   lastName: string;
   email: string;
   mobile: string;
+  userId: string;
   password: string;
   confirmPassword: string;
   providerCountry: string;
