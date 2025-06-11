@@ -531,5 +531,3 @@ const SeekerMembershipFeeConfig = () => {
 };
 
 export default SeekerMembershipFeeConfig;
-
-}
