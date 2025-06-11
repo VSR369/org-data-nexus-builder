@@ -137,16 +137,24 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2">Categories & Sub-Categories</h2>
+        <h2 className="text-lg font-semibold mb-2">Categories & Sub-Categories</h2>
         <p className="text-muted-foreground">
           Add categories and sub-categories for your domain group
         </p>
-        {domainGroupName && (
-          <div className="mt-4 p-3 bg-primary/10 rounded-lg">
-            <p className="text-sm text-muted-foreground">Creating Domain Group:</p>
-            <p className="font-semibold text-primary">{domainGroupName}</p>
+        
+        {(selectedSegment || domainGroupName) && (
+          <div className="mt-4 p-4 bg-primary/10 rounded-lg space-y-2">
             {selectedSegment && (
-              <p className="text-xs text-muted-foreground">in {selectedSegment.industrySegment}</p>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Industry Segment:</p>
+                <p className="font-semibold text-primary">{selectedSegment.industrySegment}</p>
+              </div>
+            )}
+            {domainGroupName && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Domain Group:</p>
+                <p className="font-semibold text-primary">{domainGroupName}</p>
+              </div>
             )}
           </div>
         )}
