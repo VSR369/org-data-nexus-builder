@@ -112,9 +112,11 @@ export const GlobalNavigation = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button>
-                  Sign Up
-                </Button>
+                <Link to="/signup">
+                  <Button>
+                    Sign Up
+                  </Button>
+                </Link>
               </div>
             )}
 
@@ -185,12 +187,13 @@ export const GlobalNavigation = () => {
                   </button>
                 ))}
                 <div className="mt-2 pt-2 border-t">
-                  <button
+                  <Link
+                    to="/signup"
                     onClick={() => setIsMenuOpen(false)}
                     className="block w-full text-left py-2 px-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium"
                   >
                     Sign Up
-                  </button>
+                  </Link>
                 </div>
               </div>
             )}
