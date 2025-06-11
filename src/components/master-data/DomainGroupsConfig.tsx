@@ -53,11 +53,6 @@ const DomainGroupsConfig: React.FC = () => {
     setExpandedCategories(newExpanded);
   };
 
-  const handleCreateLifeSciencesHierarchy = () => {
-    // Implementation for creating Life Sciences hierarchy
-    console.log('Creating Life Sciences hierarchy...');
-  };
-
   if (showManualEntry) {
     return (
       <div className="space-y-6">
@@ -145,7 +140,6 @@ const DomainGroupsConfig: React.FC = () => {
         hasData={data.domainGroups.length > 0}
         isCreating={false}
         onShowDataEntry={() => setShowManualEntry(true)}
-        onCreateLifeSciencesHierarchy={handleCreateLifeSciencesHierarchy}
       />
     </div>
   );
