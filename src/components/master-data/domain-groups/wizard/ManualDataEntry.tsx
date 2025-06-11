@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -136,13 +137,6 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-lg font-semibold mb-2">Categories & Sub-Categories</h2>
-        <p className="text-muted-foreground">
-          Add categories and sub-categories for your domain group
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
