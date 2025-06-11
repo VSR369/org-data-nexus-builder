@@ -46,7 +46,7 @@ export const GlobalNavigation = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Always visible */}
           <div className="hidden lg:flex items-center space-x-1">
             {navigationItems.map((item) => (
               <Link
@@ -81,7 +81,7 @@ export const GlobalNavigation = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuContent className="w-56 bg-white" align="end">
                   <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />
                     Profile
@@ -104,7 +104,7 @@ export const GlobalNavigation = () => {
                       Sign In
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-48" align="end">
+                  <DropdownMenuContent className="w-48 bg-white" align="end">
                     {signInRoles.map((role) => (
                       <DropdownMenuItem key={role} onClick={() => setIsLoggedIn(true)}>
                         {role}
@@ -144,7 +144,7 @@ export const GlobalNavigation = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Always show navigation items */}
         {isMenuOpen && (
           <div className="lg:hidden border-t bg-white py-4 space-y-2">
             <div className="relative mb-4">
@@ -154,21 +154,22 @@ export const GlobalNavigation = () => {
                 className="pl-10 bg-gray-50"
               />
             </div>
-            {/* Always show navigation items in mobile menu */}
+            
+            {/* Navigation items - always visible */}
             {navigationItems.map((item) => (
               <Link
                 key={item.label}
                 to={item.href}
-                className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
             
-            {/* Show sign-in options only if not logged in */}
+            {/* Sign-in options - only when not logged in */}
             {!isLoggedIn && (
-              <div className="px-4 py-2">
+              <div className="px-4 py-2 border-t pt-4 mt-4">
                 <p className="text-sm font-medium text-gray-900 mb-2">Sign In As:</p>
                 {signInRoles.map((role) => (
                   <button
@@ -185,9 +186,10 @@ export const GlobalNavigation = () => {
               </div>
             )}
             
+            {/* Master Data Portal link in mobile */}
             <Link
               to="/master-data"
-              className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium"
+              className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium border-t pt-4 mt-4"
               onClick={() => setIsMenuOpen(false)}
             >
               <Database className="inline h-4 w-4 mr-2" />
