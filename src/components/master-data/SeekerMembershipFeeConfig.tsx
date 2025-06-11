@@ -189,9 +189,9 @@ const SeekerMembershipFeeConfig = () => {
     e.preventDefault();
     
     if (!currentEntry.country || !currentEntry.entityType || 
-        !currentEntry.quarterlyAmount || !currentEntry.quarterlyCurrency ||
-        !currentEntry.halfYearlyAmount || !currentEntry.halfYearlyCurrency ||
-        !currentEntry.annualAmount || !currentEntry.annualCurrency) {
+        currentEntry.quarterlyAmount === undefined || currentEntry.quarterlyAmount === null || !currentEntry.quarterlyCurrency ||
+        currentEntry.halfYearlyAmount === undefined || currentEntry.halfYearlyAmount === null || !currentEntry.halfYearlyCurrency ||
+        currentEntry.annualAmount === undefined || currentEntry.annualAmount === null || !currentEntry.annualCurrency) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -362,8 +362,14 @@ const SeekerMembershipFeeConfig = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={currentEntry.quarterlyAmount || ''}
-                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, quarterlyAmount: parseFloat(e.target.value) }))}
+                    value={currentEntry.quarterlyAmount ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCurrentEntry(prev => ({ 
+                        ...prev, 
+                        quarterlyAmount: value === '' ? 0 : parseFloat(value) 
+                      }));
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -397,8 +403,14 @@ const SeekerMembershipFeeConfig = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={currentEntry.halfYearlyAmount || ''}
-                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, halfYearlyAmount: parseFloat(e.target.value) }))}
+                    value={currentEntry.halfYearlyAmount ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCurrentEntry(prev => ({ 
+                        ...prev, 
+                        halfYearlyAmount: value === '' ? 0 : parseFloat(value) 
+                      }));
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -432,8 +444,14 @@ const SeekerMembershipFeeConfig = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={currentEntry.annualAmount || ''}
-                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, annualAmount: parseFloat(e.target.value) }))}
+                    value={currentEntry.annualAmount ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCurrentEntry(prev => ({ 
+                        ...prev, 
+                        annualAmount: value === '' ? 0 : parseFloat(value) 
+                      }));
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -513,3 +531,5 @@ const SeekerMembershipFeeConfig = () => {
 };
 
 export default SeekerMembershipFeeConfig;
+
+}
