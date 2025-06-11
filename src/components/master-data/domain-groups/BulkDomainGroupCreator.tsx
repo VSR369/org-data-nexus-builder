@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { createLifeSciencesHierarchyData } from './lifeSciencesHierarchyData';
 import { domainGroupsDataManager } from './domainGroupsDataManager';
-import { Zap, Building2, ChevronDown, ChevronRight, Plus, FolderTree, Target, Globe } from 'lucide-react';
+import { Zap, Building2, ChevronDown, ChevronRight, Plus, FolderTree, Target, Globe, Bug } from 'lucide-react';
 
 interface BulkDomainGroupCreatorProps {
   data: DomainGroupsData;
@@ -26,21 +26,76 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [debugInfo, setDebugInfo] = useState<any>({});
 
-  // Check if any domain groups exist
+  // Enhanced debugging effect
   useEffect(() => {
-    console.log('🔄 BulkDomainGroupCreator: Checking for existing hierarchies...');
-    console.log('📊 BulkDomainGroupCreator: Current data state:', {
-      domainGroups: data.domainGroups?.length || 0,
-      categories: data.categories?.length || 0,
-      subCategories: data.subCategories?.length || 0
+    console.log('🔄 BulkDomainGroupCreator: useEffect triggered');
+    console.log('📊 BulkDomainGroupCreator: Current data prop:', data);
+    
+    // Check localStorage directly
+    const storedData = localStorage.getItem('master_data_domain_groups');
+    console.log('💾 Direct localStorage check:', storedData);
+    
+    // Check if data manager has data
+    const managerHasData = domainGroupsDataManager.hasData();
+    console.log('🔍 Data manager hasData():', managerHasData);
+    
+    // Load fresh data from manager
+    const freshData = domainGroupsDataManager.loadData();
+    console.log('🆕 Fresh data from manager:', freshData);
+    
+    // Check all localStorage keys
+    const allKeys = Object.keys(localStorage);
+    const relevantKeys = allKeys.filter(key => key.includes('domain') || key.includes('group'));
+    console.log('🗝️ All relevant localStorage keys:', relevantKeys);
+    relevantKeys.forEach(key => {
+      console.log(`📋 ${key}:`, localStorage.getItem(key));
     });
 
     const exists = data.domainGroups && data.domainGroups.length > 0;
     setHierarchyExists(exists);
     
+    // Store debug info for display
+    setDebugInfo({
+      propData: data,
+      storedRaw: storedData,
+      managerHasData,
+      freshData,
+      relevantKeys,
+      hierarchyExists: exists
+    });
+    
     console.log('📊 BulkDomainGroupCreator: Hierarchy existence result:', exists);
   }, [data, forceRefresh]);
+
+  // Test data loading button
+  const handleTestDataLoad = () => {
+    console.log('🧪 Testing data load...');
+    
+    // Force reload from localStorage
+    const testData = domainGroupsDataManager.loadData();
+    console.log('🧪 Test load result:', testData);
+    
+    // Update parent component
+    onDataUpdate(testData);
+    setForceRefresh(prev => prev + 1);
+  };
+
+  // Clear all data button for testing
+  const handleClearAllData = () => {
+    console.log('🗑️ Clearing all domain groups data...');
+    domainGroupsDataManager.clearData();
+    
+    const emptyData: DomainGroupsData = {
+      domainGroups: [],
+      categories: [],
+      subCategories: []
+    };
+    
+    onDataUpdate(emptyData);
+    setForceRefresh(prev => prev + 1);
+  };
 
   const handleCreateLifeSciencesHierarchy = async () => {
     setIsCreating(true);
@@ -67,6 +122,10 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
       // Save the data using the data manager
       domainGroupsDataManager.saveData(updatedData);
       console.log('💾 Data saved to localStorage');
+      
+      // Verify save
+      const verificationData = domainGroupsDataManager.loadData();
+      console.log('🔍 Verification load after save:', verificationData);
       
       onDataUpdate(updatedData);
       setForceRefresh(prev => prev + 1);
@@ -153,6 +212,52 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Debug Panel */}
+      <Card className="bg-red-50 border-red-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-800">
+            <Bug className="w-5 h-5" />
+            Debug Panel - Data Flow Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <h4 className="font-semibold text-red-700">Props Data</h4>
+              <p>Domain Groups: {data.domainGroups?.length || 0}</p>
+              <p>Categories: {data.categories?.length || 0}</p>
+              <p>Sub-Categories: {data.subCategories?.length || 0}</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-red-700">localStorage</h4>
+              <p>Raw Data: {debugInfo.storedRaw ? 'Found' : 'Empty/Null'}</p>
+              <p>Manager Has Data: {debugInfo.managerHasData?.toString()}</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-red-700">Render State</h4>
+              <p>Has Data: {hasData.toString()}</p>
+              <p>Hierarchy Exists: {hierarchyExists.toString()}</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button onClick={handleTestDataLoad} variant="outline" size="sm">
+              Force Reload Data
+            </Button>
+            <Button onClick={handleClearAllData} variant="destructive" size="sm">
+              Clear All Data
+            </Button>
+          </div>
+          
+          <details className="text-xs">
+            <summary className="cursor-pointer font-medium text-red-700">Raw Debug Data</summary>
+            <pre className="mt-2 p-2 bg-red-100 rounded overflow-auto max-h-40">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </details>
+        </CardContent>
+      </Card>
+
       {/* Existing Hierarchies Display */}
       {hasData && (
         <Card>
