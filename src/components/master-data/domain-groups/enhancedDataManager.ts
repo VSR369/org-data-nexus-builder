@@ -3,7 +3,7 @@ import { DataManager } from '@/utils/dataManager';
 
 // Base enhanced data manager with persistence improvements
 export class EnhancedDataManager<T> extends DataManager<T> {
-  // Override loadData to be more forgiving and persistent
+  // Override loadData to be more persistent and less destructive
   loadData(): T {
     console.log(`=== Enhanced DataManager.loadData() START for key: ${this.config.key} ===`);
     
@@ -18,8 +18,8 @@ export class EnhancedDataManager<T> extends DataManager<T> {
         
         // Validate the structure for the specific data type
         if (this.validateDataStructure(parsed)) {
-          // Mark as initialized without version checking to prevent clearing
-          this.updateInitializationState();
+          // Mark as initialized to prevent any clearing
+          this.markAsInitialized();
           
           console.log(`=== Enhanced DataManager.loadData() END - Success for ${this.config.key} ===`);
           return parsed;
@@ -36,7 +36,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
 
       // Only use defaults if absolutely no data exists
       console.log('⚠️ No data found, using defaults');
-      this.updateInitializationState();
+      this.markAsInitialized();
       console.log(`=== Enhanced DataManager.loadData() END - Defaults for ${this.config.key} ===`);
       return this.config.defaultData;
       
@@ -63,7 +63,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
     return null;
   }
 
-  // Enhanced save that also cleans up old keys
+  // Enhanced save that preserves data integrity
   saveData(data: T): void {
     try {
       console.log(`=== Enhanced DataManager.saveData() START for ${this.config.key} ===`);
@@ -71,7 +71,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
       
       const jsonString = JSON.stringify(data);
       localStorage.setItem(this.config.key, jsonString);
-      this.updateInitializationState();
+      this.markAsInitialized();
       
       // Clean up old keys to prevent confusion
       this.cleanupOldKeys();
@@ -110,7 +110,7 @@ export class EnhancedDataManager<T> extends DataManager<T> {
     return !!data;
   }
 
-  private updateInitializationState(): void {
+  private markAsInitialized(): void {
     const initKey = `${this.config.key}_initialized`;
     const versionKey = `${this.config.key}_version`;
     localStorage.setItem(initKey, 'true');

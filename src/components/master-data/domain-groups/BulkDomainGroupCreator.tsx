@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { checkLifeSciencesExists } from './lifeSciencesExistenceChecker';
 import HierarchyExistsMessage from './HierarchyExistsMessage';
-import BulkCreationForm from './BulkCreationForm';
+import DomainGroupForm from './DomainGroupForm';
 
 interface BulkDomainGroupCreatorProps {
   data: DomainGroupsData;
@@ -15,78 +15,44 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
   onDataUpdate 
 }) => {
   const [forceRefresh, setForceRefresh] = useState(0);
-  const [lifeSciencesExists, setLifeSciencesExists] = useState(false);
-  const [hierarchyCreated, setHierarchyCreated] = useState(false);
+  const [hierarchyExists, setHierarchyExists] = useState(false);
 
-  // Enhanced existence checking with better logging
+  // Check if any domain groups exist
   useEffect(() => {
-    console.log('🔄 BulkDomainGroupCreator: Enhanced existence check triggered...');
+    console.log('🔄 Checking for existing hierarchies...');
     console.log('📊 Current data state:', {
       domainGroups: data.domainGroups?.length || 0,
       categories: data.categories?.length || 0,
-      subCategories: data.subCategories?.length || 0,
-      forceRefresh,
-      hierarchyCreated
+      subCategories: data.subCategories?.length || 0
     });
 
-    const exists = checkLifeSciencesExists(data);
-    setLifeSciencesExists(exists);
+    const exists = data.domainGroups && data.domainGroups.length > 0;
+    setHierarchyExists(exists);
     
-    console.log('📊 Life Sciences existence result:', {
-      exists,
-      previousState: lifeSciencesExists,
-      hierarchyCreated,
-      forceRefresh
-    });
-
-    // If hierarchy was just created, ensure we show the exists message
-    if (hierarchyCreated && exists) {
-      console.log('✅ Hierarchy was created and exists - showing exists message');
-    }
-  }, [data, forceRefresh, hierarchyCreated]);
-
-  const handleCreationComplete = (newData: DomainGroupsData) => {
-    console.log('✅ Enhanced creation completed - updating state...');
-    
-    // Immediately update the hierarchyCreated flag
-    setHierarchyCreated(true);
-    
-    // Update parent data
-    onDataUpdate(newData);
-    
-    // Force immediate UI update
-    setLifeSciencesExists(true);
-    
-    // Force refresh to re-check existence
-    setForceRefresh(prev => prev + 1);
-    
-    console.log('🎯 All states updated - hierarchy should now show as existing');
-  };
+    console.log('📊 Hierarchy existence result:', exists);
+  }, [data, forceRefresh]);
 
   const handleDataUpdate = (newData: DomainGroupsData) => {
-    console.log('🔄 BulkDomainGroupCreator: Enhanced data update...');
+    console.log('🔄 Data update received');
     onDataUpdate(newData);
     setForceRefresh(prev => prev + 1);
   };
 
-  console.log('🎯 BulkDomainGroupCreator render decision:', {
-    lifeSciencesExists,
-    hierarchyCreated,
-    forceRefresh,
-    dataHasDomainGroups: data.domainGroups?.length > 0,
-    showExistsMessage: lifeSciencesExists || hierarchyCreated
+  console.log('🎯 Render decision:', {
+    hierarchyExists,
+    dataHasDomainGroups: data.domainGroups?.length > 0
   });
 
-  // Show exists message if hierarchy exists OR was just created
-  if (lifeSciencesExists || hierarchyCreated) {
+  // Show exists message if hierarchy exists
+  if (hierarchyExists) {
     return <HierarchyExistsMessage data={data} />;
   }
 
+  // Show simple domain group creation form
   return (
-    <BulkCreationForm 
+    <DomainGroupForm 
       data={data} 
       onDataUpdate={handleDataUpdate}
-      onCreationComplete={handleCreationComplete}
     />
   );
 };

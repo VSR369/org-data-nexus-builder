@@ -17,7 +17,7 @@ class EnhancedDomainGroupsManager extends EnhancedDataManager<DomainGroupsData> 
     super({
       key: 'master_data_domain_groups',
       defaultData: defaultDomainGroupsData,
-      version: 1 // Fixed stable version
+      version: 1 // Stable version to prevent clearing
     });
   }
 
@@ -39,9 +39,12 @@ class EnhancedDomainGroupsManager extends EnhancedDataManager<DomainGroupsData> 
     return DomainGroupsRecoveryUtils.tryRecovery();
   }
 
-  // Override cleanup logic
+  // Override cleanup logic - only clean specific old keys
   protected cleanupOldKeys(): void {
-    const oldKeys = DomainGroupsMigrationUtils.getOldKeysToCleanup();
+    const oldKeys = [
+      'domainGroupsData', // Old key that might conflict
+      'domain_groups_data' // Another old key
+    ];
     
     oldKeys.forEach(key => {
       if (localStorage.getItem(key)) {
