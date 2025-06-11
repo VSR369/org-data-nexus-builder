@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { createLifeSciencesHierarchyData } from './lifeSciencesHierarchyData';
+import { domainGroupsDataManager } from './domainGroupsDataManager';
 import { Zap, Building2, ChevronDown, ChevronRight, Plus, FolderTree, Target, Globe } from 'lucide-react';
 
 interface BulkDomainGroupCreatorProps {
@@ -62,6 +63,10 @@ const BulkDomainGroupCreator: React.FC<BulkDomainGroupCreatorProps> = ({
         totalCategories: updatedData.categories.length,
         totalSubCategories: updatedData.subCategories.length
       });
+      
+      // Save the data using the data manager
+      domainGroupsDataManager.saveData(updatedData);
+      console.log('💾 Data saved to localStorage');
       
       onDataUpdate(updatedData);
       setForceRefresh(prev => prev + 1);
