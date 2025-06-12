@@ -10,6 +10,7 @@ import { WizardData } from '@/types/wizardTypes';
 import { DomainGroupsData, DomainGroup, Category, SubCategory } from '@/types/domainGroups';
 import { domainGroupsDataManager } from '../domainGroupsDataManager';
 import { industrySegmentDataManager } from '../industrySegmentDataManager';
+import ExistingDataTreeView from './ExistingDataTreeView';
 
 interface ReviewAndSubmitProps {
   wizardData: WizardData;
@@ -194,10 +195,35 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
     );
   }
 
-  // Group by industry segment for hierarchical display
+  // Prepare existing data for display
   const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
   const selectedSegment = industrySegments.find(seg => seg.id === wizardData.selectedIndustrySegment);
   const industrySegmentName = selectedSegment?.industrySegment || 'Unknown Industry';
+
+  // Transform existing domain groups data to include nested categories and subcategories
+  const enhancedExistingDomainGroups: DomainGroup[] = existingData.domainGroups.map(dg => {
+    const domainCategories = existingData.categories.filter(cat => cat.domainGroupId === dg.id);
+    
+    return {
+      ...dg,
+      categories: domainCategories.map(cat => ({
+        ...cat,
+        subCategories: existingData.subCategories.filter(sub => sub.categoryId === cat.id)
+      }))
+    };
+  });
+
+  // Group existing domain groups by industry segment
+  const groupedExistingDomainGroups = enhancedExistingDomainGroups.reduce((acc, dg) => {
+    const segment = industrySegments.find(is => is.id === dg.industrySegmentId);
+    if (segment) {
+      if (!acc[segment.industrySegment]) {
+        acc[segment.industrySegment] = [];
+      }
+      acc[segment.industrySegment].push(dg);
+    }
+    return acc;
+  }, {} as Record<string, DomainGroup[]>);
 
   return (
     <div className="space-y-6">
@@ -207,6 +233,12 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
           Review the new hierarchy structure before saving to database
         </p>
       </div>
+
+      {/* Show existing hierarchies to prevent duplicates */}
+      <ExistingDataTreeView
+        industrySegments={industrySegments}
+        groupedDomainGroups={groupedExistingDomainGroups}
+      />
 
       {/* Summary */}
       <Card>
@@ -240,7 +272,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
         </CardContent>
       </Card>
 
-      {/* New Hierarchy Preview - This is the ONLY hierarchy display needed */}
+      {/* New Hierarchy Preview */}
       <Card>
         <CardHeader>
           <CardTitle>New Hierarchy Preview</CardTitle>
