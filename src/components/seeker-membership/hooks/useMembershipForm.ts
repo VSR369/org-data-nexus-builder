@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { checkExistingMembership } from '@/utils/membershipUtils';
-import { DataManager } from '@/utils/dataManager';
+import { UniversalDataManager } from '@/utils/core/UniversalDataManager';
 
 interface UseMembershipFormProps {
   userId?: string;
@@ -25,15 +25,17 @@ interface MembershipFeeEntry {
   annualCurrency: string;
 }
 
-// Create data manager for entity types
-const entityTypesDataManager = new DataManager<string[]>({
+// Create data manager for entity types from master data
+const entityTypesDataManager = new UniversalDataManager<string[]>({
   key: 'master_data_entity_types',
-  defaultData: [
+  defaultData: [],
+  version: 1,
+  seedFunction: () => [
     'Commercial',
     'Non-Profit Organization',
     'Society/ Trust'
   ],
-  version: 1
+  validationFunction: (data) => Array.isArray(data) && data.length > 0
 });
 
 export const useMembershipForm = ({
@@ -85,47 +87,8 @@ export const useMembershipForm = ({
     }
   ]);
 
-  // Initialize form state with existing data if editing
-  const [selectedEntityType, setSelectedEntityType] = useState<string>(() => {
-    console.log('🔄 Initializing entity type selection...');
-    
-    if (isEditing && existingEntityType) {
-      console.log('🔄 Pre-filling entity type from props:', existingEntityType);
-      return existingEntityType;
-    }
-    
-    // Try to get from localStorage if no props passed
-    if (isEditing && userId) {
-      const membershipDetails = checkExistingMembership(userId);
-      if (membershipDetails.entityType) {
-        console.log('🔄 Loading entity type from localStorage:', membershipDetails.entityType);
-        return membershipDetails.entityType;
-      }
-    }
-    
-    return '';
-  });
-
-  const [selectedPlan, setSelectedPlan] = useState<string>(() => {
-    console.log('🔄 Initializing membership plan selection...');
-    
-    if (isEditing && existingMembershipPlan) {
-      console.log('🔄 Pre-filling membership plan from props:', existingMembershipPlan);
-      return existingMembershipPlan;
-    }
-    
-    // Try to get from localStorage if no props passed
-    if (isEditing && userId) {
-      const membershipDetails = checkExistingMembership(userId);
-      if (membershipDetails.membershipPlan) {
-        console.log('🔄 Loading membership plan from localStorage:', membershipDetails.membershipPlan);
-        return membershipDetails.membershipPlan;
-      }
-    }
-    
-    return '';
-  });
-
+  const [selectedEntityType, setSelectedEntityType] = useState<string>('');
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Load entity types from master data on component mount
@@ -136,23 +99,40 @@ export const useMembershipForm = ({
     setEntityTypes(loadedEntityTypes);
   }, []);
 
-  // Effect to handle editing mode initialization
+  // Initialize form with existing data when editing
   useEffect(() => {
     if (isEditing && userId) {
-      console.log('🔄 Editing mode detected, checking for existing membership data...');
+      console.log('🔄 Editing mode - initializing form with existing data...');
+      console.log('📥 Props received:', { 
+        existingEntityType, 
+        existingMembershipPlan,
+        userId,
+        organizationName 
+      });
+
+      // Get membership details from localStorage as fallback
       const membershipDetails = checkExistingMembership(userId);
-      console.log('🔍 Retrieved membership details:', membershipDetails);
-      
-      // Only update if we don't already have the data from props
-      if (!existingEntityType && membershipDetails.entityType) {
-        console.log('🔄 Setting entity type from localStorage:', membershipDetails.entityType);
-        setSelectedEntityType(membershipDetails.entityType);
+      console.log('📋 Retrieved membership details from storage:', membershipDetails);
+
+      // Set entity type - prefer props, fallback to localStorage
+      const entityTypeToSet = existingEntityType || membershipDetails.entityType;
+      if (entityTypeToSet) {
+        console.log('✅ Setting entity type:', entityTypeToSet);
+        setSelectedEntityType(entityTypeToSet);
+      } else {
+        console.warn('⚠️ No entity type found to pre-fill');
       }
-      
-      if (!existingMembershipPlan && membershipDetails.membershipPlan) {
-        console.log('🔄 Setting membership plan from localStorage:', membershipDetails.membershipPlan);
-        setSelectedPlan(membershipDetails.membershipPlan);
+
+      // Set membership plan - prefer props, fallback to localStorage
+      const membershipPlanToSet = existingMembershipPlan || membershipDetails.membershipPlan;
+      if (membershipPlanToSet) {
+        console.log('✅ Setting membership plan:', membershipPlanToSet);
+        setSelectedPlan(membershipPlanToSet);
+      } else {
+        console.warn('⚠️ No membership plan found to pre-fill');
       }
+    } else {
+      console.log('🆕 New membership mode - starting with empty form');
     }
   }, [isEditing, userId, existingEntityType, existingMembershipPlan]);
 
@@ -202,6 +182,9 @@ export const useMembershipForm = ({
       const membershipOptions = getMembershipOptions();
       const selectedOption = membershipOptions?.[selectedPlan as keyof typeof membershipOptions];
 
+      // Get existing data to preserve joinedAt date
+      const existingData = isEditing && userId ? checkExistingMembership(userId) : null;
+
       const membershipData = {
         userId: userId || '',
         organizationName: organizationName || '',
@@ -210,17 +193,9 @@ export const useMembershipForm = ({
         amount: selectedOption?.amount || 0,
         currency: selectedOption?.currency || 'USD',
         isMember: true,
-        joinedAt: isEditing ? undefined : new Date().toISOString(), // Don't update join date when editing
+        joinedAt: existingData?.joinedAt || new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       };
-
-      // Get existing data to preserve joinedAt date
-      if (isEditing && userId) {
-        const existingData = checkExistingMembership(userId);
-        if (existingData.joinedAt) {
-          membershipData.joinedAt = existingData.joinedAt;
-        }
-      }
 
       localStorage.setItem('seeker_membership_data', JSON.stringify(membershipData));
       console.log('💾 Saved membership data:', membershipData);

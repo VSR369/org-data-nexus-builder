@@ -81,14 +81,36 @@ const SeekerDashboard = () => {
   };
 
   const handleEditMembership = () => {
+    console.log('🔄 Starting edit membership process...');
+    console.log('📋 Current membership details:', membershipDetails);
+    
+    // Ensure we have the necessary data
+    if (!userId) {
+      console.error('❌ No userId available for editing');
+      return;
+    }
+
+    // Get fresh membership data
+    const freshMembershipData = checkExistingMembership(userId);
+    console.log('🔄 Fresh membership data retrieved:', freshMembershipData);
+
+    if (!freshMembershipData.isMember) {
+      console.error('❌ No active membership found to edit');
+      return;
+    }
+
+    const editState = {
+      userId,
+      organizationName: organizationName || freshMembershipData.organizationName,
+      isEditing: true,
+      existingEntityType: freshMembershipData.entityType,
+      existingMembershipPlan: freshMembershipData.membershipPlan
+    };
+
+    console.log('🚀 Navigating to edit membership with state:', editState);
+
     navigate('/seeker-membership', {
-      state: {
-        userId,
-        organizationName,
-        isEditing: true,
-        existingEntityType: membershipDetails.entityType,
-        existingMembershipPlan: membershipDetails.membershipPlan
-      }
+      state: editState
     });
   };
 

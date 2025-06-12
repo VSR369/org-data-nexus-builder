@@ -41,6 +41,8 @@ const SeekerMembership = () => {
   // Get existing membership details for display
   const existingMembershipDetails = isEditing && userId ? checkExistingMembership(userId) : null;
 
+  console.log('📋 Existing membership details for display:', existingMembershipDetails);
+
   const {
     entityTypes,
     membershipFees,
@@ -101,7 +103,7 @@ const SeekerMembership = () => {
             </div>
 
             {/* Show editing notice with current details */}
-            {isEditing && existingMembershipDetails && (
+            {isEditing && existingMembershipDetails && existingMembershipDetails.isMember && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <User className="h-5 w-5 text-blue-600" />
@@ -136,6 +138,17 @@ const SeekerMembership = () => {
                 <p className="text-blue-800 text-sm">
                   ✏️ <strong>Editing Mode:</strong> Make any changes you need below and click "Update Membership" to save.
                 </p>
+              </div>
+            )}
+
+            {/* Debug info for editing mode */}
+            {isEditing && (
+              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                <p className="font-medium text-gray-700">Debug Info:</p>
+                <p>Selected Entity Type: {selectedEntityType || 'None'}</p>
+                <p>Selected Plan: {selectedPlan || 'None'}</p>
+                <p>Props Entity Type: {existingEntityType || 'None'}</p>
+                <p>Props Plan: {existingMembershipPlan || 'None'}</p>
               </div>
             )}
           </CardHeader>
