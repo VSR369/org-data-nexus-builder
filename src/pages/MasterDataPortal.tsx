@@ -15,6 +15,8 @@ const MasterDataPortal = () => {
     setIsLoggedIn(true);
   };
 
+  console.log('MasterDataPortal - activeSection:', activeSection);
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex w-full">
@@ -57,7 +59,7 @@ const MasterDataPortal = () => {
           {/* Main Content */}
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <MasterDataContent />
+              <MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />
             </div>
           </main>
         </div>

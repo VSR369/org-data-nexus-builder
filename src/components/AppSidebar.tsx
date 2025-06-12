@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -126,6 +125,8 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   const isOnMasterDataPortal = location.pathname === '/master-data';
 
   const handleMasterDataClick = (sectionId: string) => {
+    console.log('AppSidebar - handleMasterDataClick:', sectionId);
+    
     if (isOnRegistrationPage) {
       // Navigate to home page with the section using React Router
       navigate(`/?section=${sectionId}`);
@@ -158,7 +159,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    isActive={activeSection === item.id && isOnMasterDataPortal}
                     className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
@@ -178,7 +179,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    isActive={activeSection === item.id && isOnMasterDataPortal}
                     className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
@@ -198,7 +199,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    isActive={activeSection === item.id && isOnMasterDataPortal}
                     className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
@@ -218,7 +219,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    isActive={activeSection === item.id && isOnMasterDataPortal}
                     className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
@@ -238,7 +239,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && !isOnRegistrationPage}
+                    isActive={activeSection === item.id && isOnMasterDataPortal}
                     className="w-full justify-start cursor-pointer"
                   >
                     <item.icon className="w-4 h-4" />
