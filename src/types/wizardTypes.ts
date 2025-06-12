@@ -12,6 +12,8 @@ export interface WizardData {
   dataSource: 'manual';
   selectedIndustrySegment: string;
   selectedDomainGroup?: string;
+  existingDataViewed?: boolean;
+  hasExistingData?: boolean;
   manualData?: {
     domainGroupDescription?: string;
     categories: Array<{
