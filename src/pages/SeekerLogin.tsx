@@ -40,6 +40,39 @@ const SeekerLogin = () => {
     }
   };
 
+  // Check if user has existing membership data
+  const checkExistingMembership = (userId: string) => {
+    console.log('🔍 Checking existing membership for user:', userId);
+    
+    const membershipData = localStorage.getItem('seeker_membership_data');
+    if (membershipData) {
+      try {
+        const parsedData = JSON.parse(membershipData);
+        console.log('🔍 Found membership data:', parsedData);
+        
+        // Check if the membership data belongs to this user and is valid
+        if (parsedData && 
+            parsedData.userId === userId && 
+            parsedData.isMember === true &&
+            parsedData.organizationName) {
+          console.log('✅ Valid membership found for user');
+          return {
+            isMember: true,
+            organizationName: parsedData.organizationName
+          };
+        }
+      } catch (error) {
+        console.log('❌ Error parsing membership data:', error);
+      }
+    }
+    
+    console.log('❌ No valid membership found for user');
+    return {
+      isMember: false,
+      organizationName: 'Sample Organization' // Default organization name
+    };
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -62,19 +95,23 @@ const SeekerLogin = () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to seeker dashboard with user context
+      // Check for existing membership data
+      const membershipInfo = checkExistingMembership(formData.userId);
+      
+      console.log('🔍 Login - Membership info for navigation:', membershipInfo);
+      
+      // Navigate to seeker dashboard with user context and membership status
       navigate('/seeker-dashboard', { 
         state: { 
           userId: formData.userId,
-          // In real implementation, you'd get this from the backend response
-          organizationName: 'Sample Organization',
-          isMember: false // This would come from backend
+          organizationName: membershipInfo.organizationName,
+          isMember: membershipInfo.isMember
         }
       });
 
       toast({
         title: "Login Successful",
-        description: "Welcome back!",
+        description: membershipInfo.isMember ? "Welcome back, member!" : "Welcome back!",
       });
     } catch (error) {
       toast({
