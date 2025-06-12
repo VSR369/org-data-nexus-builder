@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2 } from 'lucide-react';
 import { PricingConfig } from './types';
 
@@ -66,21 +65,6 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Platform as a Service Countries</h4>
-                  {config.internalPaasPricing && config.internalPaasPricing.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {config.internalPaasPricing.map((pricing) => (
-                        <Badge key={pricing.id} variant="outline" className="text-xs">
-                          {pricing.country} ({pricing.currency})
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No Platform as a Service countries configured</p>
-                  )}
                 </div>
               </div>
             </div>
