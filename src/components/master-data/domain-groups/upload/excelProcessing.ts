@@ -64,7 +64,7 @@ export const processExcelFile = async (file: File): Promise<{
         // Process all rows from 0 to the last row with data
         for (let rowNum = range.s.r; rowNum <= range.e.r; rowNum++) {
           const row: string[] = [];
-          let hasData = false;
+          let hasAnyData = false;
           
           // Check each column in the row (ensure we check at least 4 columns for the required data)
           for (let colNum = range.s.c; colNum <= Math.max(range.e.c, 3); colNum++) {
@@ -72,17 +72,35 @@ export const processExcelFile = async (file: File): Promise<{
             const cell = worksheet[cellAddress];
             const value = cell ? String(cell.v || '').trim() : '';
             row.push(value);
-            if (value) hasData = true;
+            if (value) hasAnyData = true;
           }
           
-          // Only add rows that have some data
-          if (hasData) {
+          // For data rows (not header), we need at least the first 4 columns to have meaningful hierarchy data
+          // But we should be more lenient - if at least 2 of the 4 required columns have data, include the row
+          if (rowNum === range.s.r) {
+            // Always include header row
             jsonData.push(row);
-            console.log(`📝 Row ${rowNum + 1}:`, row);
+            console.log(`📝 Header row ${rowNum + 1}:`, row);
+          } else if (hasAnyData) {
+            // For data rows, check if we have meaningful hierarchy data
+            const industrySegment = (row[0] || '').toString().trim();
+            const domainGroup = (row[1] || '').toString().trim();
+            const category = (row[2] || '').toString().trim();
+            const subCategory = (row[3] || '').toString().trim();
+            
+            // Include row if at least 2 of the 4 main columns have data
+            const nonEmptyColumns = [industrySegment, domainGroup, category, subCategory].filter(val => val).length;
+            
+            if (nonEmptyColumns >= 2) {
+              jsonData.push(row);
+              console.log(`📝 Data row ${rowNum + 1} (${nonEmptyColumns} columns filled):`, row);
+            } else {
+              console.log(`⚠️ Skipping row ${rowNum + 1} - insufficient data (${nonEmptyColumns} columns):`, row);
+            }
           }
         }
 
-        console.log(`✅ Processed ${jsonData.length} rows with data`);
+        console.log(`✅ Processed ${jsonData.length} total rows (including header)`);
 
         const processingResult: ProcessingResult = {
           totalRows: jsonData.length > 0 ? jsonData.length - 1 : 0, // Exclude header if exists
@@ -147,10 +165,25 @@ export const parseExcelToHierarchy = (
 
     console.log(`📝 Parsed values - IS: "${industrySegment}", DG: "${domainGroup}", Cat: "${category}", Sub: "${subCategory}"`);
 
+    // More flexible validation - allow missing values but require at least industry segment and domain group
     if (!industrySegment) errors.push('Industry Segment is required');
     if (!domainGroup) errors.push('Domain Group is required');
-    if (!category) errors.push('Category is required');
-    if (!subCategory) errors.push('Sub-Category is required');
+    
+    // If we have industry segment and domain group, but missing category/subcategory, 
+    // we can still create a partial hierarchy entry
+    const hasMinimumData = industrySegment && domainGroup;
+    
+    if (!hasMinimumData) {
+      errors.push('Minimum required: Industry Segment and Domain Group');
+    }
+    
+    // For complete hierarchy, we need all 4 fields
+    if (!category && hasMinimumData) {
+      errors.push('Category is recommended for complete hierarchy');
+    }
+    if (!subCategory && hasMinimumData && category) {
+      errors.push('Sub-Category is recommended for complete hierarchy');
+    }
 
     const item: ParsedExcelData = {
       industrySegment,
@@ -158,15 +191,16 @@ export const parseExcelToHierarchy = (
       category,
       subCategory,
       rowNumber,
-      isValid: errors.length === 0,
+      isValid: hasMinimumData && category && subCategory, // Only fully valid if all 4 fields present
       errors
     };
     
     parsed.push(item);
 
-    if (item.isValid) {
+    // Build hierarchy even for partially valid data (if we have minimum data)
+    if (hasMinimumData) {
       validRowCount++;
-      console.log(`✅ Valid row ${rowNumber}: Building hierarchy...`);
+      console.log(`✅ Processing row ${rowNumber}: Building hierarchy...`);
       
       // Build hierarchy structure
       if (!hierarchy[item.industrySegment]) {
@@ -177,16 +211,20 @@ export const parseExcelToHierarchy = (
         hierarchy[item.industrySegment][item.domainGroup] = {};
         console.log(`🏗️ Created domain group: ${item.domainGroup}`);
       }
-      if (!hierarchy[item.industrySegment][item.domainGroup][item.category]) {
-        hierarchy[item.industrySegment][item.domainGroup][item.category] = [];
-        console.log(`🏗️ Created category: ${item.category}`);
-      }
       
-      if (!hierarchy[item.industrySegment][item.domainGroup][item.category].includes(item.subCategory)) {
-        hierarchy[item.industrySegment][item.domainGroup][item.category].push(item.subCategory);
-        console.log(`🏗️ Added sub-category: ${item.subCategory}`);
-      } else {
-        console.log(`⚠️ Duplicate sub-category skipped: ${item.subCategory}`);
+      // Only add category and subcategory if they exist
+      if (item.category) {
+        if (!hierarchy[item.industrySegment][item.domainGroup][item.category]) {
+          hierarchy[item.industrySegment][item.domainGroup][item.category] = [];
+          console.log(`🏗️ Created category: ${item.category}`);
+        }
+        
+        if (item.subCategory && !hierarchy[item.industrySegment][item.domainGroup][item.category].includes(item.subCategory)) {
+          hierarchy[item.industrySegment][item.domainGroup][item.category].push(item.subCategory);
+          console.log(`🏗️ Added sub-category: ${item.subCategory}`);
+        } else if (item.subCategory) {
+          console.log(`⚠️ Duplicate sub-category skipped: ${item.subCategory}`);
+        }
       }
     } else {
       console.error(`❌ Invalid row ${rowNumber}:`, errors);
@@ -203,9 +241,10 @@ export const parseExcelToHierarchy = (
   console.log(`❌ Errors: ${processingResult.errors.length}`);
   console.log('🏗️ Final hierarchy:', hierarchy);
 
-  // Add warnings for empty rows that were skipped
-  if (processingResult.totalRows > rows.length) {
-    processingResult.warnings.push(`${processingResult.totalRows - rows.length} empty rows were skipped`);
+  // Add warnings for rows with partial data
+  const partialRows = parsed.filter(p => !p.isValid && (p.industrySegment || p.domainGroup)).length;
+  if (partialRows > 0) {
+    processingResult.warnings.push(`${partialRows} rows had partial data and were included where possible`);
   }
 
   return { parsed, hierarchy, processingResult };
