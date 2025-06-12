@@ -4,9 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowLeft, Upload, FileSpreadsheet, X, Building2, Target, Globe, FolderTree } from 'lucide-react';
+import { ArrowLeft, Upload, FileSpreadsheet, X, Building2, Target, Globe, FolderTree, Save } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { DomainGroupsData, DomainGroup, Category, SubCategory } from '@/types/domainGroups';
+import { domainGroupsDataManager } from './domainGroupsDataManager';
+import { industrySegmentDataManager } from './industrySegmentDataManager';
 
 interface DomainGroupHierarchyManagerProps {
   onBack: () => void;
@@ -45,6 +49,7 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
   const [hierarchyData, setHierarchyData] = useState<HierarchyData>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [savedDocument, setSavedDocument] = useState<SavedExcelDocument | null>(null);
+  const { toast } = useToast();
 
   // Load saved document on component mount
   useEffect(() => {
@@ -133,6 +138,122 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
     });
 
     return { parsed, hierarchy };
+  };
+
+  const convertToMasterDataFormat = () => {
+    if (!hierarchyData || Object.keys(hierarchyData).length === 0) {
+      toast({
+        title: "No Data",
+        description: "No Excel data to convert to master data format",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Load existing data
+      const existingData = domainGroupsDataManager.loadData();
+      const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
+      
+      const newDomainGroups: DomainGroup[] = [];
+      const newCategories: Category[] = [];
+      const newSubCategories: SubCategory[] = [];
+      
+      let domainGroupCounter = existingData.domainGroups.length + 1;
+      let categoryCounter = existingData.categories.length + 1;
+      let subCategoryCounter = existingData.subCategories.length + 1;
+
+      Object.entries(hierarchyData).forEach(([industrySegmentName, domainGroups]) => {
+        // Find or create industry segment
+        let industrySegment = industrySegments.find(is => is.industrySegment === industrySegmentName);
+        if (!industrySegment) {
+          console.warn(`Industry segment "${industrySegmentName}" not found in master data`);
+          return; // Skip if industry segment doesn't exist
+        }
+
+        Object.entries(domainGroups).forEach(([domainGroupName, categories]) => {
+          // Check if domain group already exists
+          const existingDomainGroup = existingData.domainGroups.find(
+            dg => dg.name === domainGroupName && dg.industrySegmentId === industrySegment!.id
+          );
+          
+          if (existingDomainGroup) {
+            console.log(`Domain group "${domainGroupName}" already exists, skipping`);
+            return;
+          }
+
+          const domainGroupId = `dg_${domainGroupCounter++}`;
+          const newDomainGroup: DomainGroup = {
+            id: domainGroupId,
+            name: domainGroupName,
+            description: `Imported from Excel: ${savedDocument?.fileName || 'Unknown file'}`,
+            industrySegmentId: industrySegment!.id,
+            industrySegmentName: industrySegmentName,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          };
+          newDomainGroups.push(newDomainGroup);
+
+          Object.entries(categories).forEach(([categoryName, subCategories]) => {
+            const categoryId = `cat_${categoryCounter++}`;
+            const newCategory: Category = {
+              id: categoryId,
+              name: categoryName,
+              description: `Imported from Excel`,
+              domainGroupId: domainGroupId,
+              isActive: true,
+              createdAt: new Date().toISOString()
+            };
+            newCategories.push(newCategory);
+
+            subCategories.forEach(subCategoryName => {
+              const subCategoryId = `sub_${subCategoryCounter++}`;
+              const newSubCategory: SubCategory = {
+                id: subCategoryId,
+                name: subCategoryName,
+                description: `Imported from Excel`,
+                categoryId: categoryId,
+                isActive: true,
+                createdAt: new Date().toISOString()
+              };
+              newSubCategories.push(newSubCategory);
+            });
+          });
+        });
+      });
+
+      // Merge with existing data
+      const updatedData: DomainGroupsData = {
+        domainGroups: [...existingData.domainGroups, ...newDomainGroups],
+        categories: [...existingData.categories, ...newCategories],
+        subCategories: [...existingData.subCategories, ...newSubCategories]
+      };
+
+      // Save to master data
+      domainGroupsDataManager.saveData(updatedData);
+
+      toast({
+        title: "Success",
+        description: `Successfully imported ${newDomainGroups.length} domain groups with ${newCategories.length} categories and ${newSubCategories.length} sub-categories to master data`,
+      });
+
+      console.log('✅ Excel data converted and saved to master data format:', {
+        domainGroups: newDomainGroups.length,
+        categories: newCategories.length,
+        subCategories: newSubCategories.length
+      });
+
+      // Navigate back to main page to see the integrated data
+      onBack();
+
+    } catch (error) {
+      console.error('❌ Error converting Excel data to master data format:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert Excel data to master data format",
+        variant: "destructive"
+      });
+    }
   };
 
   const processExcelFile = async (file: File) => {
@@ -271,22 +392,45 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="flex items-center space-x-3">
-                <FileSpreadsheet className="w-8 h-8 text-green-600" />
-                <div>
-                  <p className="font-medium">{uploadedFile.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {(uploadedFile.size / 1024).toFixed(1)} KB
-                    {savedDocument && (
-                      <span className="ml-2 text-green-600">• Saved</span>
-                    )}
-                  </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <FileSpreadsheet className="w-8 h-8 text-green-600" />
+                  <div>
+                    <p className="font-medium">{uploadedFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(uploadedFile.size / 1024).toFixed(1)} KB
+                      {savedDocument && (
+                        <span className="ml-2 text-green-600">• Saved</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
+                <Button variant="ghost" size="sm" onClick={clearUpload}>
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={clearUpload}>
-                <X className="w-4 h-4" />
-              </Button>
+
+              {/* Action Button to Save to Master Data */}
+              {Object.keys(hierarchyData).length > 0 && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-blue-900">Ready to Import</h3>
+                      <p className="text-sm text-blue-700">
+                        Click to add this hierarchy data to your main Domain Groups configuration
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={convertToMasterDataFormat}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save to Master Data
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -298,24 +442,24 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FolderTree className="w-5 h-5" />
-              Domain Group Hierarchy Tree
+              Excel Data Preview
             </CardTitle>
             <CardDescription>
-              Hierarchical tree view of your uploaded domain groups
+              Preview of your uploaded domain groups hierarchy (not yet saved to master data)
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               {Object.entries(hierarchyData).map(([industrySegment, domainGroups]) => (
-                <div key={industrySegment} className="border rounded-lg p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div key={industrySegment} className="border rounded-lg p-6 bg-gradient-to-r from-orange-50 to-amber-50">
                   {/* Industry Segment Header */}
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-semibold text-blue-900">{industrySegment}</h2>
-                      <p className="text-sm text-blue-700">
+                      <h2 className="text-xl font-semibold text-orange-900">{industrySegment}</h2>
+                      <p className="text-sm text-orange-700">
                         {Object.keys(domainGroups).length} Domain Group{Object.keys(domainGroups).length !== 1 ? 's' : ''} • {' '}
                         {Object.values(domainGroups).reduce((sum, dg) => sum + Object.keys(dg).length, 0)} Categories • {' '}
                         {Object.values(domainGroups).reduce((sum, dg) => 
@@ -323,8 +467,8 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
                         )} Sub-Categories
                       </p>
                     </div>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      Industry Segment
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                      Excel Import Preview
                     </Badge>
                   </div>
 
@@ -338,7 +482,9 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
                             <div className="flex items-center gap-2 mb-2">
                               <Building2 className="w-5 h-5 text-primary" />
                               <h3 className="text-lg font-semibold">{domainGroupName}</h3>
-                              <Badge variant="default">Active</Badge>
+                              <Badge variant="outline" className="border-orange-300 text-orange-700">
+                                Preview
+                              </Badge>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
@@ -381,12 +527,9 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
                                         <div className="flex-1 min-w-0">
                                           <h4 className="font-medium text-sm mb-1">{subCategory}</h4>
                                           <div className="flex items-center gap-2 mt-2">
-                                            <Badge variant="outline" className="text-xs">
-                                              Active
+                                            <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
+                                              Excel Import
                                             </Badge>
-                                            <span className="text-xs text-muted-foreground">
-                                              Ready for Evaluation
-                                            </span>
                                           </div>
                                         </div>
                                       </div>
