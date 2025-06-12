@@ -1,105 +1,27 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard, User, Calendar, Settings } from 'lucide-react';
+import { ArrowLeft, CreditCard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import OrganizationInfoDisplay from '@/components/seeker-membership/OrganizationInfoDisplay';
-import DebugInfoPanel from '@/components/seeker-membership/DebugInfoPanel';
-import EntityTypeSelector from '@/components/seeker-membership/EntityTypeSelector';
-import MembershipPlanSelector from '@/components/seeker-membership/MembershipPlanSelector';
-import MembershipCrudManager from '@/components/seeker-membership/MembershipCrudManager';
-import { useMembershipForm } from '@/components/seeker-membership/hooks/useMembershipForm';
-import { checkExistingMembership } from '@/utils/membershipUtils';
-import { useEntityTypeCrud } from '@/hooks/useEntityTypeCrud';
 
 interface SeekerMembershipProps {
   userId?: string;
   organizationName?: string;
-  isEditing?: boolean;
-  existingEntityType?: string;
-  existingMembershipPlan?: string;
 }
 
 const SeekerMembership = () => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('membership');
   
-  const { 
-    userId, 
-    organizationName, 
-    isEditing, 
-    existingEntityType, 
-    existingMembershipPlan 
-  } = location.state as SeekerMembershipProps || {};
-
-  // Get existing membership details for display
-  const existingMembershipDetails = isEditing && userId ? checkExistingMembership(userId) : null;
-
-  // Load entity types and plans from the new CRUD system
-  const { entityTypes: crudEntityTypes, membershipPlans: crudMembershipPlans } = useEntityTypeCrud();
-
-  // Transform CRUD data to match the existing form structure
-  const transformedEntityTypes = crudEntityTypes.map(et => et.name);
-  const transformedMembershipFees = crudMembershipPlans.map(plan => {
-    const entityType = crudEntityTypes.find(et => et.id === plan.entityTypeId);
-    return {
-      id: plan.id,
-      country: 'Global',
-      entityType: entityType?.name || 'Unknown',
-      quarterlyAmount: plan.duration === 'quarterly' ? plan.fee : 0,
-      quarterlyCurrency: plan.currency,
-      halfYearlyAmount: plan.duration === 'halfYearly' ? plan.fee : 0,
-      halfYearlyCurrency: plan.currency,
-      annualAmount: plan.duration === 'annual' ? plan.fee : 0,
-      annualCurrency: plan.currency
-    };
-  });
-
-  const {
-    selectedEntityType,
-    setSelectedEntityType,
-    selectedPlan,
-    setSelectedPlan,
-    isLoading,
-    getMembershipOptions,
-    handleSubmit
-  } = useMembershipForm({
-    userId,
-    organizationName,
-    isEditing,
-    existingEntityType,
-    existingMembershipPlan,
-    // Override with CRUD data
-    entityTypes: transformedEntityTypes,
-    membershipFees: transformedMembershipFees
-  });
-
-  const membershipOptions = getMembershipOptions();
-
-  // Format membership plan display
-  const formatMembershipPlan = (plan?: string) => {
-    if (!plan) return '';
-    switch (plan) {
-      case 'quarterly':
-        return 'Quarterly';
-      case 'halfYearly':
-        return 'Half-Yearly';
-      case 'annual':
-        return 'Annual';
-      default:
-        return plan;
-    }
-  };
+  const { userId, organizationName } = location.state as SeekerMembershipProps || {};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <Card className="shadow-xl border-0">
           <CardHeader>
             <div className="flex items-center gap-4">
-              <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: isEditing || false }}>
+              <Link to="/seeker-dashboard" state={{ userId, organizationName }}>
                 <Button variant="outline" size="icon">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -111,113 +33,22 @@ const SeekerMembership = () => {
                     Seeker Membership Portal
                   </CardTitle>
                   <p className="text-muted-foreground">
-                    Manage membership registration and entity types
+                    Ready for fresh implementation
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* Show editing notice with current details */}
-            {isEditing && existingMembershipDetails && existingMembershipDetails.isMember && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="h-5 w-5 text-blue-600" />
-                  <p className="text-blue-800 font-medium">Current Membership Details</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-blue-700">Entity Type:</span>
-                    <span className="font-semibold text-blue-800">
-                      {existingMembershipDetails.entityType || 'Not set'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-blue-700">Plan:</span>
-                    <span className="font-semibold text-blue-800">
-                      {formatMembershipPlan(existingMembershipDetails.membershipPlan) || 'Not set'}
-                    </span>
-                  </div>
-                </div>
-
-                {existingMembershipDetails.joinedAt && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm text-blue-700">Member since:</span>
-                    <span className="font-semibold text-blue-800">
-                      {new Date(existingMembershipDetails.joinedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-                
-                <p className="text-blue-800 text-sm">
-                  ✏️ <strong>Editing Mode:</strong> Make any changes you need below and click "Update Membership" to save.
-                </p>
-              </div>
-            )}
           </CardHeader>
 
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="membership" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {isEditing ? 'Edit Membership' : 'Membership Registration'}
-                </TabsTrigger>
-                <TabsTrigger value="management" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Manage Entity Types & Plans
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="membership" className="space-y-8">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <OrganizationInfoDisplay 
-                    organizationName={organizationName}
-                    userId={userId}
-                  />
-
-                  <DebugInfoPanel 
-                    entityTypes={transformedEntityTypes}
-                    membershipFees={transformedMembershipFees}
-                  />
-
-                  <EntityTypeSelector
-                    entityTypes={transformedEntityTypes}
-                    selectedEntityType={selectedEntityType}
-                    onEntityTypeChange={setSelectedEntityType}
-                  />
-
-                  <MembershipPlanSelector
-                    membershipOptions={membershipOptions}
-                    selectedPlan={selectedPlan}
-                    onPlanChange={setSelectedPlan}
-                    selectedEntityType={selectedEntityType}
-                    membershipFeesLength={transformedMembershipFees.length}
-                  />
-
-                  {/* Submit Button */}
-                  <div className="flex gap-4 pt-6">
-                    <Button 
-                      type="submit" 
-                      className="flex-1"
-                      disabled={!selectedEntityType || !selectedPlan || isLoading || transformedMembershipFees.length === 0}
-                    >
-                      {isLoading ? 'Processing...' : (isEditing ? 'Update Membership' : 'Submit Registration')}
-                    </Button>
-                    <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: isEditing || false }}>
-                      <Button type="button" variant="outline" className="px-8">
-                        Cancel
-                      </Button>
-                    </Link>
-                  </div>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="management">
-                <MembershipCrudManager />
-              </TabsContent>
-            </Tabs>
+            <div className="text-center py-12">
+              <p className="text-lg text-gray-600 mb-4">
+                Membership functionality has been cleared and ready for new implementation.
+              </p>
+              <p className="text-sm text-gray-500">
+                User: {userId} | Organization: {organizationName}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

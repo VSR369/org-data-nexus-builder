@@ -16,12 +16,12 @@ const defaultEntityTypes = [
 ];
 
 const dataManager = new DataManager<string[]>({
-  key: 'master_data_entity_types',
+  key: 'master_data_entity_types_config',
   defaultData: defaultEntityTypes,
   version: 1
 });
 
-GlobalCacheManager.registerKey('master_data_entity_types');
+GlobalCacheManager.registerKey('master_data_entity_types_config');
 
 const EntityTypeConfig = () => {
   const { toast } = useToast();
@@ -144,9 +144,9 @@ const EntityTypeConfig = () => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Organization Entity Types</CardTitle>
+            <CardTitle>Organization Entity Types (Master Data)</CardTitle>
             <CardDescription>
-              Configure organization entity types for legal classification
+              Configure organization entity types for classification (independent of membership system)
             </CardDescription>
           </div>
           <Button
