@@ -25,6 +25,7 @@ import GlobalCacheManagerComponent from './master-data/GlobalCacheManager';
 import DomainGroupsConfig from './master-data/DomainGroupsConfig';
 import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
 import SeekerMembershipFeeConfig from './master-data/SeekerMembershipFeeConfig';
+import DataHealthPanel from './master-data/debug/DataHealthPanel';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -71,6 +72,8 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
         return <SolutionVotingAssessmentConfig />;
       case 'global-cache-manager':
         return <GlobalCacheManagerComponent />;
+      case 'data-health':
+        return <DataHealthPanel />;
       default:
         return (
           <div className="space-y-6">
@@ -78,7 +81,7 @@ export const MasterDataContent: React.FC<MasterDataContentProps> = ({
               <h2 className="text-2xl font-bold mb-2">Select a Configuration</h2>
               <p className="text-muted-foreground">Choose a configuration option from the sidebar to get started.</p>
             </div>
-            <GlobalCacheManagerComponent />
+            <DataHealthPanel />
           </div>
         );
     }
