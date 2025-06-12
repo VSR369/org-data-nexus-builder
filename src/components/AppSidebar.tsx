@@ -123,11 +123,15 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   const location = useLocation();
   const navigate = useNavigate();
   const isOnRegistrationPage = location.pathname === '/register';
+  const isOnMasterDataPortal = location.pathname === '/master-data';
 
   const handleMasterDataClick = (sectionId: string) => {
     if (isOnRegistrationPage) {
       // Navigate to home page with the section using React Router
       navigate(`/?section=${sectionId}`);
+    } else if (isOnMasterDataPortal) {
+      // On master data portal, just set the active section
+      setActiveSection(sectionId);
     } else {
       // Just set the active section on the current page
       setActiveSection(sectionId);
