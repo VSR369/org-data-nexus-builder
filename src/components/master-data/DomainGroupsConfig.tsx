@@ -4,9 +4,8 @@ import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 import DomainGroupForm from './domain-groups/DomainGroupForm';
 import ManualEntryWizard from './domain-groups/wizard/ManualEntryWizard';
-import DomainGroupDisplay from './domain-groups/DomainGroupDisplay';
-import HierarchyDisplay from './domain-groups/HierarchyDisplay';
 import ActionsSection from './domain-groups/ActionsSection';
+import CombinedHierarchyDisplay from './domain-groups/CombinedHierarchyDisplay';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ const DomainGroupsConfig: React.FC = () => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [newlyCreatedIds, setNewlyCreatedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadedData = domainGroupsDataManager.loadData();
@@ -30,7 +30,23 @@ const DomainGroupsConfig: React.FC = () => {
   }, []);
 
   const handleDataUpdate = (newData: DomainGroupsData) => {
+    // Identify newly created domain groups
+    const existingIds = new Set(data.domainGroups.map(dg => dg.id));
+    const newIds = new Set(
+      newData.domainGroups
+        .filter(dg => !existingIds.has(dg.id))
+        .map(dg => dg.id)
+    );
+    
+    setNewlyCreatedIds(newIds);
     setData(newData);
+    
+    // Clear the "new" indicators after 10 seconds
+    if (newIds.size > 0) {
+      setTimeout(() => {
+        setNewlyCreatedIds(new Set());
+      }, 10000);
+    }
   };
 
   const handleToggleGroupExpansion = (groupId: string) => {
@@ -128,14 +144,17 @@ const DomainGroupsConfig: React.FC = () => {
       </Tabs>
 
       <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
-      <DomainGroupDisplay data={data} onDataUpdate={handleDataUpdate} />
-      <HierarchyDisplay 
+      
+      <CombinedHierarchyDisplay 
         data={data} 
         expandedGroups={expandedGroups}
         expandedCategories={expandedCategories}
+        newlyCreatedIds={newlyCreatedIds}
         onToggleGroupExpansion={handleToggleGroupExpansion}
         onToggleCategoryExpansion={handleToggleCategoryExpansion}
+        onDataUpdate={handleDataUpdate}
       />
+      
       <ActionsSection 
         hasData={data.domainGroups.length > 0}
         isCreating={false}
