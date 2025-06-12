@@ -3,7 +3,7 @@ import React from 'react';
 import { WizardData } from '@/types/wizardTypes';
 import { DomainGroupsData } from '@/types/domainGroups';
 import DomainGroupSetup from './DomainGroupSetup';
-import ManualDataEntry from './ManualDataEntry';
+import DataEntryStep from './DataEntryStep';
 import ReviewAndSubmit from './ReviewAndSubmit';
 
 interface WizardStepContentProps {
@@ -36,7 +36,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
       );
     case 1:
       return (
-        <ManualDataEntry
+        <DataEntryStep
           wizardData={wizardData}
           onUpdate={onUpdate}
           onValidationChange={(isValid) => onValidationChange(1, isValid)}

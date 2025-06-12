@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,6 +9,10 @@ import { Building2, FolderTree } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
 import { IndustrySegment } from '@/types/industrySegments';
 import { industrySegmentDataManager } from '../industrySegmentDataManager';
+import { domainGroupsDataManager } from '../domainGroupsDataManager';
+import { DomainGroupsData } from '@/types/domainGroups';
+import IndustrySegmentCard from './IndustrySegmentCard';
+import EmptyStateDisplay from './EmptyStateDisplay';
 
 interface DomainGroupSetupProps {
   wizardData: WizardData;
@@ -23,15 +26,19 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
   onValidationChange
 }) => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+  const [existingData, setExistingData] = useState<DomainGroupsData>({ domainGroups: [], industrySegments: [] });
 
   // Get values from wizardData or use empty strings as defaults
   const domainGroupName = wizardData.selectedDomainGroup || '';
   const domainGroupDescription = wizardData.manualData?.domainGroupDescription || '';
 
   useEffect(() => {
-    // Load industry segments from master data
-    const loadedData = industrySegmentDataManager.loadData();
-    setIndustrySegments(loadedData.industrySegments || []);
+    // Load industry segments and existing domain groups
+    const industryData = industrySegmentDataManager.loadData();
+    const domainData = domainGroupsDataManager.loadData();
+    
+    setIndustrySegments(industryData.industrySegments || []);
+    setExistingData(domainData);
   }, []);
 
   useEffect(() => {
@@ -69,6 +76,18 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
   };
 
   const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
+
+  // Group existing domain groups by industry segment
+  const groupedDomainGroups = existingData.domainGroups.reduce((acc, dg) => {
+    const segment = industrySegments.find(is => is.id === dg.industrySegmentId);
+    if (segment) {
+      if (!acc[segment.industrySegment]) {
+        acc[segment.industrySegment] = [];
+      }
+      acc[segment.industrySegment].push(dg);
+    }
+    return acc;
+  }, {} as Record<string, typeof existingData.domainGroups>);
 
   return (
     <div className="space-y-6">
@@ -169,6 +188,31 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
               rows={3}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Existing Domain Groups Tree Structure */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderTree className="w-5 h-5" />
+            Existing Domain Group Hierarchies
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {Object.keys(groupedDomainGroups).length === 0 ? (
+            <EmptyStateDisplay />
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(groupedDomainGroups).map(([industrySegment, domainGroups]) => (
+                <IndustrySegmentCard
+                  key={industrySegment}
+                  industrySegment={industrySegment}
+                  domainGroups={domainGroups}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
