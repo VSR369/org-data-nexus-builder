@@ -22,10 +22,22 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
   const { toast } = useToast();
 
   const handleSaveConfig = () => {
-    if (!currentConfig.organizationType || 
-        currentConfig.marketplaceFee === undefined || 
-        currentConfig.aggregatorFee === undefined || 
-        currentConfig.marketplacePlusAggregatorFee === undefined) {
+    console.log('🔍 Current config before validation:', currentConfig);
+    
+    // Check if all required fields are filled
+    const isOrgTypeValid = currentConfig.organizationType && currentConfig.organizationType.trim() !== '';
+    const isMarketplaceFeeValid = currentConfig.marketplaceFee !== undefined && currentConfig.marketplaceFee !== null && !isNaN(currentConfig.marketplaceFee);
+    const isAggregatorFeeValid = currentConfig.aggregatorFee !== undefined && currentConfig.aggregatorFee !== null && !isNaN(currentConfig.aggregatorFee);
+    const isMarketplacePlusAggregatorFeeValid = currentConfig.marketplacePlusAggregatorFee !== undefined && currentConfig.marketplacePlusAggregatorFee !== null && !isNaN(currentConfig.marketplacePlusAggregatorFee);
+
+    console.log('🔍 Validation checks:', {
+      isOrgTypeValid,
+      isMarketplaceFeeValid,
+      isAggregatorFeeValid,
+      isMarketplacePlusAggregatorFeeValid
+    });
+
+    if (!isOrgTypeValid || !isMarketplaceFeeValid || !isAggregatorFeeValid || !isMarketplacePlusAggregatorFeeValid) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -34,6 +46,25 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       return;
     }
 
+    // Save configuration to localStorage
+    const configToSave = {
+      id: Date.now().toString(),
+      organizationType: currentConfig.organizationType,
+      marketplaceFee: currentConfig.marketplaceFee,
+      aggregatorFee: currentConfig.aggregatorFee,
+      marketplacePlusAggregatorFee: currentConfig.marketplacePlusAggregatorFee,
+      internalPaasPricing: [],
+      version: 1,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    // Save to localStorage
+    const existingConfigs = JSON.parse(localStorage.getItem('pricing_general_configs') || '[]');
+    const updatedConfigs = [...existingConfigs, configToSave];
+    localStorage.setItem('pricing_general_configs', JSON.stringify(updatedConfigs));
+
+    console.log('✅ Configuration saved:', configToSave);
+
     toast({
       title: "Success",
       description: "General configuration saved successfully.",
@@ -41,6 +72,14 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
 
     // Clear form after saving
     setCurrentConfig({});
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    const numericValue = parseFloat(value);
+    setCurrentConfig(prev => ({ 
+      ...prev, 
+      [field]: isNaN(numericValue) ? undefined : numericValue 
+    }));
   };
 
   return (
@@ -54,7 +93,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
             <div>
               <Label htmlFor="organizationType">Organization Type *</Label>
               <Select
-                value={currentConfig.organizationType}
+                value={currentConfig.organizationType || ''}
                 onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, organizationType: value }))}
               >
                 <SelectTrigger>
@@ -76,8 +115,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                 min="0"
                 max="100"
                 step="0.1"
-                value={currentConfig.marketplaceFee || ''}
-                onChange={(e) => setCurrentConfig(prev => ({ ...prev, marketplaceFee: parseFloat(e.target.value) }))}
+                value={currentConfig.marketplaceFee !== undefined ? currentConfig.marketplaceFee.toString() : ''}
+                onChange={(e) => handleInputChange('marketplaceFee', e.target.value)}
                 placeholder="30"
               />
             </div>
@@ -90,8 +129,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                 min="0"
                 max="100"
                 step="0.1"
-                value={currentConfig.aggregatorFee || ''}
-                onChange={(e) => setCurrentConfig(prev => ({ ...prev, aggregatorFee: parseFloat(e.target.value) }))}
+                value={currentConfig.aggregatorFee !== undefined ? currentConfig.aggregatorFee.toString() : ''}
+                onChange={(e) => handleInputChange('aggregatorFee', e.target.value)}
                 placeholder="15"
               />
             </div>
@@ -104,8 +143,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                 min="0"
                 max="100"
                 step="0.1"
-                value={currentConfig.marketplacePlusAggregatorFee || ''}
-                onChange={(e) => setCurrentConfig(prev => ({ ...prev, marketplacePlusAggregatorFee: parseFloat(e.target.value) }))}
+                value={currentConfig.marketplacePlusAggregatorFee !== undefined ? currentConfig.marketplacePlusAggregatorFee.toString() : ''}
+                onChange={(e) => handleInputChange('marketplacePlusAggregatorFee', e.target.value)}
                 placeholder="45"
               />
             </div>
