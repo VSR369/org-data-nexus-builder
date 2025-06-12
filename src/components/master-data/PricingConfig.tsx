@@ -61,6 +61,9 @@ const PricingConfig = () => {
       return;
     }
 
+    // Log the current configuration being saved
+    console.log('💾 Saving pricing configuration:', currentConfig);
+
     if (isEditing && currentConfig.id) {
       setConfigs(prev => prev.map(item => 
         item.id === currentConfig.id 
@@ -78,6 +81,8 @@ const PricingConfig = () => {
         version: 1,
         createdAt: new Date().toISOString().split('T')[0],
       } as PricingConfigType;
+      
+      console.log('✅ Created new configuration:', newConfig);
       setConfigs(prev => [...prev, newConfig]);
       toast({
         title: "Success",
@@ -89,6 +94,7 @@ const PricingConfig = () => {
   };
 
   const handleEdit = (config: PricingConfigType) => {
+    console.log('✏️ Editing configuration:', config);
     setCurrentConfig(config);
     setIsEditing(true);
     setActiveTab('general');
