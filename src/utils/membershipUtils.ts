@@ -1,5 +1,14 @@
 
-export const checkExistingMembership = (userId: string) => {
+interface MembershipDetails {
+  isMember: boolean;
+  organizationName?: string;
+  entityType?: string;
+  membershipPlan?: string;
+  joinedAt?: string;
+  lastUpdated?: string;
+}
+
+export const checkExistingMembership = (userId: string): MembershipDetails => {
   console.log('🔍 Checking existing membership for user:', userId);
   
   const membershipData = localStorage.getItem('seeker_membership_data');
@@ -20,18 +29,18 @@ export const checkExistingMembership = (userId: string) => {
           return {
             isMember: true,
             organizationName: parsedData.organizationName || 'Sample Organization',
-            entityType: parsedData.entityType,
-            membershipPlan: parsedData.membershipPlan,
-            joinedAt: parsedData.joinedAt,
-            lastUpdated: parsedData.lastUpdated
+            entityType: parsedData.entityType || undefined,
+            membershipPlan: parsedData.membershipPlan || undefined,
+            joinedAt: parsedData.joinedAt || undefined,
+            lastUpdated: parsedData.lastUpdated || undefined
           };
         } else {
           console.log('⚠️ User found but no active membership');
           return {
             isMember: false,
             organizationName: parsedData.organizationName || 'Sample Organization',
-            entityType: parsedData.entityType,
-            membershipPlan: parsedData.membershipPlan
+            entityType: parsedData.entityType || undefined,
+            membershipPlan: parsedData.membershipPlan || undefined
           };
         }
       } else {

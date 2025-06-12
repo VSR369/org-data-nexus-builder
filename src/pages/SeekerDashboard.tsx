@@ -57,7 +57,8 @@ const SeekerDashboard = () => {
   const isActiveMember = membershipDetails.isMember;
 
   // Format membership plan display
-  const formatMembershipPlan = (plan: string) => {
+  const formatMembershipPlan = (plan?: string) => {
+    if (!plan) return '';
     switch (plan) {
       case 'quarterly':
         return 'Quarterly';
@@ -68,16 +69,6 @@ const SeekerDashboard = () => {
       default:
         return plan;
     }
-  };
-
-  // Get membership fee information (this would ideally come from the membership details)
-  const getMembershipFeeDisplay = () => {
-    if (!membershipDetails.membershipPlan) return null;
-    
-    // For demo purposes, showing the plan frequency
-    // In a real app, you'd fetch the actual fee amounts from your master data
-    const planDisplay = formatMembershipPlan(membershipDetails.membershipPlan);
-    return planDisplay;
   };
 
   const handleJoinAsMember = () => {
