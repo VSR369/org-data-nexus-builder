@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,11 +9,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { CountryPricing, PricingConfig } from './types';
+import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface InternalPaasPricingManagerProps {
   currentConfig: Partial<PricingConfig>;
   setCurrentConfig: React.Dispatch<React.SetStateAction<Partial<PricingConfig>>>;
 }
+
+// Country to currency mapping
+const countryCurrencyMap: { [key: string]: string } = {
+  'India': 'INR',
+  'United States of America': 'USD',
+  'United Arab Emirates': 'AED',
+  'United Kingdom': 'GBP',
+  'Germany': 'EUR',
+  'France': 'EUR',
+  'Japan': 'JPY',
+  'Australia': 'AUD',
+  'China': 'CNY',
+  'Brazil': 'BRL',
+  'Canada': 'CAD',
+  'Mexico': 'MXN'
+};
 
 const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
   currentConfig,
@@ -21,10 +38,35 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
 }) => {
   const [newCountryPricing, setNewCountryPricing] = useState<Partial<CountryPricing>>({});
   const [editingPricingType, setEditingPricingType] = useState<'internal' | null>(null);
+  const [countries, setCountries] = useState<{ id: string; name: string; code: string; region?: string }[]>([]);
   const { toast } = useToast();
 
-  const countries = ['India', 'United States of America', 'United Arab Emirates', 'United Kingdom', 'Germany'];
-  const currencies = ['INR', 'USD', 'AED', 'GBP', 'EUR'];
+  // Load countries from master data
+  useEffect(() => {
+    console.log('🔄 InternalPaasPricingManager: Loading countries from master data...');
+    const loadedCountries = countriesDataManager.loadData();
+    console.log('✅ InternalPaasPricingManager: Loaded countries:', loadedCountries);
+    setCountries(loadedCountries);
+  }, []);
+
+  const handleCountryChange = (countryName: string) => {
+    console.log('🔄 Country selected:', countryName);
+    const currency = countryCurrencyMap[countryName] || '';
+    console.log('💱 Auto-selected currency:', currency);
+    
+    setNewCountryPricing(prev => ({ 
+      ...prev, 
+      country: countryName,
+      currency: currency
+    }));
+    
+    if (currency) {
+      toast({
+        title: "Currency Auto-Selected",
+        description: `Currency ${currency} automatically selected for ${countryName}`,
+      });
+    }
+  };
 
   const handleCountryPricingSubmit = () => {
     if (!newCountryPricing.country || !newCountryPricing.currency) {
@@ -51,7 +93,7 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
     
     toast({
       title: "Success",
-      description: "Internal PaaS pricing added successfully.",
+      description: "Platform as a Service pricing added successfully.",
     });
   };
 
@@ -78,7 +120,7 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
     <div className="space-y-6">
       <div className="border rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">Internal PaaS Pricing</h3>
+          <h3 className="text-lg font-medium">Platform as a Service Pricing</h3>
           <Button
             type="button"
             onClick={() => setEditingPricingType('internal')}
@@ -96,33 +138,27 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
                 <Label>Country *</Label>
                 <Select
                   value={newCountryPricing.country}
-                  onValueChange={(value) => setNewCountryPricing(prev => ({ ...prev, country: value }))}
+                  onValueChange={handleCountryChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
                     {countries.map((country) => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                      <SelectItem key={country.id} value={country.name}>{country.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Currency *</Label>
-                <Select
-                  value={newCountryPricing.currency}
-                  onValueChange={(value) => setNewCountryPricing(prev => ({ ...prev, currency: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={newCountryPricing.currency || ''}
+                  onChange={(e) => setNewCountryPricing(prev => ({ ...prev, currency: e.target.value }))}
+                  placeholder="Auto-populated"
+                  readOnly
+                  className="bg-muted"
+                />
               </div>
               <div>
                 <Label>Quarterly Price</Label>

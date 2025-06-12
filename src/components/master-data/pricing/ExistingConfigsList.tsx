@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2 } from 'lucide-react';
 import { PricingConfig } from './types';
 
@@ -16,6 +17,13 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
   onEdit,
   onDelete
 }) => {
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -42,18 +50,37 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="space-y-4">
                 <div>
-                  <span className="font-medium">Marketplace Fee:</span>
-                  <p>{config.marketplaceFee}%</p>
-                </div>
-                <div>
-                  <span className="font-medium">Aggregator Fee:</span>
-                  <p>{config.aggregatorFee}%</p>
-                </div>
-                <div>
-                  <span className="font-medium">Marketplace Plus Aggregator:</span>
-                  <p>{config.marketplacePlusAggregatorFee}%</p>
+                  <h4 className="font-medium text-sm mb-2">Platform as a Service Pricing</h4>
+                  {config.internalPaasPricing && config.internalPaasPricing.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {config.internalPaasPricing.map((pricing) => (
+                        <div key={pricing.id} className="border rounded-lg p-3 bg-muted/30">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-sm">{pricing.country}</span>
+                            <Badge variant="outline" className="text-xs">{pricing.currency}</Badge>
+                          </div>
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Quarterly:</span>
+                              <span>{formatCurrency(pricing.quarterlyPrice, pricing.currency)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Half-Yearly:</span>
+                              <span>{formatCurrency(pricing.halfYearlyPrice, pricing.currency)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Annual:</span>
+                              <span>{formatCurrency(pricing.annualPrice, pricing.currency)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No Platform as a Service pricing configured</p>
+                  )}
                 </div>
               </div>
             </div>
