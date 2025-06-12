@@ -25,9 +25,29 @@ const DomainGroupsConfig: React.FC = () => {
   // Ref for scrolling to data entry section
   const dataEntryRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const loadedData = domainGroupsDataManager.loadData();
+  // Function to load and refresh data
+  const loadData = () => {
+    console.log('🔄 DomainGroupsConfig: Loading data...');
+    const loadedData = domainGroupsDataManager.refreshData();
+    console.log('✅ DomainGroupsConfig: Loaded data:', loadedData);
     setData(loadedData);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Add effect to listen for storage changes (when data is updated in other components)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'master_data_domain_groups') {
+        console.log('🔄 DomainGroupsConfig: Storage changed, reloading data...');
+        loadData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const handleDataUpdate = (newData: DomainGroupsData) => {
@@ -87,6 +107,8 @@ const DomainGroupsConfig: React.FC = () => {
 
   const handleCloseWizard = () => {
     setShowWizard(false);
+    // Refresh data when closing wizard
+    loadData();
   };
 
   const handleUploadExcel = () => {
@@ -95,6 +117,9 @@ const DomainGroupsConfig: React.FC = () => {
 
   const handleBackFromHierarchyManager = () => {
     setShowHierarchyManager(false);
+    // Force refresh data when returning from Excel upload
+    console.log('🔄 Returning from hierarchy manager, refreshing data...');
+    loadData();
   };
 
   // If hierarchy manager is open, show only the hierarchy manager

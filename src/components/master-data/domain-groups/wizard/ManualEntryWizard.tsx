@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
@@ -33,23 +33,23 @@ const ManualEntryWizard: React.FC<ManualEntryWizardProps> = ({
 
   console.log('ManualEntryWizard: Current wizard data:', wizardData);
 
-  const updateWizardData = (updates: Partial<WizardData>) => {
+  const updateWizardData = useCallback((updates: Partial<WizardData>) => {
     console.log('ManualEntryWizard: Updating wizard data with:', updates);
     setWizardData(prev => {
       const newData = { ...prev, ...updates };
       console.log('ManualEntryWizard: New wizard data:', newData);
       return newData;
     });
-  };
+  }, []);
 
-  const markStepCompleted = (stepIndex: number, isValid: boolean) => {
+  const markStepCompleted = useCallback((stepIndex: number, isValid: boolean) => {
     console.log('ManualEntryWizard: Marking step', stepIndex, 'as', isValid ? 'valid' : 'invalid');
     setSteps(prev => prev.map((step, index) => 
       index === stepIndex 
         ? { ...step, isValid, isCompleted: isValid }
         : step
     ));
-  };
+  }, []);
 
   const canProceed = () => {
     const canMove = steps[currentStep]?.isValid || false;

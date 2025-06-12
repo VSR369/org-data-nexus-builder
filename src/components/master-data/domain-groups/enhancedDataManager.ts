@@ -1,115 +1,100 @@
 
-import { DataManager } from '@/utils/dataManager';
+import { DataManager, DataManagerConfig } from '@/utils/core/DataManager';
 
-// Base enhanced data manager with persistence improvements
 export class EnhancedDataManager<T> extends DataManager<T> {
-  // Override loadData to be more persistent and less destructive
-  loadData(): T {
-    console.log(`=== Enhanced DataManager.loadData() START for key: ${this.config.key} ===`);
-    
-    try {
-      // First try to load from the main key
-      const stored = localStorage.getItem(this.config.key);
-      console.log('📦 Raw stored data:', stored);
-      
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        console.log('✅ Successfully loaded data:', parsed);
-        
-        // Validate the structure for the specific data type
-        if (this.validateDataStructure(parsed)) {
-          // Mark as initialized to prevent any clearing
-          this.markAsInitialized();
-          this.updateVersion();
-          
-          console.log(`=== Enhanced DataManager.loadData() END - Success for ${this.config.key} ===`);
-          return parsed;
-        }
-      }
-
-      // If no valid data, try to migrate from old keys
-      const migrated = this.migrateFromOldKeys();
-      if (migrated) {
-        console.log('✅ Migrated data from old keys:', migrated);
-        this.saveData(migrated);
-        return migrated;
-      }
-
-      // Only use defaults if absolutely no data exists
-      console.log('⚠️ No data found, using defaults');
-      this.markAsInitialized();
-      this.updateVersion();
-      console.log(`=== Enhanced DataManager.loadData() END - Defaults for ${this.config.key} ===`);
-      return this.config.defaultData;
-      
-    } catch (error) {
-      console.error(`❌ Error loading data for ${this.config.key}:`, error);
-      // Don't clear on error, try to recover
-      const recovered = this.tryRecovery();
-      return recovered || this.config.defaultData;
-    }
+  constructor(config: DataManagerConfig<T>) {
+    super(config);
   }
 
-  // Method to be overridden by specific implementations for data validation
+  // Override to provide better data structure validation
   protected validateDataStructure(data: any): boolean {
     return data && typeof data === 'object';
   }
 
-  // Method to be overridden by specific implementations for migration
+  // Override to provide better migration logic
   protected migrateFromOldKeys(): T | null {
-    return null;
+    return null; // To be overridden by subclasses
   }
 
-  // Method to be overridden by specific implementations for recovery
+  // Override to provide better recovery logic
   protected tryRecovery(): T | null {
-    return null;
+    return null; // To be overridden by subclasses
   }
 
-  // Enhanced save that preserves data integrity
-  saveData(data: T): void {
-    try {
-      console.log(`=== Enhanced DataManager.saveData() START for ${this.config.key} ===`);
-      console.log('💾 Saving data:', data);
-      
-      const jsonString = JSON.stringify(data);
-      localStorage.setItem(this.config.key, jsonString);
-      this.markAsInitialized();
-      this.updateVersion();
-      
-      // Clean up old keys to prevent confusion
-      this.cleanupOldKeys();
-      
-      console.log('✅ Enhanced save completed successfully');
-      console.log(`=== Enhanced DataManager.saveData() END for ${this.config.key} ===`);
-    } catch (error) {
-      console.error(`❌ Error saving data for ${this.config.key}:`, error);
-    }
-  }
-
-  // Method to be overridden by specific implementations for cleanup
+  // Override to provide better cleanup logic
   protected cleanupOldKeys(): void {
-    // Default implementation - no cleanup
+    // To be overridden by subclasses
   }
 
-  // Method to check if data exists without clearing it
-  hasData(): boolean {
+  // Override to provide better content validation
+  protected hasValidContent(data: T): boolean {
+    return data !== null && data !== undefined;
+  }
+
+  // Enhanced load method that tries multiple recovery strategies
+  loadData(): T {
+    console.log(`=== Enhanced DataManager.loadData() START for key: ${this.config.key} ===`);
+    
     try {
+      // First try normal data loading
       const stored = localStorage.getItem(this.config.key);
+      console.log(`📦 Raw stored data: ${stored}`);
+      
       if (stored) {
         const parsed = JSON.parse(stored);
-        return this.validateDataStructure(parsed) && this.hasValidContent(parsed);
+        if (this.validateDataStructure(parsed) && this.hasValidContent(parsed)) {
+          console.log(`✅ Successfully loaded data: ${JSON.stringify(parsed, null, 2)}`);
+          
+          // Update version if needed
+          if (this.getCurrentVersion() !== this.config.version) {
+            this.updateVersion();
+            this.markAsInitialized();
+          }
+          
+          console.log(`=== Enhanced DataManager.loadData() END - Success for ${this.config.key} ===`);
+          return parsed;
+        } else {
+          console.log(`⚠️ Data structure validation failed, trying recovery...`);
+        }
       }
+
+      // Try migration from old keys
+      const migratedData = this.migrateFromOldKeys();
+      if (migratedData && this.validateDataStructure(migratedData) && this.hasValidContent(migratedData)) {
+        console.log(`🔄 Successfully migrated data from old keys`);
+        this.saveData(migratedData);
+        this.cleanupOldKeys();
+        return migratedData;
+      }
+
+      // Try recovery mechanisms
+      const recoveredData = this.tryRecovery();
+      if (recoveredData && this.validateDataStructure(recoveredData) && this.hasValidContent(recoveredData)) {
+        console.log(`🔄 Successfully recovered data`);
+        this.saveData(recoveredData);
+        return recoveredData;
+      }
+
+      // Fall back to parent class behavior (which now includes backup recovery)
+      console.log(`⚠️ No recovery possible, falling back to parent class loadData`);
+      return super.loadData();
       
-      // Check old keys too
-      const migrated = this.migrateFromOldKeys();
-      return migrated && this.hasValidContent(migrated);
     } catch (error) {
-      return false;
+      console.error(`❌ Enhanced loadData error: ${error}`);
+      return super.loadData();
     }
   }
 
-  // Method to be overridden by specific implementations to check for valid content
-  protected hasValidContent(data: T): boolean {
-    return !!data;
+  private getCurrentVersion(): number {
+    const stored = localStorage.getItem(`${this.config.key}_version`);
+    return stored ? parseInt(stored, 10) : 0;
+  }
+
+  private updateVersion(): void {
+    localStorage.setItem(`${this.config.key}_version`, this.config.version.toString());
+  }
+
+  private markAsInitialized(): void {
+    localStorage.setItem(`${this.config.key}_initialized`, 'true');
   }
 }

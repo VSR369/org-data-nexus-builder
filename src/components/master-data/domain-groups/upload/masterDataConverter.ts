@@ -9,9 +9,14 @@ export const convertToMasterDataFormat = (hierarchyData: HierarchyData, savedDoc
     throw new Error("No Excel data to convert to master data format");
   }
 
+  console.log('🔄 Converting Excel data to master data format...');
+
   // Load existing data
   const existingData = domainGroupsDataManager.loadData();
   const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
+  
+  console.log('📦 Existing data:', existingData);
+  console.log('📦 Industry segments:', industrySegments);
   
   const newDomainGroups: DomainGroup[] = [];
   const newCategories: Category[] = [];
@@ -87,13 +92,24 @@ export const convertToMasterDataFormat = (hierarchyData: HierarchyData, savedDoc
     subCategories: [...existingData.subCategories, ...newSubCategories]
   };
 
+  console.log('📦 Updated data to save:', updatedData);
+
   // Save to master data
   domainGroupsDataManager.saveData(updatedData);
+
+  // Trigger storage event to notify other components
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: 'master_data_domain_groups',
+    newValue: JSON.stringify(updatedData)
+  }));
 
   console.log('✅ Excel data converted and saved to master data format:', {
     domainGroups: newDomainGroups.length,
     categories: newCategories.length,
-    subCategories: newSubCategories.length
+    subCategories: newSubCategories.length,
+    totalDomainGroups: updatedData.domainGroups.length,
+    totalCategories: updatedData.categories.length,
+    totalSubCategories: updatedData.subCategories.length
   });
 
   return {
