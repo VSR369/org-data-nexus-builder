@@ -3,8 +3,9 @@ import React, { useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, X, Save } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, Save, Trash2 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { useToast } from "@/hooks/use-toast";
 
 interface SavedExcelDocument {
   fileName: string;
@@ -49,6 +50,8 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
   onClearUpload,
   onSaveToMasterData
 }) => {
+  const { toast } = useToast();
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -65,6 +68,14 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
     },
     multiple: false
   });
+
+  const handleDeleteFile = () => {
+    onClearUpload();
+    toast({
+      title: "File Deleted",
+      description: "Excel file and all associated data have been removed",
+    });
+  };
 
   return (
     <Card>
@@ -128,9 +139,20 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={onClearUpload}>
-                <X className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={handleDeleteFile}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete File
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onClearUpload}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Action Button to Save to Master Data */}

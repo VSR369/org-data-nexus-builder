@@ -118,5 +118,10 @@ export const loadSavedDocument = (): SavedExcelDocument | null => {
 
 export const clearSavedDocument = (): void => {
   localStorage.removeItem(STORAGE_KEY);
-  console.log('🗑️ Cleared saved Excel document');
+  console.log('🗑️ Cleared saved Excel document and all associated data');
+};
+
+export const deleteExcelFile = (): void => {
+  clearSavedDocument();
+  console.log('🗑️ Deleted Excel file and all tree-structured data from storage');
 };

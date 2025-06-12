@@ -11,6 +11,7 @@ import {
   saveDocument, 
   loadSavedDocument, 
   clearSavedDocument,
+  deleteExcelFile,
   type HierarchyData,
   type ParsedExcelData,
   type SavedExcelDocument 
@@ -77,12 +78,20 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
   };
 
   const handleClearUpload = () => {
+    // Clear all state
     setUploadedFile(null);
     setExcelData(null);
     setParsedData([]);
     setHierarchyData({});
     setSavedDocument(null);
-    clearSavedDocument();
+    
+    // Delete from storage
+    deleteExcelFile();
+    
+    toast({
+      title: "File Deleted",
+      description: "Excel file and all tree-structured data have been completely removed",
+    });
   };
 
   const handleSaveToMasterData = () => {
