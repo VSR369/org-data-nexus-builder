@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 import DomainGroupForm from './domain-groups/DomainGroupForm';
@@ -22,6 +22,9 @@ const DomainGroupsConfig: React.FC = () => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [newlyCreatedIds, setNewlyCreatedIds] = useState<Set<string>>(new Set());
+  
+  // Ref for scrolling to data entry section
+  const dataEntryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadedData = domainGroupsDataManager.loadData();
@@ -68,6 +71,13 @@ const DomainGroupsConfig: React.FC = () => {
     setExpandedCategories(newExpanded);
   };
 
+  const scrollToDataEntry = () => {
+    dataEntryRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
+
   if (showManualEntry) {
     return (
       <div className="space-y-6">
@@ -87,14 +97,25 @@ const DomainGroupsConfig: React.FC = () => {
           <h1 className="text-2xl font-bold">Domain Groups Configuration</h1>
           <p className="text-muted-foreground">Manage domain groups for the platform</p>
         </div>
-        <Button 
-          onClick={() => setShowManualEntry(true)}
-          className="flex items-center gap-2"
-          size="lg"
-        >
-          <Plus className="w-4 h-4" />
-          Add New Domain Hierarchy
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setShowManualEntry(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            <TreePine className="w-4 h-4" />
+            Start Manual Entry Wizard
+          </Button>
+          <Button 
+            onClick={scrollToDataEntry}
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Domain Hierarchy
+          </Button>
+        </div>
       </div>
 
       {/* Display existing hierarchies first */}
@@ -108,61 +129,74 @@ const DomainGroupsConfig: React.FC = () => {
         onDataUpdate={handleDataUpdate}
       />
 
-      {/* Creation options below */}
-      <Tabs defaultValue="manual-entry" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="manual-entry">
-            <TreePine className="mr-2 h-4 w-4" />
-            Manual Entry
-          </TabsTrigger>
-          <TabsTrigger disabled value="upload-excel">
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Upload Excel
-          </TabsTrigger>
-          <TabsTrigger disabled value="upload-template">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Template
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="manual-entry" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Domain Group Hierarchy</CardTitle>
-              <CardDescription>Create domain groups manually using the wizard</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => setShowManualEntry(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Start Manual Entry Wizard
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="upload-excel" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Excel</CardTitle>
-              <CardDescription>Functionality coming soon.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>This feature is under development.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="upload-template" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Template</CardTitle>
-              <CardDescription>Functionality coming soon.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>This feature is under development.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Data Entry Section */}
+      <div ref={dataEntryRef} className="scroll-mt-6">
+        {/* Creation options below */}
+        <Tabs defaultValue="manual-entry" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="manual-entry">
+              <TreePine className="mr-2 h-4 w-4" />
+              Manual Entry
+            </TabsTrigger>
+            <TabsTrigger disabled value="upload-excel">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Upload Excel
+            </TabsTrigger>
+            <TabsTrigger disabled value="upload-template">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Template
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="manual-entry" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Create Domain Group Hierarchy
+                  <Button 
+                    onClick={() => setShowManualEntry(true)}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <TreePine className="w-4 h-4" />
+                    Start Manual Entry Wizard
+                  </Button>
+                </CardTitle>
+                <CardDescription>Create domain groups manually using the wizard or form below</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => setShowManualEntry(true)} className="mb-4">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Start Manual Entry Wizard
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="upload-excel" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Excel</CardTitle>
+                <CardDescription>Functionality coming soon.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>This feature is under development.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="upload-template" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Template</CardTitle>
+                <CardDescription>Functionality coming soon.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>This feature is under development.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-      <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
+        <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
+      </div>
     </div>
   );
 };
