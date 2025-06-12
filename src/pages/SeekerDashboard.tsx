@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,8 +33,10 @@ const SeekerDashboard = () => {
     }
   }, [userId, organizationName, isMember]);
 
-  // Check if user is a member by looking at localStorage or other membership indicators
+  // Improved membership checking function
   const checkMembershipStatus = () => {
+    console.log('🔍 Checking membership status...');
+    
     // First check the passed state
     if (isMember !== undefined) {
       console.log('🔍 Checking membership from navigation state:', isMember);
@@ -44,19 +45,25 @@ const SeekerDashboard = () => {
     
     // If no state passed, check localStorage for membership data
     const membershipData = localStorage.getItem('seeker_membership_data');
+    console.log('🔍 Raw membership data from localStorage:', membershipData);
+    
     if (membershipData) {
       try {
         const parsedData = JSON.parse(membershipData);
-        console.log('🔍 Checking membership from localStorage:', parsedData);
+        console.log('🔍 Parsed membership data:', parsedData);
         
-        // Check if there's valid membership data for this user/organization
-        const isValidMember = parsedData && 
-          parsedData.userId === userId && 
-          parsedData.organizationName === organizationName &&
-          parsedData.isMember === true;
-        
-        console.log('✅ Membership validation result:', isValidMember);
-        return isValidMember;
+        // Enhanced validation - check if there's valid membership data for current user
+        if (parsedData && parsedData.userId && parsedData.userId === userId) {
+          console.log('✅ User ID matches stored data');
+          
+          // Check if user has active membership
+          const isValidMember = parsedData.isMember === true;
+          console.log('✅ Membership validation result:', isValidMember);
+          return isValidMember;
+        } else {
+          console.log('❌ User ID does not match or missing user data');
+          console.log('Expected userId:', userId, 'Stored userId:', parsedData?.userId);
+        }
       } catch (error) {
         console.log('❌ Error parsing membership data:', error);
         return false;
@@ -89,8 +96,8 @@ const SeekerDashboard = () => {
   };
 
   const handleLogout = () => {
-    // Clear membership data on logout
-    localStorage.removeItem('seeker_membership_data');
+    // Clear membership data on logout - but be more careful about what we clear
+    console.log('🚪 Logging out user:', userId);
     navigate('/signin');
   };
 

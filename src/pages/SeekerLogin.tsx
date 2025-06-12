@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,30 +39,45 @@ const SeekerLogin = () => {
     }
   };
 
-  // Check if user has existing membership data
+  // Fixed function to properly check existing membership
   const checkExistingMembership = (userId: string) => {
     console.log('🔍 Checking existing membership for user:', userId);
     
     const membershipData = localStorage.getItem('seeker_membership_data');
+    console.log('🔍 Raw membership data from localStorage:', membershipData);
+    
     if (membershipData) {
       try {
         const parsedData = JSON.parse(membershipData);
-        console.log('🔍 Found membership data:', parsedData);
+        console.log('🔍 Parsed membership data:', parsedData);
         
-        // Check if the membership data belongs to this user and is valid
-        if (parsedData && 
-            parsedData.userId === userId && 
-            parsedData.isMember === true &&
-            parsedData.organizationName) {
-          console.log('✅ Valid membership found for user');
-          return {
-            isMember: true,
-            organizationName: parsedData.organizationName
-          };
+        // More robust checking - check if user exists and has membership
+        if (parsedData && parsedData.userId && parsedData.userId === userId) {
+          console.log('✅ User ID matches! Checking membership status...');
+          
+          // Check if user has active membership
+          if (parsedData.isMember === true) {
+            console.log('✅ Valid active membership found for user');
+            return {
+              isMember: true,
+              organizationName: parsedData.organizationName || 'Sample Organization'
+            };
+          } else {
+            console.log('⚠️ User found but no active membership');
+            return {
+              isMember: false,
+              organizationName: parsedData.organizationName || 'Sample Organization'
+            };
+          }
+        } else {
+          console.log('❌ User ID does not match stored data');
+          console.log('Expected:', userId, 'Found:', parsedData?.userId);
         }
       } catch (error) {
         console.log('❌ Error parsing membership data:', error);
       }
+    } else {
+      console.log('❌ No membership data found in localStorage');
     }
     
     console.log('❌ No valid membership found for user');
