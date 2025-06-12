@@ -57,11 +57,19 @@ export const useLoginForm = () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Save seeker details to localStorage for demonstration
+      localStorage.setItem('seekerOrganizationName', 'Tech Solutions Inc.');
+      localStorage.setItem('seekerEntityType', 'Private Company');
+      localStorage.setItem('seekerCountry', 'United States');
+      localStorage.setItem('seekerUserId', formData.userId);
+      
+      console.log('💾 Saved seeker details to localStorage');
+      
       // Navigate to seeker dashboard with user context
       navigate('/seeker-dashboard', { 
         state: { 
           userId: formData.userId,
-          organizationName: 'Sample Organization'
+          organizationName: 'Tech Solutions Inc.'
         }
       });
 

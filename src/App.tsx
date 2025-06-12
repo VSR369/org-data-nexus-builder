@@ -14,6 +14,7 @@ import SeekerRegistration from "./pages/SeekerRegistration";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
 import MasterDataPortal from "./pages/MasterDataPortal";
 import ContributorEnrollment from "./pages/ContributorEnrollment";
+import MembershipRegistration from "./pages/MembershipRegistration";
 import Challenges from "./pages/Challenges";
 import Solutions from "./pages/Solutions";
 import Events from "./pages/Events";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/seeker-login" element={<SeekerLogin />} />
           <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
           <Route path="/seeker-membership" element={<SeekerMembership />} />
+          <Route path="/membership-registration" element={<MembershipRegistration />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/seeker-registration" element={<SeekerRegistration />} />
           <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
