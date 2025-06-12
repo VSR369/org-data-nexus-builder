@@ -87,6 +87,11 @@ const DomainGroupsConfig: React.FC = () => {
     setShowWizard(false);
   };
 
+  const handleUploadExcel = () => {
+    console.log('Upload Excel functionality to be implemented');
+    // TODO: Implement Excel upload functionality
+  };
+
   // If wizard is open, show only the wizard
   if (showWizard) {
     return (
@@ -106,6 +111,7 @@ const DomainGroupsConfig: React.FC = () => {
         onStartManualEntry={handleStartManualEntry}
         onScrollToDataEntry={scrollToDataEntry}
         onOpenWizard={handleOpenWizard}
+        onUploadExcel={handleUploadExcel}
       />
 
       {/* Display existing hierarchies */}

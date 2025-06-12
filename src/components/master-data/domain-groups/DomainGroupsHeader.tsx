@@ -1,18 +1,20 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus, Wand2 } from 'lucide-react';
+import { Plus, Wand2, Upload } from 'lucide-react';
 
 interface DomainGroupsHeaderProps {
   onStartManualEntry: () => void;
   onScrollToDataEntry: () => void;
   onOpenWizard: () => void;
+  onUploadExcel?: () => void;
 }
 
 const DomainGroupsHeader: React.FC<DomainGroupsHeaderProps> = ({
   onStartManualEntry,
   onScrollToDataEntry,
-  onOpenWizard
+  onOpenWizard,
+  onUploadExcel
 }) => {
   return (
     <div>
@@ -35,6 +37,15 @@ const DomainGroupsHeader: React.FC<DomainGroupsHeaderProps> = ({
         >
           <Wand2 className="w-4 h-4" />
           Create Using Wizard
+        </Button>
+        <Button 
+          onClick={onUploadExcel}
+          variant="outline"
+          className="flex items-center gap-2"
+          size="lg"
+        >
+          <Upload className="w-4 h-4" />
+          Upload Excel
         </Button>
       </div>
     </div>
