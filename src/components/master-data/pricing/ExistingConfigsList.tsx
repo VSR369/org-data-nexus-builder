@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2 } from 'lucide-react';
 import { PricingConfig } from './types';
 
@@ -16,6 +17,13 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
   onEdit,
   onDelete
 }) => {
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -44,27 +52,37 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
               
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-sm mb-2">Fee Configuration</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="border rounded-lg p-3 bg-muted/30">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-primary">{config.marketplaceFee}%</div>
-                        <div className="text-xs text-muted-foreground">Marketplace Fee</div>
-                      </div>
+                  <h4 className="font-medium text-sm mb-2">Platform as a Service Pricing</h4>
+                  {config.internalPaasPricing && config.internalPaasPricing.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-2">Country</th>
+                            <th className="text-left p-2">Currency</th>
+                            <th className="text-left p-2">Quarterly</th>
+                            <th className="text-left p-2">Half-Yearly</th>
+                            <th className="text-left p-2">Annual</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {config.internalPaasPricing.map((pricing) => (
+                            <tr key={pricing.id} className="border-b">
+                              <td className="p-2">{pricing.country}</td>
+                              <td className="p-2">
+                                <Badge variant="outline" className="text-xs">{pricing.currency}</Badge>
+                              </td>
+                              <td className="p-2">{formatCurrency(pricing.quarterlyPrice, pricing.currency)}</td>
+                              <td className="p-2">{formatCurrency(pricing.halfYearlyPrice, pricing.currency)}</td>
+                              <td className="p-2">{formatCurrency(pricing.annualPrice, pricing.currency)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                    <div className="border rounded-lg p-3 bg-muted/30">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-primary">{config.aggregatorFee}%</div>
-                        <div className="text-xs text-muted-foreground">Aggregator Fee</div>
-                      </div>
-                    </div>
-                    <div className="border rounded-lg p-3 bg-muted/30">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-primary">{config.marketplacePlusAggregatorFee}%</div>
-                        <div className="text-xs text-muted-foreground">Marketplace + Aggregator</div>
-                      </div>
-                    </div>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No Platform as a Service pricing configured</p>
+                  )}
                 </div>
               </div>
             </div>
