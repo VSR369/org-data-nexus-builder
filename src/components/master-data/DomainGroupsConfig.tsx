@@ -5,6 +5,7 @@ import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager
 import DomainGroupForm from './domain-groups/DomainGroupForm';
 import CombinedHierarchyDisplay from './domain-groups/CombinedHierarchyDisplay';
 import DomainGroupsHeader from './domain-groups/DomainGroupsHeader';
+import ManualEntryWizard from './domain-groups/wizard/ManualEntryWizard';
 
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -17,6 +18,7 @@ const DomainGroupsConfig: React.FC = () => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [newlyCreatedIds, setNewlyCreatedIds] = useState<Set<string>>(new Set());
+  const [showWizard, setShowWizard] = useState(false);
   
   // Ref for scrolling to data entry section
   const dataEntryRef = useRef<HTMLDivElement>(null);
@@ -73,16 +75,37 @@ const DomainGroupsConfig: React.FC = () => {
     });
   };
 
-  // Simplified handlers - no manual entry functionality
   const handleStartManualEntry = () => {
     // No-op since manual entry is removed
   };
+
+  const handleOpenWizard = () => {
+    setShowWizard(true);
+  };
+
+  const handleCloseWizard = () => {
+    setShowWizard(false);
+  };
+
+  // If wizard is open, show only the wizard
+  if (showWizard) {
+    return (
+      <div className="space-y-6">
+        <ManualEntryWizard 
+          data={data}
+          onDataUpdate={handleDataUpdate}
+          onCancel={handleCloseWizard}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <DomainGroupsHeader 
         onStartManualEntry={handleStartManualEntry}
         onScrollToDataEntry={scrollToDataEntry}
+        onOpenWizard={handleOpenWizard}
       />
 
       {/* Display existing hierarchies */}

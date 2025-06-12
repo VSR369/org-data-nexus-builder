@@ -1,16 +1,18 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
+import { Plus, Wand2 } from 'lucide-react';
 
 interface DomainGroupsHeaderProps {
   onStartManualEntry: () => void;
   onScrollToDataEntry: () => void;
+  onOpenWizard: () => void;
 }
 
 const DomainGroupsHeader: React.FC<DomainGroupsHeaderProps> = ({
   onStartManualEntry,
-  onScrollToDataEntry
+  onScrollToDataEntry,
+  onOpenWizard
 }) => {
   return (
     <div>
@@ -24,6 +26,15 @@ const DomainGroupsHeader: React.FC<DomainGroupsHeaderProps> = ({
         >
           <Plus className="w-4 h-4" />
           Add New Domain Hierarchy
+        </Button>
+        <Button 
+          onClick={onOpenWizard}
+          variant="outline"
+          className="flex items-center gap-2"
+          size="lg"
+        >
+          <Wand2 className="w-4 h-4" />
+          Create Using Wizard
         </Button>
       </div>
     </div>
