@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { MasterDataContent } from "@/components/MasterDataContent";
+import MasterDataContent from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Database } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -57,10 +57,7 @@ const MasterDataPortal = () => {
           {/* Main Content */}
           <main className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <MasterDataContent 
-                activeSection={activeSection} 
-                onSignInComplete={handleSignInComplete}
-              />
+              <MasterDataContent />
             </div>
           </main>
         </div>
