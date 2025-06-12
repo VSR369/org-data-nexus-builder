@@ -10,17 +10,17 @@ export const processExcelFile = async (file: File): Promise<{
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        console.log('🔄 Starting Excel file processing...');
+        console.log('🔄 Starting Excel file processing for:', file.name);
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        console.log('📊 Worksheet loaded:', firstSheetName);
+        console.log('📊 Processing worksheet:', firstSheetName);
         
         // Get the range to find the last row with data
         const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-        console.log('📐 Excel range:', range);
+        console.log('📐 Excel range detected:', range);
         
         const jsonData: string[][] = [];
         
@@ -29,56 +29,71 @@ export const processExcelFile = async (file: File): Promise<{
           const row: string[] = [];
           let hasAnyData = false;
           
-          // Check each column in the row (ensure we check at least 4 columns for the required data)
-          for (let colNum = range.s.c; colNum <= Math.max(range.e.c, 3); colNum++) {
+          // Ensure we check at least 4 columns for the required hierarchy data
+          const maxCol = Math.max(range.e.c, 3);
+          for (let colNum = range.s.c; colNum <= maxCol; colNum++) {
             const cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: colNum });
             const cell = worksheet[cellAddress];
-            const value = cell ? String(cell.v || '').trim() : '';
+            
+            // Handle different cell value types and ensure proper string conversion
+            let value = '';
+            if (cell) {
+              if (cell.v !== null && cell.v !== undefined) {
+                value = String(cell.v).trim();
+              }
+            }
+            
             row.push(value);
             if (value) hasAnyData = true;
           }
           
-          // For data rows (not header), we need at least the first 4 columns to have meaningful hierarchy data
-          // But we should be more lenient - if at least 2 of the 4 required columns have data, include the row
+          // Include header row always
           if (rowNum === range.s.r) {
-            // Always include header row
             jsonData.push(row);
             console.log(`📝 Header row ${rowNum + 1}:`, row);
-          } else if (hasAnyData) {
-            // For data rows, check if we have meaningful hierarchy data
-            const industrySegment = (row[0] || '').toString().trim();
-            const domainGroup = (row[1] || '').toString().trim();
-            const category = (row[2] || '').toString().trim();
-            const subCategory = (row[3] || '').toString().trim();
+          } 
+          // For data rows, include if there's any meaningful data
+          else if (hasAnyData) {
+            const industrySegment = (row[0] || '').trim();
+            const domainGroup = (row[1] || '').trim();
+            const category = (row[2] || '').trim();
+            const subCategory = (row[3] || '').trim();
             
-            // Include row if at least 2 of the 4 main columns have data
-            const nonEmptyColumns = [industrySegment, domainGroup, category, subCategory].filter(val => val).length;
-            
-            if (nonEmptyColumns >= 2) {
+            // Include row if it has at least industry segment and domain group
+            if (industrySegment && domainGroup) {
               jsonData.push(row);
-              console.log(`📝 Data row ${rowNum + 1} (${nonEmptyColumns} columns filled):`, row);
+              console.log(`📝 Valid data row ${rowNum + 1}:`, row);
             } else {
-              console.log(`⚠️ Skipping row ${rowNum + 1} - insufficient data (${nonEmptyColumns} columns):`, row);
+              console.log(`⚠️ Skipping incomplete row ${rowNum + 1}:`, row);
             }
+          } else {
+            console.log(`⚠️ Skipping empty row ${rowNum + 1}`);
           }
         }
 
         console.log(`✅ Processed ${jsonData.length} total rows (including header)`);
 
         const processingResult: ProcessingResult = {
-          totalRows: jsonData.length > 0 ? jsonData.length - 1 : 0, // Exclude header if exists
-          validRows: 0,
+          totalRows: jsonData.length > 0 ? jsonData.length - 1 : 0, // Exclude header
+          validRows: 0, // Will be updated by parser
           errors: [],
           warnings: []
         };
 
+        console.log('📊 Initial processing result:', processingResult);
         resolve({ excelData: jsonData, processingResult });
+        
       } catch (error) {
         console.error('❌ Excel processing error:', error);
-        reject(error);
+        reject(new Error(`Failed to process Excel file: ${error}`));
       }
     };
-    reader.onerror = () => reject(new Error('Failed to read file'));
+    
+    reader.onerror = () => {
+      console.error('❌ File reader error');
+      reject(new Error('Failed to read Excel file'));
+    };
+    
     reader.readAsArrayBuffer(file);
   });
 };
