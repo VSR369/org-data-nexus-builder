@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit, Trash2, Plus, DollarSign } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
 
 interface CountryPricing {
   id: string;
@@ -24,6 +25,7 @@ interface PricingConfig {
   organizationType: string;
   marketplaceFee: number;
   aggregatorFee: number;
+  marketplacePlusAggregatorFee: number;
   internalPaasPricing: CountryPricing[];
   version: number;
   createdAt: string;
@@ -36,6 +38,7 @@ const PricingConfig = () => {
       organizationType: 'All Organizations',
       marketplaceFee: 30,
       aggregatorFee: 15,
+      marketplacePlusAggregatorFee: 45,
       internalPaasPricing: [
         { id: '1', country: 'India', currency: 'INR', quarterlyPrice: 50000, halfYearlyPrice: 90000, annualPrice: 150000 },
         { id: '2', country: 'United States of America', currency: 'USD', quarterlyPrice: 600, halfYearlyPrice: 1080, annualPrice: 1800 },
@@ -49,6 +52,7 @@ const PricingConfig = () => {
     organizationType: 'All Organizations',
     marketplaceFee: 30,
     aggregatorFee: 15,
+    marketplacePlusAggregatorFee: 45,
     internalPaasPricing: [],
   });
 
@@ -56,12 +60,20 @@ const PricingConfig = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [newCountryPricing, setNewCountryPricing] = useState<Partial<CountryPricing>>({});
   const [editingPricingType, setEditingPricingType] = useState<'internal' | null>(null);
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
 
   const { toast } = useToast();
 
+  // Load organization types from master data
+  useEffect(() => {
+    console.log('🔄 PricingConfig: Loading organization types from master data...');
+    const loadedOrgTypes = organizationTypesDataManager.loadData();
+    console.log('✅ PricingConfig: Loaded organization types:', loadedOrgTypes);
+    setOrganizationTypes(loadedOrgTypes);
+  }, []);
+
   const countries = ['India', 'United States of America', 'United Arab Emirates', 'United Kingdom', 'Germany'];
   const currencies = ['INR', 'USD', 'AED', 'GBP', 'EUR'];
-  const organizationTypes = ['All Organizations', 'Specific Organizations'];
 
   const handleConfigSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +174,7 @@ const PricingConfig = () => {
       organizationType: 'All Organizations',
       marketplaceFee: 30,
       aggregatorFee: 15,
+      marketplacePlusAggregatorFee: 45,
       internalPaasPricing: [],
     });
     setIsEditing(false);
@@ -208,7 +221,7 @@ const PricingConfig = () => {
           <form onSubmit={handleConfigSubmit}>
             {activeTab === 'general' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="organizationType">Organization Type *</Label>
                     <Select
@@ -249,6 +262,19 @@ const PricingConfig = () => {
                       value={currentConfig.aggregatorFee || ''}
                       onChange={(e) => setCurrentConfig(prev => ({ ...prev, aggregatorFee: parseFloat(e.target.value) }))}
                       placeholder="15"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="marketplacePlusAggregatorFee">Marketplace Plus Aggregator (%) *</Label>
+                    <Input
+                      id="marketplacePlusAggregatorFee"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={currentConfig.marketplacePlusAggregatorFee || ''}
+                      onChange={(e) => setCurrentConfig(prev => ({ ...prev, marketplacePlusAggregatorFee: parseFloat(e.target.value) }))}
+                      placeholder="45"
                     />
                   </div>
                 </div>
@@ -439,7 +465,7 @@ const PricingConfig = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Marketplace Fee:</span>
                     <p>{config.marketplaceFee}%</p>
@@ -447,6 +473,10 @@ const PricingConfig = () => {
                   <div>
                     <span className="font-medium">Aggregator Fee:</span>
                     <p>{config.aggregatorFee}%</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Marketplace Plus Aggregator:</span>
+                    <p>{config.marketplacePlusAggregatorFee}%</p>
                   </div>
                   <div>
                     <span className="font-medium">Internal PaaS Countries:</span>

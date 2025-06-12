@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FormData } from '../types';
 import { cn } from "@/lib/utils";
+import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface OrganizationFormProps {
   formData: FormData;
@@ -18,10 +19,28 @@ interface OrganizationFormProps {
 const OrganizationForm: React.FC<OrganizationFormProps> = ({
   formData,
   updateFormData,
-  organizationTypes,
-  countries,
+  organizationTypes: propOrgTypes,
+  countries: propCountries,
   invalidFields = new Set()
 }) => {
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>(propOrgTypes);
+  const [countries, setCountries] = useState<any[]>([]);
+
+  // Load data from master data instead of props
+  useEffect(() => {
+    console.log('🔄 OrganizationForm: Loading data from master data...');
+    
+    // Load organization types from master data
+    const loadedOrgTypes = organizationTypesDataManager.loadData();
+    console.log('✅ OrganizationForm: Loaded organization types:', loadedOrgTypes);
+    setOrganizationTypes(loadedOrgTypes);
+
+    // Load countries from master data
+    const loadedCountries = countriesDataManager.loadData();
+    console.log('✅ OrganizationForm: Loaded countries:', loadedCountries);
+    setCountries(loadedCountries);
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -65,8 +84,8 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({
           </SelectTrigger>
           <SelectContent>
             {countries.map((country) => (
-              <SelectItem key={country} value={country.toLowerCase().replace(/\s+/g, '-')}>
-                {country}
+              <SelectItem key={country.id} value={country.name.toLowerCase().replace(/\s+/g, '-')}>
+                {country.name}
               </SelectItem>
             ))}
           </SelectContent>
