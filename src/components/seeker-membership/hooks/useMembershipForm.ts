@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { checkExistingMembership } from '@/utils/membershipUtils';
+import { DataManager } from '@/utils/dataManager';
 
 interface UseMembershipFormProps {
   userId?: string;
@@ -24,6 +25,17 @@ interface MembershipFeeEntry {
   annualCurrency: string;
 }
 
+// Create data manager for entity types
+const entityTypesDataManager = new DataManager<string[]>({
+  key: 'master_data_entity_types',
+  defaultData: [
+    'Commercial',
+    'Non-Profit Organization',
+    'Society/ Trust'
+  ],
+  version: 1
+});
+
 export const useMembershipForm = ({
   userId,
   organizationName,
@@ -34,31 +46,14 @@ export const useMembershipForm = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [entityTypes] = useState<string[]>([
-    'Startup',
-    'SME',
-    'Corporation',
-    'Non-Profit',
-    'Government',
-    'Educational Institution'
-  ]);
+  // Load entity types from master data
+  const [entityTypes, setEntityTypes] = useState<string[]>([]);
 
   const [membershipFees] = useState<MembershipFeeEntry[]>([
     {
       id: 'fee-1',
       country: 'Global',
-      entityType: 'Startup',
-      quarterlyAmount: 99,
-      quarterlyCurrency: 'USD',
-      halfYearlyAmount: 189,
-      halfYearlyCurrency: 'USD',
-      annualAmount: 359,
-      annualCurrency: 'USD'
-    },
-    {
-      id: 'fee-2',
-      country: 'Global',
-      entityType: 'SME',
+      entityType: 'Commercial',
       quarterlyAmount: 199,
       quarterlyCurrency: 'USD',
       halfYearlyAmount: 379,
@@ -67,20 +62,9 @@ export const useMembershipForm = ({
       annualCurrency: 'USD'
     },
     {
-      id: 'fee-3',
+      id: 'fee-2',
       country: 'Global',
-      entityType: 'Corporation',
-      quarterlyAmount: 499,
-      quarterlyCurrency: 'USD',
-      halfYearlyAmount: 949,
-      halfYearlyCurrency: 'USD',
-      annualAmount: 1799,
-      annualCurrency: 'USD'
-    },
-    {
-      id: 'fee-4',
-      country: 'Global',
-      entityType: 'Non-Profit',
+      entityType: 'Non-Profit Organization',
       quarterlyAmount: 49,
       quarterlyCurrency: 'USD',
       halfYearlyAmount: 94,
@@ -89,33 +73,24 @@ export const useMembershipForm = ({
       annualCurrency: 'USD'
     },
     {
-      id: 'fee-5',
+      id: 'fee-3',
       country: 'Global',
-      entityType: 'Government',
-      quarterlyAmount: 299,
+      entityType: 'Society/ Trust',
+      quarterlyAmount: 99,
       quarterlyCurrency: 'USD',
-      halfYearlyAmount: 569,
+      halfYearlyAmount: 189,
       halfYearlyCurrency: 'USD',
-      annualAmount: 1079,
-      annualCurrency: 'USD'
-    },
-    {
-      id: 'fee-6',
-      country: 'Global',
-      entityType: 'Educational Institution',
-      quarterlyAmount: 149,
-      quarterlyCurrency: 'USD',
-      halfYearlyAmount: 284,
-      halfYearlyCurrency: 'USD',
-      annualAmount: 539,
+      annualAmount: 359,
       annualCurrency: 'USD'
     }
   ]);
 
   // Initialize form state with existing data if editing
   const [selectedEntityType, setSelectedEntityType] = useState<string>(() => {
+    console.log('🔄 Initializing entity type selection...');
+    
     if (isEditing && existingEntityType) {
-      console.log('🔄 Pre-filling entity type:', existingEntityType);
+      console.log('🔄 Pre-filling entity type from props:', existingEntityType);
       return existingEntityType;
     }
     
@@ -132,8 +107,10 @@ export const useMembershipForm = ({
   });
 
   const [selectedPlan, setSelectedPlan] = useState<string>(() => {
+    console.log('🔄 Initializing membership plan selection...');
+    
     if (isEditing && existingMembershipPlan) {
-      console.log('🔄 Pre-filling membership plan:', existingMembershipPlan);
+      console.log('🔄 Pre-filling membership plan from props:', existingMembershipPlan);
       return existingMembershipPlan;
     }
     
@@ -151,11 +128,20 @@ export const useMembershipForm = ({
 
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load entity types from master data on component mount
+  useEffect(() => {
+    console.log('🔍 Loading entity types from master data...');
+    const loadedEntityTypes = entityTypesDataManager.loadData();
+    console.log('📋 Loaded entity types:', loadedEntityTypes);
+    setEntityTypes(loadedEntityTypes);
+  }, []);
+
   // Effect to handle editing mode initialization
   useEffect(() => {
     if (isEditing && userId) {
       console.log('🔄 Editing mode detected, checking for existing membership data...');
       const membershipDetails = checkExistingMembership(userId);
+      console.log('🔍 Retrieved membership details:', membershipDetails);
       
       // Only update if we don't already have the data from props
       if (!existingEntityType && membershipDetails.entityType) {
