@@ -3,10 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Minus, Building2, FolderTree } from 'lucide-react';
+import { Plus, Building2, FolderTree } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
 import { IndustrySegment } from '@/types/industrySegments';
 import { industrySegmentDataManager } from '../industrySegmentDataManager';
@@ -25,29 +22,73 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
   onValidationChange
 }) => {
   const [industrySegments, setIndustrySegments] = React.useState<IndustrySegment[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
 
   React.useEffect(() => {
     const loadedData = industrySegmentDataManager.loadData();
     setIndustrySegments(loadedData.industrySegments || []);
   }, []);
 
-  const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
-  const domainGroupName = wizardData.selectedDomainGroup || '';
-  const categories = wizardData.manualData?.categories || [];
+  React.useEffect(() => {
+    // Initialize categories from wizard data if available
+    const wizardCategories = wizardData.manualData?.categories || [];
+    const wizardSubCategories = wizardData.manualData?.subCategories || [];
+    
+    const initialCategories: Category[] = wizardCategories.map((cat, index) => ({
+      id: `cat-${index}`,
+      name: cat.name,
+      description: cat.description || '',
+      subCategories: wizardSubCategories
+        .filter(sub => sub.categoryName === cat.name)
+        .map((sub, subIndex) => ({
+          id: `sub-${index}-${subIndex}`,
+          name: sub.name,
+          description: sub.description || ''
+        }))
+    }));
+
+    setCategories(initialCategories);
+  }, [wizardData.manualData]);
 
   React.useEffect(() => {
     // Validate that we have at least one category with a name and at least one sub-category
     const isValid = categories.length > 0 && 
       categories.every(cat => cat.name.trim().length > 0) &&
-      categories.every(cat => 
-        wizardData.manualData?.subCategories?.filter(sub => sub.categoryName === cat.name).length > 0
+      categories.every(cat => cat.subCategories.length > 0 && 
+        cat.subCategories.every(sub => sub.name.trim().length > 0)
       );
     
     console.log('DataEntryStep: Validation:', { categories: categories.length, isValid });
     onValidationChange(isValid);
-  }, [categories, wizardData.manualData?.subCategories, onValidationChange]);
+  }, [categories, onValidationChange]);
+
+  const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
+  const domainGroupName = wizardData.selectedDomainGroup || '';
 
   const generateId = () => `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  const updateWizardData = (updatedCategories: Category[]) => {
+    const categoriesData = updatedCategories.map(cat => ({
+      name: cat.name,
+      description: cat.description
+    }));
+
+    const subCategoriesData = updatedCategories.flatMap(cat =>
+      cat.subCategories.map(sub => ({
+        name: sub.name,
+        description: sub.description,
+        categoryName: cat.name
+      }))
+    );
+
+    onUpdate({
+      manualData: {
+        ...wizardData.manualData,
+        categories: categoriesData,
+        subCategories: subCategoriesData
+      }
+    });
+  };
 
   const addCategory = () => {
     const newCategory: Category = {
@@ -62,126 +103,71 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
     };
 
     const updatedCategories = [...categories, newCategory];
-    onUpdate({
-      manualData: {
-        ...wizardData.manualData,
-        categories: updatedCategories.map(cat => ({ name: cat.name, description: cat.description })),
-        subCategories: wizardData.manualData?.subCategories || []
-      }
-    });
+    setCategories(updatedCategories);
+    updateWizardData(updatedCategories);
   };
 
   const updateCategory = (categoryId: string, field: keyof Category, value: string) => {
-    const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
-    if (categoryIndex === -1) return;
-
-    const updatedCategories = [...categories];
-    updatedCategories[categoryIndex] = { ...updatedCategories[categoryIndex], [field]: value };
-
-    // Update the main data structure
-    onUpdate({
-      manualData: {
-        ...wizardData.manualData,
-        categories: updatedCategories.map(cat => ({ name: cat.name, description: cat.description })),
-        subCategories: wizardData.manualData?.subCategories || []
-      }
-    });
+    const updatedCategories = categories.map(cat =>
+      cat.id === categoryId ? { ...cat, [field]: value } : cat
+    );
+    setCategories(updatedCategories);
+    updateWizardData(updatedCategories);
   };
 
   const removeCategory = (categoryId: string) => {
-    const categoryToRemove = categories.find(cat => cat.id === categoryId);
-    if (!categoryToRemove) return;
-
     const updatedCategories = categories.filter(cat => cat.id !== categoryId);
-    const updatedSubCategories = (wizardData.manualData?.subCategories || [])
-      .filter(sub => sub.categoryName !== categoryToRemove.name);
-
-    onUpdate({
-      manualData: {
-        ...wizardData.manualData,
-        categories: updatedCategories.map(cat => ({ name: cat.name, description: cat.description })),
-        subCategories: updatedSubCategories
-      }
-    });
+    setCategories(updatedCategories);
+    updateWizardData(updatedCategories);
   };
 
   const addSubCategory = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    if (!category) return;
-
-    const newSubCategory = {
-      name: '',
-      description: '',
-      categoryName: category.name
-    };
-
-    const updatedSubCategories = [...(wizardData.manualData?.subCategories || []), newSubCategory];
-
-    onUpdate({
-      manualData: {
-        ...wizardData.manualData,
-        categories: categories.map(cat => ({ name: cat.name, description: cat.description })),
-        subCategories: updatedSubCategories
+    const updatedCategories = categories.map(cat => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          subCategories: [...cat.subCategories, {
+            id: generateId(),
+            name: '',
+            description: ''
+          }]
+        };
       }
+      return cat;
     });
+    setCategories(updatedCategories);
+    updateWizardData(updatedCategories);
   };
 
   const updateSubCategory = (categoryId: string, subCategoryId: string, field: keyof SubCategory, value: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    if (!category) return;
-
-    const subCategories = wizardData.manualData?.subCategories || [];
-    const subCategoryIndex = subCategories.findIndex(sub => 
-      sub.categoryName === category.name && sub.name === (category.subCategories.find(sc => sc.id === subCategoryId)?.name || '')
-    );
-
-    if (subCategoryIndex === -1) return;
-
-    const updatedSubCategories = [...subCategories];
-    updatedSubCategories[subCategoryIndex] = { 
-      ...updatedSubCategories[subCategoryIndex], 
-      [field]: value 
-    };
-
-    onUpdate({
-      manualData: {
-        ...wizardData.manualData,
-        categories: categories.map(cat => ({ name: cat.name, description: cat.description })),
-        subCategories: updatedSubCategories
+    const updatedCategories = categories.map(cat => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          subCategories: cat.subCategories.map(sub =>
+            sub.id === subCategoryId ? { ...sub, [field]: value } : sub
+          )
+        };
       }
+      return cat;
     });
+    setCategories(updatedCategories);
+    updateWizardData(updatedCategories);
   };
 
   const removeSubCategory = (categoryId: string, subCategoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    if (!category) return;
-
-    const subCategoryToRemove = category.subCategories.find(sc => sc.id === subCategoryId);
-    if (!subCategoryToRemove) return;
-
-    const updatedSubCategories = (wizardData.manualData?.subCategories || [])
-      .filter(sub => !(sub.categoryName === category.name && sub.name === subCategoryToRemove.name));
-
-    onUpdate({
-      manualData: {
-        ...wizardData.manualData,
-        categories: categories.map(cat => ({ name: cat.name, description: cat.description })),
-        subCategories: updatedSubCategories
+    const updatedCategories = categories.map(cat => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          subCategories: cat.subCategories.filter(sub => sub.id !== subCategoryId)
+        };
       }
+      return cat;
     });
+    setCategories(updatedCategories);
+    updateWizardData(updatedCategories);
   };
-
-  // Convert the data structure for rendering
-  const renderCategories: Category[] = categories.map(cat => ({
-    ...cat,
-    subCategories: (wizardData.manualData?.subCategories || [])
-      .filter(sub => sub.categoryName === cat.name)
-      .map(sub => ({
-        id: generateId(),
-        name: sub.name,
-        description: sub.description || ''
-      }))
-  }));
 
   return (
     <div className="space-y-6">
@@ -234,7 +220,7 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          {renderCategories.length === 0 ? (
+          {categories.length === 0 ? (
             <div className="text-center py-8">
               <FolderTree className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Categories Yet</h3>
@@ -248,12 +234,12 @@ const DataEntryStep: React.FC<DataEntryStepProps> = ({
             </div>
           ) : (
             <div className="space-y-6">
-              {renderCategories.map((category, index) => (
+              {categories.map((category, index) => (
                 <CategoryCard
                   key={category.id}
                   category={category}
                   categoryIndex={index}
-                  canRemove={renderCategories.length > 1}
+                  canRemove={categories.length > 1}
                   onUpdateCategory={(field, value) => updateCategory(category.id, field, value)}
                   onRemoveCategory={() => removeCategory(category.id)}
                   onAddSubCategory={() => addSubCategory(category.id)}

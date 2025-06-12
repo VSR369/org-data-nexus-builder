@@ -22,7 +22,7 @@ interface DomainGroup {
   description?: string;
   isActive: boolean;
   createdAt: string;
-  categories: Category[];
+  categories?: Category[];
 }
 
 interface IndustrySegmentCardProps {
@@ -34,9 +34,9 @@ const IndustrySegmentCard: React.FC<IndustrySegmentCardProps> = ({
   industrySegment, 
   domainGroups 
 }) => {
-  const totalCategories = domainGroups.reduce((sum, dg) => sum + dg.categories.length, 0);
+  const totalCategories = domainGroups.reduce((sum, dg) => sum + (dg.categories?.length || 0), 0);
   const totalSubCategories = domainGroups.reduce((sum, dg) => 
-    sum + dg.categories.reduce((catSum, cat) => catSum + cat.subCategories.length, 0), 0
+    sum + (dg.categories?.reduce((catSum, cat) => catSum + (cat.subCategories?.length || 0), 0) || 0), 0
   );
 
   return (

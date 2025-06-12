@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -20,13 +21,33 @@ interface DomainGroupSetupProps {
   onValidationChange: (isValid: boolean) => void;
 }
 
+// Enhanced domain group interface for display
+interface EnhancedDomainGroup {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  categories: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    subCategories: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      isActive: boolean;
+    }>;
+  }>;
+}
+
 const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
   wizardData,
   onUpdate,
   onValidationChange
 }) => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
-  const [existingData, setExistingData] = useState<DomainGroupsData>({ domainGroups: [], industrySegments: [] });
+  const [existingData, setExistingData] = useState<DomainGroupsData>({ domainGroups: [], categories: [], subCategories: [] });
 
   // Get values from wizardData or use empty strings as defaults
   const domainGroupName = wizardData.selectedDomainGroup || '';
@@ -77,8 +98,30 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
 
   const selectedSegment = industrySegments.find(s => s.id === wizardData.selectedIndustrySegment);
 
-  // Group existing domain groups by industry segment
-  const groupedDomainGroups = existingData.domainGroups.reduce((acc, dg) => {
+  // Transform domain groups data to include nested categories and subcategories
+  const enhancedDomainGroups: EnhancedDomainGroup[] = existingData.domainGroups.map(dg => {
+    const domainCategories = existingData.categories.filter(cat => cat.domainGroupId === dg.id);
+    
+    return {
+      ...dg,
+      categories: domainCategories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        description: cat.description,
+        subCategories: existingData.subCategories
+          .filter(sub => sub.categoryId === cat.id)
+          .map(sub => ({
+            id: sub.id,
+            name: sub.name,
+            description: sub.description,
+            isActive: sub.isActive
+          }))
+      }))
+    };
+  });
+
+  // Group enhanced domain groups by industry segment
+  const groupedDomainGroups = enhancedDomainGroups.reduce((acc, dg) => {
     const segment = industrySegments.find(is => is.id === dg.industrySegmentId);
     if (segment) {
       if (!acc[segment.industrySegment]) {
@@ -87,7 +130,7 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
       acc[segment.industrySegment].push(dg);
     }
     return acc;
-  }, {} as Record<string, typeof existingData.domainGroups>);
+  }, {} as Record<string, EnhancedDomainGroup[]>);
 
   return (
     <div className="space-y-6">
