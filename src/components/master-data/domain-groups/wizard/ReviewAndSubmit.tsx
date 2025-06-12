@@ -204,7 +204,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
       <div className="text-center">
         <h2 className="text-xl font-semibold mb-2">Review & Submit</h2>
         <p className="text-muted-foreground">
-          Review the processed hierarchy before saving to database
+          Review the new hierarchy structure before saving to database
         </p>
       </div>
 
@@ -240,10 +240,10 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
         </CardContent>
       </Card>
 
-      {/* Hierarchy Preview */}
+      {/* New Hierarchy Preview - This is the ONLY hierarchy display needed */}
       <Card>
         <CardHeader>
-          <CardTitle>Hierarchy Preview</CardTitle>
+          <CardTitle>New Hierarchy Preview</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -259,9 +259,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
                       <Globe className="w-6 h-6 text-blue-600" />
                       <div>
                         <h3 className="text-2xl font-bold text-blue-900">{industrySegmentName}</h3>
-                        <p className="text-sm text-blue-700">
-                          {processedData.domainGroups.length} Domain Group{processedData.domainGroups.length !== 1 ? 's' : ''}
-                        </p>
+                        <p className="text-sm text-blue-700">Industry Segment</p>
                       </div>
                     </div>
                     {expandedIndustrySegments.has(industrySegmentName) ? (
@@ -289,9 +287,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
                                   <Building2 className="w-5 h-5 text-primary" />
                                   <div>
                                     <h4 className="text-xl font-semibold text-primary">{domainGroup.name}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {categories.length} categories
-                                    </p>
+                                    <p className="text-sm text-muted-foreground">Domain Group</p>
                                   </div>
                                 </div>
                                 {expandedDomainGroups.has(domainGroup.id) ? (
