@@ -22,6 +22,7 @@ export const convertToMasterDataFormat = (
   }
 
   console.log('🔄 Converting Excel data to master data format with intelligent merging...');
+  console.log('📊 Input hierarchy data:', hierarchyData);
 
   // Load existing data
   const existingData = domainGroupsDataManager.loadData();
@@ -47,15 +48,24 @@ export const convertToMasterDataFormat = (
     skippedDuplicates: 0
   };
 
+  console.log('🔄 Processing hierarchy data...');
+
   Object.entries(hierarchyData).forEach(([industrySegmentName, domainGroups]) => {
+    console.log(`🏭 Processing industry segment: ${industrySegmentName}`);
+    
     // Find industry segment
     let industrySegment = industrySegments.find(is => is.industrySegment === industrySegmentName);
     if (!industrySegment) {
-      console.warn(`Industry segment "${industrySegmentName}" not found in master data`);
+      console.warn(`⚠️ Industry segment "${industrySegmentName}" not found in master data`);
       return; // Skip if industry segment doesn't exist
     }
 
+    console.log(`✅ Found industry segment: ${industrySegment.industrySegment} (ID: ${industrySegment.id})`);
+
     Object.entries(domainGroups).forEach(([domainGroupName, categories]) => {
+      console.log(`🏢 Processing domain group: ${domainGroupName}`);
+      console.log(`📊 Categories in this domain group:`, Object.keys(categories));
+      
       // Check if domain group already exists
       let existingDomainGroup = existingData.domainGroups.find(
         dg => dg.name === domainGroupName && dg.industrySegmentId === industrySegment!.id
@@ -64,7 +74,7 @@ export const convertToMasterDataFormat = (
       let domainGroupId: string;
       
       if (existingDomainGroup) {
-        console.log(`Domain group "${domainGroupName}" already exists, merging categories...`);
+        console.log(`♻️ Domain group "${domainGroupName}" already exists, merging categories...`);
         domainGroupId = existingDomainGroup.id;
         result.skippedDuplicates++;
       } else {
@@ -81,9 +91,13 @@ export const convertToMasterDataFormat = (
         };
         newDomainGroups.push(newDomainGroup);
         result.domainGroups++;
+        console.log(`✅ Created new domain group: ${domainGroupName} (ID: ${domainGroupId})`);
       }
 
       Object.entries(categories).forEach(([categoryName, subCategories]) => {
+        console.log(`📁 Processing category: ${categoryName}`);
+        console.log(`📊 Sub-categories in this category:`, subCategories);
+        
         // Check if category already exists for this domain group
         let existingCategory = existingData.categories.find(
           cat => cat.name === categoryName && cat.domainGroupId === domainGroupId
@@ -92,7 +106,7 @@ export const convertToMasterDataFormat = (
         let categoryId: string;
         
         if (existingCategory) {
-          console.log(`Category "${categoryName}" already exists, merging sub-categories...`);
+          console.log(`♻️ Category "${categoryName}" already exists, merging sub-categories...`);
           categoryId = existingCategory.id;
           result.mergedCategories++;
         } else {
@@ -108,17 +122,21 @@ export const convertToMasterDataFormat = (
           };
           newCategories.push(newCategory);
           result.categories++;
+          console.log(`✅ Created new category: ${categoryName} (ID: ${categoryId})`);
         }
 
-        // Handle sub-categories
-        subCategories.forEach(subCategoryName => {
+        // Handle sub-categories - ensure we process all of them
+        console.log(`🔄 Processing ${subCategories.length} sub-categories for category: ${categoryName}`);
+        subCategories.forEach((subCategoryName, index) => {
+          console.log(`📝 Processing sub-category ${index + 1}/${subCategories.length}: ${subCategoryName}`);
+          
           // Check if sub-category already exists for this category
           const existingSubCategory = existingData.subCategories.find(
             sub => sub.name === subCategoryName && sub.categoryId === categoryId
           );
           
           if (existingSubCategory) {
-            console.log(`Sub-category "${subCategoryName}" already exists, skipping...`);
+            console.log(`♻️ Sub-category "${subCategoryName}" already exists, skipping...`);
             result.mergedSubCategories++;
           } else {
             // Create new sub-category
@@ -133,11 +151,20 @@ export const convertToMasterDataFormat = (
             };
             newSubCategories.push(newSubCategory);
             result.subCategories++;
+            console.log(`✅ Created new sub-category: ${subCategoryName} (ID: ${subCategoryId})`);
           }
         });
       });
     });
   });
+
+  console.log('📊 Integration results:');
+  console.log(`🏢 New domain groups: ${result.domainGroups}`);
+  console.log(`📁 New categories: ${result.categories}`);
+  console.log(`📝 New sub-categories: ${result.subCategories}`);
+  console.log(`♻️ Merged categories: ${result.mergedCategories}`);
+  console.log(`♻️ Merged sub-categories: ${result.mergedSubCategories}`);
+  console.log(`⏭️ Skipped duplicates: ${result.skippedDuplicates}`);
 
   // Merge with existing data
   const updatedData: DomainGroupsData = {
@@ -146,16 +173,21 @@ export const convertToMasterDataFormat = (
     subCategories: [...existingData.subCategories, ...newSubCategories]
   };
 
-  console.log('📦 Updated data to save:', updatedData);
+  console.log('📦 Final updated data to save:');
+  console.log(`🏢 Total domain groups: ${updatedData.domainGroups.length}`);
+  console.log(`📁 Total categories: ${updatedData.categories.length}`);
+  console.log(`📝 Total sub-categories: ${updatedData.subCategories.length}`);
 
   // Save to master data
   domainGroupsDataManager.saveData(updatedData);
+  console.log('💾 Data saved to localStorage');
 
   // Trigger storage event to notify other components
   window.dispatchEvent(new StorageEvent('storage', {
     key: 'master_data_domain_groups',
     newValue: JSON.stringify(updatedData)
   }));
+  console.log('📡 Storage event dispatched');
 
   console.log('✅ Excel data converted and saved to master data format:', result);
 

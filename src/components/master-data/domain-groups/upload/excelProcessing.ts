@@ -47,13 +47,18 @@ export const processExcelFile = async (file: File): Promise<{
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
+        console.log('🔄 Starting Excel file processing...');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
+        console.log('📊 Worksheet loaded:', firstSheetName);
+        
         // Get the range to find the last row with data
         const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+        console.log('📐 Excel range:', range);
+        
         const jsonData: string[][] = [];
         
         // Process all rows from 0 to the last row with data
@@ -61,7 +66,7 @@ export const processExcelFile = async (file: File): Promise<{
           const row: string[] = [];
           let hasData = false;
           
-          // Check each column in the row
+          // Check each column in the row (ensure we check at least 4 columns for the required data)
           for (let colNum = range.s.c; colNum <= Math.max(range.e.c, 3); colNum++) {
             const cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: colNum });
             const cell = worksheet[cellAddress];
@@ -73,11 +78,14 @@ export const processExcelFile = async (file: File): Promise<{
           // Only add rows that have some data
           if (hasData) {
             jsonData.push(row);
+            console.log(`📝 Row ${rowNum + 1}:`, row);
           }
         }
 
+        console.log(`✅ Processed ${jsonData.length} rows with data`);
+
         const processingResult: ProcessingResult = {
-          totalRows: jsonData.length - 1, // Exclude header
+          totalRows: jsonData.length > 0 ? jsonData.length - 1 : 0, // Exclude header if exists
           validRows: 0,
           errors: [],
           warnings: []
@@ -85,6 +93,7 @@ export const processExcelFile = async (file: File): Promise<{
 
         resolve({ excelData: jsonData, processingResult });
       } catch (error) {
+        console.error('❌ Excel processing error:', error);
         reject(error);
       }
     };
@@ -97,7 +106,11 @@ export const parseExcelToHierarchy = (
   data: string[][], 
   processingResult: ProcessingResult
 ): { parsed: ParsedExcelData[], hierarchy: HierarchyData, processingResult: ProcessingResult } => {
+  console.log('🔄 Starting Excel data parsing...');
+  console.log('📊 Input data:', data);
+  
   if (!data || data.length < 2) {
+    console.warn('⚠️ No sufficient data found in Excel file');
     return { 
       parsed: [], 
       hierarchy: {}, 
@@ -113,18 +126,26 @@ export const parseExcelToHierarchy = (
   const headers = data[0];
   const rows = data.slice(1);
   
+  console.log('📋 Headers:', headers);
+  console.log(`📊 Data rows to process: ${rows.length}`);
+  
   const parsed: ParsedExcelData[] = [];
   const hierarchy: HierarchyData = {};
+  let validRowCount = 0;
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2; // Excel row number (1-based + header)
     const errors: string[] = [];
     
-    // Validate required columns
-    const industrySegment = (row[0] || '').trim();
-    const domainGroup = (row[1] || '').trim();
-    const category = (row[2] || '').trim();
-    const subCategory = (row[3] || '').trim();
+    console.log(`🔍 Processing row ${rowNumber}:`, row);
+    
+    // Validate required columns - ensure we trim whitespace
+    const industrySegment = (row[0] || '').toString().trim();
+    const domainGroup = (row[1] || '').toString().trim();
+    const category = (row[2] || '').toString().trim();
+    const subCategory = (row[3] || '').toString().trim();
+
+    console.log(`📝 Parsed values - IS: "${industrySegment}", DG: "${domainGroup}", Cat: "${category}", Sub: "${subCategory}"`);
 
     if (!industrySegment) errors.push('Industry Segment is required');
     if (!domainGroup) errors.push('Domain Group is required');
@@ -144,26 +165,43 @@ export const parseExcelToHierarchy = (
     parsed.push(item);
 
     if (item.isValid) {
-      processingResult.validRows++;
+      validRowCount++;
+      console.log(`✅ Valid row ${rowNumber}: Building hierarchy...`);
       
       // Build hierarchy structure
       if (!hierarchy[item.industrySegment]) {
         hierarchy[item.industrySegment] = {};
+        console.log(`🏗️ Created industry segment: ${item.industrySegment}`);
       }
       if (!hierarchy[item.industrySegment][item.domainGroup]) {
         hierarchy[item.industrySegment][item.domainGroup] = {};
+        console.log(`🏗️ Created domain group: ${item.domainGroup}`);
       }
       if (!hierarchy[item.industrySegment][item.domainGroup][item.category]) {
         hierarchy[item.industrySegment][item.domainGroup][item.category] = [];
+        console.log(`🏗️ Created category: ${item.category}`);
       }
       
       if (!hierarchy[item.industrySegment][item.domainGroup][item.category].includes(item.subCategory)) {
         hierarchy[item.industrySegment][item.domainGroup][item.category].push(item.subCategory);
+        console.log(`🏗️ Added sub-category: ${item.subCategory}`);
+      } else {
+        console.log(`⚠️ Duplicate sub-category skipped: ${item.subCategory}`);
       }
     } else {
+      console.error(`❌ Invalid row ${rowNumber}:`, errors);
       processingResult.errors.push(`Row ${rowNumber}: ${errors.join(', ')}`);
     }
   });
+
+  processingResult.validRows = validRowCount;
+  processingResult.totalRows = rows.length;
+
+  console.log('✅ Parsing complete:');
+  console.log(`📊 Total rows: ${processingResult.totalRows}`);
+  console.log(`✅ Valid rows: ${processingResult.validRows}`);
+  console.log(`❌ Errors: ${processingResult.errors.length}`);
+  console.log('🏗️ Final hierarchy:', hierarchy);
 
   // Add warnings for empty rows that were skipped
   if (processingResult.totalRows > rows.length) {
