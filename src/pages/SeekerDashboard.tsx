@@ -94,7 +94,9 @@ const SeekerDashboard = () => {
       state: {
         userId,
         organizationName,
-        isEditing: true
+        isEditing: true,
+        existingEntityType: membershipDetails.entityType,
+        existingMembershipPlan: membershipDetails.membershipPlan
       }
     });
   };
@@ -171,9 +173,9 @@ const SeekerDashboard = () => {
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                           {membershipDetails.entityType}
                         </Badge>
-                        {getMembershipFeeDisplay() && (
+                        {membershipDetails.membershipPlan && (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                            {getMembershipFeeDisplay()}
+                            {formatMembershipPlan(membershipDetails.membershipPlan)}
                           </Badge>
                         )}
                       </div>

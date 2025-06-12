@@ -25,6 +25,8 @@ interface SeekerMembershipProps {
   userId?: string;
   organizationName?: string;
   isEditing?: boolean;
+  existingEntityType?: string;
+  existingMembershipPlan?: string;
 }
 
 // Data managers
@@ -45,7 +47,17 @@ const SeekerMembership = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const { userId, organizationName, isEditing } = location.state as SeekerMembershipProps & { isEditing?: boolean } || {};
+  const { 
+    userId, 
+    organizationName, 
+    isEditing, 
+    existingEntityType, 
+    existingMembershipPlan 
+  } = location.state as SeekerMembershipProps & { 
+    isEditing?: boolean;
+    existingEntityType?: string;
+    existingMembershipPlan?: string;
+  } || {};
   
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
@@ -83,17 +95,22 @@ const SeekerMembership = () => {
     setEntityTypes(loadedEntityTypes);
     setMembershipFees(loadedMembershipFees);
     
-    // Auto-select first entity type if available
-    if (loadedEntityTypes.length > 0) {
+    // Pre-fill form if editing with existing data
+    if (isEditing && existingEntityType && existingMembershipPlan) {
+      console.log('🔧 Pre-filling form for editing:', { existingEntityType, existingMembershipPlan });
+      setSelectedEntityType(existingEntityType);
+      setSelectedPlan(existingMembershipPlan);
+    } else if (loadedEntityTypes.length > 0 && !isEditing) {
+      // Auto-select first entity type only if not editing
       setSelectedEntityType(loadedEntityTypes[0]);
       console.log('🎯 Auto-selected entity type:', loadedEntityTypes[0]);
     }
-  }, []);
+  }, [isEditing, existingEntityType, existingMembershipPlan]);
 
-  // Load existing membership data when editing
+  // Load existing membership data when editing (fallback method)
   useEffect(() => {
-    if (isEditing && userId) {
-      console.log('🔍 Loading existing membership data for editing...');
+    if (isEditing && userId && !existingEntityType) {
+      console.log('🔍 Loading existing membership data for editing (fallback)...');
       const existingMembershipData = localStorage.getItem('seeker_membership_data');
       
       if (existingMembershipData) {
@@ -111,7 +128,7 @@ const SeekerMembership = () => {
         }
       }
     }
-  }, [isEditing, userId]);
+  }, [isEditing, userId, existingEntityType]);
 
   // Get membership fee options for selected entity type
   const getMembershipOptions = () => {
@@ -175,14 +192,16 @@ const SeekerMembership = () => {
     setIsLoading(true);
 
     try {
-      // Save membership data to localStorage
+      // Save membership data to localStorage with all details preserved
       const membershipData = {
         userId,
         organizationName,
         entityType: selectedEntityType,
         membershipPlan: selectedPlan,
         isMember: true,
-        joinedAt: new Date().toISOString(),
+        joinedAt: isEditing ? 
+          (JSON.parse(localStorage.getItem('seeker_membership_data') || '{}').joinedAt || new Date().toISOString()) : 
+          new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       };
 
