@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-import { checkExistingMembership } from '@/utils/membershipUtils';
 
 interface LoginFormData {
   userId: string;
@@ -58,23 +57,17 @@ export const useLoginForm = () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Check for existing membership data
-      const membershipInfo = checkExistingMembership(formData.userId);
-      
-      console.log('🔍 Login - Membership info for navigation:', membershipInfo);
-      
-      // Navigate to seeker dashboard with user context and membership status
+      // Navigate to seeker dashboard with user context
       navigate('/seeker-dashboard', { 
         state: { 
           userId: formData.userId,
-          organizationName: membershipInfo.organizationName,
-          isMember: membershipInfo.isMember
+          organizationName: 'Sample Organization'
         }
       });
 
       toast({
         title: "Login Successful",
-        description: membershipInfo.isMember ? "Welcome back, member!" : "Welcome back!",
+        description: "Welcome back!",
       });
     } catch (error) {
       toast({
