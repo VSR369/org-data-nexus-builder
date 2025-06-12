@@ -3,7 +3,7 @@ import React, { useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, X, Save, Trash2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, Trash2, CheckCircle } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,6 +14,8 @@ interface SavedExcelDocument {
   excelData: string[][];
   parsedData: ParsedExcelData[];
   hierarchyData: HierarchyData;
+  processingResult: ProcessingResult;
+  dataSource: 'excel';
 }
 
 interface ParsedExcelData {
@@ -21,6 +23,9 @@ interface ParsedExcelData {
   domainGroup: string;
   category: string;
   subCategory: string;
+  rowNumber: number;
+  isValid: boolean;
+  errors: string[];
 }
 
 interface HierarchyData {
@@ -29,6 +34,13 @@ interface HierarchyData {
       [category: string]: string[];
     };
   };
+}
+
+interface ProcessingResult {
+  totalRows: number;
+  validRows: number;
+  errors: string[];
+  warnings: string[];
 }
 
 interface ExcelUploadSectionProps {
@@ -82,18 +94,20 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="w-5 h-5" />
-          Excel Upload
+          Excel Upload & Processing
           {savedDocument && (
             <Badge variant="secondary" className="ml-2">
-              Document Saved
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Processed
             </Badge>
           )}
         </CardTitle>
         <CardDescription>
-          Upload an Excel file (.xlsx, .xls) or CSV file containing your domain group hierarchy data
+          Upload an Excel file (.xlsx, .xls) or CSV file containing your domain group hierarchy data. 
+          All rows will be processed and validated automatically.
           {savedDocument && (
             <span className="block mt-1 text-green-600">
-              Last saved: {new Date(savedDocument.uploadDate).toLocaleString()}
+              Last processed: {new Date(savedDocument.uploadDate).toLocaleString()}
             </span>
           )}
         </CardDescription>
@@ -119,8 +133,9 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
                   or click to browse files
                 </p>
               </div>
-              <div className="text-xs text-muted-foreground">
-                Supported formats: .xlsx, .xls, .csv
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>Supported formats: .xlsx, .xls, .csv</div>
+                <div>Expected columns: Industry Segment | Domain Group | Category | Sub-Category</div>
               </div>
             </div>
           </div>
@@ -133,8 +148,13 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
                   <p className="font-medium">{uploadedFile.name}</p>
                   <p className="text-sm text-muted-foreground">
                     {(uploadedFile.size / 1024).toFixed(1)} KB
-                    {savedDocument && (
-                      <span className="ml-2 text-green-600">• Saved</span>
+                    {savedDocument && savedDocument.processingResult && (
+                      <span className="ml-2 text-green-600">
+                        • {savedDocument.processingResult.validRows}/{savedDocument.processingResult.totalRows} rows processed
+                      </span>
+                    )}
+                    {isProcessing && (
+                      <span className="ml-2 text-blue-600">• Processing...</span>
                     )}
                   </p>
                 </div>
@@ -145,33 +165,28 @@ const ExcelUploadSection: React.FC<ExcelUploadSectionProps> = ({
                   size="sm" 
                   onClick={handleDeleteFile}
                   className="flex items-center gap-2"
+                  disabled={isProcessing}
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete File
                 </Button>
-                <Button variant="ghost" size="sm" onClick={onClearUpload}>
+                <Button variant="ghost" size="sm" onClick={onClearUpload} disabled={isProcessing}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Action Button to Save to Master Data */}
-            {Object.keys(hierarchyData).length > 0 && (
+            {/* Processing Status */}
+            {isProcessing && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   <div>
-                    <h3 className="font-medium text-blue-900">Ready to Import</h3>
+                    <h3 className="font-medium text-blue-900">Processing Excel File</h3>
                     <p className="text-sm text-blue-700">
-                      Click to add this hierarchy data to your main Domain Groups configuration
+                      Reading all rows and building hierarchy structure...
                     </p>
                   </div>
-                  <Button 
-                    onClick={onSaveToMasterData}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save to Master Data
-                  </Button>
                 </div>
               </div>
             )}

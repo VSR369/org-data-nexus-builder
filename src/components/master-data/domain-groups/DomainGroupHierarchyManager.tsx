@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import ExcelUploadSection from './upload/ExcelUploadSection';
-import ExcelPreviewDisplay from './upload/ExcelPreviewDisplay';
+import ExcelTreeStructureDisplay from './upload/ExcelTreeStructureDisplay';
 import { 
   processExcelFile, 
   parseExcelToHierarchy, 
@@ -14,7 +14,8 @@ import {
   deleteExcelFile,
   type HierarchyData,
   type ParsedExcelData,
-  type SavedExcelDocument 
+  type SavedExcelDocument,
+  type ProcessingResult
 } from './upload/excelProcessing';
 import { convertToMasterDataFormat } from './upload/masterDataConverter';
 
@@ -27,6 +28,12 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
   const [excelData, setExcelData] = useState<string[][] | null>(null);
   const [parsedData, setParsedData] = useState<ParsedExcelData[]>([]);
   const [hierarchyData, setHierarchyData] = useState<HierarchyData>({});
+  const [processingResult, setProcessingResult] = useState<ProcessingResult>({
+    totalRows: 0,
+    validRows: 0,
+    errors: [],
+    warnings: []
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [savedDocument, setSavedDocument] = useState<SavedExcelDocument | null>(null);
   const { toast } = useToast();
@@ -39,6 +46,12 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
       setExcelData(document.excelData);
       setParsedData(document.parsedData);
       setHierarchyData(document.hierarchyData);
+      setProcessingResult(document.processingResult || {
+        totalRows: 0,
+        validRows: 0,
+        errors: [],
+        warnings: []
+      });
       
       // Create a mock file object for display
       const mockFile = new File([''], document.fileName, { 
@@ -54,18 +67,29 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
     setIsProcessing(true);
     
     try {
-      const excelDataResult = await processExcelFile(file);
+      console.log('🔄 Processing Excel file:', file.name);
+      const { excelData: excelDataResult, processingResult: processingResultData } = await processExcelFile(file);
       setExcelData(excelDataResult);
+      setProcessingResult(processingResultData);
       
-      const { parsed, hierarchy } = parseExcelToHierarchy(excelDataResult);
+      console.log('📊 Processing result:', processingResultData);
+      
+      const { parsed, hierarchy, processingResult: finalProcessingResult } = parseExcelToHierarchy(excelDataResult, processingResultData);
       setParsedData(parsed);
       setHierarchyData(hierarchy);
+      setProcessingResult(finalProcessingResult);
       
       // Save the document permanently
-      const savedDoc = saveDocument(file, excelDataResult, parsed, hierarchy);
+      const savedDoc = saveDocument(file, excelDataResult, parsed, hierarchy, finalProcessingResult);
       setSavedDocument(savedDoc);
       
       setIsProcessing(false);
+      
+      toast({
+        title: "Excel File Processed",
+        description: `Successfully processed ${finalProcessingResult.validRows} out of ${finalProcessingResult.totalRows} rows`,
+      });
+      
     } catch (error) {
       console.error('Error processing Excel file:', error);
       setIsProcessing(false);
@@ -83,6 +107,12 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
     setExcelData(null);
     setParsedData([]);
     setHierarchyData({});
+    setProcessingResult({
+      totalRows: 0,
+      validRows: 0,
+      errors: [],
+      warnings: []
+    });
     setSavedDocument(null);
     
     // Delete from storage
@@ -94,13 +124,13 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
     });
   };
 
-  const handleSaveToMasterData = () => {
+  const handleIntegrateToMasterData = () => {
     try {
       const result = convertToMasterDataFormat(hierarchyData, savedDocument);
       
       toast({
         title: "Success",
-        description: `Successfully imported ${result.domainGroups} domain groups with ${result.categories} categories and ${result.subCategories} sub-categories to master data`,
+        description: `Successfully integrated ${result.domainGroups} new domain groups, ${result.categories} new categories, and ${result.subCategories} new sub-categories. ${result.mergedCategories + result.mergedSubCategories} items were merged with existing data.`,
       });
 
       // Navigate back to main page to see the integrated data
@@ -109,7 +139,7 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
       console.error('❌ Error converting Excel data to master data format:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to convert Excel data to master data format",
+        description: error instanceof Error ? error.message : "Failed to integrate Excel data to master data format",
         variant: "destructive"
       });
     }
@@ -144,13 +174,15 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
         isProcessing={isProcessing}
         onFileUpload={handleFileUpload}
         onClearUpload={handleClearUpload}
-        onSaveToMasterData={handleSaveToMasterData}
+        onSaveToMasterData={handleIntegrateToMasterData}
       />
 
-      {/* Preview Section */}
-      <ExcelPreviewDisplay
+      {/* Tree Structure Display */}
+      <ExcelTreeStructureDisplay
         hierarchyData={hierarchyData}
         savedDocument={savedDocument}
+        processingResult={processingResult}
+        onIntegrateToMasterData={handleIntegrateToMasterData}
       />
     </div>
   );
