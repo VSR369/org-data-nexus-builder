@@ -1,9 +1,11 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building, User, CreditCard, LogOut, Edit, UserPlus } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { checkExistingMembership } from '@/utils/membershipUtils';
 
 interface SeekerDashboardProps {
   userId?: string;
@@ -33,48 +35,50 @@ const SeekerDashboard = () => {
     }
   }, [userId, organizationName, isMember]);
 
-  // Improved membership checking function
-  const checkMembershipStatus = () => {
-    console.log('🔍 Checking membership status...');
+  // Get detailed membership information
+  const getMembershipDetails = () => {
+    console.log('🔍 Getting detailed membership information...');
     
     // First check the passed state
     if (isMember !== undefined) {
       console.log('🔍 Checking membership from navigation state:', isMember);
-      return isMember;
+      if (isMember) {
+        // Get detailed info from localStorage
+        return checkExistingMembership(userId || '');
+      }
+      return { isMember: false };
     }
     
     // If no state passed, check localStorage for membership data
-    const membershipData = localStorage.getItem('seeker_membership_data');
-    console.log('🔍 Raw membership data from localStorage:', membershipData);
-    
-    if (membershipData) {
-      try {
-        const parsedData = JSON.parse(membershipData);
-        console.log('🔍 Parsed membership data:', parsedData);
-        
-        // Enhanced validation - check if there's valid membership data for current user
-        if (parsedData && parsedData.userId && parsedData.userId === userId) {
-          console.log('✅ User ID matches stored data');
-          
-          // Check if user has active membership
-          const isValidMember = parsedData.isMember === true;
-          console.log('✅ Membership validation result:', isValidMember);
-          return isValidMember;
-        } else {
-          console.log('❌ User ID does not match or missing user data');
-          console.log('Expected userId:', userId, 'Stored userId:', parsedData?.userId);
-        }
-      } catch (error) {
-        console.log('❌ Error parsing membership data:', error);
-        return false;
-      }
-    }
-    
-    console.log('❌ No membership data found');
-    return false;
+    return checkExistingMembership(userId || '');
   };
 
-  const isActiveMember = checkMembershipStatus();
+  const membershipDetails = getMembershipDetails();
+  const isActiveMember = membershipDetails.isMember;
+
+  // Format membership plan display
+  const formatMembershipPlan = (plan: string) => {
+    switch (plan) {
+      case 'quarterly':
+        return 'Quarterly';
+      case 'halfYearly':
+        return 'Half-Yearly';
+      case 'annual':
+        return 'Annual';
+      default:
+        return plan;
+    }
+  };
+
+  // Get membership fee information (this would ideally come from the membership details)
+  const getMembershipFeeDisplay = () => {
+    if (!membershipDetails.membershipPlan) return null;
+    
+    // For demo purposes, showing the plan frequency
+    // In a real app, you'd fetch the actual fee amounts from your master data
+    const planDisplay = formatMembershipPlan(membershipDetails.membershipPlan);
+    return planDisplay;
+  };
 
   const handleJoinAsMember = () => {
     navigate('/seeker-membership', {
@@ -104,10 +108,10 @@ const SeekerDashboard = () => {
   // Debug logging
   useEffect(() => {
     console.log('🔍 SeekerDashboard props:', { userId, organizationName, isMember });
-    console.log('🔍 Current membership status:', isActiveMember);
+    console.log('🔍 Current membership details:', membershipDetails);
     const storedData = localStorage.getItem('seeker_membership_data');
     console.log('🔍 Stored membership data:', storedData);
-  }, [userId, organizationName, isMember, isActiveMember]);
+  }, [userId, organizationName, isMember, membershipDetails]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -153,13 +157,27 @@ const SeekerDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Membership Status</p>
-                  <div className="mt-1 flex items-center gap-2">
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
                     <Badge 
                       variant={isActiveMember ? "default" : "secondary"} 
                       className={isActiveMember ? "bg-green-100 text-green-800 border-green-200" : "bg-orange-100 text-orange-800 border-orange-200"}
                     >
                       {isActiveMember ? "✓ Active Member" : "⚠ Not a Member"}
                     </Badge>
+                    
+                    {/* Show membership details for active members */}
+                    {isActiveMember && membershipDetails.entityType && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {membershipDetails.entityType}
+                        </Badge>
+                        {getMembershipFeeDisplay() && (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            {getMembershipFeeDisplay()}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -197,6 +215,11 @@ const SeekerDashboard = () => {
                 <p className="text-green-700 text-sm">
                   You have full access to all premium features, priority support, and exclusive member benefits.
                 </p>
+                {membershipDetails.joinedAt && (
+                  <p className="text-green-600 text-xs mt-2">
+                    Member since: {new Date(membershipDetails.joinedAt).toLocaleDateString()}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
