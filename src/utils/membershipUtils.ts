@@ -19,13 +19,19 @@ export const checkExistingMembership = (userId: string) => {
           console.log('✅ Valid active membership found for user');
           return {
             isMember: true,
-            organizationName: parsedData.organizationName || 'Sample Organization'
+            organizationName: parsedData.organizationName || 'Sample Organization',
+            entityType: parsedData.entityType,
+            membershipPlan: parsedData.membershipPlan,
+            joinedAt: parsedData.joinedAt,
+            lastUpdated: parsedData.lastUpdated
           };
         } else {
           console.log('⚠️ User found but no active membership');
           return {
             isMember: false,
-            organizationName: parsedData.organizationName || 'Sample Organization'
+            organizationName: parsedData.organizationName || 'Sample Organization',
+            entityType: parsedData.entityType,
+            membershipPlan: parsedData.membershipPlan
           };
         }
       } else {

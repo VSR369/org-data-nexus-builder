@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ interface MembershipFeeEntry {
 interface SeekerMembershipProps {
   userId?: string;
   organizationName?: string;
+  isEditing?: boolean;
 }
 
 // Data managers
@@ -45,7 +45,7 @@ const SeekerMembership = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const { userId, organizationName } = location.state as SeekerMembershipProps || {};
+  const { userId, organizationName, isEditing } = location.state as SeekerMembershipProps & { isEditing?: boolean } || {};
   
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
@@ -89,6 +89,29 @@ const SeekerMembership = () => {
       console.log('🎯 Auto-selected entity type:', loadedEntityTypes[0]);
     }
   }, []);
+
+  // Load existing membership data when editing
+  useEffect(() => {
+    if (isEditing && userId) {
+      console.log('🔍 Loading existing membership data for editing...');
+      const existingMembershipData = localStorage.getItem('seeker_membership_data');
+      
+      if (existingMembershipData) {
+        try {
+          const parsedData = JSON.parse(existingMembershipData);
+          console.log('📋 Existing membership data:', parsedData);
+          
+          if (parsedData.userId === userId) {
+            console.log('✅ Found matching membership data, pre-filling form');
+            setSelectedEntityType(parsedData.entityType || '');
+            setSelectedPlan(parsedData.membershipPlan || '');
+          }
+        } catch (error) {
+          console.log('❌ Error parsing existing membership data:', error);
+        }
+      }
+    }
+  }, [isEditing, userId]);
 
   // Get membership fee options for selected entity type
   const getMembershipOptions = () => {
@@ -152,20 +175,29 @@ const SeekerMembership = () => {
     setIsLoading(true);
 
     try {
-      // Here you would save to backend
-      console.log('Membership registration:', {
+      // Save membership data to localStorage
+      const membershipData = {
         userId,
         organizationName,
         entityType: selectedEntityType,
-        membershipPlan: selectedPlan
-      });
+        membershipPlan: selectedPlan,
+        isMember: true,
+        joinedAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+
+      localStorage.setItem('seeker_membership_data', JSON.stringify(membershipData));
+      console.log('💾 Saved membership data to localStorage:', membershipData);
+
+      // Here you would save to backend
+      console.log('Membership registration:', membershipData);
 
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       toast({
-        title: "Registration Successful",
-        description: "Your membership registration has been submitted successfully!",
+        title: isEditing ? "Update Successful" : "Registration Successful",
+        description: isEditing ? "Your membership has been updated successfully!" : "Your membership registration has been submitted successfully!",
       });
 
       // Navigate back to dashboard with updated membership status
@@ -178,8 +210,8 @@ const SeekerMembership = () => {
       });
     } catch (error) {
       toast({
-        title: "Registration Failed",
-        description: "There was an error processing your membership registration.",
+        title: isEditing ? "Update Failed" : "Registration Failed",
+        description: isEditing ? "There was an error updating your membership." : "There was an error processing your membership registration.",
         variant: "destructive",
       });
     } finally {
