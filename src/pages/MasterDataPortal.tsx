@@ -50,26 +50,6 @@ const MasterDataPortal = () => {
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-4">
-                  {isLoggedIn ? (
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm text-muted-foreground">Authenticated</span>
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <span className="text-green-600 text-sm font-medium">A</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-3">
-                      <Button variant="outline" size="sm">
-                        Sign In
-                      </Button>
-                      <Button size="sm">
-                        Sign Up
-                      </Button>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </header>
