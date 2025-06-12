@@ -110,26 +110,26 @@ export const useMembershipForm = ({
         organizationName 
       });
 
-      // Get membership details from localStorage as fallback
+      // Get membership details from localStorage
       const membershipDetails = checkExistingMembership(userId);
       console.log('📋 Retrieved membership details from storage:', membershipDetails);
 
       // Set entity type - prefer props, fallback to localStorage
       const entityTypeToSet = existingEntityType || membershipDetails.entityType;
-      if (entityTypeToSet) {
+      if (entityTypeToSet && typeof entityTypeToSet === 'string') {
         console.log('✅ Setting entity type:', entityTypeToSet);
         setSelectedEntityType(entityTypeToSet);
       } else {
-        console.warn('⚠️ No entity type found to pre-fill');
+        console.warn('⚠️ No valid entity type found to pre-fill');
       }
 
       // Set membership plan - prefer props, fallback to localStorage
       const membershipPlanToSet = existingMembershipPlan || membershipDetails.membershipPlan;
-      if (membershipPlanToSet) {
+      if (membershipPlanToSet && typeof membershipPlanToSet === 'string') {
         console.log('✅ Setting membership plan:', membershipPlanToSet);
         setSelectedPlan(membershipPlanToSet);
       } else {
-        console.warn('⚠️ No membership plan found to pre-fill');
+        console.warn('⚠️ No valid membership plan found to pre-fill');
       }
     } else {
       console.log('🆕 New membership mode - starting with empty form');
@@ -188,8 +188,8 @@ export const useMembershipForm = ({
       const membershipData = {
         userId: userId || '',
         organizationName: organizationName || '',
-        entityType: selectedEntityType,
-        membershipPlan: selectedPlan,
+        entityType: selectedEntityType, // ✅ Now saving the selected entity type
+        membershipPlan: selectedPlan,   // ✅ Now saving the selected membership plan
         amount: selectedOption?.amount || 0,
         currency: selectedOption?.currency || 'USD',
         isMember: true,
@@ -198,7 +198,7 @@ export const useMembershipForm = ({
       };
 
       localStorage.setItem('seeker_membership_data', JSON.stringify(membershipData));
-      console.log('💾 Saved membership data:', membershipData);
+      console.log('💾 Saved complete membership data:', membershipData);
 
       toast({
         title: isEditing ? "Membership Updated" : "Membership Registration Successful",
