@@ -141,14 +141,16 @@ const SeekerMembership = () => {
               </div>
             )}
 
-            {/* Debug info for editing mode */}
+            {/* Enhanced debug info for editing mode */}
             {isEditing && (
               <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs">
                 <p className="font-medium text-gray-700">Debug Info:</p>
-                <p>Selected Entity Type: {selectedEntityType || 'None'}</p>
-                <p>Selected Plan: {selectedPlan || 'None'}</p>
-                <p>Props Entity Type: {existingEntityType || 'None'}</p>
-                <p>Props Plan: {existingMembershipPlan || 'None'}</p>
+                <p>Form Selected Entity Type: "{selectedEntityType}" (Type: {typeof selectedEntityType})</p>
+                <p>Form Selected Plan: "{selectedPlan}" (Type: {typeof selectedPlan})</p>
+                <p>Props Entity Type: "{existingEntityType}" (Type: {typeof existingEntityType})</p>
+                <p>Props Plan: "{existingMembershipPlan}" (Type: {typeof existingMembershipPlan})</p>
+                <p>Storage Entity Type: "{existingMembershipDetails?.entityType}" (Type: {typeof existingMembershipDetails?.entityType})</p>
+                <p>Storage Plan: "{existingMembershipDetails?.membershipPlan}" (Type: {typeof existingMembershipDetails?.membershipPlan})</p>
               </div>
             )}
           </CardHeader>

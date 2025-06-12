@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { checkExistingMembership } from '@/utils/membershipUtils';
+import { checkExistingMembership, cleanMembershipData } from '@/utils/membershipUtils';
 import { UniversalDataManager } from '@/utils/core/UniversalDataManager';
 
 interface UseMembershipFormProps {
@@ -110,26 +110,33 @@ export const useMembershipForm = ({
         organizationName 
       });
 
+      // Clean any malformed data first
+      cleanMembershipData(userId);
+
       // Get membership details from localStorage
       const membershipDetails = checkExistingMembership(userId);
       console.log('📋 Retrieved membership details from storage:', membershipDetails);
 
       // Set entity type - prefer props, fallback to localStorage
       const entityTypeToSet = existingEntityType || membershipDetails.entityType;
-      if (entityTypeToSet && typeof entityTypeToSet === 'string') {
+      console.log('🔍 Entity type to set:', entityTypeToSet, 'Type:', typeof entityTypeToSet);
+      
+      if (entityTypeToSet && typeof entityTypeToSet === 'string' && entityTypeToSet.trim() !== '') {
         console.log('✅ Setting entity type:', entityTypeToSet);
         setSelectedEntityType(entityTypeToSet);
       } else {
-        console.warn('⚠️ No valid entity type found to pre-fill');
+        console.warn('⚠️ No valid entity type found to pre-fill:', entityTypeToSet);
       }
 
       // Set membership plan - prefer props, fallback to localStorage
       const membershipPlanToSet = existingMembershipPlan || membershipDetails.membershipPlan;
-      if (membershipPlanToSet && typeof membershipPlanToSet === 'string') {
+      console.log('🔍 Membership plan to set:', membershipPlanToSet, 'Type:', typeof membershipPlanToSet);
+      
+      if (membershipPlanToSet && typeof membershipPlanToSet === 'string' && membershipPlanToSet.trim() !== '') {
         console.log('✅ Setting membership plan:', membershipPlanToSet);
         setSelectedPlan(membershipPlanToSet);
       } else {
-        console.warn('⚠️ No valid membership plan found to pre-fill');
+        console.warn('⚠️ No valid membership plan found to pre-fill:', membershipPlanToSet);
       }
     } else {
       console.log('🆕 New membership mode - starting with empty form');
@@ -185,11 +192,12 @@ export const useMembershipForm = ({
       // Get existing data to preserve joinedAt date
       const existingData = isEditing && userId ? checkExistingMembership(userId) : null;
 
+      // Ensure we save clean string data
       const membershipData = {
         userId: userId || '',
         organizationName: organizationName || '',
-        entityType: selectedEntityType, // ✅ Now saving the selected entity type
-        membershipPlan: selectedPlan,   // ✅ Now saving the selected membership plan
+        entityType: selectedEntityType, // Store as clean string
+        membershipPlan: selectedPlan,   // Store as clean string
         amount: selectedOption?.amount || 0,
         currency: selectedOption?.currency || 'USD',
         isMember: true,
@@ -197,8 +205,12 @@ export const useMembershipForm = ({
         lastUpdated: new Date().toISOString()
       };
 
+      console.log('💾 Saving membership data:', membershipData);
+      console.log('🔍 Entity type being saved:', selectedEntityType, 'Type:', typeof selectedEntityType);
+      console.log('🔍 Membership plan being saved:', selectedPlan, 'Type:', typeof selectedPlan);
+
       localStorage.setItem('seeker_membership_data', JSON.stringify(membershipData));
-      console.log('💾 Saved complete membership data:', membershipData);
+      console.log('✅ Membership data saved to localStorage');
 
       toast({
         title: isEditing ? "Membership Updated" : "Membership Registration Successful",
