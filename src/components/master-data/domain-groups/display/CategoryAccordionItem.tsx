@@ -8,7 +8,7 @@ interface CategoryAccordionItemProps {
     id: string;
     name: string;
     description?: string;
-    subCategories: Array<{
+    subCategories?: Array<{
       id: string;
       name: string;
       description?: string;
@@ -22,6 +22,8 @@ const CategoryAccordionItem: React.FC<CategoryAccordionItemProps> = ({
   category,
   categoryIndex
 }) => {
+  const subCategories = category.subCategories || [];
+  
   return (
     <AccordionItem value={`category-${category.id}`}>
       <AccordionTrigger className="text-left hover:no-underline">
@@ -32,7 +34,7 @@ const CategoryAccordionItem: React.FC<CategoryAccordionItemProps> = ({
           <div className="text-left">
             <div className="font-medium">{category.name}</div>
             <div className="text-sm text-muted-foreground">
-              {category.subCategories.length} sub-categories
+              {subCategories.length} sub-categories
               {category.description && ` • ${category.description}`}
             </div>
           </div>
@@ -41,7 +43,7 @@ const CategoryAccordionItem: React.FC<CategoryAccordionItemProps> = ({
       <AccordionContent className="pt-4">
         {/* Sub-Categories Grid */}
         <div className="grid gap-3 ml-6">
-          {category.subCategories.map((subCategory, subIndex) => (
+          {subCategories.map((subCategory, subIndex) => (
             <div key={subCategory.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border-l-2 border-primary/30">
               <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5 shrink-0">
                 {categoryIndex + 1}.{subIndex + 1}
