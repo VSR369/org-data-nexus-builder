@@ -6,6 +6,7 @@ import DomainGroupForm from './domain-groups/DomainGroupForm';
 import CombinedHierarchyDisplay from './domain-groups/CombinedHierarchyDisplay';
 import DomainGroupsHeader from './domain-groups/DomainGroupsHeader';
 import ManualEntryWizard from './domain-groups/wizard/ManualEntryWizard';
+import DomainGroupHierarchyManager from './domain-groups/DomainGroupHierarchyManager';
 
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -19,6 +20,7 @@ const DomainGroupsConfig: React.FC = () => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [newlyCreatedIds, setNewlyCreatedIds] = useState<Set<string>>(new Set());
   const [showWizard, setShowWizard] = useState(false);
+  const [showHierarchyManager, setShowHierarchyManager] = useState(false);
   
   // Ref for scrolling to data entry section
   const dataEntryRef = useRef<HTMLDivElement>(null);
@@ -88,9 +90,21 @@ const DomainGroupsConfig: React.FC = () => {
   };
 
   const handleUploadExcel = () => {
-    console.log('Upload Excel functionality to be implemented');
-    // TODO: Implement Excel upload functionality
+    setShowHierarchyManager(true);
   };
+
+  const handleBackFromHierarchyManager = () => {
+    setShowHierarchyManager(false);
+  };
+
+  // If hierarchy manager is open, show only the hierarchy manager
+  if (showHierarchyManager) {
+    return (
+      <div className="space-y-6">
+        <DomainGroupHierarchyManager onBack={handleBackFromHierarchyManager} />
+      </div>
+    );
+  }
 
   // If wizard is open, show only the wizard
   if (showWizard) {
