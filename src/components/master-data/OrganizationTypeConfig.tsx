@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+import { UniversalDataManager } from '@/utils/core/UniversalDataManager';
+import { seedingService } from '@/utils/core/UniversalSeedingService';
 
 const defaultOrgTypes = [
   'Large Enterprise',
@@ -21,13 +23,32 @@ const defaultOrgTypes = [
   'Think Tank / Policy Institute'
 ];
 
-const dataManager = new DataManager<string[]>({
+// Validation function for organization types
+const validateOrgTypesData = (data: any): boolean => {
+  console.log(`🔍 Validating organization types data:`, data);
+  const isValid = Array.isArray(data);
+  console.log(`✅ Organization types validation result: ${isValid}`);
+  return isValid;
+};
+
+// Seeding function for organization types
+const seedOrgTypesData = (): string[] => {
+  console.log('🌱 Seeding organization types default data');
+  return defaultOrgTypes;
+};
+
+// Create universal data manager instance
+const orgTypesManager = new UniversalDataManager<string[]>({
   key: 'master_data_organization_types',
   defaultData: defaultOrgTypes,
-  version: 1
+  version: 2, // Increment version for the new system
+  seedFunction: seedOrgTypesData,
+  validationFunction: validateOrgTypesData
 });
 
-GlobalCacheManager.registerKey('master_data_organization_types');
+// Register with seeding service
+seedingService.registerManager('organization_types', orgTypesManager);
+seedingService.registerSeedFunction('organization_types', seedOrgTypesData);
 
 const OrganizationTypeConfig = () => {
   const { toast } = useToast();
@@ -37,22 +58,26 @@ const OrganizationTypeConfig = () => {
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
-  // Load data on component mount
+  // Load data on component mount using Universal Data Manager
   useEffect(() => {
-    const loadedTypes = dataManager.loadData();
+    console.log('🔄 OrganizationTypeConfig: Loading data using Universal Data Manager...');
+    const loadedTypes = orgTypesManager.loadData();
+    console.log('✅ OrganizationTypeConfig: Loaded data:', loadedTypes);
     setOrgTypes(loadedTypes);
   }, []);
 
   // Save data whenever orgTypes change
   useEffect(() => {
     if (orgTypes.length > 0) {
-      dataManager.saveData(orgTypes);
+      console.log('💾 OrganizationTypeConfig: Saving data:', orgTypes);
+      orgTypesManager.saveData(orgTypes);
     }
   }, [orgTypes]);
 
   const handleAddOrgType = () => {
     if (newOrgType.trim()) {
-      setOrgTypes([...orgTypes, newOrgType.trim()]);
+      const updatedTypes = [...orgTypes, newOrgType.trim()];
+      setOrgTypes(updatedTypes);
       setNewOrgType('');
       setIsAdding(false);
       toast({
@@ -101,7 +126,8 @@ const OrganizationTypeConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    const defaultData = dataManager.resetToDefault();
+    console.log('🔄 Resetting organization types to default...');
+    const defaultData = orgTypesManager.forceReseed();
     setOrgTypes(defaultData);
     setEditingIndex(null);
     setEditingValue('');
@@ -110,6 +136,16 @@ const OrganizationTypeConfig = () => {
     toast({
       title: "Success",
       description: "Organization types reset to default values",
+    });
+  };
+
+  const handleRefreshData = () => {
+    console.log('🔄 Refreshing organization types data...');
+    const refreshedData = orgTypesManager.loadData();
+    setOrgTypes(refreshedData);
+    toast({
+      title: "Success",
+      description: "Organization types data refreshed",
     });
   };
 
@@ -123,15 +159,26 @@ const OrganizationTypeConfig = () => {
               Configure organization types for Solution Seeking, Solution Provider, Solution Assessor, Solution Manager, and Solution Head Organizations
             </CardDescription>
           </div>
-          <Button
-            onClick={handleResetToDefault}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset to Default
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRefreshData}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Refresh
+            </Button>
+            <Button
+              onClick={handleResetToDefault}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset to Default
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

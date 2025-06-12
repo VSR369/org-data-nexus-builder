@@ -1,5 +1,6 @@
 
-import { DataManager } from './dataManager';
+import { UniversalDataManager } from './core/UniversalDataManager';
+import { seedingService } from './core/UniversalSeedingService';
 
 interface Country {
   id: string;
@@ -24,17 +25,118 @@ const defaultCountries: Country[] = [
   { id: '12', name: 'Mexico', code: 'MX', region: 'North America' }
 ];
 
-// Data managers for master data
-export const countriesDataManager = new DataManager<Country[]>({
+const defaultOrgTypes = [
+  'Large Enterprise',
+  'Start-up',
+  'MSME',
+  'Academic Institution',
+  'Research Institution',
+  'Non-Profit Organization / NGO',
+  'Government Department / PSU',
+  'Industry Association / Consortium',
+  'Freelancer / Individual Consultant',
+  'Think Tank / Policy Institute'
+];
+
+// Validation functions
+const validateCountriesData = (data: any): boolean => {
+  console.log(`🔍 Validating countries data:`, data);
+  const isValid = Array.isArray(data) && data.every(country => 
+    country && typeof country === 'object' && 
+    typeof country.id === 'string' && 
+    typeof country.name === 'string' && 
+    typeof country.code === 'string'
+  );
+  console.log(`✅ Countries validation result: ${isValid}`);
+  return isValid;
+};
+
+const validateOrgTypesData = (data: any): boolean => {
+  console.log(`🔍 Validating organization types data:`, data);
+  const isValid = Array.isArray(data) && data.every(type => typeof type === 'string');
+  console.log(`✅ Organization types validation result: ${isValid}`);
+  return isValid;
+};
+
+// Seeding functions
+const seedCountriesData = (): Country[] => {
+  console.log('🌱 Seeding countries default data');
+  return defaultCountries;
+};
+
+const seedOrgTypesData = (): string[] => {
+  console.log('🌱 Seeding organization types default data');
+  return defaultOrgTypes;
+};
+
+// Create universal data manager instances
+const countriesManager = new UniversalDataManager<Country[]>({
   key: 'master_data_countries',
   defaultData: defaultCountries,
-  version: 2 // Increment version to force migration to new structure
+  version: 3, // Increment version for the new system
+  seedFunction: seedCountriesData,
+  validationFunction: validateCountriesData
 });
 
-export const organizationTypesDataManager = new DataManager({
+const organizationTypesManager = new UniversalDataManager<string[]>({
   key: 'master_data_organization_types',
-  defaultData: [
-    'Startup', 'Small Business', 'Medium Enterprise', 'Large Corporation', 'Non-Profit', 'Government Agency', 'Educational Institution', 'Healthcare Organization'
-  ],
-  version: 1
+  defaultData: defaultOrgTypes,
+  version: 2, // Increment version for the new system
+  seedFunction: seedOrgTypesData,
+  validationFunction: validateOrgTypesData
 });
+
+// Register with seeding service
+seedingService.registerManager('countries', countriesManager);
+seedingService.registerSeedFunction('countries', seedCountriesData);
+seedingService.registerManager('organization_types', organizationTypesManager);
+seedingService.registerSeedFunction('organization_types', seedOrgTypesData);
+
+// Enhanced manager classes
+class EnhancedCountriesManager {
+  private manager: UniversalDataManager<Country[]>;
+
+  constructor(manager: UniversalDataManager<Country[]>) {
+    this.manager = manager;
+  }
+
+  loadData(): Country[] {
+    console.log('🔄 Enhanced countries loadData called');
+    return this.manager.loadData();
+  }
+
+  saveData(data: Country[]): void {
+    console.log('💾 Enhanced countries saveData called:', data);
+    this.manager.saveData(data);
+  }
+
+  getDataHealth() {
+    return this.manager.getDataHealth();
+  }
+}
+
+class EnhancedOrgTypesManager {
+  private manager: UniversalDataManager<string[]>;
+
+  constructor(manager: UniversalDataManager<string[]>) {
+    this.manager = manager;
+  }
+
+  loadData(): string[] {
+    console.log('🔄 Enhanced organization types loadData called');
+    return this.manager.loadData();
+  }
+
+  saveData(data: string[]): void {
+    console.log('💾 Enhanced organization types saveData called:', data);
+    this.manager.saveData(data);
+  }
+
+  getDataHealth() {
+    return this.manager.getDataHealth();
+  }
+}
+
+// Export singleton instances
+export const countriesDataManager = new EnhancedCountriesManager(countriesManager);
+export const organizationTypesDataManager = new EnhancedOrgTypesManager(organizationTypesManager);
