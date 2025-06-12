@@ -45,11 +45,9 @@ export class EnhancedDataManager<T> extends DataManager<T> {
         if (this.validateDataStructure(parsed) && this.hasValidContent(parsed)) {
           console.log(`✅ Successfully loaded data: ${JSON.stringify(parsed, null, 2)}`);
           
-          // Update version if needed
-          if (this.getCurrentVersion() !== this.config.version) {
-            this.updateVersion();
-            this.markAsInitialized();
-          }
+          // Update version if needed using parent class methods
+          this.updateVersion();
+          this.markAsInitialized();
           
           console.log(`=== Enhanced DataManager.loadData() END - Success for ${this.config.key} ===`);
           return parsed;
@@ -83,18 +81,5 @@ export class EnhancedDataManager<T> extends DataManager<T> {
       console.error(`❌ Enhanced loadData error: ${error}`);
       return super.loadData();
     }
-  }
-
-  private getCurrentVersion(): number {
-    const stored = localStorage.getItem(`${this.config.key}_version`);
-    return stored ? parseInt(stored, 10) : 0;
-  }
-
-  private updateVersion(): void {
-    localStorage.setItem(`${this.config.key}_version`, this.config.version.toString());
-  }
-
-  private markAsInitialized(): void {
-    localStorage.setItem(`${this.config.key}_initialized`, 'true');
   }
 }
