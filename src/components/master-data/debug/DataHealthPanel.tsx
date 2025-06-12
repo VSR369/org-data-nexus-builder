@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, AlertTriangle, CheckCircle, Database, Download, Upload } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CheckCircle, Database, Download, Upload, Shield } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { seedingService } from '@/utils/core/UniversalSeedingService';
 import { domainGroupsDataManager } from '../domain-groups/domainGroupsDataManager';
+import MasterDataRecoveryCenter from '../recovery/MasterDataRecoveryCenter';
 
 const DataHealthPanel: React.FC = () => {
   const [healthData, setHealthData] = useState<any>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRecoveryCenter, setShowRecoveryCenter] = useState(false);
   const { toast } = useToast();
 
   const refreshHealthData = () => {
@@ -113,6 +114,21 @@ const DataHealthPanel: React.FC = () => {
     </Badge>
   );
 
+  if (showRecoveryCenter) {
+    return (
+      <div className="space-y-4">
+        <Button 
+          onClick={() => setShowRecoveryCenter(false)}
+          variant="outline"
+          className="mb-4"
+        >
+          ← Back to Health Panel
+        </Button>
+        <MasterDataRecoveryCenter />
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -127,6 +143,15 @@ const DataHealthPanel: React.FC = () => {
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button
+              onClick={() => setShowRecoveryCenter(true)}
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Recovery Center
+            </Button>
             <Button
               onClick={refreshHealthData}
               variant="outline"
@@ -231,7 +256,7 @@ const DataHealthPanel: React.FC = () => {
 
         {/* Emergency Actions */}
         <div>
-          <h3 className="text-lg font-medium mb-3">Emergency Recovery</h3>
+          <h3 className="text-lg font-medium mb-3">Quick Recovery</h3>
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleReseedAll}
@@ -242,19 +267,13 @@ const DataHealthPanel: React.FC = () => {
               🌱 Reseed All Data
             </Button>
             <Button
-              onClick={() => {
-                localStorage.clear();
-                sessionStorage.clear();
-                toast({
-                  title: "Storage Cleared",
-                  description: "All storage has been cleared. Refresh to reinitialize.",
-                  variant: "destructive"
-                });
-              }}
-              variant="destructive"
+              onClick={() => setShowRecoveryCenter(true)}
+              variant="default"
               size="sm"
+              className="flex items-center gap-2"
             >
-              🗑️ Clear All Storage
+              <Shield className="w-4 h-4" />
+              Full Recovery Center
             </Button>
           </div>
         </div>
