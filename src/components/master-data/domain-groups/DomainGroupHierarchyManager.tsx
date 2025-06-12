@@ -2,41 +2,118 @@
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Upload, FileSpreadsheet, X } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ArrowLeft, Upload, FileSpreadsheet, X, Building2, Target, Globe, FolderTree } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import * as XLSX from 'xlsx';
 
 interface DomainGroupHierarchyManagerProps {
   onBack: () => void;
 }
 
+interface ParsedExcelData {
+  industrySegment: string;
+  domainGroup: string;
+  category: string;
+  subCategory: string;
+}
+
+interface HierarchyData {
+  [industrySegment: string]: {
+    [domainGroup: string]: {
+      [category: string]: string[];
+    };
+  };
+}
+
 const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = ({ onBack }) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [excelData, setExcelData] = useState<any[][] | null>(null);
+  const [excelData, setExcelData] = useState<string[][] | null>(null);
+  const [parsedData, setParsedData] = useState<ParsedExcelData[]>([]);
+  const [hierarchyData, setHierarchyData] = useState<HierarchyData>({});
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const parseExcelToHierarchy = (data: string[][]): { parsed: ParsedExcelData[], hierarchy: HierarchyData } => {
+    if (!data || data.length < 2) return { parsed: [], hierarchy: {} };
+
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    const parsed: ParsedExcelData[] = [];
+    const hierarchy: HierarchyData = {};
+
+    rows.forEach(row => {
+      if (row.length >= 4) {
+        const item: ParsedExcelData = {
+          industrySegment: row[0] || '',
+          domainGroup: row[1] || '',
+          category: row[2] || '',
+          subCategory: row[3] || ''
+        };
+        
+        parsed.push(item);
+
+        // Build hierarchy structure
+        if (!hierarchy[item.industrySegment]) {
+          hierarchy[item.industrySegment] = {};
+        }
+        if (!hierarchy[item.industrySegment][item.domainGroup]) {
+          hierarchy[item.industrySegment][item.domainGroup] = {};
+        }
+        if (!hierarchy[item.industrySegment][item.domainGroup][item.category]) {
+          hierarchy[item.industrySegment][item.domainGroup][item.category] = [];
+        }
+        
+        if (!hierarchy[item.industrySegment][item.domainGroup][item.category].includes(item.subCategory)) {
+          hierarchy[item.industrySegment][item.domainGroup][item.category].push(item.subCategory);
+        }
+      }
+    });
+
+    return { parsed, hierarchy };
+  };
+
+  const processExcelFile = async (file: File) => {
+    return new Promise<string[][]>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+          resolve(jsonData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       setUploadedFile(file);
       setIsProcessing(true);
       
-      // Simulate processing the Excel file
-      setTimeout(() => {
-        // Mock Excel data for demonstration
-        const mockData = [
-          ['Industry Segment', 'Domain Group', 'Category', 'Sub Category'],
-          ['Technology', 'Software Development', 'Frontend', 'React'],
-          ['Technology', 'Software Development', 'Frontend', 'Vue.js'],
-          ['Technology', 'Software Development', 'Backend', 'Node.js'],
-          ['Technology', 'Software Development', 'Backend', 'Python'],
-          ['Healthcare', 'Medical Devices', 'Diagnostics', 'MRI'],
-          ['Healthcare', 'Medical Devices', 'Diagnostics', 'CT Scan'],
-          ['Healthcare', 'Pharmaceuticals', 'Research', 'Drug Discovery'],
-        ];
-        setExcelData(mockData);
+      try {
+        const excelDataResult = await processExcelFile(file);
+        setExcelData(excelDataResult);
+        
+        const { parsed, hierarchy } = parseExcelToHierarchy(excelDataResult);
+        setParsedData(parsed);
+        setHierarchyData(hierarchy);
+        
         setIsProcessing(false);
-      }, 1500);
+      } catch (error) {
+        console.error('Error processing Excel file:', error);
+        setIsProcessing(false);
+      }
     }
   }, []);
 
@@ -53,6 +130,8 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
   const clearUpload = () => {
     setUploadedFile(null);
     setExcelData(null);
+    setParsedData([]);
+    setHierarchyData({});
   };
 
   return (
@@ -186,20 +265,120 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
         </Card>
       )}
 
-      {/* Future Sections Placeholder */}
-      <Card className="border-dashed">
-        <CardContent className="py-8">
-          <div className="text-center text-muted-foreground">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileSpreadsheet className="w-8 h-8" />
+      {/* Tree Display Section */}
+      {Object.keys(hierarchyData).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FolderTree className="w-5 h-5" />
+              Domain Group Hierarchy Tree
+            </CardTitle>
+            <CardDescription>
+              Hierarchical tree view of your uploaded domain groups
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {Object.entries(hierarchyData).map(([industrySegment, domainGroups]) => (
+                <div key={industrySegment} className="border rounded-lg p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  {/* Industry Segment Header */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-blue-900">{industrySegment}</h2>
+                      <p className="text-sm text-blue-700">
+                        {Object.keys(domainGroups).length} Domain Group{Object.keys(domainGroups).length !== 1 ? 's' : ''} • {' '}
+                        {Object.values(domainGroups).reduce((sum, dg) => sum + Object.keys(dg).length, 0)} Categories • {' '}
+                        {Object.values(domainGroups).reduce((sum, dg) => 
+                          sum + Object.values(dg).reduce((catSum, cat) => catSum + cat.length, 0), 0
+                        )} Sub-Categories
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      Industry Segment
+                    </Badge>
+                  </div>
+
+                  {/* Domain Groups within this Industry Segment */}
+                  <div className="space-y-4">
+                    {Object.entries(domainGroups).map(([domainGroupName, categories]) => (
+                      <div key={domainGroupName} className="bg-white border rounded-lg p-5 shadow-sm">
+                        {/* Domain Group Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Building2 className="w-5 h-5 text-primary" />
+                              <h3 className="text-lg font-semibold">{domainGroupName}</h3>
+                              <Badge variant="default">Active</Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Target className="w-4 h-4" />
+                                {Object.keys(categories).length} Categories
+                              </span>
+                              <span>
+                                {Object.values(categories).reduce((sum, cat) => sum + cat.length, 0)} Sub-Categories
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Categories Accordion */}
+                        {Object.keys(categories).length > 0 && (
+                          <Accordion type="multiple" className="w-full">
+                            {Object.entries(categories).map(([categoryName, subCategories], categoryIndex) => (
+                              <AccordionItem key={categoryName} value={`category-${categoryName}`}>
+                                <AccordionTrigger className="text-left hover:no-underline">
+                                  <div className="flex items-center gap-3">
+                                    <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                                      {categoryIndex + 1}
+                                    </span>
+                                    <div className="text-left">
+                                      <div className="font-medium">{categoryName}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {subCategories.length} sub-categories
+                                      </div>
+                                    </div>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-4">
+                                  {/* Sub-Categories Grid */}
+                                  <div className="grid gap-3 ml-6">
+                                    {subCategories.map((subCategory, subIndex) => (
+                                      <div key={subIndex} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border-l-2 border-primary/30">
+                                        <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5 shrink-0">
+                                          {categoryIndex + 1}.{subIndex + 1}
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="font-medium text-sm mb-1">{subCategory}</h4>
+                                          <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              Active
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground">
+                                              Ready for Evaluation
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </Accordion>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-            <h3 className="font-medium mb-2">Tree Display Section</h3>
-            <p className="text-sm">
-              This section will display the hierarchical tree view of your domain groups
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
