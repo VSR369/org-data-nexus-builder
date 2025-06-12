@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +10,8 @@ interface UseMembershipFormProps {
   isEditing?: boolean;
   existingEntityType?: string;
   existingMembershipPlan?: string;
+  entityTypes?: string[];
+  membershipFees?: MembershipFeeEntry[];
 }
 
 interface MembershipFeeEntry {
@@ -43,15 +44,17 @@ export const useMembershipForm = ({
   organizationName,
   isEditing,
   existingEntityType,
-  existingMembershipPlan
+  existingMembershipPlan,
+  entityTypes: overrideEntityTypes,
+  membershipFees: overrideMembershipFees
 }: UseMembershipFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Load entity types from master data
+  // Load entity types from master data or use override
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
 
-  const [membershipFees] = useState<MembershipFeeEntry[]>([
+  const [membershipFees] = useState<MembershipFeeEntry[]>(overrideMembershipFees || [
     {
       id: 'fee-1',
       country: 'Global',
@@ -91,13 +94,18 @@ export const useMembershipForm = ({
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load entity types from master data on component mount
+  // Load entity types from master data on component mount or use override
   useEffect(() => {
-    console.log('🔍 Loading entity types from master data...');
-    const loadedEntityTypes = entityTypesDataManager.loadData();
-    console.log('📋 Loaded entity types:', loadedEntityTypes);
-    setEntityTypes(loadedEntityTypes);
-  }, []);
+    if (overrideEntityTypes) {
+      console.log('🔍 Using override entity types:', overrideEntityTypes);
+      setEntityTypes(overrideEntityTypes);
+    } else {
+      console.log('🔍 Loading entity types from master data...');
+      const loadedEntityTypes = entityTypesDataManager.loadData();
+      console.log('📋 Loaded entity types:', loadedEntityTypes);
+      setEntityTypes(loadedEntityTypes);
+    }
+  }, [overrideEntityTypes]);
 
   // Initialize form with existing data when editing
   useEffect(() => {

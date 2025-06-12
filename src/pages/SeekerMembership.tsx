@@ -1,15 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard, User, Calendar } from 'lucide-react';
+import { ArrowLeft, CreditCard, User, Calendar, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrganizationInfoDisplay from '@/components/seeker-membership/OrganizationInfoDisplay';
 import DebugInfoPanel from '@/components/seeker-membership/DebugInfoPanel';
 import EntityTypeSelector from '@/components/seeker-membership/EntityTypeSelector';
 import MembershipPlanSelector from '@/components/seeker-membership/MembershipPlanSelector';
+import MembershipCrudManager from '@/components/seeker-membership/MembershipCrudManager';
 import { useMembershipForm } from '@/components/seeker-membership/hooks/useMembershipForm';
 import { checkExistingMembership } from '@/utils/membershipUtils';
+import { useEntityTypeCrud } from '@/hooks/useEntityTypeCrud';
 
 interface SeekerMembershipProps {
   userId?: string;
@@ -21,6 +24,7 @@ interface SeekerMembershipProps {
 
 const SeekerMembership = () => {
   const location = useLocation();
+  const [activeTab, setActiveTab] = useState('membership');
   
   const { 
     userId, 
@@ -30,22 +34,30 @@ const SeekerMembership = () => {
     existingMembershipPlan 
   } = location.state as SeekerMembershipProps || {};
 
-  console.log('🔍 SeekerMembership received state:', {
-    userId,
-    organizationName,
-    isEditing,
-    existingEntityType,
-    existingMembershipPlan
-  });
-
   // Get existing membership details for display
   const existingMembershipDetails = isEditing && userId ? checkExistingMembership(userId) : null;
 
-  console.log('📋 Existing membership details for display:', existingMembershipDetails);
+  // Load entity types and plans from the new CRUD system
+  const { entityTypes: crudEntityTypes, membershipPlans: crudMembershipPlans } = useEntityTypeCrud();
+
+  // Transform CRUD data to match the existing form structure
+  const transformedEntityTypes = crudEntityTypes.map(et => et.name);
+  const transformedMembershipFees = crudMembershipPlans.map(plan => {
+    const entityType = crudEntityTypes.find(et => et.id === plan.entityTypeId);
+    return {
+      id: plan.id,
+      country: 'Global',
+      entityType: entityType?.name || 'Unknown',
+      quarterlyAmount: plan.duration === 'quarterly' ? plan.fee : 0,
+      quarterlyCurrency: plan.currency,
+      halfYearlyAmount: plan.duration === 'halfYearly' ? plan.fee : 0,
+      halfYearlyCurrency: plan.currency,
+      annualAmount: plan.duration === 'annual' ? plan.fee : 0,
+      annualCurrency: plan.currency
+    };
+  });
 
   const {
-    entityTypes,
-    membershipFees,
     selectedEntityType,
     setSelectedEntityType,
     selectedPlan,
@@ -58,7 +70,10 @@ const SeekerMembership = () => {
     organizationName,
     isEditing,
     existingEntityType,
-    existingMembershipPlan
+    existingMembershipPlan,
+    // Override with CRUD data
+    entityTypes: transformedEntityTypes,
+    membershipFees: transformedMembershipFees
   });
 
   const membershipOptions = getMembershipOptions();
@@ -80,7 +95,7 @@ const SeekerMembership = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <Card className="shadow-xl border-0">
           <CardHeader>
             <div className="flex items-center gap-4">
@@ -93,10 +108,10 @@ const SeekerMembership = () => {
                 <CreditCard className="h-8 w-8 text-blue-600" />
                 <div>
                   <CardTitle className="text-2xl font-bold">
-                    {isEditing ? 'Edit Seeker Membership' : 'Seeker Membership Registration'}
+                    Seeker Membership Portal
                   </CardTitle>
                   <p className="text-muted-foreground">
-                    {isEditing ? 'Update your membership details' : 'Complete your membership to access all features'}
+                    Manage membership registration and entity types
                   </p>
                 </div>
               </div>
@@ -140,63 +155,69 @@ const SeekerMembership = () => {
                 </p>
               </div>
             )}
-
-            {/* Enhanced debug info for editing mode */}
-            {isEditing && (
-              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                <p className="font-medium text-gray-700">Debug Info:</p>
-                <p>Form Selected Entity Type: "{selectedEntityType}" (Type: {typeof selectedEntityType})</p>
-                <p>Form Selected Plan: "{selectedPlan}" (Type: {typeof selectedPlan})</p>
-                <p>Props Entity Type: "{existingEntityType}" (Type: {typeof existingEntityType})</p>
-                <p>Props Plan: "{existingMembershipPlan}" (Type: {typeof existingMembershipPlan})</p>
-                <p>Storage Entity Type: "{existingMembershipDetails?.entityType}" (Type: {typeof existingMembershipDetails?.entityType})</p>
-                <p>Storage Plan: "{existingMembershipDetails?.membershipPlan}" (Type: {typeof existingMembershipDetails?.membershipPlan})</p>
-              </div>
-            )}
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <OrganizationInfoDisplay 
-                organizationName={organizationName}
-                userId={userId}
-              />
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="membership" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {isEditing ? 'Edit Membership' : 'Membership Registration'}
+                </TabsTrigger>
+                <TabsTrigger value="management" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Manage Entity Types & Plans
+                </TabsTrigger>
+              </TabsList>
 
-              <DebugInfoPanel 
-                entityTypes={entityTypes}
-                membershipFees={membershipFees}
-              />
+              <TabsContent value="membership" className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <OrganizationInfoDisplay 
+                    organizationName={organizationName}
+                    userId={userId}
+                  />
 
-              <EntityTypeSelector
-                entityTypes={entityTypes}
-                selectedEntityType={selectedEntityType}
-                onEntityTypeChange={setSelectedEntityType}
-              />
+                  <DebugInfoPanel 
+                    entityTypes={transformedEntityTypes}
+                    membershipFees={transformedMembershipFees}
+                  />
 
-              <MembershipPlanSelector
-                membershipOptions={membershipOptions}
-                selectedPlan={selectedPlan}
-                onPlanChange={setSelectedPlan}
-                selectedEntityType={selectedEntityType}
-                membershipFeesLength={membershipFees.length}
-              />
+                  <EntityTypeSelector
+                    entityTypes={transformedEntityTypes}
+                    selectedEntityType={selectedEntityType}
+                    onEntityTypeChange={setSelectedEntityType}
+                  />
 
-              {/* Submit Button */}
-              <div className="flex gap-4 pt-6">
-                <Button 
-                  type="submit" 
-                  className="flex-1"
-                  disabled={!selectedEntityType || !selectedPlan || isLoading || membershipFees.length === 0}
-                >
-                  {isLoading ? 'Processing...' : (isEditing ? 'Update Membership' : 'Submit Registration')}
-                </Button>
-                <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: isEditing || false }}>
-                  <Button type="button" variant="outline" className="px-8">
-                    Cancel
-                  </Button>
-                </Link>
-              </div>
-            </form>
+                  <MembershipPlanSelector
+                    membershipOptions={membershipOptions}
+                    selectedPlan={selectedPlan}
+                    onPlanChange={setSelectedPlan}
+                    selectedEntityType={selectedEntityType}
+                    membershipFeesLength={transformedMembershipFees.length}
+                  />
+
+                  {/* Submit Button */}
+                  <div className="flex gap-4 pt-6">
+                    <Button 
+                      type="submit" 
+                      className="flex-1"
+                      disabled={!selectedEntityType || !selectedPlan || isLoading || transformedMembershipFees.length === 0}
+                    >
+                      {isLoading ? 'Processing...' : (isEditing ? 'Update Membership' : 'Submit Registration')}
+                    </Button>
+                    <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: isEditing || false }}>
+                      <Button type="button" variant="outline" className="px-8">
+                        Cancel
+                      </Button>
+                    </Link>
+                  </div>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="management">
+                <MembershipCrudManager />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
