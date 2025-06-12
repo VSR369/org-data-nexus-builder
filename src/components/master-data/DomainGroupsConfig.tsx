@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
@@ -92,11 +91,9 @@ const DomainGroupsConfig: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Domain Groups Configuration</h1>
-          <p className="text-muted-foreground">Manage domain groups for the platform</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">Domain Groups Configuration</h1>
+        <p className="text-muted-foreground mb-4">Manage domain groups for the platform</p>
         <div className="flex items-center gap-3">
           <Button 
             onClick={() => setShowManualEntry(true)}
