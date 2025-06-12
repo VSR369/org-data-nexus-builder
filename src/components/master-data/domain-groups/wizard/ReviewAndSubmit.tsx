@@ -367,7 +367,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
       <div className="flex justify-center">
         <Button onClick={handleSubmit} size="lg" className="flex items-center gap-2">
           <Save className="w-5 h-5" />
-          Save to Database
+          Submit
         </Button>
       </div>
     </div>
