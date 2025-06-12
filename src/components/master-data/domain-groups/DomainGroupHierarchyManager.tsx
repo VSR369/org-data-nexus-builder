@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowLeft, Upload, FileSpreadsheet, X, Building2, Target, Globe, FolderTree } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import * as XLSX from 'xlsx';
 
 interface DomainGroupHierarchyManagerProps {
@@ -292,60 +291,6 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
           )}
         </CardContent>
       </Card>
-
-      {/* Document Display Section */}
-      {uploadedFile && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Uploaded Document Preview</CardTitle>
-            <CardDescription>
-              Preview of the uploaded Excel data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isProcessing ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Processing Excel file...</p>
-                </div>
-              </div>
-            ) : excelData ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Showing {excelData.length - 1} rows of data
-                  </p>
-                </div>
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto max-h-96">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          {excelData[0]?.map((header, index) => (
-                            <TableHead key={index} className="font-semibold">
-                              {header}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {excelData.slice(1).map((row, rowIndex) => (
-                          <TableRow key={rowIndex}>
-                            {row.map((cell, cellIndex) => (
-                              <TableCell key={cellIndex}>{cell}</TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Tree Display Section */}
       {Object.keys(hierarchyData).length > 0 && (
