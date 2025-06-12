@@ -8,6 +8,18 @@ interface LoginFormData {
   password: string;
 }
 
+interface RegisteredUser {
+  userId: string;
+  password: string;
+  organizationName: string;
+  entityType: string;
+  country: string;
+  email: string;
+  contactPersonName: string;
+  industrySegment: string;
+  organizationId: string;
+}
+
 export const useLoginForm = () => {
   const [formData, setFormData] = useState<LoginFormData>({
     userId: '',
@@ -35,6 +47,36 @@ export const useLoginForm = () => {
     }
   };
 
+  const findRegisteredUser = (userId: string, password: string): RegisteredUser | null => {
+    try {
+      // Get all registered users from localStorage
+      const registeredUsersData = localStorage.getItem('registered_users');
+      if (!registeredUsersData) {
+        console.log('❌ No registered users found in localStorage');
+        return null;
+      }
+
+      const registeredUsers: RegisteredUser[] = JSON.parse(registeredUsersData);
+      console.log('🔍 Searching for user in registered users:', registeredUsers);
+
+      // Find user by userId and password
+      const user = registeredUsers.find(user => 
+        user.userId === userId && user.password === password
+      );
+
+      if (user) {
+        console.log('✅ Found registered user:', user);
+        return user;
+      } else {
+        console.log('❌ User not found or password mismatch');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error reading registered users:', error);
+      return null;
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -50,32 +92,42 @@ export const useLoginForm = () => {
     setIsLoading(true);
 
     try {
-      // Here you would typically authenticate with your backend
-      // For now, we'll simulate a successful login
-      console.log('Login attempt:', formData);
+      console.log('🔐 Login attempt:', formData);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Save seeker details to localStorage for demonstration
-      localStorage.setItem('seekerOrganizationName', 'Tech Solutions Inc.');
-      localStorage.setItem('seekerEntityType', 'Private Company');
-      localStorage.setItem('seekerCountry', 'United States');
-      localStorage.setItem('seekerUserId', formData.userId);
+      // Find the registered user
+      const registeredUser = findRegisteredUser(formData.userId, formData.password);
       
-      console.log('💾 Saved seeker details to localStorage');
+      if (!registeredUser) {
+        throw new Error('Invalid credentials');
+      }
+
+      // Save the actual registered user details to seeker localStorage keys
+      localStorage.setItem('seekerOrganizationName', registeredUser.organizationName);
+      localStorage.setItem('seekerEntityType', registeredUser.entityType);
+      localStorage.setItem('seekerCountry', registeredUser.country);
+      localStorage.setItem('seekerUserId', registeredUser.userId);
+      
+      console.log('💾 Saved actual seeker details to localStorage:', {
+        organizationName: registeredUser.organizationName,
+        entityType: registeredUser.entityType,
+        country: registeredUser.country,
+        userId: registeredUser.userId
+      });
       
       // Navigate to seeker dashboard with user context
       navigate('/seeker-dashboard', { 
         state: { 
-          userId: formData.userId,
-          organizationName: 'Tech Solutions Inc.'
+          userId: registeredUser.userId,
+          organizationName: registeredUser.organizationName
         }
       });
 
       toast({
         title: "Login Successful",
-        description: "Welcome back!",
+        description: `Welcome back, ${registeredUser.contactPersonName}!`,
       });
     } catch (error) {
       toast({

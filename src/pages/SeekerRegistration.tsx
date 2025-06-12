@@ -193,12 +193,54 @@ const SeekerRegistration = () => {
       return;
     }
 
+    // Save registered user data to localStorage for login authentication
+    try {
+      const registeredUser = {
+        userId: formData.userId,
+        password: formData.password,
+        organizationName: formData.organizationName,
+        entityType: formData.entityType,
+        country: formData.country,
+        email: formData.email,
+        contactPersonName: formData.contactPersonName,
+        industrySegment: formData.industrySegment,
+        organizationId: formData.organizationId
+      };
+
+      // Get existing registered users or create new array
+      const existingUsersData = localStorage.getItem('registered_users');
+      const existingUsers = existingUsersData ? JSON.parse(existingUsersData) : [];
+      
+      // Check if user already exists
+      const userExists = existingUsers.find((user: any) => user.userId === formData.userId);
+      if (userExists) {
+        toast({
+          title: "Registration Error",
+          description: "User ID already exists. Please choose a different User ID.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Add new user to the list
+      existingUsers.push(registeredUser);
+      
+      // Save back to localStorage
+      localStorage.setItem('registered_users', JSON.stringify(existingUsers));
+      
+      console.log('💾 Saved registered user to localStorage:', registeredUser);
+      console.log('📋 All registered users:', existingUsers);
+      
+    } catch (error) {
+      console.error('❌ Error saving registration data:', error);
+    }
+
     // Here you would typically submit to your backend
     console.log('Form submitted:', formData);
     
     toast({
       title: "Registration Submitted",
-      description: "Your organization registration has been submitted successfully!",
+      description: "Your organization registration has been submitted successfully! You can now login with your credentials.",
     });
   };
 
