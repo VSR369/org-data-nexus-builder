@@ -3,10 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 import DomainGroupForm from './domain-groups/DomainGroupForm';
-import ManualEntryWizard from './domain-groups/wizard/ManualEntryWizard';
 import CombinedHierarchyDisplay from './domain-groups/CombinedHierarchyDisplay';
 import DomainGroupsHeader from './domain-groups/DomainGroupsHeader';
-import DataEntryTabs from './domain-groups/DataEntryTabs';
 
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
@@ -18,7 +16,6 @@ const DomainGroupsConfig: React.FC = () => {
   const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [showManualEntry, setShowManualEntry] = useState(false);
   const [newlyCreatedIds, setNewlyCreatedIds] = useState<Set<string>>(new Set());
   
   // Ref for scrolling to data entry section
@@ -76,21 +73,10 @@ const DomainGroupsConfig: React.FC = () => {
     });
   };
 
+  // Simplified handlers - no manual entry functionality
   const handleStartManualEntry = () => {
-    setShowManualEntry(true);
+    // No-op since manual entry is removed
   };
-
-  if (showManualEntry) {
-    return (
-      <div className="space-y-6">
-        <ManualEntryWizard
-          data={data}
-          onDataUpdate={handleDataUpdate}
-          onCancel={() => setShowManualEntry(false)}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -99,7 +85,7 @@ const DomainGroupsConfig: React.FC = () => {
         onScrollToDataEntry={scrollToDataEntry}
       />
 
-      {/* Display existing hierarchies first */}
+      {/* Display existing hierarchies */}
       <CombinedHierarchyDisplay 
         data={data} 
         expandedGroups={expandedGroups}
@@ -110,9 +96,8 @@ const DomainGroupsConfig: React.FC = () => {
         onDataUpdate={handleDataUpdate}
       />
 
-      {/* Data Entry Section */}
+      {/* Data Entry Section - simplified to only show the form */}
       <div ref={dataEntryRef} className="scroll-mt-6">
-        <DataEntryTabs onStartManualEntry={handleStartManualEntry} />
         <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
       </div>
     </div>
