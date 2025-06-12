@@ -42,7 +42,7 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Marketplace Fee:</span>
                   <p>{config.marketplaceFee}%</p>
@@ -54,10 +54,6 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
                 <div>
                   <span className="font-medium">Marketplace Plus Aggregator:</span>
                   <p>{config.marketplacePlusAggregatorFee}%</p>
-                </div>
-                <div>
-                  <span className="font-medium">Internal PaaS Countries:</span>
-                  <p>{config.internalPaasPricing.length}</p>
                 </div>
               </div>
             </div>

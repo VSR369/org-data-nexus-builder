@@ -126,7 +126,7 @@ const PricingConfig = () => {
         <CardContent>
           {/* Tab Navigation */}
           <div className="flex space-x-1 mb-6 border-b">
-            {['general', 'internal-paas'].map((tab) => (
+            {['general', 'platform-as-service'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -137,7 +137,7 @@ const PricingConfig = () => {
                 }`}
               >
                 {tab === 'general' && 'General Config'}
-                {tab === 'internal-paas' && 'Internal PaaS'}
+                {tab === 'platform-as-service' && 'Platform as a Service'}
               </button>
             ))}
           </div>
@@ -151,7 +151,7 @@ const PricingConfig = () => {
               />
             )}
 
-            {activeTab === 'internal-paas' && (
+            {activeTab === 'platform-as-service' && (
               <InternalPaasPricingManager
                 currentConfig={currentConfig}
                 setCurrentConfig={setCurrentConfig}
