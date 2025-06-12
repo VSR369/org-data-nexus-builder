@@ -2,28 +2,8 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Globe } from 'lucide-react';
+import { DomainGroup } from '@/types/domainGroups';
 import DomainGroupCard from './DomainGroupCard';
-
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  subCategories: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    isActive: boolean;
-  }>;
-}
-
-interface DomainGroup {
-  id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  categories?: Category[];
-}
 
 interface IndustrySegmentCardProps {
   industrySegment: string;

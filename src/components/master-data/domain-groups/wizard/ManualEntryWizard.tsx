@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from 'lucide-react';
 import { WizardData } from '@/types/wizardTypes';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { WIZARD_STEPS } from './wizardStepsConfig';
@@ -85,7 +86,12 @@ const ManualEntryWizard: React.FC<ManualEntryWizardProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Domain Group Creation Wizard</span>
-          <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={onCancel} className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Domain Groups
+            </Button>
+          </div>
         </CardTitle>
         
         <WizardProgressBar steps={steps} currentStep={currentStep} />
