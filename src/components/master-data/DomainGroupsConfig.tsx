@@ -145,28 +145,10 @@ const DomainGroupsConfig: React.FC = () => {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="manual-entry" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Create Domain Group Hierarchy
-                  <Button 
-                    onClick={() => setShowManualEntry(true)}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <TreePine className="w-4 h-4" />
-                    Start Manual Entry Wizard
-                  </Button>
-                </CardTitle>
-                <CardDescription>Create domain groups manually using the wizard or form below</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={() => setShowManualEntry(true)} className="mb-4">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Start Manual Entry Wizard
-                </Button>
-              </CardContent>
-            </Card>
+            <Button onClick={() => setShowManualEntry(true)} className="mb-4">
+              <Plus className="mr-2 h-4 w-4" />
+              Submit
+            </Button>
           </TabsContent>
           <TabsContent value="upload-excel" className="space-y-4">
             <Card>
