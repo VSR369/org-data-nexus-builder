@@ -4,7 +4,6 @@ import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 import DomainGroupForm from './domain-groups/DomainGroupForm';
 import ManualEntryWizard from './domain-groups/wizard/ManualEntryWizard';
-import ActionsSection from './domain-groups/ActionsSection';
 import CombinedHierarchyDisplay from './domain-groups/CombinedHierarchyDisplay';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -88,8 +87,28 @@ const DomainGroupsConfig: React.FC = () => {
           <h1 className="text-2xl font-bold">Domain Groups Configuration</h1>
           <p className="text-muted-foreground">Manage domain groups for the platform</p>
         </div>
+        <Button 
+          onClick={() => setShowManualEntry(true)}
+          className="flex items-center gap-2"
+          size="lg"
+        >
+          <Plus className="w-4 h-4" />
+          Add New Domain Hierarchy
+        </Button>
       </div>
 
+      {/* Display existing hierarchies first */}
+      <CombinedHierarchyDisplay 
+        data={data} 
+        expandedGroups={expandedGroups}
+        expandedCategories={expandedCategories}
+        newlyCreatedIds={newlyCreatedIds}
+        onToggleGroupExpansion={handleToggleGroupExpansion}
+        onToggleCategoryExpansion={handleToggleCategoryExpansion}
+        onDataUpdate={handleDataUpdate}
+      />
+
+      {/* Creation options below */}
       <Tabs defaultValue="manual-entry" className="space-y-4">
         <TabsList>
           <TabsTrigger value="manual-entry">
@@ -108,7 +127,7 @@ const DomainGroupsConfig: React.FC = () => {
         <TabsContent value="manual-entry" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Manual Domain Group Entry</CardTitle>
+              <CardTitle>Create Domain Group Hierarchy</CardTitle>
               <CardDescription>Create domain groups manually using the wizard</CardDescription>
             </CardHeader>
             <CardContent>
@@ -144,22 +163,6 @@ const DomainGroupsConfig: React.FC = () => {
       </Tabs>
 
       <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
-      
-      <CombinedHierarchyDisplay 
-        data={data} 
-        expandedGroups={expandedGroups}
-        expandedCategories={expandedCategories}
-        newlyCreatedIds={newlyCreatedIds}
-        onToggleGroupExpansion={handleToggleGroupExpansion}
-        onToggleCategoryExpansion={handleToggleCategoryExpansion}
-        onDataUpdate={handleDataUpdate}
-      />
-      
-      <ActionsSection 
-        hasData={data.domainGroups.length > 0}
-        isCreating={false}
-        onShowDataEntry={() => setShowManualEntry(true)}
-      />
     </div>
   );
 };
