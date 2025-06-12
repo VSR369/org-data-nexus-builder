@@ -1,4 +1,3 @@
-
 import { UniversalDataManager } from './core/UniversalDataManager';
 import { seedingService } from './core/UniversalSeedingService';
 
@@ -110,6 +109,11 @@ class EnhancedCountriesManager {
     this.manager.saveData(data);
   }
 
+  resetToDefault(): Country[] {
+    console.log('🔄 Enhanced countries resetToDefault called');
+    return this.manager.forceReseed();
+  }
+
   getDataHealth() {
     return this.manager.getDataHealth();
   }
@@ -130,6 +134,11 @@ class EnhancedOrgTypesManager {
   saveData(data: string[]): void {
     console.log('💾 Enhanced organization types saveData called:', data);
     this.manager.saveData(data);
+  }
+
+  resetToDefault(): string[] {
+    console.log('🔄 Enhanced organization types resetToDefault called');
+    return this.manager.forceReseed();
   }
 
   getDataHealth() {
