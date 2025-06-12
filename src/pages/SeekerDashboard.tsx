@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building, User, CreditCard, LogOut } from 'lucide-react';
+import { Building, User, CreditCard, LogOut, Edit, UserPlus } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 interface SeekerDashboardProps {
@@ -24,6 +24,16 @@ const SeekerDashboard = () => {
       state: {
         userId,
         organizationName
+      }
+    });
+  };
+
+  const handleEditMembership = () => {
+    navigate('/seeker-membership', {
+      state: {
+        userId,
+        organizationName,
+        isEditing: true
       }
     });
   };
@@ -71,32 +81,73 @@ const SeekerDashboard = () => {
               </div>
             </div>
 
+            {/* Enhanced Membership Status Section */}
             <div className="pt-4 border-t">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Membership Status</p>
-                  <Badge variant={isMember ? "default" : "secondary"} className="mt-1">
-                    {isMember ? "Active Member" : "Not a Member"}
-                  </Badge>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Badge 
+                      variant={isMember ? "default" : "secondary"} 
+                      className={isMember ? "bg-green-100 text-green-800 border-green-200" : "bg-orange-100 text-orange-800 border-orange-200"}
+                    >
+                      {isMember ? "✓ Active Member" : "⚠ Not a Member"}
+                    </Badge>
+                  </div>
                 </div>
                 
-                {!isMember && (
+                {/* Action Button based on membership status */}
+                {isMember ? (
                   <Button 
-                    onClick={handleJoinAsMember}
+                    onClick={handleEditMembership}
+                    variant="outline"
                     className="flex items-center gap-2"
                   >
-                    <CreditCard className="h-4 w-4" />
+                    <Edit className="h-4 w-4" />
+                    Edit Membership
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleJoinAsMember}
+                    className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg animate-pulse"
+                  >
+                    <UserPlus className="h-4 w-4" />
                     Join as Member
                   </Button>
                 )}
               </div>
             </div>
 
-            {isMember && (
+            {/* Membership Status Details */}
+            {isMember ? (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-green-800 font-medium">
-                  🎉 Welcome! You are an active member with full access to all features.
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <p className="text-green-800 font-medium">
+                    🎉 Welcome! You are an active member
+                  </p>
+                </div>
+                <p className="text-green-700 text-sm">
+                  You have full access to all premium features, priority support, and exclusive member benefits.
                 </p>
+              </div>
+            ) : (
+              <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                  <p className="text-orange-800 font-medium">
+                    🚀 Unlock Premium Benefits
+                  </p>
+                </div>
+                <p className="text-orange-700 text-sm mb-3">
+                  Join as a member to access exclusive features, priority support, and premium content.
+                </p>
+                <ul className="text-orange-700 text-xs space-y-1">
+                  <li>• Priority access to new challenges</li>
+                  <li>• Exclusive member-only events</li>
+                  <li>• Advanced analytics and insights</li>
+                  <li>• Direct communication with solution providers</li>
+                </ul>
               </div>
             )}
           </CardContent>
