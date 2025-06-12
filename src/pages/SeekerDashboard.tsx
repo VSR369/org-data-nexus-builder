@@ -19,6 +19,31 @@ const SeekerDashboard = () => {
   // Get user data from navigation state or props
   const { userId, organizationName, isMember } = location.state as SeekerDashboardProps || {};
 
+  // Check if user is a member by looking at localStorage or other membership indicators
+  const checkMembershipStatus = () => {
+    // First check the passed state
+    if (isMember !== undefined) {
+      return isMember;
+    }
+    
+    // If no state passed, check localStorage for membership data
+    const membershipData = localStorage.getItem('seeker_membership_data');
+    if (membershipData) {
+      try {
+        const parsedData = JSON.parse(membershipData);
+        // Check if there's valid membership data for this user/organization
+        return parsedData && parsedData.userId === userId && parsedData.organizationName === organizationName;
+      } catch (error) {
+        console.log('Error parsing membership data:', error);
+        return false;
+      }
+    }
+    
+    return false;
+  };
+
+  const isActiveMember = checkMembershipStatus();
+
   const handleJoinAsMember = () => {
     navigate('/seeker-membership', {
       state: {
@@ -88,16 +113,16 @@ const SeekerDashboard = () => {
                   <p className="text-sm text-gray-600">Membership Status</p>
                   <div className="mt-1 flex items-center gap-2">
                     <Badge 
-                      variant={isMember ? "default" : "secondary"} 
-                      className={isMember ? "bg-green-100 text-green-800 border-green-200" : "bg-orange-100 text-orange-800 border-orange-200"}
+                      variant={isActiveMember ? "default" : "secondary"} 
+                      className={isActiveMember ? "bg-green-100 text-green-800 border-green-200" : "bg-orange-100 text-orange-800 border-orange-200"}
                     >
-                      {isMember ? "✓ Active Member" : "⚠ Not a Member"}
+                      {isActiveMember ? "✓ Active Member" : "⚠ Not a Member"}
                     </Badge>
                   </div>
                 </div>
                 
                 {/* Action Button based on membership status */}
-                {isMember ? (
+                {isActiveMember ? (
                   <Button 
                     onClick={handleEditMembership}
                     variant="outline"
@@ -119,7 +144,7 @@ const SeekerDashboard = () => {
             </div>
 
             {/* Membership Status Details */}
-            {isMember ? (
+            {isActiveMember ? (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
