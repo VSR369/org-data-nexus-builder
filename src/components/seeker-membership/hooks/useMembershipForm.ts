@@ -1,8 +1,16 @@
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
-import { DataManager } from '@/utils/dataManager';
+import { checkExistingMembership } from '@/utils/membershipUtils';
+
+interface UseMembershipFormProps {
+  userId?: string;
+  organizationName?: string;
+  isEditing?: boolean;
+  existingEntityType?: string;
+  existingMembershipPlan?: string;
+}
 
 interface MembershipFeeEntry {
   id: string;
@@ -16,26 +24,6 @@ interface MembershipFeeEntry {
   annualCurrency: string;
 }
 
-interface UseMembershipFormProps {
-  userId?: string;
-  organizationName?: string;
-  isEditing?: boolean;
-  existingEntityType?: string;
-  existingMembershipPlan?: string;
-}
-
-const entityTypeDataManager = new DataManager<string[]>({
-  key: 'master_data_entity_types',
-  defaultData: ['Commercial', 'Non-Profit Organization', 'Society', 'Trust'],
-  version: 1
-});
-
-const membershipFeeDataManager = new DataManager<MembershipFeeEntry[]>({
-  key: 'master_data_seeker_membership_fees',
-  defaultData: [],
-  version: 1
-});
-
 export const useMembershipForm = ({
   userId,
   organizationName,
@@ -43,84 +31,154 @@ export const useMembershipForm = ({
   existingEntityType,
   existingMembershipPlan
 }: UseMembershipFormProps) => {
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const [entityTypes, setEntityTypes] = useState<string[]>([]);
-  const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
-  const [selectedEntityType, setSelectedEntityType] = useState<string>('');
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [entityTypes] = useState<string[]>([
+    'Startup',
+    'SME',
+    'Corporation',
+    'Non-Profit',
+    'Government',
+    'Educational Institution'
+  ]);
 
-  // Load master data
-  useEffect(() => {
-    console.log('🔄 Loading master data...');
-    
-    const loadedEntityTypes = entityTypeDataManager.loadData();
-    const loadedMembershipFees = membershipFeeDataManager.loadData();
-    
-    console.log('🔍 Raw loaded entity types:', loadedEntityTypes);
-    console.log('🔍 Raw loaded membership fees:', loadedMembershipFees);
-    
-    setEntityTypes(loadedEntityTypes);
-    setMembershipFees(loadedMembershipFees);
-    
-    // Pre-fill form if editing with existing data
-    if (isEditing && existingEntityType && existingMembershipPlan) {
-      console.log('🔧 Pre-filling form for editing:', { existingEntityType, existingMembershipPlan });
-      setSelectedEntityType(existingEntityType);
-      setSelectedPlan(existingMembershipPlan);
-    } else if (loadedEntityTypes.length > 0 && !isEditing) {
-      // Auto-select first entity type only if not editing
-      setSelectedEntityType(loadedEntityTypes[0]);
-      console.log('🎯 Auto-selected entity type:', loadedEntityTypes[0]);
+  const [membershipFees] = useState<MembershipFeeEntry[]>([
+    {
+      id: 'fee-1',
+      country: 'Global',
+      entityType: 'Startup',
+      quarterlyAmount: 99,
+      quarterlyCurrency: 'USD',
+      halfYearlyAmount: 189,
+      halfYearlyCurrency: 'USD',
+      annualAmount: 359,
+      annualCurrency: 'USD'
+    },
+    {
+      id: 'fee-2',
+      country: 'Global',
+      entityType: 'SME',
+      quarterlyAmount: 199,
+      quarterlyCurrency: 'USD',
+      halfYearlyAmount: 379,
+      halfYearlyCurrency: 'USD',
+      annualAmount: 719,
+      annualCurrency: 'USD'
+    },
+    {
+      id: 'fee-3',
+      country: 'Global',
+      entityType: 'Corporation',
+      quarterlyAmount: 499,
+      quarterlyCurrency: 'USD',
+      halfYearlyAmount: 949,
+      halfYearlyCurrency: 'USD',
+      annualAmount: 1799,
+      annualCurrency: 'USD'
+    },
+    {
+      id: 'fee-4',
+      country: 'Global',
+      entityType: 'Non-Profit',
+      quarterlyAmount: 49,
+      quarterlyCurrency: 'USD',
+      halfYearlyAmount: 94,
+      halfYearlyCurrency: 'USD',
+      annualAmount: 179,
+      annualCurrency: 'USD'
+    },
+    {
+      id: 'fee-5',
+      country: 'Global',
+      entityType: 'Government',
+      quarterlyAmount: 299,
+      quarterlyCurrency: 'USD',
+      halfYearlyAmount: 569,
+      halfYearlyCurrency: 'USD',
+      annualAmount: 1079,
+      annualCurrency: 'USD'
+    },
+    {
+      id: 'fee-6',
+      country: 'Global',
+      entityType: 'Educational Institution',
+      quarterlyAmount: 149,
+      quarterlyCurrency: 'USD',
+      halfYearlyAmount: 284,
+      halfYearlyCurrency: 'USD',
+      annualAmount: 539,
+      annualCurrency: 'USD'
     }
-  }, [isEditing, existingEntityType, existingMembershipPlan]);
+  ]);
 
-  // Load existing membership data when editing (fallback method)
-  useEffect(() => {
-    if (isEditing && userId && !existingEntityType) {
-      console.log('🔍 Loading existing membership data for editing (fallback)...');
-      const existingMembershipData = localStorage.getItem('seeker_membership_data');
-      
-      if (existingMembershipData) {
-        try {
-          const parsedData = JSON.parse(existingMembershipData);
-          console.log('📋 Existing membership data:', parsedData);
-          
-          if (parsedData.userId === userId) {
-            console.log('✅ Found matching membership data, pre-filling form');
-            setSelectedEntityType(parsedData.entityType || '');
-            setSelectedPlan(parsedData.membershipPlan || '');
-          }
-        } catch (error) {
-          console.log('❌ Error parsing existing membership data:', error);
-        }
+  // Initialize form state with existing data if editing
+  const [selectedEntityType, setSelectedEntityType] = useState<string>(() => {
+    if (isEditing && existingEntityType) {
+      console.log('🔄 Pre-filling entity type:', existingEntityType);
+      return existingEntityType;
+    }
+    
+    // Try to get from localStorage if no props passed
+    if (isEditing && userId) {
+      const membershipDetails = checkExistingMembership(userId);
+      if (membershipDetails.entityType) {
+        console.log('🔄 Loading entity type from localStorage:', membershipDetails.entityType);
+        return membershipDetails.entityType;
       }
     }
-  }, [isEditing, userId, existingEntityType]);
+    
+    return '';
+  });
 
-  // Get membership fee options for selected entity type
+  const [selectedPlan, setSelectedPlan] = useState<string>(() => {
+    if (isEditing && existingMembershipPlan) {
+      console.log('🔄 Pre-filling membership plan:', existingMembershipPlan);
+      return existingMembershipPlan;
+    }
+    
+    // Try to get from localStorage if no props passed
+    if (isEditing && userId) {
+      const membershipDetails = checkExistingMembership(userId);
+      if (membershipDetails.membershipPlan) {
+        console.log('🔄 Loading membership plan from localStorage:', membershipDetails.membershipPlan);
+        return membershipDetails.membershipPlan;
+      }
+    }
+    
+    return '';
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Effect to handle editing mode initialization
+  useEffect(() => {
+    if (isEditing && userId) {
+      console.log('🔄 Editing mode detected, checking for existing membership data...');
+      const membershipDetails = checkExistingMembership(userId);
+      
+      // Only update if we don't already have the data from props
+      if (!existingEntityType && membershipDetails.entityType) {
+        console.log('🔄 Setting entity type from localStorage:', membershipDetails.entityType);
+        setSelectedEntityType(membershipDetails.entityType);
+      }
+      
+      if (!existingMembershipPlan && membershipDetails.membershipPlan) {
+        console.log('🔄 Setting membership plan from localStorage:', membershipDetails.membershipPlan);
+        setSelectedPlan(membershipDetails.membershipPlan);
+      }
+    }
+  }, [isEditing, userId, existingEntityType, existingMembershipPlan]);
+
   const getMembershipOptions = () => {
-    console.log('🔍 Getting membership options for entity type:', selectedEntityType);
-    
-    if (!selectedEntityType) {
-      console.log('❌ No entity type selected');
-      return null;
-    }
-    
-    const feeConfig = membershipFees.find(fee => {
-      console.log(`🔍 Checking fee config: ${fee.entityType} === ${selectedEntityType}?`, fee.entityType === selectedEntityType);
-      return fee.entityType === selectedEntityType;
-    });
-    
-    if (!feeConfig) {
-      console.log('❌ No membership fee configuration found for entity type:', selectedEntityType);
-      return null;
-    }
-    
-    console.log('✅ Found fee configuration:', feeConfig);
-    
+    if (!selectedEntityType) return null;
+
+    const feeConfig = membershipFees.find(
+      fee => fee.entityType === selectedEntityType
+    );
+
+    if (!feeConfig) return null;
+
     return {
       quarterly: {
         amount: feeConfig.quarterlyAmount,
@@ -145,9 +203,9 @@ export const useMembershipForm = ({
     
     if (!selectedEntityType || !selectedPlan) {
       toast({
-        title: "Validation Error",
-        description: "Please select entity type and membership plan",
-        variant: "destructive",
+        title: "Incomplete Information",
+        description: "Please select both entity type and membership plan.",
+        variant: "destructive"
       });
       return;
     }
@@ -155,28 +213,38 @@ export const useMembershipForm = ({
     setIsLoading(true);
 
     try {
-      // Save membership data to localStorage with all details preserved
+      const membershipOptions = getMembershipOptions();
+      const selectedOption = membershipOptions?.[selectedPlan as keyof typeof membershipOptions];
+
       const membershipData = {
-        userId,
-        organizationName,
+        userId: userId || '',
+        organizationName: organizationName || '',
         entityType: selectedEntityType,
         membershipPlan: selectedPlan,
+        amount: selectedOption?.amount || 0,
+        currency: selectedOption?.currency || 'USD',
         isMember: true,
-        joinedAt: isEditing ? 
-          (JSON.parse(localStorage.getItem('seeker_membership_data') || '{}').joinedAt || new Date().toISOString()) : 
-          new Date().toISOString(),
+        joinedAt: isEditing ? undefined : new Date().toISOString(), // Don't update join date when editing
         lastUpdated: new Date().toISOString()
       };
 
-      localStorage.setItem('seeker_membership_data', JSON.stringify(membershipData));
-      console.log('💾 Saved membership data to localStorage:', membershipData);
+      // Get existing data to preserve joinedAt date
+      if (isEditing && userId) {
+        const existingData = checkExistingMembership(userId);
+        if (existingData.joinedAt) {
+          membershipData.joinedAt = existingData.joinedAt;
+        }
+      }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      localStorage.setItem('seeker_membership_data', JSON.stringify(membershipData));
+      console.log('💾 Saved membership data:', membershipData);
 
       toast({
-        title: isEditing ? "Update Successful" : "Registration Successful",
-        description: isEditing ? "Your membership has been updated successfully!" : "Your membership registration has been submitted successfully!",
+        title: isEditing ? "Membership Updated" : "Membership Registration Successful",
+        description: isEditing 
+          ? "Your membership details have been updated successfully." 
+          : "Welcome! Your membership has been activated.",
+        variant: "default"
       });
 
       // Navigate back to dashboard with updated membership status
@@ -187,11 +255,13 @@ export const useMembershipForm = ({
           isMember: true
         }
       });
+
     } catch (error) {
+      console.error('❌ Error saving membership:', error);
       toast({
-        title: isEditing ? "Update Failed" : "Registration Failed",
-        description: isEditing ? "There was an error updating your membership." : "There was an error processing your membership registration.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to save membership information. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);

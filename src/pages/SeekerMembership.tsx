@@ -27,11 +27,15 @@ const SeekerMembership = () => {
     isEditing, 
     existingEntityType, 
     existingMembershipPlan 
-  } = location.state as SeekerMembershipProps & { 
-    isEditing?: boolean;
-    existingEntityType?: string;
-    existingMembershipPlan?: string;
-  } || {};
+  } = location.state as SeekerMembershipProps || {};
+
+  console.log('🔍 SeekerMembership received state:', {
+    userId,
+    organizationName,
+    isEditing,
+    existingEntityType,
+    existingMembershipPlan
+  });
 
   const {
     entityTypes,
@@ -59,7 +63,7 @@ const SeekerMembership = () => {
         <Card className="shadow-xl border-0">
           <CardHeader>
             <div className="flex items-center gap-4">
-              <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: false }}>
+              <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: isEditing || false }}>
                 <Button variant="outline" size="icon">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -76,6 +80,16 @@ const SeekerMembership = () => {
                 </div>
               </div>
             </div>
+
+            {/* Show editing notice */}
+            {isEditing && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  ✏️ <strong>Editing Mode:</strong> Your current membership details are pre-filled below. 
+                  Make any changes you need and click "Update Membership" to save.
+                </p>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent>
@@ -113,7 +127,7 @@ const SeekerMembership = () => {
                 >
                   {isLoading ? 'Processing...' : (isEditing ? 'Update Membership' : 'Submit Registration')}
                 </Button>
-                <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: false }}>
+                <Link to="/seeker-dashboard" state={{ userId, organizationName, isMember: isEditing || false }}>
                   <Button type="button" variant="outline" className="px-8">
                     Cancel
                   </Button>
