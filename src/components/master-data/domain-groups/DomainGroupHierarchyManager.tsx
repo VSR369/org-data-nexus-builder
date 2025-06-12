@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,12 +28,73 @@ interface HierarchyData {
   };
 }
 
+interface SavedExcelDocument {
+  fileName: string;
+  fileSize: number;
+  uploadDate: string;
+  excelData: string[][];
+  parsedData: ParsedExcelData[];
+  hierarchyData: HierarchyData;
+}
+
+const STORAGE_KEY = 'domain_group_excel_document';
+
 const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = ({ onBack }) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [excelData, setExcelData] = useState<string[][] | null>(null);
   const [parsedData, setParsedData] = useState<ParsedExcelData[]>([]);
   const [hierarchyData, setHierarchyData] = useState<HierarchyData>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [savedDocument, setSavedDocument] = useState<SavedExcelDocument | null>(null);
+
+  // Load saved document on component mount
+  useEffect(() => {
+    const loadSavedDocument = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const document: SavedExcelDocument = JSON.parse(saved);
+          setSavedDocument(document);
+          setExcelData(document.excelData);
+          setParsedData(document.parsedData);
+          setHierarchyData(document.hierarchyData);
+          
+          // Create a mock file object for display
+          const mockFile = new File([''], document.fileName, { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+          });
+          Object.defineProperty(mockFile, 'size', { value: document.fileSize });
+          setUploadedFile(mockFile);
+          
+          console.log('✅ Loaded saved Excel document:', document.fileName);
+        }
+      } catch (error) {
+        console.error('❌ Error loading saved document:', error);
+      }
+    };
+
+    loadSavedDocument();
+  }, []);
+
+  // Save document to localStorage
+  const saveDocument = (file: File, excelData: string[][], parsedData: ParsedExcelData[], hierarchyData: HierarchyData) => {
+    try {
+      const documentToSave: SavedExcelDocument = {
+        fileName: file.name,
+        fileSize: file.size,
+        uploadDate: new Date().toISOString(),
+        excelData,
+        parsedData,
+        hierarchyData
+      };
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(documentToSave));
+      setSavedDocument(documentToSave);
+      console.log('💾 Excel document saved successfully:', file.name);
+    } catch (error) {
+      console.error('❌ Error saving document:', error);
+    }
+  };
 
   const parseExcelToHierarchy = (data: string[][]): { parsed: ParsedExcelData[], hierarchy: HierarchyData } => {
     if (!data || data.length < 2) return { parsed: [], hierarchy: {} };
@@ -109,6 +170,9 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
         setParsedData(parsed);
         setHierarchyData(hierarchy);
         
+        // Save the document permanently
+        saveDocument(file, excelDataResult, parsed, hierarchy);
+        
         setIsProcessing(false);
       } catch (error) {
         console.error('Error processing Excel file:', error);
@@ -132,6 +196,11 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
     setExcelData(null);
     setParsedData([]);
     setHierarchyData({});
+    setSavedDocument(null);
+    
+    // Clear from localStorage
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('🗑️ Cleared saved Excel document');
   };
 
   return (
@@ -161,9 +230,19 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
           <CardTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
             Excel Upload
+            {savedDocument && (
+              <Badge variant="secondary" className="ml-2">
+                Document Saved
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             Upload an Excel file (.xlsx, .xls) or CSV file containing your domain group hierarchy data
+            {savedDocument && (
+              <span className="block mt-1 text-green-600">
+                Last saved: {new Date(savedDocument.uploadDate).toLocaleString()}
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -200,6 +279,9 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
                   <p className="font-medium">{uploadedFile.name}</p>
                   <p className="text-sm text-muted-foreground">
                     {(uploadedFile.size / 1024).toFixed(1)} KB
+                    {savedDocument && (
+                      <span className="ml-2 text-green-600">• Saved</span>
+                    )}
                   </p>
                 </div>
               </div>
