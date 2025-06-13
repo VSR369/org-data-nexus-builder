@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -167,11 +166,35 @@ export const useLoginForm = () => {
     }
   };
 
+  const clearPreviousSessionData = () => {
+    console.log('🧹 === CLEARING PREVIOUS SESSION DATA ===');
+    
+    const sessionKeys = [
+      'seekerOrganizationName',
+      'seekerEntityType',
+      'seekerCountry',
+      'seekerUserId'
+    ];
+    
+    sessionKeys.forEach(key => {
+      const existingValue = localStorage.getItem(key);
+      if (existingValue) {
+        localStorage.removeItem(key);
+        console.log(`🧹 Cleared old session key: ${key} (was: ${existingValue})`);
+      }
+    });
+    
+    console.log('✅ Previous session data cleared');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('🔐 === LOGIN ATTEMPT START ===');
     console.log('🔐 Login attempt for userId:', formData.userId);
+    
+    // Clear any previous session data first
+    clearPreviousSessionData();
     
     // Run debug analysis
     debugLocalStorage();
@@ -218,18 +241,29 @@ export const useLoginForm = () => {
 
       console.log('✅ Login successful for user:', registeredUser.userId);
       
-      // Save the actual registered user details to seeker localStorage keys
-      localStorage.setItem('seekerOrganizationName', registeredUser.organizationName);
-      localStorage.setItem('seekerEntityType', registeredUser.entityType);
-      localStorage.setItem('seekerCountry', registeredUser.country);
-      localStorage.setItem('seekerUserId', registeredUser.userId);
+      // Save the actual registered user details to seeker localStorage keys with verification
+      const sessionData = {
+        seekerOrganizationName: registeredUser.organizationName,
+        seekerEntityType: registeredUser.entityType,
+        seekerCountry: registeredUser.country,
+        seekerUserId: registeredUser.userId
+      };
       
-      console.log('💾 Saved seeker details to localStorage:', {
-        organizationName: registeredUser.organizationName,
-        entityType: registeredUser.entityType,
-        country: registeredUser.country,
-        userId: registeredUser.userId
+      // Save each piece of session data with verification
+      Object.entries(sessionData).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+        
+        // Immediate verification
+        const verifyValue = localStorage.getItem(key);
+        if (verifyValue !== value) {
+          console.error(`❌ Failed to save ${key}: expected ${value}, got ${verifyValue}`);
+          throw new Error(`Session data save failed for ${key}`);
+        } else {
+          console.log(`✅ Successfully saved ${key}: ${value}`);
+        }
       });
+      
+      console.log('💾 All session data saved and verified:', sessionData);
       
       // Navigate to seeker dashboard with user context
       navigate('/seeker-dashboard', { 
@@ -249,6 +283,9 @@ export const useLoginForm = () => {
     } catch (error: any) {
       console.log('❌ Login error:', error.message);
       
+      // Clear any partially saved session data on error
+      clearPreviousSessionData();
+      
       let errorMessage = "Login failed. Please try again.";
       
       if (error.message === 'Invalid password') {
@@ -257,6 +294,8 @@ export const useLoginForm = () => {
         errorMessage = "User ID not found. Please check your User ID or register first.";
       } else if (error.message === 'No registered users found') {
         errorMessage = "No registered users found. Please register first.";
+      } else if (error.message.includes('Session data save failed')) {
+        errorMessage = "Failed to create session. Please try logging in again.";
       }
       
       toast({
