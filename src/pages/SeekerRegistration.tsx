@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Building, Upload, Globe, Users, Phone, Mail, Lock, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { DataManager } from '@/utils/dataManager';
@@ -79,6 +79,7 @@ const SeekerRegistration = () => {
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Generate unique organization ID
   function generateOrganizationId(): string {
@@ -211,6 +212,8 @@ const SeekerRegistration = () => {
       const existingUsersData = localStorage.getItem('registered_users');
       const existingUsers = existingUsersData ? JSON.parse(existingUsersData) : [];
       
+      console.log('📝 Before registration - existing users:', existingUsers);
+      
       // Check if user already exists
       const userExists = existingUsers.find((user: any) => user.userId === formData.userId);
       if (userExists) {
@@ -228,20 +231,35 @@ const SeekerRegistration = () => {
       // Save back to localStorage
       localStorage.setItem('registered_users', JSON.stringify(existingUsers));
       
-      console.log('💾 Saved registered user to localStorage:', registeredUser);
-      console.log('📋 All registered users:', existingUsers);
+      console.log('💾 Successfully saved registered user to localStorage:', registeredUser);
+      console.log('📋 All registered users after save:', existingUsers);
+      
+      // Verify the data was saved correctly
+      const verifyData = localStorage.getItem('registered_users');
+      console.log('🔍 Verification - data in localStorage after save:', verifyData);
       
     } catch (error) {
       console.error('❌ Error saving registration data:', error);
+      toast({
+        title: "Registration Error",
+        description: "Failed to save registration data. Please try again.",
+        variant: "destructive",
+      });
+      return;
     }
 
     // Here you would typically submit to your backend
     console.log('Form submitted:', formData);
     
     toast({
-      title: "Registration Submitted",
-      description: "Your organization registration has been submitted successfully! You can now login with your credentials.",
+      title: "Registration Successful",
+      description: "Your organization registration has been completed successfully! You can now login with your credentials.",
     });
+
+    // Navigate to login page after successful registration
+    setTimeout(() => {
+      navigate('/seeker-login');
+    }, 2000);
   };
 
   const requiresRegistrationDocuments = ['Non-Profit Organization', 'Society', 'Trust'].includes(formData.entityType);

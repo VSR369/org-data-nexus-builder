@@ -51,24 +51,29 @@ export const useLoginForm = () => {
     try {
       // Get all registered users from localStorage
       const registeredUsersData = localStorage.getItem('registered_users');
+      console.log('🔍 Raw localStorage data for registered_users:', registeredUsersData);
+      
       if (!registeredUsersData) {
         console.log('❌ No registered users found in localStorage');
         return null;
       }
 
       const registeredUsers: RegisteredUser[] = JSON.parse(registeredUsersData);
-      console.log('🔍 Searching for user in registered users:', registeredUsers);
+      console.log('🔍 Parsed registered users:', registeredUsers);
+      console.log('🔍 Number of registered users found:', registeredUsers.length);
 
       // Find user by userId and password
-      const user = registeredUsers.find(user => 
-        user.userId === userId && user.password === password
-      );
+      const user = registeredUsers.find(user => {
+        console.log(`🔍 Checking user: ${user.userId} === ${userId} && password match`);
+        return user.userId === userId && user.password === password;
+      });
 
       if (user) {
         console.log('✅ Found registered user:', user);
         return user;
       } else {
         console.log('❌ User not found or password mismatch');
+        console.log('🔍 Available userIds:', registeredUsers.map(u => u.userId));
         return null;
       }
     } catch (error) {
@@ -93,6 +98,10 @@ export const useLoginForm = () => {
 
     try {
       console.log('🔐 Login attempt:', formData);
+      
+      // Add debug information about localStorage
+      const allKeys = Object.keys(localStorage);
+      console.log('🔍 All localStorage keys:', allKeys);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -130,9 +139,10 @@ export const useLoginForm = () => {
         description: `Welcome back, ${registeredUser.contactPersonName}!`,
       });
     } catch (error) {
+      console.log('❌ Login error:', error);
       toast({
         title: "Login Failed",
-        description: "Invalid credentials. Please try again.",
+        description: "Invalid credentials. Please check your User ID and password.",
         variant: "destructive",
       });
     } finally {
