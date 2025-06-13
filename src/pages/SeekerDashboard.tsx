@@ -28,7 +28,7 @@ const SeekerDashboard = () => {
   };
 
   const handleJoinAsMember = () => {
-    navigate('/seeker-membership', { 
+    navigate('/membership-registration', { 
       state: { 
         userId,
         organizationName,
