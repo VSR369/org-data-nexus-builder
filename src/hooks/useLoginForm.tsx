@@ -1,142 +1,15 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
+import { debugLocalStorage } from '@/utils/loginDebugUtils';
+import { findRegisteredUser, checkUserExistsForBetterError } from '@/utils/userAuthUtils';
+import { clearPreviousSessionData, saveSessionData } from '@/utils/sessionDataUtils';
+import { useLoginFormValidation } from './useLoginFormValidation';
 
 interface LoginFormData {
   userId: string;
   password: string;
-}
-
-interface RegisteredUser {
-  userId: string;
-  password: string;
-  organizationName: string;
-  entityType: string;
-  country: string;
-  email: string;
-  contactPersonName: string;
-  industrySegment: string;
-  organizationId: string;
-  registrationTimestamp?: string;
-}
-
-// Debug function to analyze localStorage data
-function debugLocalStorage(): void {
-  console.log('🔍 === LOGIN DEBUG SESSION START ===');
-  
-  // Check all localStorage keys
-  const allKeys = Object.keys(localStorage);
-  console.log('🔍 All localStorage keys:', allKeys);
-  
-  // Focus on user-related keys
-  const userKeys = allKeys.filter(key => 
-    key.toLowerCase().includes('user') || 
-    key.toLowerCase().includes('registered') ||
-    key.toLowerCase().includes('seeker')
-  );
-  console.log('🔍 User-related keys:', userKeys);
-  
-  // Check registered_users specifically
-  const registeredUsersData = localStorage.getItem('registered_users');
-  console.log('🔍 Raw registered_users data:', registeredUsersData);
-  
-  if (registeredUsersData) {
-    try {
-      const parsedUsers = JSON.parse(registeredUsersData);
-      console.log('🔍 Parsed users count:', parsedUsers.length);
-      console.log('🔍 User details:', parsedUsers.map((u: any) => ({
-        userId: u.userId,
-        organizationName: u.organizationName,
-        hasPassword: !!u.password,
-        registrationTime: u.registrationTimestamp
-      })));
-    } catch (error) {
-      console.log('❌ Error parsing registered users data:', error);
-    }
-  }
-  
-  console.log('🔍 === LOGIN DEBUG SESSION END ===');
-}
-
-// Enhanced user search with detailed logging
-function findRegisteredUser(userId: string, password: string): RegisteredUser | null {
-  console.log('🔍 === USER SEARCH START ===');
-  console.log('🔍 Searching for userId:', userId);
-  console.log('🔍 Password provided:', password ? 'Yes' : 'No');
-  
-  try {
-    const registeredUsersData = localStorage.getItem('registered_users');
-    
-    if (!registeredUsersData) {
-      console.log('❌ No registered_users data found in localStorage');
-      return null;
-    }
-
-    const registeredUsers: RegisteredUser[] = JSON.parse(registeredUsersData);
-    console.log('🔍 Total registered users found:', registeredUsers.length);
-    
-    if (registeredUsers.length === 0) {
-      console.log('❌ No users in the registered users array');
-      return null;
-    }
-
-    // Log all available userIds for comparison
-    const availableUserIds = registeredUsers.map(u => u.userId);
-    console.log('🔍 Available userIds:', availableUserIds);
-    
-    // Try exact match first
-    let user = registeredUsers.find(user => {
-      const userIdMatch = user.userId === userId;
-      const passwordMatch = user.password === password;
-      console.log(`🔍 Checking user ${user.userId}: userIdMatch=${userIdMatch}, passwordMatch=${passwordMatch}`);
-      return userIdMatch && passwordMatch;
-    });
-
-    if (user) {
-      console.log('✅ Found user with exact match:', {
-        userId: user.userId,
-        organizationName: user.organizationName,
-        entityType: user.entityType,
-        country: user.country
-      });
-      return user;
-    }
-
-    // Try case-insensitive match
-    user = registeredUsers.find(user => {
-      const userIdMatch = user.userId.toLowerCase() === userId.toLowerCase();
-      const passwordMatch = user.password === password;
-      console.log(`🔍 Checking user ${user.userId} (case-insensitive): userIdMatch=${userIdMatch}, passwordMatch=${passwordMatch}`);
-      return userIdMatch && passwordMatch;
-    });
-
-    if (user) {
-      console.log('✅ Found user with case-insensitive match:', {
-        userId: user.userId,
-        organizationName: user.organizationName
-      });
-      return user;
-    }
-
-    // Check if userId exists but password is wrong
-    const userWithSameId = registeredUsers.find(user => 
-      user.userId.toLowerCase() === userId.toLowerCase()
-    );
-    
-    if (userWithSameId) {
-      console.log('⚠️ Found user with matching ID but wrong password');
-      return null;
-    }
-
-    console.log('❌ No user found with matching credentials');
-    return null;
-
-  } catch (error) {
-    console.error('❌ Error during user search:', error);
-    return null;
-  } finally {
-    console.log('🔍 === USER SEARCH END ===');
-  }
 }
 
 export const useLoginForm = () => {
@@ -144,47 +17,14 @@ export const useLoginForm = () => {
     userId: '',
     password: ''
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!formData.userId.trim()) newErrors.userId = 'User ID is required';
-    if (!formData.password) newErrors.password = 'Password is required';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const { errors, validateForm, clearFieldError } = useLoginFormValidation();
 
   const handleInputChange = (field: keyof LoginFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const clearPreviousSessionData = () => {
-    console.log('🧹 === CLEARING PREVIOUS SESSION DATA ===');
-    
-    const sessionKeys = [
-      'seekerOrganizationName',
-      'seekerEntityType',
-      'seekerCountry',
-      'seekerUserId'
-    ];
-    
-    sessionKeys.forEach(key => {
-      const existingValue = localStorage.getItem(key);
-      if (existingValue) {
-        localStorage.removeItem(key);
-        console.log(`🧹 Cleared old session key: ${key} (was: ${existingValue})`);
-      }
-    });
-    
-    console.log('✅ Previous session data cleared');
+    clearFieldError(field);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -199,7 +39,7 @@ export const useLoginForm = () => {
     // Run debug analysis
     debugLocalStorage();
     
-    if (!validateForm()) {
+    if (!validateForm(formData)) {
       console.log('❌ Form validation failed');
       toast({
         title: "Validation Error",
@@ -222,48 +62,22 @@ export const useLoginForm = () => {
         console.log('❌ Login failed: Invalid credentials');
         
         // Check if user exists to provide better error message
-        const usersData = localStorage.getItem('registered_users');
-        if (usersData) {
-          const users = JSON.parse(usersData);
-          const userExists = users.find((u: any) => 
-            u.userId.toLowerCase() === formData.userId.toLowerCase()
-          );
-          
-          if (userExists) {
-            throw new Error('Invalid password');
-          } else {
-            throw new Error('User not found');
-          }
-        } else {
-          throw new Error('No registered users found');
+        const userCheckResult = checkUserExistsForBetterError(formData.userId);
+        
+        let errorType = 'User not found';
+        if (userCheckResult === 'user_exists') {
+          errorType = 'Invalid password';
+        } else if (userCheckResult === 'no_users') {
+          errorType = 'No registered users found';
         }
+        
+        throw new Error(errorType);
       }
 
       console.log('✅ Login successful for user:', registeredUser.userId);
       
-      // Save the actual registered user details to seeker localStorage keys with verification
-      const sessionData = {
-        seekerOrganizationName: registeredUser.organizationName,
-        seekerEntityType: registeredUser.entityType,
-        seekerCountry: registeredUser.country,
-        seekerUserId: registeredUser.userId
-      };
-      
-      // Save each piece of session data with verification
-      Object.entries(sessionData).forEach(([key, value]) => {
-        localStorage.setItem(key, value);
-        
-        // Immediate verification
-        const verifyValue = localStorage.getItem(key);
-        if (verifyValue !== value) {
-          console.error(`❌ Failed to save ${key}: expected ${value}, got ${verifyValue}`);
-          throw new Error(`Session data save failed for ${key}`);
-        } else {
-          console.log(`✅ Successfully saved ${key}: ${value}`);
-        }
-      });
-      
-      console.log('💾 All session data saved and verified:', sessionData);
+      // Save session data with verification
+      saveSessionData(registeredUser);
       
       // Navigate to seeker dashboard with user context
       navigate('/seeker-dashboard', { 
