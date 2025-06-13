@@ -1,9 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard, Building, Globe, User, AlertTriangle, DollarSign } from 'lucide-react';
+import { ArrowLeft, CreditCard, AlertTriangle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useMembershipData } from '@/hooks/useMembershipData';
+import { OrganizationDetailsSection } from '@/components/membership/OrganizationDetailsSection';
+import { MembershipPricingSection } from '@/components/membership/MembershipPricingSection';
+import { DebugSection } from '@/components/membership/DebugSection';
+import { UserInfoSection } from '@/components/membership/UserInfoSection';
+import { MembershipActionSection } from '@/components/membership/MembershipActionSection';
 
 interface MembershipRegistrationProps {
   userId?: string;
@@ -12,158 +18,11 @@ interface MembershipRegistrationProps {
   country?: string;
 }
 
-interface PricingData {
-  id: string;
-  country: string;
-  currency: string;
-  quarterlyPrice: number;
-  halfYearlyPrice: number;
-  annualPrice: number;
-}
-
-interface MembershipConfig {
-  organizationType: string;
-  marketplaceFee: number;
-  aggregatorFee: number;
-  marketplacePlusAggregatorFee: number;
-  internalPaasPricing: PricingData[];
-}
-
 const MembershipRegistration = () => {
   const location = useLocation();
-  const [membershipData, setMembershipData] = useState<MembershipConfig | null>(null);
-  const [countryPricing, setCountryPricing] = useState<PricingData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  
   const { userId, organizationName, entityType, country } = location.state as MembershipRegistrationProps || {};
-
-  useEffect(() => {
-    const loadMembershipData = () => {
-      console.log('🔍 Loading membership data for:', { entityType, country });
-      setLoading(true);
-      setError(null);
-      const debug: string[] = [];
-
-      try {
-        // First, let's see all localStorage keys to understand what's available
-        const allKeys = Object.keys(localStorage);
-        console.log('🔍 All localStorage keys:', allKeys);
-        debug.push(`All localStorage keys: ${allKeys.join(', ')}`);
-
-        // Look for any pricing or membership related keys
-        const pricingKeys = allKeys.filter(key => 
-          key.toLowerCase().includes('pricing') || 
-          key.toLowerCase().includes('membership') || 
-          key.toLowerCase().includes('fee')
-        );
-        console.log('🔍 Pricing-related keys found:', pricingKeys);
-        debug.push(`Pricing-related keys: ${pricingKeys.join(', ')}`);
-
-        // Try multiple possible keys for pricing configuration
-        const possibleKeys = [
-          'master_data_pricing_configs',
-          'pricing_configs',
-          'membership_configs',
-          'membership_pricing',
-          'seeker_membership_fee',
-          'master_data_seeker_membership_fee'
-        ];
-
-        let pricingConfigs: MembershipConfig[] | null = null;
-        let usedKey = '';
-
-        for (const key of possibleKeys) {
-          const data = localStorage.getItem(key);
-          if (data) {
-            try {
-              const parsed = JSON.parse(data);
-              console.log(`📋 Found data in ${key}:`, parsed);
-              debug.push(`Found data in ${key}: ${JSON.stringify(parsed, null, 2)}`);
-              
-              // Try to adapt the data structure if needed
-              if (Array.isArray(parsed)) {
-                pricingConfigs = parsed;
-              } else if (parsed.configs && Array.isArray(parsed.configs)) {
-                pricingConfigs = parsed.configs;
-              } else if (parsed.data && Array.isArray(parsed.data)) {
-                pricingConfigs = parsed.data;
-              } else {
-                // Single config object
-                pricingConfigs = [parsed];
-              }
-              
-              usedKey = key;
-              break;
-            } catch (parseError) {
-              console.log(`❌ Failed to parse data from ${key}:`, parseError);
-              debug.push(`Failed to parse ${key}: ${parseError}`);
-            }
-          }
-        }
-
-        setDebugInfo(debug);
-
-        if (!pricingConfigs || pricingConfigs.length === 0) {
-          console.log('⚠️ No pricing configs found in any expected location');
-          setError('No pricing configuration found in master data. Please ensure pricing data is configured in the Master Data Portal.');
-          setLoading(false);
-          return;
-        }
-
-        console.log('📋 Loaded pricing configs from', usedKey, ':', pricingConfigs);
-
-        // Find configuration for the entity type or fallback to "All Organizations"
-        let matchingConfig = pricingConfigs.find(config => 
-          config.organizationType === entityType
-        );
-
-        if (!matchingConfig) {
-          matchingConfig = pricingConfigs.find(config => 
-            config.organizationType === 'All Organizations'
-          );
-        }
-
-        if (!matchingConfig) {
-          console.log('❌ No matching pricing configuration found');
-          setError(`No pricing configuration available for entity type: ${entityType}. Available types: ${pricingConfigs.map(c => c.organizationType).join(', ')}`);
-          setLoading(false);
-          return;
-        }
-
-        console.log('✅ Found matching config:', matchingConfig);
-        setMembershipData(matchingConfig);
-
-        // Find pricing for the specific country
-        const countrySpecificPricing = matchingConfig.internalPaasPricing?.find(
-          pricing => pricing.country === country
-        );
-
-        if (!countrySpecificPricing) {
-          console.log('⚠️ No country-specific pricing found for:', country);
-          const availableCountries = matchingConfig.internalPaasPricing?.map(p => p.country).join(', ') || 'none';
-          setError(`No pricing available for ${country}. Available countries: ${availableCountries}`);
-        } else {
-          console.log('✅ Found country pricing:', countrySpecificPricing);
-          setCountryPricing(countrySpecificPricing);
-        }
-
-      } catch (error) {
-        console.error('❌ Error loading membership data:', error);
-        setError('Failed to load membership information. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (entityType && country) {
-      loadMembershipData();
-    } else {
-      setError('Missing entity type or country information.');
-      setLoading(false);
-    }
-  }, [entityType, country]);
+  
+  const { membershipData, countryPricing, loading, error, debugInfo } = useMembershipData(entityType, country);
 
   if (loading) {
     return (
@@ -207,76 +66,13 @@ const MembershipRegistration = () => {
 
           <CardContent className="space-y-6">
             {/* Debug Information (only show when there's an error or no data) */}
-            {(error || !membershipData) && debugInfo.length > 0 && (
-              <Card className="bg-yellow-50 border border-yellow-200">
-                <CardHeader>
-                  <CardTitle className="text-lg text-yellow-800">Debug Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-yellow-700 space-y-2">
-                    {debugInfo.map((info, index) => (
-                      <div key={index} className="font-mono bg-yellow-100 p-2 rounded">
-                        {info}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {(error || !membershipData) && <DebugSection debugInfo={debugInfo} />}
 
-            {/* Organization Details Header */}
-            <div className="border-b pb-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Details</h2>
-              <p className="text-sm text-gray-600">Review your organization information below</p>
-            </div>
-
-            {/* Organization Information Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Organization Name */}
-              <Card className="border border-gray-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Building className="h-5 w-5 text-blue-600" />
-                    Organization Name
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xl font-semibold text-gray-900">
-                    {organizationName || 'Not Available'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Entity Type */}
-              <Card className="border border-gray-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="h-5 w-5 text-green-600" />
-                    Entity Type
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xl font-semibold text-gray-900">
-                    {entityType || 'Not Available'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Country */}
-              <Card className="border border-gray-200 md:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-purple-600" />
-                    Country
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xl font-semibold text-gray-900">
-                    {country || 'Not Available'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <OrganizationDetailsSection 
+              organizationName={organizationName}
+              entityType={entityType}
+              country={country}
+            />
 
             {/* Error Display */}
             {error && (
@@ -292,117 +88,17 @@ const MembershipRegistration = () => {
 
             {/* Membership Pricing Information */}
             {membershipData && countryPricing && (
-              <div className="border-t pt-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                  Membership Pricing
-                </h2>
-                
-                {/* Pricing Plans */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  {/* Quarterly Plan */}
-                  <Card className="border border-gray-200 hover:shadow-md transition-shadow">
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-lg text-blue-600">Quarterly</CardTitle>
-                      <p className="text-sm text-gray-600">3 months</p>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {countryPricing.currency} {countryPricing.quarterlyPrice.toLocaleString()}
-                      </div>
-                      <p className="text-sm text-gray-600">per quarter</p>
-                    </CardContent>
-                  </Card>
-
-                  {/* Half-Yearly Plan */}
-                  <Card className="border border-green-200 bg-green-50 hover:shadow-md transition-shadow">
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-lg text-green-600">Half-Yearly</CardTitle>
-                      <p className="text-sm text-gray-600">6 months</p>
-                      <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        Popular
-                      </span>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {countryPricing.currency} {countryPricing.halfYearlyPrice.toLocaleString()}
-                      </div>
-                      <p className="text-sm text-gray-600">per 6 months</p>
-                    </CardContent>
-                  </Card>
-
-                  {/* Annual Plan */}
-                  <Card className="border border-purple-200 bg-purple-50 hover:shadow-md transition-shadow">
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-lg text-purple-600">Annual</CardTitle>
-                      <p className="text-sm text-gray-600">12 months</p>
-                      <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                        Best Value
-                      </span>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {countryPricing.currency} {countryPricing.annualPrice.toLocaleString()}
-                      </div>
-                      <p className="text-sm text-gray-600">per year</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Additional Fees Information */}
-                <Card className="bg-blue-50 border border-blue-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-blue-800">Additional Information</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="font-medium text-gray-700">Marketplace Fee</p>
-                        <p className="text-blue-700 font-semibold">{membershipData.marketplaceFee}%</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-700">Aggregator Fee</p>
-                        <p className="text-blue-700 font-semibold">{membershipData.aggregatorFee}%</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-700">Combined Fee</p>
-                        <p className="text-blue-700 font-semibold">{membershipData.marketplacePlusAggregatorFee}%</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <MembershipPricingSection 
+                membershipData={membershipData}
+                countryPricing={countryPricing}
+              />
             )}
 
-            {/* User Information */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">User Information</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">User ID:</span>
-                  <span className="font-medium text-gray-900">{userId || 'Not Available'}</span>
-                </div>
-              </div>
-            </div>
+            <UserInfoSection userId={userId} />
 
-            {/* Membership Action Section */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Steps</h3>
-              <div className="bg-blue-50 rounded-lg p-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  Complete your membership registration to unlock premium features and enhanced access to our platform.
-                </p>
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  disabled={!membershipData || !countryPricing || !!error}
-                >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Proceed with Membership Registration
-                </Button>
-              </div>
-            </div>
+            <MembershipActionSection 
+              disabled={!membershipData || !countryPricing || !!error}
+            />
           </CardContent>
         </Card>
       </div>
