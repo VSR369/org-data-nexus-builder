@@ -11,6 +11,7 @@ interface IntegrationResult {
   mergedCategories: number;
   mergedSubCategories: number;
   skippedDuplicates: number;
+  createdIndustrySegments: number;
 }
 
 export const convertToMasterDataFormat = (
@@ -24,9 +25,9 @@ export const convertToMasterDataFormat = (
     throw new Error("No valid Excel hierarchy data to convert to master data format");
   }
 
-  // Load existing data with detailed logging
+  // Load existing data
   const existingData = domainGroupsDataManager.loadData();
-  const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
+  let industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
   
   console.log('📦 Existing domain groups data:', existingData);
   console.log('📦 Available industry segments:', industrySegments.map(is => ({ id: is.id, name: is.industrySegment })));
@@ -45,7 +46,8 @@ export const convertToMasterDataFormat = (
     subCategories: 0,
     mergedCategories: 0,
     mergedSubCategories: 0,
-    skippedDuplicates: 0
+    skippedDuplicates: 0,
+    createdIndustrySegments: 0
   };
 
   console.log('🔄 Processing each industry segment in hierarchy...');
@@ -53,18 +55,37 @@ export const convertToMasterDataFormat = (
   Object.entries(hierarchyData).forEach(([industrySegmentName, domainGroups]) => {
     console.log(`\n🏭 Processing industry segment: "${industrySegmentName}"`);
     
-    // Find matching industry segment (case-insensitive)
+    // Find matching industry segment (case-insensitive and fuzzy matching)
     let industrySegment = industrySegments.find(is => 
-      is.industrySegment.toLowerCase().trim() === industrySegmentName.toLowerCase().trim()
+      is.industrySegment.toLowerCase().trim() === industrySegmentName.toLowerCase().trim() ||
+      is.industrySegment.toLowerCase().replace(/[^a-z0-9]/g, '') === industrySegmentName.toLowerCase().replace(/[^a-z0-9]/g, '')
     );
     
     if (!industrySegment) {
-      console.error(`❌ Industry segment "${industrySegmentName}" not found in master data`);
-      console.log('Available industry segments:', industrySegments.map(is => is.industrySegment));
-      return; // Skip if industry segment doesn't exist
+      // Create missing industry segment automatically
+      console.log(`⚠️ Industry segment "${industrySegmentName}" not found, creating it...`);
+      const newIndustrySegment = {
+        id: `is_${industrySegments.length + result.createdIndustrySegments + 1}`,
+        industrySegment: industrySegmentName,
+        description: `Auto-created from Excel import: ${savedDocument?.fileName || 'Unknown file'}`,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      industrySegments.push(newIndustrySegment);
+      industrySegment = newIndustrySegment;
+      result.createdIndustrySegments++;
+      console.log(`✅ Created new industry segment: ${industrySegmentName} (ID: ${newIndustrySegment.id})`);
+      
+      // Save the updated industry segments
+      try {
+        industrySegmentDataManager.saveData({ industrySegments });
+        console.log('💾 Saved updated industry segments');
+      } catch (error) {
+        console.error('❌ Error saving industry segments:', error);
+      }
+    } else {
+      console.log(`✅ Found matching industry segment: ${industrySegment.industrySegment} (ID: ${industrySegment.id})`);
     }
-
-    console.log(`✅ Found matching industry segment: ${industrySegment.industrySegment} (ID: ${industrySegment.id})`);
 
     Object.entries(domainGroups).forEach(([domainGroupName, categories]) => {
       console.log(`\n🏢 Processing domain group: "${domainGroupName}"`);
@@ -166,6 +187,7 @@ export const convertToMasterDataFormat = (
   });
 
   console.log('\n📊 Integration Summary:');
+  console.log(`🏭 Created industry segments: ${result.createdIndustrySegments}`);
   console.log(`🏢 New domain groups: ${result.domainGroups}`);
   console.log(`📁 New categories: ${result.categories}`);
   console.log(`📝 New sub-categories: ${result.subCategories}`);

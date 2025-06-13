@@ -29,9 +29,9 @@ export const processExcelFile = async (file: File): Promise<{
           const row: string[] = [];
           let hasAnyData = false;
           
-          // Check up to 8 columns to accommodate extended format
-          const maxCol = Math.max(range.e.c, 7);
-          for (let colNum = range.s.c; colNum <= maxCol; colNum++) {
+          // Read up to 10 columns to ensure we capture all data (A through J)
+          const maxCol = Math.max(range.e.c, 9);
+          for (let colNum = 0; colNum <= maxCol; colNum++) {
             const cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: colNum });
             const cell = worksheet[cellAddress];
             
@@ -46,15 +46,10 @@ export const processExcelFile = async (file: File): Promise<{
             if (value) hasAnyData = true;
           }
           
-          // Include header row always
-          if (rowNum === range.s.r) {
+          // Include header row always, and data rows that have any content
+          if (rowNum === range.s.r || hasAnyData) {
             jsonData.push(row);
-            console.log(`📝 Header row ${rowNum + 1}:`, row);
-          } 
-          // For data rows, include if there's any data in ANY column (very lenient)
-          else if (hasAnyData) {
-            jsonData.push(row);
-            console.log(`📝 Raw data row ${rowNum + 1}:`, row);
+            console.log(`📝 Row ${rowNum + 1} [${rowNum === range.s.r ? 'HEADER' : 'DATA'}]:`, row);
           } else {
             console.log(`⚠️ Skipping completely empty row ${rowNum + 1}`);
           }

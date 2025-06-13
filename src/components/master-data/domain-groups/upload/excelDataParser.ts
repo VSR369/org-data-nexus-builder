@@ -5,7 +5,7 @@ export const parseExcelToHierarchy = (
   data: string[][], 
   processingResult: ProcessingResult
 ): { parsed: ParsedExcelData[], hierarchy: HierarchyData, processingResult: ProcessingResult } => {
-  console.log('🔄 Starting Excel data parsing...');
+  console.log('🔄 Starting Excel data parsing with correct column mapping...');
   console.log('📊 Input data rows:', data.length);
   
   if (!data || data.length < 2) {
@@ -25,8 +25,17 @@ export const parseExcelToHierarchy = (
   const headers = data[0];
   const rows = data.slice(1);
   
-  console.log('📋 Headers:', headers);
+  console.log('📋 Headers detected:', headers);
   console.log(`📊 Data rows to process: ${rows.length}`);
+  
+  // Analyze the data structure first
+  console.log('🔍 Analyzing column structure:');
+  console.log('Column A (0): Industry Segment');
+  console.log('Column B (1): Domain Group'); 
+  console.log('Column C (2): Unknown/Empty');
+  console.log('Column D (3): Category');
+  console.log('Column E (4): Unknown/Empty');
+  console.log('Column F (5): Sub-Category');
   
   const parsed: ParsedExcelData[] = [];
   const hierarchy: HierarchyData = {};
@@ -38,15 +47,19 @@ export const parseExcelToHierarchy = (
     
     console.log(`🔍 Processing row ${rowNumber}:`, row);
     
-    // Extract and clean data with more robust handling
+    // Extract data from CORRECT columns based on your Excel format:
+    // Column A (0): Industry Segment
+    // Column B (1): Domain Group
+    // Column D (3): Category (NOT column C!)
+    // Column F (5): Sub-Category (NOT column D!)
     const industrySegment = String(row[0] || '').trim();
     const domainGroup = String(row[1] || '').trim();
-    const category = String(row[2] || '').trim();
-    const subCategory = String(row[3] || '').trim();
+    const category = String(row[3] || '').trim(); // Column D (index 3)
+    const subCategory = String(row[5] || '').trim(); // Column F (index 5)
 
-    console.log(`📝 Cleaned values - IS: "${industrySegment}", DG: "${domainGroup}", Cat: "${category}", Sub: "${subCategory}"`);
+    console.log(`📝 Extracted values - IS: "${industrySegment}", DG: "${domainGroup}", Cat: "${category}", Sub: "${subCategory}"`);
 
-    // Very lenient validation - only require industry segment
+    // Validation - require all four fields for a complete entry
     if (!industrySegment) {
       errors.push('Industry Segment is required');
     }
@@ -56,18 +69,18 @@ export const parseExcelToHierarchy = (
     if (!category) {
       errors.push('Category is required');
     }
+    if (!subCategory) {
+      errors.push('Sub-Category is required');
+    }
     
-    // If sub-category is missing, use a default
-    const finalSubCategory = subCategory || 'General';
-    
-    // A row is valid if it has at least the first three fields
-    const isValid = Boolean(industrySegment && domainGroup && category);
+    // A row is valid if it has all required fields
+    const isValid = Boolean(industrySegment && domainGroup && category && subCategory);
 
     const item: ParsedExcelData = {
       industrySegment,
       domainGroup,
       category,
-      subCategory: finalSubCategory,
+      subCategory,
       rowNumber,
       isValid,
       errors
@@ -75,12 +88,12 @@ export const parseExcelToHierarchy = (
     
     parsed.push(item);
 
-    // Build hierarchy for ALL rows that have basic required fields
+    // Build hierarchy for valid rows
     if (isValid) {
       validRowCount++;
       console.log(`✅ Processing VALID row ${rowNumber}: Building hierarchy...`);
       
-      // Build hierarchy structure step by step with detailed logging
+      // Build hierarchy structure step by step
       if (!hierarchy[industrySegment]) {
         hierarchy[industrySegment] = {};
         console.log(`🏗️ Created NEW industry segment: "${industrySegment}"`);
@@ -97,11 +110,11 @@ export const parseExcelToHierarchy = (
       }
       
       // Add subcategory if not already present
-      if (!hierarchy[industrySegment][domainGroup][category].includes(finalSubCategory)) {
-        hierarchy[industrySegment][domainGroup][category].push(finalSubCategory);
-        console.log(`🏗️ Added NEW sub-category: "${finalSubCategory}" to category "${category}"`);
+      if (!hierarchy[industrySegment][domainGroup][category].includes(subCategory)) {
+        hierarchy[industrySegment][domainGroup][category].push(subCategory);
+        console.log(`🏗️ Added NEW sub-category: "${subCategory}" to category "${category}"`);
       } else {
-        console.log(`⚠️ Sub-category "${finalSubCategory}" already exists in category "${category}"`);
+        console.log(`⚠️ Sub-category "${subCategory}" already exists in category "${category}"`);
       }
       
       // Log current state of this branch
@@ -112,6 +125,7 @@ export const parseExcelToHierarchy = (
         industrySegment: !!industrySegment,
         domainGroup: !!domainGroup,
         category: !!category,
+        subCategory: !!subCategory,
         errors
       });
       processingResult.errors.push(`Row ${rowNumber}: ${errors.join(', ')}`);
