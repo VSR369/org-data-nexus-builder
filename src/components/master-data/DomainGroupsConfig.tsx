@@ -1,5 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Download, Upload, AlertTriangle } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from './domain-groups/domainGroupsDataManager';
 import DomainGroupForm from './domain-groups/DomainGroupForm';
@@ -15,29 +17,95 @@ const defaultDomainGroupsData: DomainGroupsData = {
 };
 
 const DomainGroupsConfig: React.FC = () => {
-  const [data, setData] = useState<DomainGroupsData>(defaultDomainGroupsData);
+  const [data, setData] = useState<DomainGroupsData>({ domainGroups: [], categories: [], subCategories: [] });
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [newlyCreatedIds, setNewlyCreatedIds] = useState<Set<string>>(new Set());
   const [showWizard, setShowWizard] = useState(false);
   const [showHierarchyManager, setShowHierarchyManager] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   
   // Ref for scrolling to data entry section
   const dataEntryRef = useRef<HTMLDivElement>(null);
 
   // Function to load and refresh data
-  const loadData = () => {
+  const loadData = async () => {
     console.log('🔄 DomainGroupsConfig: Loading data...');
-    const loadedData = domainGroupsDataManager.refreshData();
-    console.log('✅ DomainGroupsConfig: Loaded data:', loadedData);
-    setData(loadedData);
+    setIsLoading(true);
+    
+    try {
+      const loadedData = domainGroupsDataManager.refreshData();
+      console.log('✅ DomainGroupsConfig: Loaded data:', loadedData);
+      setData(loadedData);
+      
+      // Show success message if data was loaded
+      if (loadedData.domainGroups.length > 0) {
+        toast({
+          title: "Data Loaded",
+          description: `Found ${loadedData.domainGroups.length} domain groups`,
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load domain groups data. Using sample data.",
+        variant: "destructive"
+      });
+      
+      // Try to load sample data as fallback
+      const sampleData = domainGroupsDataManager.forceReseed();
+      setData(sampleData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForceRefresh = () => {
+    console.log('🔄 Force refresh requested');
+    loadData();
+  };
+
+  const handleClearData = () => {
+    console.log('🗑️ Clear data requested');
+    domainGroupsDataManager.clearAllData();
+    setData({ domainGroups: [], categories: [], subCategories: [] });
+    toast({
+      title: "Data Cleared",
+      description: "All domain groups data has been cleared",
+    });
+  };
+
+  const handleExportData = () => {
+    try {
+      const exportData = domainGroupsDataManager.exportData();
+      const blob = new Blob([exportData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `domain-groups-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Data Exported",
+        description: "Domain groups data has been exported as JSON",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export domain groups data",
+        variant: "destructive"
+      });
+    }
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Add effect to listen for storage changes (when data is updated in other components)
+  // Add effect to listen for storage changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'master_data_domain_groups') {
@@ -51,22 +119,40 @@ const DomainGroupsConfig: React.FC = () => {
   }, []);
 
   const handleDataUpdate = (newData: DomainGroupsData) => {
-    // Identify newly created domain groups
-    const existingIds = new Set(data.domainGroups.map(dg => dg.id));
-    const newIds = new Set(
-      newData.domainGroups
-        .filter(dg => !existingIds.has(dg.id))
-        .map(dg => dg.id)
-    );
+    console.log('💾 Updating domain groups data:', newData);
     
-    setNewlyCreatedIds(newIds);
-    setData(newData);
+    // Save the data first
+    const saveSuccess = domainGroupsDataManager.saveData(newData);
     
-    // Clear the "new" indicators after 10 seconds
-    if (newIds.size > 0) {
-      setTimeout(() => {
-        setNewlyCreatedIds(new Set());
-      }, 10000);
+    if (saveSuccess) {
+      // Identify newly created domain groups
+      const existingIds = new Set(data.domainGroups.map(dg => dg.id));
+      const newIds = new Set(
+        newData.domainGroups
+          .filter(dg => !existingIds.has(dg.id))
+          .map(dg => dg.id)
+      );
+      
+      setNewlyCreatedIds(newIds);
+      setData(newData);
+      
+      toast({
+        title: "Data Updated",
+        description: `Successfully saved ${newData.domainGroups.length} domain groups`,
+      });
+      
+      // Clear the "new" indicators after 10 seconds
+      if (newIds.size > 0) {
+        setTimeout(() => {
+          setNewlyCreatedIds(new Set());
+        }, 10000);
+      }
+    } else {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save domain groups data. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -144,14 +230,66 @@ const DomainGroupsConfig: React.FC = () => {
     );
   }
 
+  const dataStats = domainGroupsDataManager.getDataStats();
+
   return (
     <div className="space-y-6">
-      <DomainGroupsHeader 
-        onStartManualEntry={handleStartManualEntry}
-        onScrollToDataEntry={scrollToDataEntry}
-        onOpenWizard={handleOpenWizard}
-        onUploadExcel={handleUploadExcel}
-      />
+      {/* Enhanced Header with Actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <DomainGroupsHeader 
+            onStartManualEntry={handleStartManualEntry}
+            onScrollToDataEntry={scrollToDataEntry}
+            onOpenWizard={handleOpenWizard}
+            onUploadExcel={handleUploadExcel}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleForceRefresh}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button
+            onClick={handleExportData}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </Button>
+          <Button
+            onClick={handleClearData}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 text-destructive hover:text-destructive"
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Clear All
+          </Button>
+        </div>
+      </div>
+
+      {/* Data Statistics */}
+      <div className="bg-muted/50 p-4 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Currently configured: {dataStats.domainGroups} domain groups, {dataStats.categories} categories, {dataStats.subCategories} sub-categories
+          </div>
+          {dataStats.domainGroups === 0 && (
+            <div className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm">No domain groups found - try refreshing or creating new ones</span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Display existing hierarchies */}
       <CombinedHierarchyDisplay 
@@ -164,7 +302,7 @@ const DomainGroupsConfig: React.FC = () => {
         onDataUpdate={handleDataUpdate}
       />
 
-      {/* Data Entry Section - simplified to only show the form */}
+      {/* Data Entry Section */}
       <div ref={dataEntryRef} className="scroll-mt-6">
         <DomainGroupForm data={data} onDataUpdate={handleDataUpdate} />
       </div>

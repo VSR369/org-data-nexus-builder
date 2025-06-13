@@ -3,36 +3,118 @@ import { DomainGroupsData } from '@/types/domainGroups';
 import { UniversalDataManager } from '@/utils/core/UniversalDataManager';
 import { seedingService } from '@/utils/core/UniversalSeedingService';
 
-// Default data structure
+// Sample data with realistic domain groups for different industry segments
+const sampleDomainGroupsData: DomainGroupsData = {
+  domainGroups: [
+    {
+      id: 'sample-dg-1',
+      name: 'Digital Banking & Fintech',
+      description: 'Digital transformation in banking and financial technology',
+      industrySegmentId: 'bfsi',
+      industrySegmentName: 'Banking, Financial Services & Insurance (BFSI)',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'sample-dg-2',
+      name: 'E-commerce & Digital Retail',
+      description: 'Online retail platforms and digital commerce solutions',
+      industrySegmentId: 'retail',
+      industrySegmentName: 'Retail & E-Commerce',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    }
+  ],
+  categories: [
+    {
+      id: 'sample-cat-1',
+      name: 'Mobile Banking',
+      description: 'Mobile banking applications and services',
+      domainGroupId: 'sample-dg-1',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'sample-cat-2',
+      name: 'Online Store Development',
+      description: 'Building and maintaining e-commerce platforms',
+      domainGroupId: 'sample-dg-2',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    }
+  ],
+  subCategories: [
+    {
+      id: 'sample-sub-1',
+      name: 'Account Management',
+      description: 'Mobile banking account management features',
+      categoryId: 'sample-cat-1',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'sample-sub-2',
+      name: 'Payment Processing',
+      description: 'Mobile payment integration and processing',
+      categoryId: 'sample-cat-1',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'sample-sub-3',
+      name: 'Shopping Cart',
+      description: 'E-commerce shopping cart functionality',
+      categoryId: 'sample-cat-2',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    }
+  ]
+};
+
+// Default empty data structure
 const defaultDomainGroupsData: DomainGroupsData = {
   domainGroups: [],
   categories: [],
   subCategories: []
 };
 
-// Validation function for domain groups data
+// Enhanced validation function
 const validateDomainGroupsData = (data: any): boolean => {
   console.log(`🔍 Validating domain groups data structure:`, data);
-  const isValid = data && 
-                 typeof data === 'object' && 
-                 Array.isArray(data.domainGroups) && 
-                 Array.isArray(data.categories) && 
-                 Array.isArray(data.subCategories);
-  console.log(`✅ Validation result: ${isValid}`);
-  return isValid;
+  
+  if (!data || typeof data !== 'object') {
+    console.log('❌ Data is not an object');
+    return false;
+  }
+  
+  if (!Array.isArray(data.domainGroups) || !Array.isArray(data.categories) || !Array.isArray(data.subCategories)) {
+    console.log('❌ Missing required arrays');
+    return false;
+  }
+  
+  // Additional validation for data integrity
+  for (const dg of data.domainGroups) {
+    if (!dg.id || !dg.name || !dg.industrySegmentId) {
+      console.log('❌ Invalid domain group:', dg);
+      return false;
+    }
+  }
+  
+  console.log(`✅ Validation successful - Found ${data.domainGroups.length} domain groups`);
+  return true;
 };
 
-// Seeding function for domain groups
+// Enhanced seeding function that provides sample data
 const seedDomainGroupsData = (): DomainGroupsData => {
-  console.log('🌱 Seeding domain groups default data');
-  return defaultDomainGroupsData;
+  console.log('🌱 Seeding domain groups with sample data');
+  return sampleDomainGroupsData;
 };
 
-// Create universal data manager instance
+// Create universal data manager instance with enhanced configuration
 const domainGroupsManager = new UniversalDataManager<DomainGroupsData>({
   key: 'master_data_domain_groups',
-  defaultData: defaultDomainGroupsData,
-  version: 4, // Increment version for the new system
+  defaultData: sampleDomainGroupsData, // Use sample data as default
+  version: 5, // Increment version to trigger re-seeding
   seedFunction: seedDomainGroupsData,
   validationFunction: validateDomainGroupsData
 });
@@ -41,7 +123,7 @@ const domainGroupsManager = new UniversalDataManager<DomainGroupsData>({
 seedingService.registerManager('domain_groups', domainGroupsManager);
 seedingService.registerSeedFunction('domain_groups', seedDomainGroupsData);
 
-// Enhanced domain groups manager class
+// Enhanced domain groups manager class with better error handling
 class EnhancedDomainGroupsManager {
   private manager: UniversalDataManager<DomainGroupsData>;
 
@@ -51,38 +133,85 @@ class EnhancedDomainGroupsManager {
 
   loadData(): DomainGroupsData {
     console.log('🔄 Enhanced loadData called for domain groups');
-    const data = this.manager.loadData();
-    console.log('✅ Domain groups data loaded:', data);
-    return data;
-  }
-
-  saveData(data: DomainGroupsData): void {
-    console.log('💾 Enhanced saveData called for domain groups:', data);
-    
-    // Validate data before saving
-    if (!validateDomainGroupsData(data)) {
-      console.error('❌ Invalid data structure, cannot save:', data);
-      throw new Error('Invalid data structure for domain groups');
+    try {
+      const data = this.manager.loadData();
+      console.log('✅ Domain groups data loaded successfully:', {
+        domainGroups: data.domainGroups.length,
+        categories: data.categories.length,
+        subCategories: data.subCategories.length
+      });
+      return data;
+    } catch (error) {
+      console.error('❌ Error loading domain groups data:', error);
+      console.log('🔄 Attempting to recover with sample data...');
+      return sampleDomainGroupsData;
     }
-    
-    this.manager.saveData(data);
-    console.log('✅ Domain groups data saved successfully');
   }
 
-  refreshData(): DomainGroupsData {
-    console.log('🔄 Force refreshing domain groups data...');
-    const data = this.manager.loadData();
-    console.log('✅ Refreshed data contains:', {
+  saveData(data: DomainGroupsData): boolean {
+    console.log('💾 Enhanced saveData called for domain groups:', {
       domainGroups: data.domainGroups.length,
       categories: data.categories.length,
       subCategories: data.subCategories.length
     });
-    return data;
+    
+    try {
+      // Validate data before saving
+      if (!validateDomainGroupsData(data)) {
+        console.error('❌ Invalid data structure, cannot save');
+        throw new Error('Invalid data structure for domain groups');
+      }
+      
+      this.manager.saveData(data);
+      
+      // Verify the save was successful
+      const verificationData = this.manager.loadData();
+      const saveSuccess = verificationData.domainGroups.length === data.domainGroups.length;
+      
+      if (saveSuccess) {
+        console.log('✅ Domain groups data saved and verified successfully');
+        return true;
+      } else {
+        console.error('❌ Save verification failed');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error saving domain groups data:', error);
+      return false;
+    }
+  }
+
+  refreshData(): DomainGroupsData {
+    console.log('🔄 Force refreshing domain groups data...');
+    try {
+      const data = this.manager.loadData();
+      console.log('✅ Refreshed data contains:', {
+        domainGroups: data.domainGroups.length,
+        categories: data.categories.length,
+        subCategories: data.subCategories.length
+      });
+      return data;
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+      return this.forceReseed();
+    }
   }
 
   forceReseed(): DomainGroupsData {
     console.log('🌱 Force reseeding domain groups data...');
-    return this.manager.forceReseed();
+    try {
+      const data = this.manager.forceReseed();
+      console.log('✅ Force reseed completed with sample data');
+      return data;
+    } catch (error) {
+      console.error('❌ Error during force reseed:', error);
+      return sampleDomainGroupsData;
+    }
+  }
+
+  clearAllData(): void {
+    console.log('🗑️ Clearing all domain groups data...');
+    this.manager.clearAllData();
   }
 
   getDataStats(): { domainGroups: number; categories: number; subCategories: number } {
@@ -96,6 +225,21 @@ class EnhancedDomainGroupsManager {
 
   getDataHealth() {
     return this.manager.getDataHealth();
+  }
+
+  exportData(): string {
+    const data = this.loadData();
+    return JSON.stringify(data, null, 2);
+  }
+
+  importData(jsonData: string): boolean {
+    try {
+      const data = JSON.parse(jsonData);
+      return this.saveData(data);
+    } catch (error) {
+      console.error('❌ Error importing data:', error);
+      return false;
+    }
   }
 }
 

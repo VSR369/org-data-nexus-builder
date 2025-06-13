@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Database, Plus } from 'lucide-react';
+import { Database, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DomainGroup, Category, SubCategory, DomainGroupsData } from '@/types/domainGroups';
 import { IndustrySegmentData } from '@/types/industrySegments';
@@ -43,116 +42,168 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
   });
   
   const [industrySegmentData, setIndustrySegmentData] = useState<IndustrySegmentData>({ industrySegments: [] });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   // Load industry segments data on component mount
   useEffect(() => {
     const loadedIndustryData = industrySegmentDataManager.loadData();
+    console.log('🔄 Loading industry segments for form:', loadedIndustryData);
     setIndustrySegmentData(loadedIndustryData);
-  }, []);
+    
+    if (loadedIndustryData.industrySegments.length === 0) {
+      toast({
+        title: "No Industry Segments",
+        description: "Please configure industry segments first before creating domain groups.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
 
-  // Get industry segments that already have domain groups
+  // Relaxed validation - only check for used industry segments if validation is specifically needed
   const getUsedIndustrySegmentIds = () => {
     return new Set(data.domainGroups.map(dg => dg.industrySegmentId));
   };
 
   const usedIndustrySegmentIds = getUsedIndustrySegmentIds();
 
-  const handleSubmit = () => {
-    // Validate required fields
-    if (!formData.industrySegmentId || !formData.domainGroupName || !formData.categoryName || !formData.subCategoryName) {
+  const handleSubmit = async () => {
+    console.log('📝 Form submission started with data:', formData);
+    setIsSubmitting(true);
+    
+    try {
+      // Basic validation - only require essential fields
+      if (!formData.domainGroupName.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Domain Group Name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.categoryName.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Category Name is required", 
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.subCategoryName.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Sub Category Name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Handle industry segment selection
+      let selectedIndustrySegment;
+      
+      if (formData.industrySegmentId) {
+        selectedIndustrySegment = industrySegmentData.industrySegments.find(
+          segment => segment.id === formData.industrySegmentId
+        );
+        
+        if (!selectedIndustrySegment) {
+          toast({
+            title: "Validation Error",
+            description: "Please select a valid industry segment",
+            variant: "destructive"
+          });
+          return;
+        }
+      } else {
+        // If no industry segment selected, create a default one or allow without it
+        selectedIndustrySegment = {
+          id: 'default',
+          industrySegment: 'General',
+          description: 'General industry segment',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
+        
+        toast({
+          title: "Info",
+          description: "No industry segment selected, using 'General' category",
+        });
+      }
+
+      const timestamp = new Date().toISOString();
+      const baseId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      console.log('📝 Creating hierarchy with base ID:', baseId);
+      
+      // Create Domain Group
+      const domainGroup: DomainGroup = {
+        id: baseId + '_dg',
+        name: formData.domainGroupName.trim(),
+        description: formData.domainGroupDescription.trim() || undefined,
+        industrySegmentId: selectedIndustrySegment.id,
+        industrySegmentName: selectedIndustrySegment.industrySegment,
+        isActive: formData.isActive,
+        createdAt: timestamp
+      };
+      
+      // Create Category
+      const category: Category = {
+        id: baseId + '_cat',
+        name: formData.categoryName.trim(),
+        description: formData.categoryDescription.trim() || undefined,
+        domainGroupId: domainGroup.id,
+        isActive: formData.isActive,
+        createdAt: timestamp
+      };
+      
+      // Create Sub Category
+      const subCategory: SubCategory = {
+        id: baseId + '_sub',
+        name: formData.subCategoryName.trim(),
+        description: formData.subCategoryDescription.trim() || undefined,
+        categoryId: category.id,
+        isActive: formData.isActive,
+        createdAt: timestamp
+      };
+      
+      // Update data
+      const updatedData = {
+        domainGroups: [...data.domainGroups, domainGroup],
+        categories: [...data.categories, category],
+        subCategories: [...data.subCategories, subCategory]
+      };
+      
+      console.log('💾 Saving updated data:', updatedData);
+      
+      // Call the update handler which will save the data
+      onDataUpdate(updatedData);
+      
+      // Reset form on successful submission
+      setFormData({
+        industrySegmentId: '',
+        domainGroupName: '',
+        domainGroupDescription: '',
+        categoryName: '',
+        categoryDescription: '',
+        subCategoryName: '',
+        subCategoryDescription: '',
+        isActive: true
+      });
+      
+      console.log('✅ Form submission completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Error during form submission:', error);
       toast({
-        title: "Validation Error",
-        description: "Industry Segment, Domain Group Name, Category Name, and Sub Category Name are required",
+        title: "Submission Error",
+        description: "An error occurred while creating the hierarchy. Please try again.",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Check if industry segment already has domain groups
-    if (usedIndustrySegmentIds.has(formData.industrySegmentId)) {
-      toast({
-        title: "Validation Error",
-        description: "This industry segment already has domain groups configured. Please select a different industry segment.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Find the selected industry segment
-    const selectedIndustrySegment = industrySegmentData.industrySegments.find(
-      segment => segment.id === formData.industrySegmentId
-    );
-
-    if (!selectedIndustrySegment) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a valid industry segment",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const timestamp = new Date().toISOString();
-    const baseId = Date.now().toString();
-    
-    // Create Domain Group
-    const domainGroup: DomainGroup = {
-      id: baseId + '_dg',
-      name: formData.domainGroupName,
-      description: formData.domainGroupDescription || undefined,
-      industrySegmentId: formData.industrySegmentId,
-      industrySegmentName: selectedIndustrySegment.industrySegment,
-      isActive: formData.isActive,
-      createdAt: timestamp
-    };
-    
-    // Create Category
-    const category: Category = {
-      id: baseId + '_cat',
-      name: formData.categoryName,
-      description: formData.categoryDescription || undefined,
-      domainGroupId: domainGroup.id,
-      isActive: formData.isActive,
-      createdAt: timestamp
-    };
-    
-    // Create Sub Category
-    const subCategory: SubCategory = {
-      id: baseId + '_sub',
-      name: formData.subCategoryName,
-      description: formData.subCategoryDescription || undefined,
-      categoryId: category.id,
-      isActive: formData.isActive,
-      createdAt: timestamp
-    };
-    
-    // Update data
-    const updatedData = {
-      domainGroups: [...data.domainGroups, domainGroup],
-      categories: [...data.categories, category],
-      subCategories: [...data.subCategories, subCategory]
-    };
-    
-    onDataUpdate(updatedData);
-    domainGroupsDataManager.saveData(updatedData);
-    
-    // Reset form
-    setFormData({
-      industrySegmentId: '',
-      domainGroupName: '',
-      domainGroupDescription: '',
-      categoryName: '',
-      categoryDescription: '',
-      subCategoryName: '',
-      subCategoryDescription: '',
-      isActive: true
-    });
-    
-    toast({
-      title: "Success",
-      description: "Domain group hierarchy created successfully",
-    });
   };
 
   return (
@@ -163,52 +214,46 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
           Create Domain Group Hierarchy
         </CardTitle>
         <CardDescription>
-          Fill all fields to create a complete hierarchy: Industry Segment → Domain Group → Category → Sub Category
+          Fill the required fields to create a complete hierarchy: Domain Group → Category → Sub Category
         </CardDescription>
+        {industrySegmentData.industrySegments.length === 0 && (
+          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm">
+              No industry segments configured. You can still create domain groups, but consider configuring industry segments first.
+            </span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Industry Segment */}
+          {/* Industry Segment - Optional */}
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="industry-segment">Industry Segment *</Label>
+            <Label htmlFor="industry-segment">Industry Segment (Optional)</Label>
             <Select 
               value={formData.industrySegmentId} 
               onValueChange={(value) => setFormData({...formData, industrySegmentId: value})}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select an industry segment" />
+                <SelectValue placeholder="Select an industry segment (optional)" />
               </SelectTrigger>
               <SelectContent>
-                {industrySegmentData.industrySegments.map((segment) => {
-                  const isUsed = usedIndustrySegmentIds.has(segment.id);
-                  return (
-                    <SelectItem 
-                      key={segment.id} 
-                      value={segment.id}
-                      disabled={isUsed}
-                      className={isUsed ? "opacity-50 cursor-not-allowed" : ""}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span>{segment.industrySegment}</span>
-                        {isUsed && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            (Already configured)
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
+                {industrySegmentData.industrySegments.map((segment) => (
+                  <SelectItem 
+                    key={segment.id} 
+                    value={segment.id}
+                  >
+                    {segment.industrySegment}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {usedIndustrySegmentIds.size > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Industry segments with existing hierarchies are disabled
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              If not selected, will be categorized as "General"
+            </p>
           </div>
 
-          {/* Domain Group Name */}
+          {/* Domain Group Name - Required */}
           <div className="space-y-2">
             <Label htmlFor="domain-group">Domain Group Name *</Label>
             <Input 
@@ -216,6 +261,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
               value={formData.domainGroupName}
               onChange={(e) => setFormData({...formData, domainGroupName: e.target.value})}
               placeholder="e.g., Digital Banking"
+              required
             />
           </div>
 
@@ -231,7 +277,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
             />
           </div>
 
-          {/* Category Name */}
+          {/* Category Name - Required */}
           <div className="space-y-2">
             <Label htmlFor="category">Category Name *</Label>
             <Input 
@@ -239,6 +285,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
               value={formData.categoryName}
               onChange={(e) => setFormData({...formData, categoryName: e.target.value})}
               placeholder="e.g., Mobile Banking"
+              required
             />
           </div>
 
@@ -254,7 +301,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
             />
           </div>
 
-          {/* Sub Category Name */}
+          {/* Sub Category Name - Required */}
           <div className="space-y-2">
             <Label htmlFor="sub-category">Sub Category Name *</Label>
             <Input 
@@ -262,6 +309,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
               value={formData.subCategoryName}
               onChange={(e) => setFormData({...formData, subCategoryName: e.target.value})}
               placeholder="e.g., Account Management"
+              required
             />
           </div>
 
@@ -288,9 +336,13 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
         </div>
 
         {/* Submit Button */}
-        <Button onClick={handleSubmit} className="w-full">
+        <Button 
+          onClick={handleSubmit} 
+          className="w-full"
+          disabled={isSubmitting || !formData.domainGroupName.trim() || !formData.categoryName.trim() || !formData.subCategoryName.trim()}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Create Complete Hierarchy
+          {isSubmitting ? 'Creating...' : 'Create Complete Hierarchy'}
         </Button>
       </CardContent>
     </Card>
