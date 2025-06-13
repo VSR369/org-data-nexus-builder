@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, Building, Globe, User, AlertTriangle, DollarSign } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface MembershipRegistrationProps {
   userId?: string;
@@ -36,6 +35,7 @@ const MembershipRegistration = () => {
   const [countryPricing, setCountryPricing] = useState<PricingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
   
   const { userId, organizationName, entityType, country } = location.state as MembershipRegistrationProps || {};
 
@@ -44,20 +44,75 @@ const MembershipRegistration = () => {
       console.log('🔍 Loading membership data for:', { entityType, country });
       setLoading(true);
       setError(null);
+      const debug: string[] = [];
 
       try {
-        // Load pricing configs from localStorage (master data system)
-        const pricingConfigsStr = localStorage.getItem('master_data_pricing_configs');
-        
-        if (!pricingConfigsStr) {
-          console.log('⚠️ No pricing configs found in master data');
-          setError('No pricing configuration found. Please contact administrator.');
+        // First, let's see all localStorage keys to understand what's available
+        const allKeys = Object.keys(localStorage);
+        console.log('🔍 All localStorage keys:', allKeys);
+        debug.push(`All localStorage keys: ${allKeys.join(', ')}`);
+
+        // Look for any pricing or membership related keys
+        const pricingKeys = allKeys.filter(key => 
+          key.toLowerCase().includes('pricing') || 
+          key.toLowerCase().includes('membership') || 
+          key.toLowerCase().includes('fee')
+        );
+        console.log('🔍 Pricing-related keys found:', pricingKeys);
+        debug.push(`Pricing-related keys: ${pricingKeys.join(', ')}`);
+
+        // Try multiple possible keys for pricing configuration
+        const possibleKeys = [
+          'master_data_pricing_configs',
+          'pricing_configs',
+          'membership_configs',
+          'membership_pricing',
+          'seeker_membership_fee',
+          'master_data_seeker_membership_fee'
+        ];
+
+        let pricingConfigs: MembershipConfig[] | null = null;
+        let usedKey = '';
+
+        for (const key of possibleKeys) {
+          const data = localStorage.getItem(key);
+          if (data) {
+            try {
+              const parsed = JSON.parse(data);
+              console.log(`📋 Found data in ${key}:`, parsed);
+              debug.push(`Found data in ${key}: ${JSON.stringify(parsed, null, 2)}`);
+              
+              // Try to adapt the data structure if needed
+              if (Array.isArray(parsed)) {
+                pricingConfigs = parsed;
+              } else if (parsed.configs && Array.isArray(parsed.configs)) {
+                pricingConfigs = parsed.configs;
+              } else if (parsed.data && Array.isArray(parsed.data)) {
+                pricingConfigs = parsed.data;
+              } else {
+                // Single config object
+                pricingConfigs = [parsed];
+              }
+              
+              usedKey = key;
+              break;
+            } catch (parseError) {
+              console.log(`❌ Failed to parse data from ${key}:`, parseError);
+              debug.push(`Failed to parse ${key}: ${parseError}`);
+            }
+          }
+        }
+
+        setDebugInfo(debug);
+
+        if (!pricingConfigs || pricingConfigs.length === 0) {
+          console.log('⚠️ No pricing configs found in any expected location');
+          setError('No pricing configuration found in master data. Please ensure pricing data is configured in the Master Data Portal.');
           setLoading(false);
           return;
         }
 
-        const pricingConfigs: MembershipConfig[] = JSON.parse(pricingConfigsStr);
-        console.log('📋 Loaded pricing configs:', pricingConfigs);
+        console.log('📋 Loaded pricing configs from', usedKey, ':', pricingConfigs);
 
         // Find configuration for the entity type or fallback to "All Organizations"
         let matchingConfig = pricingConfigs.find(config => 
@@ -72,7 +127,7 @@ const MembershipRegistration = () => {
 
         if (!matchingConfig) {
           console.log('❌ No matching pricing configuration found');
-          setError('No pricing configuration available for your organization type.');
+          setError(`No pricing configuration available for entity type: ${entityType}. Available types: ${pricingConfigs.map(c => c.organizationType).join(', ')}`);
           setLoading(false);
           return;
         }
@@ -81,13 +136,14 @@ const MembershipRegistration = () => {
         setMembershipData(matchingConfig);
 
         // Find pricing for the specific country
-        const countrySpecificPricing = matchingConfig.internalPaasPricing.find(
+        const countrySpecificPricing = matchingConfig.internalPaasPricing?.find(
           pricing => pricing.country === country
         );
 
         if (!countrySpecificPricing) {
           console.log('⚠️ No country-specific pricing found for:', country);
-          setError(`No pricing available for ${country}. Please contact administrator.`);
+          const availableCountries = matchingConfig.internalPaasPricing?.map(p => p.country).join(', ') || 'none';
+          setError(`No pricing available for ${country}. Available countries: ${availableCountries}`);
         } else {
           console.log('✅ Found country pricing:', countrySpecificPricing);
           setCountryPricing(countrySpecificPricing);
@@ -150,6 +206,24 @@ const MembershipRegistration = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Debug Information (only show when there's an error or no data) */}
+            {(error || !membershipData) && debugInfo.length > 0 && (
+              <Card className="bg-yellow-50 border border-yellow-200">
+                <CardHeader>
+                  <CardTitle className="text-lg text-yellow-800">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-yellow-700 space-y-2">
+                    {debugInfo.map((info, index) => (
+                      <div key={index} className="font-mono bg-yellow-100 p-2 rounded">
+                        {info}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Organization Details Header */}
             <div className="border-b pb-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Details</h2>
