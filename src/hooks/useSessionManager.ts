@@ -1,6 +1,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
+import { sessionStorageManager } from '@/utils/storage/SessionStorageManager';
 
 interface SessionData {
   seekerOrganizationName: string;
@@ -13,63 +14,20 @@ export const useSessionManager = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Session keys that should be cleared on logout
-  const SESSION_KEYS = [
-    'seekerOrganizationName',
-    'seekerEntityType', 
-    'seekerCountry',
-    'seekerUserId'
-  ];
-
   const clearSessionData = () => {
-    console.log('🧹 === SESSION CLEANUP START ===');
-    
-    SESSION_KEYS.forEach(key => {
-      const existingValue = localStorage.getItem(key);
-      if (existingValue) {
-        localStorage.removeItem(key);
-        console.log(`🧹 Cleared session key: ${key} (was: ${existingValue})`);
-      }
-    });
-    
-    console.log('✅ All session data cleared successfully');
-    console.log('🧹 === SESSION CLEANUP END ===');
+    sessionStorageManager.clearSession();
   };
 
   const validateSession = (): SessionData | null => {
-    console.log('🔍 === SESSION VALIDATION START ===');
-    
-    const sessionData: Partial<SessionData> = {};
-    let isComplete = true;
-    
-    SESSION_KEYS.forEach(key => {
-      const value = localStorage.getItem(key);
-      if (value) {
-        sessionData[key as keyof SessionData] = value;
-        console.log(`✅ Found session data for ${key}: ${value}`);
-      } else {
-        console.log(`❌ Missing session data for ${key}`);
-        isComplete = false;
-      }
-    });
-    
-    if (!isComplete) {
-      console.log('⚠️ Incomplete session data found');
-      return null;
-    }
-    
-    console.log('✅ Session validation successful');
-    console.log('🔍 === SESSION VALIDATION END ===');
-    
-    return sessionData as SessionData;
+    return sessionStorageManager.loadSession();
   };
 
   const handleLogout = (userId?: string) => {
     console.log('🚪 === LOGOUT PROCESS START ===');
     console.log('🚪 Logging out user:', userId);
     
-    // Clear all session data
-    clearSessionData();
+    // Clear all session data using robust storage manager
+    sessionStorageManager.clearSession();
     
     // Navigate to signin page
     navigate('/signin');
@@ -86,10 +44,10 @@ export const useSessionManager = () => {
     console.log('🔄 === SESSION RECOVERY START ===');
     
     try {
-      const sessionData = validateSession();
+      const sessionData = sessionStorageManager.loadSession();
       
       if (!sessionData) {
-        console.log('⚠️ Session recovery failed: incomplete data');
+        console.log('⚠️ Session recovery failed: no valid data found');
         return null;
       }
       
@@ -107,10 +65,15 @@ export const useSessionManager = () => {
     }
   };
 
+  const getStorageHealth = () => {
+    return sessionStorageManager.getStorageHealth();
+  };
+
   return {
     clearSessionData,
     validateSession,
     handleLogout,
-    recoverSession
+    recoverSession,
+    getStorageHealth
   };
 };
