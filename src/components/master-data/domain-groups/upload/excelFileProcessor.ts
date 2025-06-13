@@ -29,8 +29,8 @@ export const processExcelFile = async (file: File): Promise<{
           const row: string[] = [];
           let hasAnyData = false;
           
-          // Ensure we check at least 4 columns for the required hierarchy data
-          const maxCol = Math.max(range.e.c, 3);
+          // Check up to 8 columns to accommodate extended format (includes descriptions and active status)
+          const maxCol = Math.max(range.e.c, 7);
           for (let colNum = range.s.c; colNum <= maxCol; colNum++) {
             const cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: colNum });
             const cell = worksheet[cellAddress];
@@ -52,26 +52,31 @@ export const processExcelFile = async (file: File): Promise<{
             jsonData.push(row);
             console.log(`📝 Header row ${rowNum + 1}:`, row);
           } 
-          // For data rows, include if there's any meaningful data
+          // For data rows, include if there's any meaningful data in the first 4 required columns
           else if (hasAnyData) {
             const industrySegment = (row[0] || '').trim();
             const domainGroup = (row[1] || '').trim();
             const category = (row[2] || '').trim();
             const subCategory = (row[3] || '').trim();
             
-            // Include row if it has at least industry segment and domain group
-            if (industrySegment && domainGroup) {
+            // Include row if it has at least the first 3 required fields (more lenient)
+            if (industrySegment && domainGroup && category) {
               jsonData.push(row);
               console.log(`📝 Valid data row ${rowNum + 1}:`, row);
             } else {
-              console.log(`⚠️ Skipping incomplete row ${rowNum + 1}:`, row);
+              console.log(`⚠️ Skipping incomplete row ${rowNum + 1} - missing required fields:`, {
+                industrySegment: !!industrySegment,
+                domainGroup: !!domainGroup,
+                category: !!category,
+                subCategory: !!subCategory
+              });
             }
           } else {
             console.log(`⚠️ Skipping empty row ${rowNum + 1}`);
           }
         }
 
-        console.log(`✅ Processed ${jsonData.length} total rows (including header)`);
+        console.log(`✅ Processed ${jsonData.length} total rows (including header) from ${range.e.r + 1} Excel rows`);
 
         const processingResult: ProcessingResult = {
           totalRows: jsonData.length > 0 ? jsonData.length - 1 : 0, // Exclude header

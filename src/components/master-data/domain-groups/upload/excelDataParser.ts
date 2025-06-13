@@ -6,7 +6,7 @@ export const parseExcelToHierarchy = (
   processingResult: ProcessingResult
 ): { parsed: ParsedExcelData[], hierarchy: HierarchyData, processingResult: ProcessingResult } => {
   console.log('🔄 Starting Excel data parsing...');
-  console.log('📊 Input data:', data);
+  console.log('📊 Input data rows:', data.length);
   
   if (!data || data.length < 2) {
     console.warn('⚠️ No sufficient data found in Excel file');
@@ -46,28 +46,30 @@ export const parseExcelToHierarchy = (
 
     console.log(`📝 Cleaned values - IS: "${industrySegment}", DG: "${domainGroup}", Cat: "${category}", Sub: "${subCategory}"`);
 
-    // Validation logic - require all 4 fields for complete hierarchy
+    // More lenient validation - require at least the first 3 fields
     if (!industrySegment) errors.push('Industry Segment is required');
     if (!domainGroup) errors.push('Domain Group is required');
     if (!category) errors.push('Category is required');
-    if (!subCategory) errors.push('Sub-Category is required');
     
-    // A row is valid only if all required fields are present
-    const isValid = industrySegment && domainGroup && category && subCategory;
+    // Sub-category is optional - if missing, use a default
+    const finalSubCategory = subCategory || 'General';
+    
+    // A row is valid if it has industry segment, domain group, and category
+    const isValid = industrySegment && domainGroup && category;
 
     const item: ParsedExcelData = {
       industrySegment,
       domainGroup,
       category,
-      subCategory,
+      subCategory: finalSubCategory,
       rowNumber,
-      isValid: Boolean(isValid), // Ensure proper boolean type
+      isValid: Boolean(isValid),
       errors
     };
     
     parsed.push(item);
 
-    // Build hierarchy only for completely valid rows
+    // Build hierarchy for valid rows
     if (isValid) {
       validRowCount++;
       console.log(`✅ Processing valid row ${rowNumber}: Building hierarchy...`);
@@ -89,11 +91,11 @@ export const parseExcelToHierarchy = (
       }
       
       // Add subcategory if not already present
-      if (!hierarchy[industrySegment][domainGroup][category].includes(subCategory)) {
-        hierarchy[industrySegment][domainGroup][category].push(subCategory);
-        console.log(`🏗️ Added sub-category: ${subCategory} to category ${category}`);
+      if (!hierarchy[industrySegment][domainGroup][category].includes(finalSubCategory)) {
+        hierarchy[industrySegment][domainGroup][category].push(finalSubCategory);
+        console.log(`🏗️ Added sub-category: ${finalSubCategory} to category ${category}`);
       } else {
-        console.log(`⚠️ Duplicate sub-category skipped: ${subCategory}`);
+        console.log(`⚠️ Duplicate sub-category skipped: ${finalSubCategory}`);
       }
     } else {
       console.error(`❌ Invalid row ${rowNumber}:`, errors);
@@ -121,7 +123,7 @@ export const parseExcelToHierarchy = (
     sum + Object.values(dgs).reduce((catSum, cats) => 
       catSum + Object.values(cats).reduce((subSum, subs) => subSum + subs.length, 0), 0), 0);
 
-  console.log(`📈 Hierarchy Stats: ${industryCount} Industries, ${domainGroupCount} Domain Groups, ${categoryCount} Categories, ${subCategoryCount} Sub-Categories`);
+  console.log(`📈 Final Hierarchy Stats: ${industryCount} Industries, ${domainGroupCount} Domain Groups, ${categoryCount} Categories, ${subCategoryCount} Sub-Categories`);
 
   return { parsed, hierarchy, processingResult };
 };
