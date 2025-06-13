@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building, User, LogOut, Globe, AlertTriangle, CreditCard } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSessionManager } from '@/hooks/useSessionManager';
 
 interface SeekerDashboardProps {
@@ -13,6 +13,7 @@ interface SeekerDashboardProps {
 
 const SeekerDashboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { validateSession, handleLogout, recoverSession } = useSessionManager();
   
   // Screen variables with default values
