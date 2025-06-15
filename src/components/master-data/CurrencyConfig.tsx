@@ -37,6 +37,7 @@ const CurrencyConfig = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentCurrency, setCurrentCurrency] = useState<Partial<Currency>>({});
   const { toast } = useToast();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load data on component mount
   useEffect(() => {
@@ -45,15 +46,17 @@ const CurrencyConfig = () => {
     const safeCurrencies = Array.isArray(loadedCurrencies) ? loadedCurrencies : defaultCurrencies;
     console.log('🔍 CurrencyConfig - Loaded currencies:', safeCurrencies);
     setCurrencies(safeCurrencies);
+    setIsInitialized(true);
   }, []);
 
   // Save data whenever currencies change
   useEffect(() => {
-    if (currencies.length > 0) {
-      console.log('💾 CurrencyConfig - Saving currencies:', currencies.length);
-      dataManager.saveData(currencies);
+    if (!isInitialized) {
+      return;
     }
-  }, [currencies]);
+    console.log('💾 CurrencyConfig - Saving currencies:', currencies.length);
+    dataManager.saveData(currencies);
+  }, [currencies, isInitialized]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

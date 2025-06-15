@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
@@ -11,6 +10,7 @@ export const useMembershipFeeData = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [dataHealth, setDataHealth] = useState<any>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Function to check data health
   const checkDataHealth = () => {
@@ -44,18 +44,21 @@ export const useMembershipFeeData = () => {
     setCountries(loadedCountries);
     setEntityTypes(loadedEntityTypes);
     setDataHealth(checkDataHealth());
+    setIsInitialized(true); // Mark as initialized after first load
     
     return { loadedCurrencies, loadedCountries, loadedEntityTypes, loadedFees };
   };
 
-  // Save membership fees whenever they change
+  // Save membership fees whenever they change, but only after initial load
   useEffect(() => {
-    if (membershipFees.length > 0) {
-      console.log('💾 Saving membership fees as user data:', membershipFees.length);
-      MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
-      setDataHealth(checkDataHealth());
+    if (!isInitialized) {
+      console.log('📥 Initializing membership fees... skipping save.');
+      return;
     }
-  }, [membershipFees]);
+    console.log(`💾 Saving membership fees (count: ${membershipFees.length}). Initialized: ${isInitialized}`);
+    MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
+    setDataHealth(checkDataHealth());
+  }, [membershipFees, isInitialized]);
 
   return {
     membershipFees,
