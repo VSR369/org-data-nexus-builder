@@ -6,7 +6,8 @@ interface DebugSectionProps {
 }
 
 export const DebugSection = ({ debugInfo }: DebugSectionProps) => {
-  if (debugInfo.length === 0) {
+  // Don't show debug section in production or when there's no debug info
+  if (debugInfo.length === 0 || process.env.NODE_ENV === 'production') {
     return null;
   }
 

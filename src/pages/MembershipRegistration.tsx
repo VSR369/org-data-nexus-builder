@@ -65,8 +65,8 @@ const MembershipRegistration = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Debug Information (only show when there's an error or no data) */}
-            {(error || !membershipData) && <DebugSection debugInfo={debugInfo} />}
+            {/* Debug Information (only show when there's an error) */}
+            {error && <DebugSection debugInfo={debugInfo} />}
 
             <OrganizationDetailsSection 
               organizationName={organizationName}

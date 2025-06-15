@@ -27,116 +27,66 @@ export const useMembershipData = (entityType?: string, country?: string) => {
 
   useEffect(() => {
     const loadMembershipData = () => {
-      console.log('🔍 Loading membership data for:', { entityType, country });
       setLoading(true);
       setError(null);
-      const debug: string[] = [];
 
       try {
-        // First, let's see all localStorage keys to understand what's available
-        const allKeys = Object.keys(localStorage);
-        console.log('🔍 All localStorage keys:', allKeys);
-        debug.push(`All localStorage keys: ${allKeys.join(', ')}`);
-
-        // Look for any pricing or membership related keys
-        const pricingKeys = allKeys.filter(key => 
-          key.toLowerCase().includes('pricing') || 
-          key.toLowerCase().includes('membership') || 
-          key.toLowerCase().includes('fee')
-        );
-        console.log('🔍 Pricing-related keys found:', pricingKeys);
-        debug.push(`Pricing-related keys: ${pricingKeys.join(', ')}`);
-
-        // Try multiple possible keys for pricing configuration
-        const possibleKeys = [
-          'master_data_pricing_configs',
-          'pricing_configs',
-          'membership_configs',
-          'membership_pricing',
-          'seeker_membership_fee',
-          'master_data_seeker_membership_fee'
-        ];
-
-        let pricingConfigs: MembershipConfig[] | null = null;
-        let usedKey = '';
-
-        for (const key of possibleKeys) {
-          const data = localStorage.getItem(key);
-          if (data) {
-            try {
-              const parsed = JSON.parse(data);
-              console.log(`📋 Found data in ${key}:`, parsed);
-              debug.push(`Found data in ${key}: ${JSON.stringify(parsed, null, 2)}`);
-              
-              // Try to adapt the data structure if needed
-              if (Array.isArray(parsed)) {
-                pricingConfigs = parsed;
-              } else if (parsed.configs && Array.isArray(parsed.configs)) {
-                pricingConfigs = parsed.configs;
-              } else if (parsed.data && Array.isArray(parsed.data)) {
-                pricingConfigs = parsed.data;
-              } else {
-                // Single config object
-                pricingConfigs = [parsed];
-              }
-              
-              usedKey = key;
-              break;
-            } catch (parseError) {
-              console.log(`❌ Failed to parse data from ${key}:`, parseError);
-              debug.push(`Failed to parse ${key}: ${parseError}`);
-            }
-          }
-        }
-
-        setDebugInfo(debug);
-
-        if (!pricingConfigs || pricingConfigs.length === 0) {
-          console.log('⚠️ No pricing configs found in any expected location');
-          setError('No pricing configuration found in master data. Please ensure pricing data is configured in the Master Data Portal.');
+        // Try to load seeker membership fees data
+        const membershipFeesData = localStorage.getItem('master_data_seeker_membership_fees');
+        
+        if (!membershipFeesData) {
+          setError('No membership fee configuration found. Please configure membership fees in the Master Data Portal.');
           setLoading(false);
           return;
         }
 
-        console.log('📋 Loaded pricing configs from', usedKey, ':', pricingConfigs);
-
-        // Find configuration for the entity type or fallback to "All Organizations"
-        let matchingConfig = pricingConfigs.find(config => 
-          config.organizationType === entityType
-        );
-
-        if (!matchingConfig) {
-          matchingConfig = pricingConfigs.find(config => 
-            config.organizationType === 'All Organizations'
-          );
-        }
-
-        if (!matchingConfig) {
-          console.log('❌ No matching pricing configuration found');
-          setError(`No pricing configuration available for entity type: ${entityType}. Available types: ${pricingConfigs.map(c => c.organizationType).join(', ')}`);
+        let membershipFees;
+        try {
+          membershipFees = JSON.parse(membershipFeesData);
+        } catch (parseError) {
+          setError('Invalid membership fee configuration data.');
           setLoading(false);
           return;
         }
 
-        console.log('✅ Found matching config:', matchingConfig);
-        setMembershipData(matchingConfig);
+        if (!Array.isArray(membershipFees) || membershipFees.length === 0) {
+          setError('No membership fee configurations available. Please add configurations in the Master Data Portal.');
+          setLoading(false);
+          return;
+        }
 
-        // Find pricing for the specific country
-        const countrySpecificPricing = matchingConfig.internalPaasPricing?.find(
-          pricing => pricing.country === country
+        // Find matching configuration for the entity type and country
+        const matchingFee = membershipFees.find(fee => 
+          fee.entityType === entityType && fee.country === country
         );
 
-        if (!countrySpecificPricing) {
-          console.log('⚠️ No country-specific pricing found for:', country);
-          const availableCountries = matchingConfig.internalPaasPricing?.map(p => p.country).join(', ') || 'none';
-          setError(`No pricing available for ${country}. Available countries: ${availableCountries}`);
-        } else {
-          console.log('✅ Found country pricing:', countrySpecificPricing);
-          setCountryPricing(countrySpecificPricing);
+        if (!matchingFee) {
+          const availableConfigs = membershipFees.map(fee => `${fee.entityType} (${fee.country})`).join(', ');
+          setError(`No membership fee configuration found for ${entityType} in ${country}. Available configurations: ${availableConfigs}`);
+          setLoading(false);
+          return;
         }
+
+        // Convert the membership fee data to the expected format
+        const membershipConfig: MembershipConfig = {
+          organizationType: entityType,
+          marketplaceFee: 0,
+          aggregatorFee: 0,
+          marketplacePlusAggregatorFee: 0,
+          internalPaasPricing: [{
+            id: matchingFee.id,
+            country: matchingFee.country,
+            currency: matchingFee.quarterlyCurrency,
+            quarterlyPrice: matchingFee.quarterlyAmount,
+            halfYearlyPrice: matchingFee.halfYearlyAmount,
+            annualPrice: matchingFee.annualAmount
+          }]
+        };
+
+        setMembershipData(membershipConfig);
+        setCountryPricing(membershipConfig.internalPaasPricing[0]);
 
       } catch (error) {
-        console.error('❌ Error loading membership data:', error);
         setError('Failed to load membership information. Please try again.');
       } finally {
         setLoading(false);
