@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -124,6 +125,8 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   const isOnRegistrationPage = location.pathname === '/register';
   const isOnMasterDataPortal = location.pathname === '/master-data';
 
+  console.log('AppSidebar render:', { activeSection, isOnMasterDataPortal, pathname: location.pathname });
+
   const handleMasterDataClick = (sectionId: string) => {
     console.log('AppSidebar - handleMasterDataClick:', sectionId);
     
@@ -139,6 +142,28 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
     }
   };
 
+  const renderMenuGroup = (title: string, items: any[]) => (
+    <SidebarGroup key={title}>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.id}>
+              <SidebarMenuButton 
+                onClick={() => handleMasterDataClick(item.id)}
+                isActive={activeSection === item.id && isOnMasterDataPortal}
+                className="w-full justify-start cursor-pointer"
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="font-medium">{item.title}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b p-4">
@@ -151,105 +176,11 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Foundation Data</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {foundationMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && isOnMasterDataPortal}
-                    className="w-full justify-start cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Organization Setup</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {organizationMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && isOnMasterDataPortal}
-                    className="w-full justify-start cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Challenge & Solution Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {challengeMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && isOnMasterDataPortal}
-                    className="w-full justify-start cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>System Configuration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {systemMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && isOnMasterDataPortal}
-                    className="w-full justify-start cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Administration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {administrationMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleMasterDataClick(item.id)}
-                    isActive={activeSection === item.id && isOnMasterDataPortal}
-                    className="w-full justify-start cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {renderMenuGroup("Foundation Data", foundationMenuItems)}
+        {renderMenuGroup("Organization Setup", organizationMenuItems)}
+        {renderMenuGroup("Challenge & Solution Management", challengeMenuItems)}
+        {renderMenuGroup("System Configuration", systemMenuItems)}
+        {renderMenuGroup("Administration", administrationMenuItems)}
       </SidebarContent>
     </Sidebar>
   );
