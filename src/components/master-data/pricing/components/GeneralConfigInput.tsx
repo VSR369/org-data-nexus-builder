@@ -41,6 +41,14 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   const [organizationTypesFromMaster, setOrganizationTypesFromMaster] = useState<string[]>([]);
   const [countries, setCountries] = useState<any[]>([]);
 
+  // Check if engagement model is Platform as a Service (PaaS)
+  const isPaaSModel = (engagementModel: string) => {
+    return engagementModel?.toLowerCase().includes('platform as a service') || 
+           engagementModel?.toLowerCase().includes('paas');
+  };
+
+  const isCurrentModelPaaS = isPaaSModel(currentConfig.engagementModel || '');
+
   useEffect(() => {
     // Load engagement models from master data
     const loadedModels = engagementModelsDataManager.getEngagementModels();
@@ -261,44 +269,50 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
             {/* Row 2: All Three Fee Inputs in One Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="quarterlyFee">Quarterly Fee (%) *</Label>
+                <Label htmlFor="quarterlyFee">
+                  Quarterly Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
+                </Label>
                 <Input
                   id="quarterlyFee"
                   type="number"
                   min="0"
-                  max="100"
-                  step="0.1"
+                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
+                  max={isCurrentModelPaaS ? undefined : "100"}
                   value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
                   onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
-                  placeholder="15"
+                  placeholder={isCurrentModelPaaS ? "1000" : "15"}
                 />
               </div>
 
               <div>
-                <Label htmlFor="halfYearlyFee">Half Yearly Fee (%) *</Label>
+                <Label htmlFor="halfYearlyFee">
+                  Half Yearly Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
+                </Label>
                 <Input
                   id="halfYearlyFee"
                   type="number"
                   min="0"
-                  max="100"
-                  step="0.1"
+                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
+                  max={isCurrentModelPaaS ? undefined : "100"}
                   value={currentConfig.halfYearlyFee !== undefined ? currentConfig.halfYearlyFee.toString() : ''}
                   onChange={(e) => handleInputChange('halfYearlyFee', e.target.value)}
-                  placeholder="12"
+                  placeholder={isCurrentModelPaaS ? "1800" : "12"}
                 />
               </div>
 
               <div>
-                <Label htmlFor="annualFee">Annual Fee (%) *</Label>
+                <Label htmlFor="annualFee">
+                  Annual Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
+                </Label>
                 <Input
                   id="annualFee"
                   type="number"
                   min="0"
-                  max="100"
-                  step="0.1"
+                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
+                  max={isCurrentModelPaaS ? undefined : "100"}
                   value={currentConfig.annualFee !== undefined ? currentConfig.annualFee.toString() : ''}
                   onChange={(e) => handleInputChange('annualFee', e.target.value)}
-                  placeholder="10"
+                  placeholder={isCurrentModelPaaS ? "3000" : "10"}
                 />
               </div>
             </div>
