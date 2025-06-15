@@ -23,6 +23,7 @@ export const useSeekerRegistration = () => {
   const {
     countries,
     industrySegments,
+    organizationTypes,
     entityTypes
   } = useSeekerMasterData();
 
@@ -33,6 +34,7 @@ export const useSeekerRegistration = () => {
     console.log('📝 Form data to register:', {
       userId: formData.userId,
       organizationName: formData.organizationName,
+      organizationType: formData.organizationType,
       entityType: formData.entityType,
       country: formData.country,
       email: formData.email,
@@ -120,6 +122,7 @@ export const useSeekerRegistration = () => {
     errors,
     countries,
     industrySegments,
+    organizationTypes,
     entityTypes,
     requiresRegistrationDocuments,
     handleInputChange,

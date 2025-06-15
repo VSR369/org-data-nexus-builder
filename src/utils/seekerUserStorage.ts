@@ -13,7 +13,7 @@ export function saveUserDataSecurely(userData: any): boolean {
     console.log('💾 Starting secure user data save process...');
     
     // Validate required fields
-    const required = ['userId', 'password', 'organizationName', 'entityType', 'country', 'email', 'contactPersonName'];
+    const required = ['userId', 'password', 'organizationName', 'organizationType', 'entityType', 'country', 'email', 'contactPersonName'];
     for (const field of required) {
       if (!userData[field] || userData[field].toString().trim() === '') {
         console.log(`❌ Missing required field: ${field}`);
@@ -42,6 +42,7 @@ export function prepareRegistrationData(formData: FormData) {
     userId: formData.userId.trim(),
     password: formData.password,
     organizationName: formData.organizationName.trim(),
+    organizationType: formData.organizationType,
     entityType: formData.entityType,
     country: formData.country,
     email: formData.email.trim().toLowerCase(),

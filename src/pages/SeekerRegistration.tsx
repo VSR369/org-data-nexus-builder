@@ -16,6 +16,7 @@ const SeekerRegistration = () => {
     errors,
     countries,
     industrySegments,
+    organizationTypes,
     entityTypes,
     requiresRegistrationDocuments,
     handleInputChange,
@@ -49,6 +50,7 @@ const SeekerRegistration = () => {
               <OrganizationInfoSection
                 formData={formData}
                 industrySegments={industrySegments}
+                organizationTypes={organizationTypes}
                 entityTypes={entityTypes}
                 errors={errors}
                 onInputChange={handleInputChange}

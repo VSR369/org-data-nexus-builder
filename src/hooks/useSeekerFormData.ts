@@ -8,6 +8,7 @@ export const useSeekerFormData = () => {
     industrySegment: '',
     organizationName: '',
     organizationId: generateOrganizationId(),
+    organizationType: '',
     entityType: '',
     registrationDocuments: [],
     companyProfile: null,

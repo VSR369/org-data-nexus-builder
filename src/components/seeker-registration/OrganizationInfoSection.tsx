@@ -9,6 +9,7 @@ import { FormData, IndustrySegment } from '@/types/seekerRegistration';
 interface OrganizationInfoSectionProps {
   formData: FormData;
   industrySegments: IndustrySegment[];
+  organizationTypes: string[];
   entityTypes: string[];
   errors: { [key: string]: string };
   onInputChange: (field: keyof FormData, value: string) => void;
@@ -17,6 +18,7 @@ interface OrganizationInfoSectionProps {
 const OrganizationInfoSection: React.FC<OrganizationInfoSectionProps> = ({
   formData,
   industrySegments,
+  organizationTypes,
   entityTypes,
   errors,
   onInputChange
@@ -66,6 +68,23 @@ const OrganizationInfoSection: React.FC<OrganizationInfoSectionProps> = ({
             disabled
             className="bg-muted"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="organizationType">Organization Type *</Label>
+          <Select value={formData.organizationType} onValueChange={(value) => onInputChange('organizationType', value)}>
+            <SelectTrigger className={errors.organizationType ? 'border-red-500' : ''}>
+              <SelectValue placeholder="Select organization type" />
+            </SelectTrigger>
+            <SelectContent>
+              {organizationTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.organizationType && <p className="text-red-500 text-sm mt-1">{errors.organizationType}</p>}
         </div>
 
         <div>

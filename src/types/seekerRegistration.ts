@@ -16,6 +16,7 @@ export interface FormData {
   industrySegment: string;
   organizationName: string;
   organizationId: string;
+  organizationType: string;
   entityType: string;
   registrationDocuments: File[];
   companyProfile: File | null;
