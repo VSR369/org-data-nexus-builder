@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
@@ -45,6 +46,9 @@ export const useMembershipFeeData = () => {
     setEntityTypes(loadedEntityTypes);
     setDataHealth(checkDataHealth());
     setIsInitialized(true); // Mark as initialized after first load
+
+    // ADDED: diagnostics
+    console.log("🌟 [reloadMasterData] setMembershipFees length:", loadedFees.length, loadedFees);
     
     return { loadedCurrencies, loadedCountries, loadedEntityTypes, loadedFees };
   };
@@ -58,7 +62,15 @@ export const useMembershipFeeData = () => {
     console.log(`💾 Saving membership fees (count: ${membershipFees.length}). Initialized: ${isInitialized}`);
     MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
     setDataHealth(checkDataHealth());
+
+    // ADDED: diagnostics
+    console.log("🌟 [useEffect SAVE] membershipFees length:", membershipFees.length, membershipFees);
   }, [membershipFees, isInitialized]);
+
+  // EXTRA DEBUG: Track when membershipFees state changes (including after reload)
+  useEffect(() => {
+    console.log('🌟 [state change] membershipFees now:', membershipFees.length, membershipFees);
+  }, [membershipFees]);
 
   return {
     membershipFees,
@@ -71,3 +83,4 @@ export const useMembershipFeeData = () => {
     userCurrencies: currencies.filter(c => c.isUserCreated !== false)
   };
 };
+
