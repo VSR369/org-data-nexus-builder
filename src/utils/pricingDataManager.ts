@@ -6,9 +6,13 @@ import { PricingConfig } from '@/components/master-data/pricing/types';
 const defaultPricingConfigs: PricingConfig[] = [
   {
     id: '1',
+    country: 'India',
+    currency: 'INR',
     organizationType: 'All Organizations',
+    entityType: 'Commercial',
     engagementModel: 'Market Place',
     engagementModelFee: 30,
+    membershipStatus: 'not-a-member',
     internalPaasPricing: [],
     version: 1,
     createdAt: new Date().toISOString().split('T')[0],

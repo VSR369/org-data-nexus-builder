@@ -24,6 +24,20 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
     return Math.round(discountedPrice * 10) / 10; // Round to 1 decimal place
   };
 
+  // Check if engagement model is Platform as a Service (PaaS)
+  const isPaaSModel = (engagementModel: string) => {
+    return engagementModel.toLowerCase().includes('platform as a service') || 
+           engagementModel.toLowerCase().includes('paas');
+  };
+
+  // Format fee display based on engagement model
+  const formatFeeDisplay = (fee: number, currency: string, engagementModel: string) => {
+    if (isPaaSModel(engagementModel)) {
+      return `${currency} ${fee.toLocaleString()}`;
+    }
+    return `${fee}%`;
+  };
+
   if (configs.length === 0) {
     return (
       <Card>
@@ -64,6 +78,7 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
               {configs.map((config) => {
                 const discount = config.discountPercentage || 0;
                 const hasDiscount = config.membershipStatus === 'active' && discount > 0;
+                const isPaaS = isPaaSModel(config.engagementModel);
 
                 return (
                   <TableRow key={config.id}>
@@ -90,10 +105,14 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                     <TableCell>
                       {config.quarterlyFee !== undefined ? (
                         <div className="space-y-1">
-                          <div className="text-sm font-medium">{config.quarterlyFee}%</div>
+                          <div className="text-sm font-medium">
+                            {formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel)}
+                          </div>
                           {hasDiscount && (
                             <div className="text-xs text-green-600">
-                              After discount: {calculateDiscountedPrice(config.quarterlyFee, discount)}%
+                              After discount: {isPaaS ? 
+                                `${config.currency} ${calculateDiscountedPrice(config.quarterlyFee, discount).toLocaleString()}` : 
+                                `${calculateDiscountedPrice(config.quarterlyFee, discount)}%`}
                             </div>
                           )}
                         </div>
@@ -102,10 +121,14 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                     <TableCell>
                       {config.halfYearlyFee !== undefined ? (
                         <div className="space-y-1">
-                          <div className="text-sm font-medium">{config.halfYearlyFee}%</div>
+                          <div className="text-sm font-medium">
+                            {formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel)}
+                          </div>
                           {hasDiscount && (
                             <div className="text-xs text-green-600">
-                              After discount: {calculateDiscountedPrice(config.halfYearlyFee, discount)}%
+                              After discount: {isPaaS ? 
+                                `${config.currency} ${calculateDiscountedPrice(config.halfYearlyFee, discount).toLocaleString()}` : 
+                                `${calculateDiscountedPrice(config.halfYearlyFee, discount)}%`}
                             </div>
                           )}
                         </div>
@@ -114,10 +137,14 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                     <TableCell>
                       {config.annualFee !== undefined ? (
                         <div className="space-y-1">
-                          <div className="text-sm font-medium">{config.annualFee}%</div>
+                          <div className="text-sm font-medium">
+                            {formatFeeDisplay(config.annualFee, config.currency, config.engagementModel)}
+                          </div>
                           {hasDiscount && (
                             <div className="text-xs text-green-600">
-                              After discount: {calculateDiscountedPrice(config.annualFee, discount)}%
+                              After discount: {isPaaS ? 
+                                `${config.currency} ${calculateDiscountedPrice(config.annualFee, discount).toLocaleString()}` : 
+                                `${calculateDiscountedPrice(config.annualFee, discount)}%`}
                             </div>
                           )}
                         </div>

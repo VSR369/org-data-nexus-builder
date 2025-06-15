@@ -21,7 +21,22 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
     return Math.round(discountedPrice * 10) / 10; // Round to 1 decimal place
   };
 
+  // Check if engagement model is Platform as a Service (PaaS)
+  const isPaaSModel = (engagementModel: string) => {
+    return engagementModel.toLowerCase().includes('platform as a service') || 
+           engagementModel.toLowerCase().includes('paas');
+  };
+
+  // Format fee display based on engagement model
+  const formatFeeDisplay = (fee: number, currency: string, engagementModel: string) => {
+    if (isPaaSModel(engagementModel)) {
+      return `${currency} ${fee.toLocaleString()}`;
+    }
+    return `${fee}%`;
+  };
+
   const discount = config.discountPercentage || 0;
+  const isPaaS = isPaaSModel(config.engagementModel);
 
   return (
     <div className="border rounded-lg p-4 bg-muted/30">
@@ -29,6 +44,8 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
         <div>
           <h3 className="font-medium text-lg">{config.organizationType}</h3>
           <div className="flex gap-2 mt-1 flex-wrap">
+            <Badge variant="outline">{config.country}</Badge>
+            <Badge variant="outline">{config.currency}</Badge>
             {config.entityType && (
               <Badge variant="outline">{config.entityType}</Badge>
             )}
@@ -61,21 +78,27 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
           {config.quarterlyFee !== undefined && (
             <div className="flex items-center justify-between p-3 bg-background rounded-md border">
               <span className="text-sm font-medium">Quarterly Fee</span>
-              <Badge variant="secondary">{config.quarterlyFee}%</Badge>
+              <Badge variant="secondary">
+                {formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel)}
+              </Badge>
             </div>
           )}
           
           {config.halfYearlyFee !== undefined && (
             <div className="flex items-center justify-between p-3 bg-background rounded-md border">
               <span className="text-sm font-medium">Half Yearly Fee</span>
-              <Badge variant="secondary">{config.halfYearlyFee}%</Badge>
+              <Badge variant="secondary">
+                {formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel)}
+              </Badge>
             </div>
           )}
 
           {config.annualFee !== undefined && (
             <div className="flex items-center justify-between p-3 bg-background rounded-md border">
               <span className="text-sm font-medium">Annual Fee</span>
-              <Badge variant="secondary">{config.annualFee}%</Badge>
+              <Badge variant="secondary">
+                {formatFeeDisplay(config.annualFee, config.currency, config.engagementModel)}
+              </Badge>
             </div>
           )}
 
@@ -83,7 +106,9 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
           {config.engagementModelFee !== undefined && !config.quarterlyFee && !config.halfYearlyFee && !config.annualFee && (
             <div className="flex items-center justify-between p-3 bg-background rounded-md border">
               <span className="text-sm font-medium">Legacy Fee</span>
-              <Badge variant="secondary">{config.engagementModelFee}%</Badge>
+              <Badge variant="secondary">
+                {formatFeeDisplay(config.engagementModelFee, config.currency, config.engagementModel)}
+              </Badge>
             </div>
           )}
         </div>
@@ -98,7 +123,9 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
                 <span className="text-sm font-medium">Quarterly Fee</span>
                 <Badge variant="default" className="bg-green-600">
-                  {calculateActiveMemberPrice(config.quarterlyFee, discount)}%
+                  {isPaaS ? 
+                    `${config.currency} ${calculateActiveMemberPrice(config.quarterlyFee, discount).toLocaleString()}` : 
+                    `${calculateActiveMemberPrice(config.quarterlyFee, discount)}%`}
                 </Badge>
               </div>
             )}
@@ -107,7 +134,9 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
                 <span className="text-sm font-medium">Half Yearly Fee</span>
                 <Badge variant="default" className="bg-green-600">
-                  {calculateActiveMemberPrice(config.halfYearlyFee, discount)}%
+                  {isPaaS ? 
+                    `${config.currency} ${calculateActiveMemberPrice(config.halfYearlyFee, discount).toLocaleString()}` : 
+                    `${calculateActiveMemberPrice(config.halfYearlyFee, discount)}%`}
                 </Badge>
               </div>
             )}
@@ -116,7 +145,9 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
                 <span className="text-sm font-medium">Annual Fee</span>
                 <Badge variant="default" className="bg-green-600">
-                  {calculateActiveMemberPrice(config.annualFee, discount)}%
+                  {isPaaS ? 
+                    `${config.currency} ${calculateActiveMemberPrice(config.annualFee, discount).toLocaleString()}` : 
+                    `${calculateActiveMemberPrice(config.annualFee, discount)}%`}
                 </Badge>
               </div>
             )}
