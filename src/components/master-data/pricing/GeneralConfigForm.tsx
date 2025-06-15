@@ -1,14 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { PricingConfig } from './types';
-import { PricingDataManager } from '@/utils/pricingDataManager';
+import GeneralConfigInput from './components/GeneralConfigInput';
+import SavedConfigurationsList from './components/SavedConfigurationsList';
+import { useGeneralConfigValidation } from './hooks/useGeneralConfigValidation';
 
 interface GeneralConfigFormProps {
   currentConfig: Partial<PricingConfig>;
@@ -26,70 +22,16 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
   setConfigs
 }) => {
   const { toast } = useToast();
+  const { validateConfig, checkForDuplicates } = useGeneralConfigValidation();
 
   const handleSaveConfig = () => {
-    console.log('🔍 Current config before validation:', currentConfig);
-    
-    // Check if all required fields are filled
-    const isOrgTypeValid = currentConfig.organizationType && currentConfig.organizationType.trim() !== '';
-    const isMarketplaceFeeValid = currentConfig.marketplaceFee !== undefined && 
-                                   currentConfig.marketplaceFee !== null && 
-                                   !isNaN(currentConfig.marketplaceFee) &&
-                                   currentConfig.marketplaceFee >= 0;
-    const isAggregatorFeeValid = currentConfig.aggregatorFee !== undefined && 
-                                 currentConfig.aggregatorFee !== null && 
-                                 !isNaN(currentConfig.aggregatorFee) &&
-                                 currentConfig.aggregatorFee >= 0;
-    const isMarketplacePlusAggregatorFeeValid = currentConfig.marketplacePlusAggregatorFee !== undefined && 
-                                                currentConfig.marketplacePlusAggregatorFee !== null && 
-                                                !isNaN(currentConfig.marketplacePlusAggregatorFee) &&
-                                                currentConfig.marketplacePlusAggregatorFee >= 0;
-
-    // Validate membership status is selected
-    const isMembershipStatusValid = currentConfig.membershipStatus && currentConfig.membershipStatus.trim() !== '';
-
-    // If membership status is active, discount percentage is required
-    const isDiscountValid = currentConfig.membershipStatus !== 'active' || 
-                           (currentConfig.discountPercentage !== undefined && 
-                            currentConfig.discountPercentage !== null && 
-                            !isNaN(currentConfig.discountPercentage) &&
-                            currentConfig.discountPercentage >= 0 &&
-                            currentConfig.discountPercentage <= 100);
-
-    console.log('🔍 Validation checks:', {
-      isOrgTypeValid,
-      isMarketplaceFeeValid,
-      isAggregatorFeeValid,
-      isMarketplacePlusAggregatorFeeValid,
-      isMembershipStatusValid,
-      isDiscountValid
-    });
-
-    if (!isOrgTypeValid || !isMarketplaceFeeValid || !isAggregatorFeeValid || !isMarketplacePlusAggregatorFeeValid || !isMembershipStatusValid || !isDiscountValid) {
-      let errorMessage = "Please fill in all required fields with valid values.";
-      if (currentConfig.membershipStatus === 'active' && !isDiscountValid) {
-        errorMessage = "Discount percentage is required when membership status is Active and must be between 0-100%.";
-      }
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    // Validate configuration
+    if (!validateConfig(currentConfig)) {
       return;
     }
 
-    // Check for duplicate organization type
-    const existingConfig = configs.find(config => 
-      config.organizationType === currentConfig.organizationType && 
-      config.id !== currentConfig.id
-    );
-
-    if (existingConfig) {
-      toast({
-        title: "Error",
-        description: "Configuration for this organization type already exists.",
-        variant: "destructive",
-      });
+    // Check for duplicates
+    if (checkForDuplicates(currentConfig, configs)) {
       return;
     }
 
@@ -129,14 +71,6 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     setCurrentConfig({});
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    const numericValue = parseFloat(value);
-    setCurrentConfig(prev => ({ 
-      ...prev, 
-      [field]: isNaN(numericValue) ? undefined : numericValue 
-    }));
-  };
-
   const handleEdit = (config: PricingConfig) => {
     setCurrentConfig(config);
   };
@@ -149,189 +83,25 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     });
   };
 
+  const handleClear = () => {
+    setCurrentConfig({});
+  };
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>General Pricing Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="organizationType">Organization Type *</Label>
-                <Select
-                  value={currentConfig.organizationType || ''}
-                  onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, organizationType: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select organization type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {organizationTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <GeneralConfigInput
+        currentConfig={currentConfig}
+        setCurrentConfig={setCurrentConfig}
+        organizationTypes={organizationTypes}
+        onSave={handleSaveConfig}
+        onClear={handleClear}
+      />
 
-              <div>
-                <Label htmlFor="membershipStatus">Membership Status *</Label>
-                <Select
-                  value={currentConfig.membershipStatus || ''}
-                  onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
-                    setCurrentConfig(prev => ({ 
-                      ...prev, 
-                      membershipStatus: value,
-                      discountPercentage: value === 'active' ? prev.discountPercentage : undefined
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select membership status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="not-a-member">Not a Member</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {currentConfig.membershipStatus === 'active' && (
-                <div>
-                  <Label htmlFor="discountPercentage">Discount (%) *</Label>
-                  <Input
-                    id="discountPercentage"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={currentConfig.discountPercentage !== undefined ? currentConfig.discountPercentage.toString() : ''}
-                    onChange={(e) => handleInputChange('discountPercentage', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="marketplaceFee">Marketplace Fee (%) *</Label>
-                <Input
-                  id="marketplaceFee"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={currentConfig.marketplaceFee !== undefined ? currentConfig.marketplaceFee.toString() : ''}
-                  onChange={(e) => handleInputChange('marketplaceFee', e.target.value)}
-                  placeholder="30"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="aggregatorFee">Aggregator Fee (%) *</Label>
-                <Input
-                  id="aggregatorFee"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={currentConfig.aggregatorFee !== undefined ? currentConfig.aggregatorFee.toString() : ''}
-                  onChange={(e) => handleInputChange('aggregatorFee', e.target.value)}
-                  placeholder="15"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="marketplacePlusAggregatorFee">Marketplace Plus Aggregator (%) *</Label>
-                <Input
-                  id="marketplacePlusAggregatorFee"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={currentConfig.marketplacePlusAggregatorFee !== undefined ? currentConfig.marketplacePlusAggregatorFee.toString() : ''}
-                  onChange={(e) => handleInputChange('marketplacePlusAggregatorFee', e.target.value)}
-                  placeholder="45"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSaveConfig}>
-                {currentConfig.id ? 'Update' : 'Save'} Configuration
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentConfig({})}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Saved Configurations Display */}
-      {configs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Saved General Configurations ({configs.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {configs.map((config) => (
-                <div key={config.id} className="border rounded-lg p-4 bg-muted/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-medium text-lg">{config.organizationType}</h3>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant={config.membershipStatus === 'active' ? 'default' : 'secondary'}>
-                          {config.membershipStatus === 'active' ? 'Active Member' : 
-                           config.membershipStatus === 'inactive' ? 'Inactive Member' : 'Not a Member'}
-                        </Badge>
-                        {config.membershipStatus === 'active' && config.discountPercentage && (
-                          <Badge variant="outline">{config.discountPercentage}% Discount</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Version {config.version} • Created: {config.createdAt}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(config)}>
-                        Edit
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-                      <span className="text-sm font-medium">Marketplace Fee</span>
-                      <Badge variant="secondary">{config.marketplaceFee}%</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-                      <span className="text-sm font-medium">Aggregator Fee</span>
-                      <Badge variant="secondary">{config.aggregatorFee}%</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-                      <span className="text-sm font-medium">Marketplace + Aggregator</span>
-                      <Badge variant="secondary">{config.marketplacePlusAggregatorFee}%</Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <SavedConfigurationsList
+        configs={configs}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };
