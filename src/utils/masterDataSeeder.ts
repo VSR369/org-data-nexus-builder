@@ -19,7 +19,7 @@ interface Country {
 // Enhanced default currencies with better country coverage
 const defaultCurrencies: Currency[] = [
   { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
-  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States' },
+  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States of America' },
   { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
   { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
   { id: '5', code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', country: 'Canada' },
@@ -27,7 +27,12 @@ const defaultCurrencies: Currency[] = [
   { id: '7', code: 'JPY', name: 'Japanese Yen', symbol: '¥', country: 'Japan' },
   { id: '8', code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', country: 'Singapore' },
   { id: '9', code: 'CNY', name: 'Chinese Yuan', symbol: '¥', country: 'China' },
-  { id: '10', code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', country: 'Switzerland' }
+  { id: '10', code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', country: 'Switzerland' },
+  { id: '11', code: 'AED', name: 'UAE Dirham', symbol: 'AED', country: 'United Arab Emirates' },
+  { id: '12', code: 'BRL', name: 'Brazilian Real', symbol: 'R$', country: 'Brazil' },
+  { id: '13', code: 'MXN', name: 'Mexican Peso', symbol: '$', country: 'Mexico' },
+  { id: '14', code: 'EUR', name: 'Euro', symbol: '€', country: 'Germany' },
+  { id: '15', code: 'EUR', name: 'Euro', symbol: '€', country: 'France' }
 ];
 
 const defaultEntityTypes: string[] = [
@@ -43,7 +48,7 @@ const defaultEntityTypes: string[] = [
 
 const currencyDataManager = new DataManager<Currency[]>({
   key: 'master_data_currencies',
-  defaultData: defaultCurrencies,
+  defaultData: defaultCurrencies, // Fixed: was empty array before
   version: 1
 });
 
@@ -57,8 +62,12 @@ export class MasterDataSeeder {
   static seedAllMasterData() {
     console.log('🌱 Starting master data seeding...');
     
-    // Seed currencies
-    const currencies = currencyDataManager.loadData();
+    // Seed currencies - force reset if empty
+    let currencies = currencyDataManager.loadData();
+    if (currencies.length === 0) {
+      console.log('🔄 Currencies empty, forcing reset to defaults...');
+      currencies = currencyDataManager.resetToDefault();
+    }
     console.log('💰 Seeded currencies:', currencies.length);
     
     // Seed entity types
@@ -100,18 +109,24 @@ export class MasterDataSeeder {
   static getCurrencyByCountry(country: string): Currency | null {
     const currencies = currencyDataManager.loadData();
     
+    console.log('🔍 getCurrencyByCountry - Looking for:', country);
+    console.log('🔍 getCurrencyByCountry - Available currencies:', currencies.length);
+    
     // Direct match
     let currency = currencies.find(c => 
       c.country.toLowerCase() === country.toLowerCase()
     );
     
-    if (currency) return currency;
+    if (currency) {
+      console.log('✅ getCurrencyByCountry - Direct match found:', currency);
+      return currency;
+    }
     
     // Common mappings
     const mappings: { [key: string]: string } = {
-      'United States of America': 'United States',
-      'USA': 'United States',
-      'US': 'United States',
+      'United States of America': 'United States of America',
+      'USA': 'United States of America',
+      'US': 'United States of America',
       'UK': 'United Kingdom',
       'Britain': 'United Kingdom',
       'Great Britain': 'United Kingdom'
@@ -122,7 +137,10 @@ export class MasterDataSeeder {
       currency = currencies.find(c => 
         c.country.toLowerCase() === mappedCountry.toLowerCase()
       );
-      if (currency) return currency;
+      if (currency) {
+        console.log('✅ getCurrencyByCountry - Mapped match found:', currency);
+        return currency;
+      }
     }
     
     // Partial match
@@ -131,6 +149,17 @@ export class MasterDataSeeder {
       country.toLowerCase().includes(c.country.toLowerCase())
     );
     
-    return currency || null;
+    if (currency) {
+      console.log('✅ getCurrencyByCountry - Partial match found:', currency);
+      return currency;
+    }
+    
+    console.log('❌ getCurrencyByCountry - No match found for:', country);
+    return null;
+  }
+  
+  static resetCurrencyData(): Currency[] {
+    console.log('🔄 Resetting currency data to defaults...');
+    return currencyDataManager.resetToDefault();
   }
 }

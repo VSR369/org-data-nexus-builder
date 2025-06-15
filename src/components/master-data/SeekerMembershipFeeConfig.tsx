@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Plus, Users, RotateCcw } from 'lucide-react';
+import { Edit, Trash2, Plus, Users, RotateCcw, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
@@ -73,25 +74,34 @@ const SeekerMembershipFeeConfig = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
-  // Load data on component mount
-  useEffect(() => {
+  // Function to reload all master data
+  const reloadMasterData = () => {
+    console.log('🔄 Reloading master data...');
+    
     // Seed master data first to ensure dependencies exist
-    MasterDataSeeder.seedAllMasterData();
+    const seededData = MasterDataSeeder.seedAllMasterData();
     
     const loadedFees = membershipFeeDataManager.loadData();
     const loadedCurrencies = currencyDataManager.loadData();
     const loadedCountries = countriesDataManager.loadData();
     const loadedEntityTypes = entityTypeDataManager.loadData();
     
-    console.log('🔍 SeekerMembershipFeeConfig - Loaded countries from master data:', loadedCountries);
-    console.log('🔍 SeekerMembershipFeeConfig - Loaded currencies from master data:', loadedCurrencies);
-    console.log('🔍 SeekerMembershipFeeConfig - Loaded entity types from master data:', loadedEntityTypes);
-    console.log('🔍 SeekerMembershipFeeConfig - Loaded membership fees:', loadedFees);
+    console.log('🔍 SeekerMembershipFeeConfig - Reloaded countries:', loadedCountries.length);
+    console.log('🔍 SeekerMembershipFeeConfig - Reloaded currencies:', loadedCurrencies.length);
+    console.log('🔍 SeekerMembershipFeeConfig - Reloaded entity types:', loadedEntityTypes.length);
+    console.log('🔍 SeekerMembershipFeeConfig - Reloaded membership fees:', loadedFees.length);
     
     setMembershipFees(loadedFees);
     setCurrencies(loadedCurrencies);
     setCountries(loadedCountries);
     setEntityTypes(loadedEntityTypes);
+    
+    return { loadedCurrencies, loadedCountries, loadedEntityTypes, loadedFees };
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    reloadMasterData();
   }, []);
 
   // Save data whenever membershipFees change with validation
@@ -107,31 +117,16 @@ const SeekerMembershipFeeConfig = () => {
     }
   }, [membershipFees]);
 
-  // Enhanced currency finding with better logging
-  const findCurrencyByCountry = (selectedCountry: string): Currency | undefined => {
-    console.log('🔍 Looking for currency for country:', selectedCountry);
-    console.log('🔍 Available currencies:', currencies);
-    
-    // Use the master data seeder's enhanced logic
-    const currency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
-    
-    if (currency) {
-      console.log('✅ Found currency:', currency);
-      return currency;
-    }
-    
-    console.log('❌ No currency found for country:', selectedCountry);
-    return undefined;
-  };
-
   // Auto-populate currency when country is selected
   const handleCountryChange = (selectedCountry: string) => {
     console.log('🌍 Country selected:', selectedCountry);
+    console.log('🔍 Available currencies for lookup:', currencies.length);
     
     // Find the currency for the selected country from master data
-    const countryCurrency = findCurrencyByCountry(selectedCountry);
+    const countryCurrency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
     
     if (countryCurrency) {
+      console.log('✅ Found currency for country:', countryCurrency);
       setCurrentEntry(prev => ({
         ...prev,
         country: selectedCountry,
@@ -145,6 +140,31 @@ const SeekerMembershipFeeConfig = () => {
         description: `${countryCurrency.code} (${countryCurrency.name}) has been auto-selected for ${selectedCountry}`,
       });
     } else {
+      console.log('❌ No currency found for country, checking if currencies are loaded...');
+      if (currencies.length === 0) {
+        console.log('🔄 Currencies not loaded, attempting to reload...');
+        const reloadedData = reloadMasterData();
+        if (reloadedData.loadedCurrencies.length > 0) {
+          // Try again with reloaded currencies
+          const retryFindCurrency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
+          if (retryFindCurrency) {
+            setCurrentEntry(prev => ({
+              ...prev,
+              country: selectedCountry,
+              quarterlyCurrency: retryFindCurrency.code,
+              halfYearlyCurrency: retryFindCurrency.code,
+              annualCurrency: retryFindCurrency.code
+            }));
+            
+            toast({
+              title: "Currency Auto-Selected",
+              description: `${retryFindCurrency.code} (${retryFindCurrency.name}) has been auto-selected for ${selectedCountry}`,
+            });
+            return;
+          }
+        }
+      }
+      
       setCurrentEntry(prev => ({
         ...prev,
         country: selectedCountry,
@@ -282,6 +302,16 @@ const SeekerMembershipFeeConfig = () => {
     });
   };
 
+  const handleResetCurrencies = () => {
+    console.log('🔄 Manually resetting currencies...');
+    const resetCurrencies = MasterDataSeeder.resetCurrencyData();
+    setCurrencies(resetCurrencies);
+    toast({
+      title: "Success",
+      description: `Currencies reset to defaults. ${resetCurrencies.length} currencies loaded.`,
+    });
+  };
+
   const formatCurrency = (amount: number, currency: string) => {
     const currencyData = currencies.find(c => c.code === currency);
     const symbol = currencyData?.symbol || currency;
@@ -297,18 +327,37 @@ const SeekerMembershipFeeConfig = () => {
               <Users className="w-5 h-5" />
               {isEditing ? 'Edit Seeker Membership Fee' : 'Add Seeker Membership Fee Configuration'}
             </CardTitle>
-            <Button
-              onClick={handleResetToDefault}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset to Default
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleResetCurrencies}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reset Currencies
+              </Button>
+              <Button
+                onClick={handleResetToDefault}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset to Default
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {currencies.length === 0 && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-yellow-800">
+                ⚠️ No currencies loaded. Click "Reset Currencies" to load default currency data.
+              </p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
