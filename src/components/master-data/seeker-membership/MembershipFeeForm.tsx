@@ -1,0 +1,344 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, AlertTriangle } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { MasterDataSeeder } from '@/utils/masterDataSeeder';
+import { MembershipFeeEntry, Currency, Country } from './types';
+
+interface MembershipFeeFormProps {
+  currencies: Currency[];
+  countries: Country[];
+  entityTypes: string[];
+  membershipFees: MembershipFeeEntry[];
+  onSubmit: (entry: MembershipFeeEntry) => void;
+  editingEntry?: MembershipFeeEntry | null;
+  onCancelEdit: () => void;
+}
+
+const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
+  currencies,
+  countries,
+  entityTypes,
+  membershipFees,
+  onSubmit,
+  editingEntry,
+  onCancelEdit
+}) => {
+  const [currentEntry, setCurrentEntry] = useState<Partial<MembershipFeeEntry>>(editingEntry || {});
+  const { toast } = useToast();
+
+  const userCurrencies = currencies.filter(c => c.isUserCreated !== false);
+  const isEditing = !!editingEntry;
+
+  React.useEffect(() => {
+    if (editingEntry) {
+      setCurrentEntry(editingEntry);
+    }
+  }, [editingEntry]);
+
+  const handleCountryChange = (selectedCountry: string) => {
+    console.log('🌍 Country selected:', selectedCountry);
+    
+    const countryCurrency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
+    
+    if (countryCurrency) {
+      setCurrentEntry(prev => ({
+        ...prev,
+        country: selectedCountry,
+        quarterlyCurrency: countryCurrency.code,
+        halfYearlyCurrency: countryCurrency.code,
+        annualCurrency: countryCurrency.code
+      }));
+      
+      toast({
+        title: "Currency Auto-Selected",
+        description: `${countryCurrency.code} (${countryCurrency.name}) has been auto-selected for ${selectedCountry}`,
+      });
+    } else {
+      setCurrentEntry(prev => ({
+        ...prev,
+        country: selectedCountry,
+        quarterlyCurrency: '',
+        halfYearlyCurrency: '',
+        annualCurrency: ''
+      }));
+      
+      toast({
+        title: "No Currency Found",
+        description: `No currency mapping found for ${selectedCountry}. Please create the currency in Currency Configuration first.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const requiredFields = {
+      country: currentEntry.country,
+      entityType: currentEntry.entityType,
+      quarterlyAmount: currentEntry.quarterlyAmount,
+      quarterlyCurrency: currentEntry.quarterlyCurrency,
+      halfYearlyAmount: currentEntry.halfYearlyAmount,
+      halfYearlyCurrency: currentEntry.halfYearlyCurrency,
+      annualAmount: currentEntry.annualAmount,
+      annualCurrency: currentEntry.annualCurrency
+    };
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => value === undefined || value === null || value === '')
+      .map(([key]) => key);
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const existingEntry = membershipFees.find(fee => 
+      fee.country === currentEntry.country && 
+      fee.entityType === currentEntry.entityType && 
+      fee.id !== currentEntry.id
+    );
+
+    if (existingEntry && !isEditing) {
+      toast({
+        title: "Duplicate Configuration",
+        description: "Membership fee configuration already exists for this country and entity type combination.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const entry = {
+      ...currentEntry,
+      id: currentEntry.id || `user_${Date.now()}`,
+      createdAt: currentEntry.createdAt || now.split('T')[0],
+      updatedAt: now,
+      isUserCreated: true
+    } as MembershipFeeEntry;
+
+    onSubmit(entry);
+    resetForm();
+    
+    toast({
+      title: "Success",
+      description: `Seeker membership fee ${isEditing ? 'updated' : 'created'} successfully.`,
+    });
+  };
+
+  const resetForm = () => {
+    setCurrentEntry({});
+    onCancelEdit();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="w-5 h-5" />
+          {isEditing ? 'Edit Seeker Membership Fee' : 'Add Seeker Membership Fee Configuration'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {userCurrencies.length === 0 && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <div className="flex items-center gap-3 text-yellow-800">
+              <AlertTriangle className="h-5 w-5" />
+              <p>
+                ⚠️ No user-created currencies found. Please create currencies in the Currency Configuration section first.
+              </p>
+            </div>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="country">Country *</Label>
+              <Select
+                value={currentEntry.country}
+                onValueChange={handleCountryChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name} ({country.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="entityType">Entity Type *</Label>
+              <Select
+                value={currentEntry.entityType}
+                onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, entityType: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select entity type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {entityTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Quarterly Fee */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Quarterly Fee</h3>
+              <div>
+                <Label htmlFor="quarterlyCurrency">Currency *</Label>
+                <Select
+                  value={currentEntry.quarterlyCurrency}
+                  onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, quarterlyCurrency: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userCurrencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.code} - {currency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="quarterlyAmount">Amount *</Label>
+                <Input
+                  id="quarterlyAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={currentEntry.quarterlyAmount ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCurrentEntry(prev => ({ 
+                      ...prev, 
+                      quarterlyAmount: value === '' ? 0 : parseFloat(value) 
+                    }));
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Half Yearly Fee */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Half Yearly Fee</h3>
+              <div>
+                <Label htmlFor="halfYearlyCurrency">Currency *</Label>
+                <Select
+                  value={currentEntry.halfYearlyCurrency}
+                  onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, halfYearlyCurrency: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userCurrencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.code} - {currency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="halfYearlyAmount">Amount *</Label>
+                <Input
+                  id="halfYearlyAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={currentEntry.halfYearlyAmount ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCurrentEntry(prev => ({ 
+                      ...prev, 
+                      halfYearlyAmount: value === '' ? 0 : parseFloat(value) 
+                    }));
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Annual Fee */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Annual Fee</h3>
+              <div>
+                <Label htmlFor="annualCurrency">Currency *</Label>
+                <Select
+                  value={currentEntry.annualCurrency}
+                  onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, annualCurrency: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userCurrencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.code} - {currency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="annualAmount">Amount *</Label>
+                <Input
+                  id="annualAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={currentEntry.annualAmount ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCurrentEntry(prev => ({ 
+                      ...prev, 
+                      annualAmount: value === '' ? 0 : parseFloat(value) 
+                    }));
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={userCurrencies.length === 0}>
+              {isEditing ? 'Update' : 'Submit'} Membership Fee
+            </Button>
+            {isEditing && (
+              <Button type="button" variant="outline" onClick={resetForm}>
+                Cancel
+              </Button>
+            )}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default MembershipFeeForm;
