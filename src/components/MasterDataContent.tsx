@@ -21,7 +21,8 @@ import {
   CreditCard,
   Trash2,
   Factory,
-  FolderTree
+  FolderTree,
+  Handshake
 } from 'lucide-react';
 import EntityTypeConfig from './master-data/EntityTypeConfig';
 import IndustrySegmentConfig from './master-data/IndustrySegmentConfig';
@@ -39,6 +40,7 @@ import SolutionStatusConfig from './master-data/SolutionStatusConfig';
 import CommunicationTypeConfig from './master-data/CommunicationTypeConfig';
 import RewardTypeConfig from './master-data/RewardTypeConfig';
 import SeekerMembershipFeeConfig from './master-data/SeekerMembershipFeeConfig';
+import EngagementModelsConfig from './master-data/EngagementModelsConfig';
 import SolutionVotingAssessmentConfig from './voting-assessment/SolutionVotingAssessmentConfig';
 import EventsCalendarConfig from './master-data/EventsCalendarConfig';
 import GlobalCacheManager from './master-data/GlobalCacheManager';
@@ -86,6 +88,8 @@ const MasterDataContent = ({ activeSection, setActiveSection }: MasterDataConten
         return <RewardTypeConfig />;
       case 'seeker-membership-fee':
         return <SeekerMembershipFeeConfig />;
+      case 'engagement-models':
+        return <EngagementModelsConfig />;
       case 'pricing':
         return <PricingConfig />;
       case 'solution-voting-assessment':
@@ -132,6 +136,7 @@ const MasterDataContent = ({ activeSection, setActiveSection }: MasterDataConten
       'communication-types': 'Communication Types Configuration',
       'reward-types': 'Reward Types Configuration',
       'seeker-membership-fee': 'Seeker Membership Fee Configuration',
+      'engagement-models': 'Engagement Models Configuration',
       'pricing': 'Pricing Configuration',
       'solution-voting-assessment': 'Solution Voting & Assessment Configuration',
       'events-calendar': 'Events Calendar Configuration',

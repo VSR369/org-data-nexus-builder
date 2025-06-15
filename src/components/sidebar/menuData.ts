@@ -1,5 +1,5 @@
 
-import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree } from 'lucide-react';
+import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree, Handshake } from 'lucide-react';
 
 export const foundationMenuItems = [
   {
@@ -75,6 +75,11 @@ export const systemMenuItems = [
     id: 'seeker-membership-fee',
     title: 'Seeker Membership Fee',
     icon: Users,
+  },
+  {
+    id: 'engagement-models',
+    title: 'Engagement Models',
+    icon: Handshake,
   },
   {
     id: 'pricing',
