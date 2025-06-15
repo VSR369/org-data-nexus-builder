@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PricingConfig } from '../types';
 import { engagementModelsDataManager } from '../../engagement-models/engagementModelsDataManager';
 import { EngagementModel } from '../../engagement-models/types';
-import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
+import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
 import { DataManager } from '@/utils/dataManager';
+import { CurrencyService } from '@/utils/masterData/currencyService';
+import { useToast } from "@/hooks/use-toast";
 
 // Entity types data manager
 const entityTypeDataManager = new DataManager<string[]>({
@@ -33,9 +35,11 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   onSave,
   onClear
 }) => {
+  const { toast } = useToast();
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [organizationTypesFromMaster, setOrganizationTypesFromMaster] = useState<string[]>([]);
+  const [countries, setCountries] = useState<any[]>([]);
 
   useEffect(() => {
     // Load engagement models from master data
@@ -52,6 +56,11 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     const loadedOrgTypes = organizationTypesDataManager.loadData();
     console.log('🔄 GeneralConfigInput: Loading organization types:', loadedOrgTypes);
     setOrganizationTypesFromMaster(loadedOrgTypes);
+
+    // Load countries from master data
+    const loadedCountries = countriesDataManager.loadData();
+    console.log('🔄 GeneralConfigInput: Loading countries:', loadedCountries);
+    setCountries(loadedCountries);
   }, []);
 
   const handleInputChange = (field: string, value: string) => {
@@ -60,6 +69,25 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
       ...prev, 
       [field]: isNaN(numericValue) ? undefined : numericValue 
     }));
+  };
+
+  const handleCountryChange = (countryName: string) => {
+    console.log('🔄 Country selected:', countryName);
+    const currency = CurrencyService.getCurrencyByCountry(countryName);
+    console.log('💱 Auto-selected currency from master data:', currency);
+    
+    setCurrentConfig(prev => ({ 
+      ...prev, 
+      country: countryName,
+      currency: currency?.code || ''
+    }));
+    
+    if (currency) {
+      toast({
+        title: "Currency Auto-Selected",
+        description: `Currency ${currency.code} automatically selected for ${countryName} from master data`,
+      });
+    }
   };
 
   const membershipStatuses = [
@@ -76,7 +104,40 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
       <CardContent>
         <div className="space-y-6">
           {/* Master Data Selection Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="country">Country *</Label>
+              <Select
+                value={currentConfig.country || ''}
+                onValueChange={handleCountryChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>{country.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {countries.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No countries found in master data.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="currency">Currency</Label>
+              <Input
+                id="currency"
+                value={currentConfig.currency || ''}
+                readOnly
+                placeholder="Auto-populated from master data"
+                className="bg-muted"
+              />
+            </div>
+
             <div>
               <Label htmlFor="organizationType">Organization Type *</Label>
               <Select

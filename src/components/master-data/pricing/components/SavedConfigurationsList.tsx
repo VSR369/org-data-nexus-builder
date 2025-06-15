@@ -46,6 +46,8 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Country</TableHead>
+                <TableHead>Currency</TableHead>
                 <TableHead>Organization Type</TableHead>
                 <TableHead>Entity Type</TableHead>
                 <TableHead>Engagement Model</TableHead>
@@ -65,6 +67,10 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
 
                 return (
                   <TableRow key={config.id}>
+                    <TableCell className="font-medium">{config.country}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{config.currency}</Badge>
+                    </TableCell>
                     <TableCell className="font-medium">{config.organizationType}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{config.entityType}</Badge>

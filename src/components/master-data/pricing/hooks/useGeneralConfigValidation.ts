@@ -6,6 +6,15 @@ export const useGeneralConfigValidation = () => {
   const { toast } = useToast();
 
   const validateConfig = (config: Partial<PricingConfig>): boolean => {
+    if (!config.country) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a country.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     if (!config.organizationType) {
       toast({
         title: "Validation Error",
@@ -71,6 +80,7 @@ export const useGeneralConfigValidation = () => {
   const checkForDuplicates = (currentConfig: Partial<PricingConfig>, existingConfigs: PricingConfig[]): boolean => {
     const duplicate = existingConfigs.find(config => 
       config.id !== currentConfig.id &&
+      config.country === currentConfig.country &&
       config.organizationType === currentConfig.organizationType &&
       config.entityType === currentConfig.entityType &&
       config.engagementModel === currentConfig.engagementModel &&
@@ -80,7 +90,7 @@ export const useGeneralConfigValidation = () => {
     if (duplicate) {
       toast({
         title: "Duplicate Configuration",
-        description: "A configuration with the same organization type, entity type, engagement model, and membership status already exists.",
+        description: "A configuration with the same country, organization type, entity type, engagement model, and membership status already exists.",
         variant: "destructive",
       });
       return true;

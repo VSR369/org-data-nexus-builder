@@ -38,6 +38,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     // Create configuration to save
     const configToSave = {
       id: currentConfig.id || Date.now().toString(),
+      country: currentConfig.country!,
+      currency: currentConfig.currency || '',
       organizationType: currentConfig.organizationType!,
       entityType: currentConfig.entityType!,
       engagementModel: currentConfig.engagementModel!,

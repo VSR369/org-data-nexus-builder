@@ -12,6 +12,8 @@ export interface CountryPricing {
 
 export interface PricingConfig {
   id: string;
+  country: string;
+  currency: string;
   organizationType: string;
   entityType?: string;
   engagementModel: string;
