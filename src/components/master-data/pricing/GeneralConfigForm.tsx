@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,30 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { PricingConfig } from './types';
+import { PricingDataManager } from '@/utils/pricingDataManager';
 
 interface GeneralConfigFormProps {
   currentConfig: Partial<PricingConfig>;
   setCurrentConfig: React.Dispatch<React.SetStateAction<Partial<PricingConfig>>>;
   organizationTypes: string[];
+  configs: PricingConfig[];
+  setConfigs: React.Dispatch<React.SetStateAction<PricingConfig[]>>;
 }
 
 const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
   currentConfig,
   setCurrentConfig,
-  organizationTypes
+  organizationTypes,
+  configs,
+  setConfigs
 }) => {
   const { toast } = useToast();
-  const [savedConfigs, setSavedConfigs] = useState<PricingConfig[]>([]);
-
-  // Load saved configurations on component mount
-  useEffect(() => {
-    loadSavedConfigs();
-  }, []);
-
-  const loadSavedConfigs = () => {
-    const existingConfigs = JSON.parse(localStorage.getItem('pricing_general_configs') || '[]');
-    setSavedConfigs(existingConfigs);
-  };
 
   const handleSaveConfig = () => {
     console.log('🔍 Current config before validation:', currentConfig);
@@ -67,33 +60,53 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       return;
     }
 
-    // Save configuration to localStorage
+    // Check for duplicate organization type
+    const existingConfig = configs.find(config => 
+      config.organizationType === currentConfig.organizationType && 
+      config.id !== currentConfig.id
+    );
+
+    if (existingConfig) {
+      toast({
+        title: "Error",
+        description: "Configuration for this organization type already exists.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create configuration to save
     const configToSave = {
-      id: Date.now().toString(),
-      organizationType: currentConfig.organizationType,
-      marketplaceFee: currentConfig.marketplaceFee,
-      aggregatorFee: currentConfig.aggregatorFee,
-      marketplacePlusAggregatorFee: currentConfig.marketplacePlusAggregatorFee,
-      internalPaasPricing: [],
-      version: 1,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
+      id: currentConfig.id || Date.now().toString(),
+      organizationType: currentConfig.organizationType!,
+      marketplaceFee: currentConfig.marketplaceFee!,
+      aggregatorFee: currentConfig.aggregatorFee!,
+      marketplacePlusAggregatorFee: currentConfig.marketplacePlusAggregatorFee!,
+      internalPaasPricing: currentConfig.internalPaasPricing || [],
+      version: (currentConfig.version || 0) + 1,
+      createdAt: currentConfig.createdAt || new Date().toISOString().split('T')[0],
+    } as PricingConfig;
 
-    // Save to localStorage
-    const existingConfigs = JSON.parse(localStorage.getItem('pricing_general_configs') || '[]');
-    const updatedConfigs = [...existingConfigs, configToSave];
-    localStorage.setItem('pricing_general_configs', JSON.stringify(updatedConfigs));
+    console.log('✅ Configuration to save:', configToSave);
 
-    console.log('✅ Configuration saved:', configToSave);
+    // Update configs state
+    if (currentConfig.id) {
+      // Update existing
+      setConfigs(prev => prev.map(config => 
+        config.id === currentConfig.id ? configToSave : config
+      ));
+    } else {
+      // Add new
+      setConfigs(prev => [...prev, configToSave]);
+    }
 
     toast({
       title: "Success",
       description: "General configuration saved successfully.",
     });
 
-    // Clear form after saving and reload saved configs
+    // Clear form after saving
     setCurrentConfig({});
-    loadSavedConfigs();
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -102,6 +115,18 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       ...prev, 
       [field]: isNaN(numericValue) ? undefined : numericValue 
     }));
+  };
+
+  const handleEdit = (config: PricingConfig) => {
+    setCurrentConfig(config);
+  };
+
+  const handleDelete = (configId: string) => {
+    setConfigs(prev => prev.filter(config => config.id !== configId));
+    toast({
+      title: "Success",
+      description: "Configuration deleted successfully.",
+    });
   };
 
   return (
@@ -175,7 +200,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
 
             <div className="flex gap-2">
               <Button onClick={handleSaveConfig}>
-                Save Configuration
+                {currentConfig.id ? 'Update' : 'Save'} Configuration
               </Button>
               <Button
                 variant="outline"
@@ -189,14 +214,14 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       </Card>
 
       {/* Saved Configurations Display */}
-      {savedConfigs.length > 0 && (
+      {configs.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Saved General Configurations ({savedConfigs.length})</CardTitle>
+            <CardTitle>Saved General Configurations ({configs.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {savedConfigs.map((config) => (
+              {configs.map((config) => (
                 <div key={config.id} className="border rounded-lg p-4 bg-muted/30">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -205,9 +230,14 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                         Version {config.version} • Created: {config.createdAt}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      ID: {config.id}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(config)}>
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

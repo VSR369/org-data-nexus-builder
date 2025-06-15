@@ -7,31 +7,35 @@ import { PricingConfig as PricingConfigType } from './pricing/types';
 import InternalPaasPricingManager from './pricing/InternalPaasPricingManager';
 import GeneralConfigForm from './pricing/GeneralConfigForm';
 import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
+import { PricingDataManager } from '@/utils/pricingDataManager';
 
 const PricingConfig = () => {
-  const [configs, setConfigs] = useState<PricingConfigType[]>([
-    {
-      id: '1',
-      organizationType: 'All Organizations',
-      marketplaceFee: 30,
-      aggregatorFee: 15,
-      marketplacePlusAggregatorFee: 45,
-      internalPaasPricing: [
-        { id: '1', country: 'India', currency: 'INR', quarterlyPrice: 50000, halfYearlyPrice: 90000, annualPrice: 150000 },
-        { id: '2', country: 'United States of America', currency: 'USD', quarterlyPrice: 600, halfYearlyPrice: 1080, annualPrice: 1800 },
-      ],
-      version: 1,
-      createdAt: '2024-01-01',
-    },
-  ]);
-
+  const [configs, setConfigs] = useState<PricingConfigType[]>([]);
   const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [currentGeneralConfig, setCurrentGeneralConfig] = useState<Partial<PricingConfigType>>({});
 
+  // Load data on component mount
   useEffect(() => {
+    console.log('🔄 PricingConfig: Loading data...');
+    
+    // Load pricing configurations
+    const loadedConfigs = PricingDataManager.getAllConfigurations();
+    setConfigs(loadedConfigs);
+    
+    // Load organization types
     const loadedOrgTypes = organizationTypesDataManager.loadData();
     setOrganizationTypes(loadedOrgTypes);
+    
+    console.log('✅ PricingConfig: Data loaded');
   }, []);
+
+  // Save configurations whenever they change
+  useEffect(() => {
+    if (configs.length >= 0) {
+      console.log('💾 PricingConfig: Saving configurations to persistent storage');
+      PricingDataManager.saveConfigurations(configs);
+    }
+  }, [configs]);
 
   return (
     <div className="space-y-6">
@@ -54,6 +58,8 @@ const PricingConfig = () => {
                 currentConfig={currentGeneralConfig}
                 setCurrentConfig={setCurrentGeneralConfig}
                 organizationTypes={organizationTypes}
+                configs={configs}
+                setConfigs={setConfigs}
               />
             </TabsContent>
             

@@ -1,0 +1,55 @@
+
+import { useState, useEffect } from 'react';
+import { PricingDataManager } from '@/utils/pricingDataManager';
+import { PricingConfig } from '@/components/master-data/pricing/types';
+
+export const usePricingData = (organizationType?: string, country?: string) => {
+  const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPricingData = () => {
+      console.log('🔄 usePricingData: Loading pricing configurations...');
+      setLoading(true);
+      setError(null);
+
+      try {
+        const configs = PricingDataManager.getAllConfigurations();
+        setPricingConfigs(configs);
+        console.log('✅ usePricingData: Loaded configurations:', configs.length);
+      } catch (err) {
+        console.error('❌ usePricingData: Error loading pricing data:', err);
+        setError('Failed to load pricing configurations');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPricingData();
+  }, []);
+
+  // Get specific pricing for organization type and country
+  const getSpecificPricing = () => {
+    if (!organizationType || !country) return null;
+    
+    return PricingDataManager.getPricingForCountryAndOrgType(country, organizationType);
+  };
+
+  // Get configuration by organization type
+  const getConfigByOrgType = (orgType: string) => {
+    return PricingDataManager.getConfigurationByOrgType(orgType);
+  };
+
+  return {
+    pricingConfigs,
+    loading,
+    error,
+    getSpecificPricing,
+    getConfigByOrgType,
+    refetch: () => {
+      const configs = PricingDataManager.getAllConfigurations();
+      setPricingConfigs(configs);
+    }
+  };
+};
