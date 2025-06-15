@@ -79,21 +79,21 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
               <span className="text-sm font-medium">Marketplace Fee</span>
               <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.marketplaceFee, discount).toFixed(1)}%
+                {Math.round(calculateActiveMemberPrice(config.marketplaceFee, discount))}%
               </Badge>
             </div>
             
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
               <span className="text-sm font-medium">Aggregator Fee</span>
               <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.aggregatorFee, discount).toFixed(1)}%
+                {Math.round(calculateActiveMemberPrice(config.aggregatorFee, discount))}%
               </Badge>
             </div>
             
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
               <span className="text-sm font-medium">Marketplace + Aggregator</span>
               <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.marketplacePlusAggregatorFee, discount).toFixed(1)}%
+                {Math.round(calculateActiveMemberPrice(config.marketplacePlusAggregatorFee, discount))}%
               </Badge>
             </div>
           </div>
