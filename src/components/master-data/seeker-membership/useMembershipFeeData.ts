@@ -45,13 +45,17 @@ export const useMembershipFeeData = () => {
     setCountries(loadedCountries);
     setEntityTypes(loadedEntityTypes);
     setDataHealth(checkDataHealth());
-    setIsInitialized(true); // Mark as initialized after first load
+    setIsInitialized(true);
 
-    // ADDED: diagnostics
     console.log("🌟 [reloadMasterData] setMembershipFees length:", loadedFees.length, loadedFees);
     
     return { loadedCurrencies, loadedCountries, loadedEntityTypes, loadedFees };
   };
+
+  // Track when membershipFees state changes (including after reload)
+  useEffect(() => {
+    console.log('🌟 [state change] membershipFees now:', membershipFees.length, membershipFees);
+  }, [membershipFees]);
 
   // Save membership fees whenever they change, but only after initial load
   useEffect(() => {
@@ -63,14 +67,8 @@ export const useMembershipFeeData = () => {
     MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
     setDataHealth(checkDataHealth());
 
-    // ADDED: diagnostics
     console.log("🌟 [useEffect SAVE] membershipFees length:", membershipFees.length, membershipFees);
   }, [membershipFees, isInitialized]);
-
-  // EXTRA DEBUG: Track when membershipFees state changes (including after reload)
-  useEffect(() => {
-    console.log('🌟 [state change] membershipFees now:', membershipFees.length, membershipFees);
-  }, [membershipFees]);
 
   return {
     membershipFees,
@@ -83,4 +81,3 @@ export const useMembershipFeeData = () => {
     userCurrencies: currencies.filter(c => c.isUserCreated !== false)
   };
 };
-
