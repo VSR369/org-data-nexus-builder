@@ -1,6 +1,33 @@
-
 import { DataManager } from '@/utils/core/DataManager';
-import { EngagementModel, DEFAULT_ENGAGEMENT_MODELS } from './types';
+import { EngagementModel } from './types';
+
+// Define the default models here only, not exported to avoid duplication
+const DEFAULT_ENGAGEMENT_MODELS: EngagementModel[] = [
+  {
+    id: '1',
+    name: 'Market Place',
+    description: 'Standard marketplace engagement model',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Aggregator',
+    description: 'Aggregator engagement model',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    name: 'Market Place Plus Aggregator',
+    description: 'Combined marketplace and aggregator model',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
 export interface EngagementModelsData {
   engagementModels: EngagementModel[];
@@ -32,7 +59,18 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
 
   getEngagementModels(): EngagementModel[] {
     const data = this.loadData();
-    return data.engagementModels || [];
+    // Only return active models and remove duplicates based on name
+    const activeModels = data.engagementModels.filter(model => model.isActive);
+    const uniqueModels = activeModels.reduce((acc: EngagementModel[], current) => {
+      const exists = acc.find(model => model.name === current.name);
+      if (!exists) {
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+    
+    console.log('🔄 Loaded unique engagement models:', uniqueModels.length);
+    return uniqueModels;
   }
 
   addEngagementModel(model: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>): EngagementModel {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,9 +26,21 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
 
   useEffect(() => {
-    // Load engagement models from master data
+    // Load engagement models from master data and ensure no duplicates
     const loadedModels = engagementModelsDataManager.getEngagementModels();
-    setEngagementModels(loadedModels.filter(model => model.isActive));
+    console.log('🔄 GeneralConfigInput: Loading engagement models:', loadedModels);
+    
+    // Additional deduplication check based on name
+    const uniqueModels = loadedModels.reduce((acc: EngagementModel[], current) => {
+      const exists = acc.find(model => model.name.toLowerCase() === current.name.toLowerCase());
+      if (!exists) {
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+    
+    setEngagementModels(uniqueModels);
+    console.log('✅ GeneralConfigInput: Set unique engagement models:', uniqueModels.length);
   }, []);
 
   const handleInputChange = (field: string, value: string) => {
@@ -76,10 +87,17 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {engagementModels.map((model) => (
-                    <SelectItem key={model.id} value={model.name}>{model.name}</SelectItem>
+                    <SelectItem key={model.id} value={model.name}>
+                      {model.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {engagementModels.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No engagement models found. Please configure them first.
+                </p>
+              )}
             </div>
 
             <div>

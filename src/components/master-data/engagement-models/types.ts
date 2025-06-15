@@ -8,29 +8,5 @@ export interface EngagementModel {
   updatedAt: string;
 }
 
-export const DEFAULT_ENGAGEMENT_MODELS: EngagementModel[] = [
-  {
-    id: '1',
-    name: 'Market Place',
-    description: 'Standard marketplace engagement model',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Aggregator',
-    description: 'Aggregator engagement model',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: 'Market Place Plus Aggregator',
-    description: 'Combined marketplace and aggregator model',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+// Remove the DEFAULT_ENGAGEMENT_MODELS export to avoid duplication
+// The data manager will handle the initial seeding
