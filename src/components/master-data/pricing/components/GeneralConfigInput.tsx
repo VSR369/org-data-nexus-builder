@@ -166,7 +166,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
             </div>
           )}
 
-          {/* Engagement Model Pricing Section - 4 Rows */}
+          {/* Engagement Model Pricing Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Engagement Model Pricing Configuration</h3>
             
@@ -197,10 +197,10 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
               </div>
             </div>
 
-            {/* Row 2: Quarterly Fee */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Row 2: All Three Fee Inputs in One Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="quarterlyFee">Quarterly Engagement Model Fee (%) *</Label>
+                <Label htmlFor="quarterlyFee">Quarterly Fee (%) *</Label>
                 <Input
                   id="quarterlyFee"
                   type="number"
@@ -212,12 +212,9 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                   placeholder="15"
                 />
               </div>
-            </div>
 
-            {/* Row 3: Half Yearly Fee */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="halfYearlyFee">Half Yearly Engagement Model Fee (%) *</Label>
+                <Label htmlFor="halfYearlyFee">Half Yearly Fee (%) *</Label>
                 <Input
                   id="halfYearlyFee"
                   type="number"
@@ -229,12 +226,9 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                   placeholder="12"
                 />
               </div>
-            </div>
 
-            {/* Row 4: Annual Fee */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="annualFee">Annual Engagement Model Fee (%) *</Label>
+                <Label htmlFor="annualFee">Annual Fee (%) *</Label>
                 <Input
                   id="annualFee"
                   type="number"
