@@ -33,6 +33,9 @@ const EngagementModelPricingSection: React.FC<EngagementModelPricingSectionProps
 
   const isCurrentModelPaaS = isPaaSModel(currentConfig.engagementModel || '');
 
+  // Filter to only show active engagement models and remove any potential duplicates
+  const uniqueEngagementModels = engagementModels.filter(model => model.isActive);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Engagement Model Pricing Configuration</h3>
@@ -49,14 +52,14 @@ const EngagementModelPricingSection: React.FC<EngagementModelPricingSectionProps
               <SelectValue placeholder="Select engagement model" />
             </SelectTrigger>
             <SelectContent>
-              {engagementModels.map((model) => (
-                <SelectItem key={`${model.id}-${model.name}`} value={model.name}>
+              {uniqueEngagementModels.map((model) => (
+                <SelectItem key={model.id} value={model.name}>
                   {model.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {engagementModels.length === 0 && (
+          {uniqueEngagementModels.length === 0 && (
             <p className="text-sm text-muted-foreground mt-1">
               No engagement models found. Please configure them first.
             </p>
