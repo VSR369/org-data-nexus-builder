@@ -15,10 +15,10 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
   onEdit,
   onDelete
 }) => {
-  // Calculate active member pricing based on discount - fixed calculation
+  // Calculate active member pricing based on discount
   const calculateActiveMemberPrice = (originalPrice: number, discount: number) => {
-    // Apply discount as a simple percentage reduction
-    return Math.round(originalPrice * (100 - discount) / 100);
+    const discountedPrice = originalPrice - (originalPrice * discount / 100);
+    return Math.round(discountedPrice * 10) / 10; // Round to 1 decimal place
   };
 
   const discount = config.discountPercentage || 0;
@@ -51,23 +51,18 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
         </div>
       </div>
       
-      {/* Non-Member Pricing */}
+      {/* Engagement Model Pricing */}
       <div className="mb-4">
-        <h4 className="text-sm font-medium mb-2 text-gray-600">Non-Member Pricing</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h4 className="text-sm font-medium mb-2 text-gray-600">Engagement Model Configuration</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-            <span className="text-sm font-medium">Marketplace Fee</span>
-            <Badge variant="secondary">{config.marketplaceFee}%</Badge>
+            <span className="text-sm font-medium">Engagement Model</span>
+            <Badge variant="outline">{config.engagementModel}</Badge>
           </div>
           
           <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-            <span className="text-sm font-medium">Aggregator Fee</span>
-            <Badge variant="secondary">{config.aggregatorFee}%</Badge>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-            <span className="text-sm font-medium">Marketplace + Aggregator</span>
-            <Badge variant="secondary">{config.marketplacePlusAggregatorFee}%</Badge>
+            <span className="text-sm font-medium">Fee</span>
+            <Badge variant="secondary">{config.engagementModelFee}%</Badge>
           </div>
         </div>
       </div>
@@ -76,25 +71,16 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
       {config.membershipStatus === 'active' && discount > 0 && (
         <div>
           <h4 className="text-sm font-medium mb-2 text-green-600">Active Member Pricing (After {discount}% Discount)</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
-              <span className="text-sm font-medium">Marketplace Fee</span>
-              <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.marketplaceFee, discount)}%
-              </Badge>
+              <span className="text-sm font-medium">Engagement Model</span>
+              <Badge variant="outline">{config.engagementModel}</Badge>
             </div>
             
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
-              <span className="text-sm font-medium">Aggregator Fee</span>
+              <span className="text-sm font-medium">Discounted Fee</span>
               <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.aggregatorFee, discount)}%
-              </Badge>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
-              <span className="text-sm font-medium">Marketplace + Aggregator</span>
-              <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.marketplacePlusAggregatorFee, discount)}%
+                {calculateActiveMemberPrice(config.engagementModelFee, discount)}%
               </Badge>
             </div>
           </div>

@@ -33,12 +33,12 @@ export const usePricingData = (organizationType?: string, country?: string) => {
   const getSpecificPricing = () => {
     if (!organizationType || !country) return null;
     
-    return PricingDataManager.getPricingForCountryAndOrgType(country, organizationType);
+    return PricingDataManager.getPricingForCountryOrgTypeAndEngagement(country, organizationType, '');
   };
 
-  // Get configuration by organization type
-  const getConfigByOrgType = (orgType: string) => {
-    return PricingDataManager.getConfigurationByOrgType(orgType);
+  // Get configuration by organization type and engagement model
+  const getConfigByOrgTypeAndEngagement = (orgType: string, engagementModel: string) => {
+    return PricingDataManager.getConfigurationByOrgTypeAndEngagement(orgType, engagementModel);
   };
 
   return {
@@ -46,7 +46,7 @@ export const usePricingData = (organizationType?: string, country?: string) => {
     loading,
     error,
     getSpecificPricing,
-    getConfigByOrgType,
+    getConfigByOrgTypeAndEngagement,
     refetch: () => {
       const configs = PricingDataManager.getAllConfigurations();
       setPricingConfigs(configs);

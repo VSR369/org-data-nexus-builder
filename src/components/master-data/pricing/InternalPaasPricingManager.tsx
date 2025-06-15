@@ -86,13 +86,12 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
         config.id === existingConfig!.id ? updatedConfig : config
       ));
     } else {
-      // Create new config
+      // Create new config with required fields
       const newConfig = {
         id: Date.now().toString(),
         organizationType: newCountryPricing.organizationType!,
-        marketplaceFee: 0,
-        aggregatorFee: 0,
-        marketplacePlusAggregatorFee: 0,
+        engagementModel: 'Market Place', // Default engagement model
+        engagementModelFee: 0, // Default fee
         internalPaasPricing: [pricingEntry],
         version: 1,
         createdAt: new Date().toISOString().split('T')[0],
