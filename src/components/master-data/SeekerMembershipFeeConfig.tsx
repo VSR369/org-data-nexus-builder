@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,13 +77,13 @@ const SeekerMembershipFeeConfig = () => {
   const reloadMasterData = () => {
     console.log('🔄 Reloading master data...');
     
-    // Seed master data first to ensure dependencies exist
+    // Seed master data to ensure dependencies exist (but don't force reset)
     const seededData = MasterDataSeeder.seedAllMasterData();
     
     const loadedFees = membershipFeeDataManager.loadData();
-    const loadedCurrencies = currencyDataManager.loadData();
+    const loadedCurrencies = MasterDataSeeder.getCurrencies();
     const loadedCountries = countriesDataManager.loadData();
-    const loadedEntityTypes = entityTypeDataManager.loadData();
+    const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
     
     console.log('🔍 SeekerMembershipFeeConfig - Reloaded countries:', loadedCountries.length);
     console.log('🔍 SeekerMembershipFeeConfig - Reloaded currencies:', loadedCurrencies.length);
@@ -140,30 +139,7 @@ const SeekerMembershipFeeConfig = () => {
         description: `${countryCurrency.code} (${countryCurrency.name}) has been auto-selected for ${selectedCountry}`,
       });
     } else {
-      console.log('❌ No currency found for country, checking if currencies are loaded...');
-      if (currencies.length === 0) {
-        console.log('🔄 Currencies not loaded, attempting to reload...');
-        const reloadedData = reloadMasterData();
-        if (reloadedData.loadedCurrencies.length > 0) {
-          // Try again with reloaded currencies
-          const retryFindCurrency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
-          if (retryFindCurrency) {
-            setCurrentEntry(prev => ({
-              ...prev,
-              country: selectedCountry,
-              quarterlyCurrency: retryFindCurrency.code,
-              halfYearlyCurrency: retryFindCurrency.code,
-              annualCurrency: retryFindCurrency.code
-            }));
-            
-            toast({
-              title: "Currency Auto-Selected",
-              description: `${retryFindCurrency.code} (${retryFindCurrency.name}) has been auto-selected for ${selectedCountry}`,
-            });
-            return;
-          }
-        }
-      }
+      console.log('❌ No currency found for country');
       
       setCurrentEntry(prev => ({
         ...prev,
@@ -335,7 +311,7 @@ const SeekerMembershipFeeConfig = () => {
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Reset Currencies
+                Reset Currencies (Testing Only)
               </Button>
               <Button
                 onClick={handleResetToDefault}
@@ -353,7 +329,7 @@ const SeekerMembershipFeeConfig = () => {
           {currencies.length === 0 && (
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-yellow-800">
-                ⚠️ No currencies loaded. Click "Reset Currencies" to load default currency data.
+                ⚠️ No currencies available. This should not happen - please check the currency configuration.
               </p>
             </div>
           )}

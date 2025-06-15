@@ -48,7 +48,7 @@ const defaultEntityTypes: string[] = [
 
 const currencyDataManager = new DataManager<Currency[]>({
   key: 'master_data_currencies',
-  defaultData: defaultCurrencies, // Fixed: was empty array before
+  defaultData: defaultCurrencies,
   version: 1
 });
 
@@ -62,17 +62,27 @@ export class MasterDataSeeder {
   static seedAllMasterData() {
     console.log('🌱 Starting master data seeding...');
     
-    // Seed currencies - force reset if empty
+    // Load currencies - DO NOT reset if data exists
     let currencies = currencyDataManager.loadData();
-    if (currencies.length === 0) {
-      console.log('🔄 Currencies empty, forcing reset to defaults...');
-      currencies = currencyDataManager.resetToDefault();
-    }
-    console.log('💰 Seeded currencies:', currencies.length);
+    console.log('💰 Loaded currencies from storage:', currencies.length);
     
-    // Seed entity types
-    const entityTypes = entityTypeDataManager.loadData();
-    console.log('🏢 Seeded entity types:', entityTypes.length);
+    // Only seed defaults if truly empty (no currencies at all)
+    if (!currencies || currencies.length === 0) {
+      console.log('📦 No currencies found, seeding defaults for the first time...');
+      currencyDataManager.saveData(defaultCurrencies);
+      currencies = defaultCurrencies;
+    } else {
+      console.log('✅ Using existing currency data, count:', currencies.length);
+    }
+    
+    // Load entity types
+    let entityTypes = entityTypeDataManager.loadData();
+    if (!entityTypes || entityTypes.length === 0) {
+      console.log('📦 No entity types found, seeding defaults...');
+      entityTypeDataManager.saveData(defaultEntityTypes);
+      entityTypes = defaultEntityTypes;
+    }
+    console.log('🏢 Entity types loaded:', entityTypes.length);
     
     console.log('✅ Master data seeding complete');
     
@@ -90,13 +100,13 @@ export class MasterDataSeeder {
     
     // Check currencies
     const currencies = currencyDataManager.loadData();
-    if (currencies.length === 0) {
+    if (!currencies || currencies.length === 0) {
       issues.push('No currencies found in master data');
     }
     
     // Check entity types
     const entityTypes = entityTypeDataManager.loadData();
-    if (entityTypes.length === 0) {
+    if (!entityTypes || entityTypes.length === 0) {
       issues.push('No entity types found in master data');
     }
     
@@ -110,7 +120,12 @@ export class MasterDataSeeder {
     const currencies = currencyDataManager.loadData();
     
     console.log('🔍 getCurrencyByCountry - Looking for:', country);
-    console.log('🔍 getCurrencyByCountry - Available currencies:', currencies.length);
+    console.log('🔍 getCurrencyByCountry - Available currencies:', currencies?.length || 0);
+    
+    if (!currencies || currencies.length === 0) {
+      console.log('❌ No currencies available for lookup');
+      return null;
+    }
     
     // Direct match
     let currency = currencies.find(c => 
@@ -158,8 +173,24 @@ export class MasterDataSeeder {
     return null;
   }
   
+  static getCurrencies(): Currency[] {
+    return currencyDataManager.loadData() || [];
+  }
+  
+  static saveCurrencies(currencies: Currency[]): void {
+    console.log('💾 Saving currencies to persistent storage:', currencies.length);
+    currencyDataManager.saveData(currencies);
+  }
+  
+  static getEntityTypes(): string[] {
+    return entityTypeDataManager.loadData() || [];
+  }
+  
+  // Only use this method when explicitly requested by user for testing/reset purposes
   static resetCurrencyData(): Currency[] {
-    console.log('🔄 Resetting currency data to defaults...');
-    return currencyDataManager.resetToDefault();
+    console.log('🔄 MANUAL RESET: Resetting currency data to defaults...');
+    const resetData = currencyDataManager.resetToDefault();
+    console.log('🔄 MANUAL RESET: Currency data reset complete, count:', resetData.length);
+    return resetData;
   }
 }
