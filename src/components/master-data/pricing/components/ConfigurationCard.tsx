@@ -15,6 +15,13 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
   onEdit,
   onDelete
 }) => {
+  // Calculate active member pricing based on discount
+  const calculateActiveMemberPrice = (originalPrice: number, discount: number) => {
+    return originalPrice - (originalPrice * discount / 100);
+  };
+
+  const discount = config.discountPercentage || 0;
+
   return (
     <div className="border rounded-lg p-4 bg-muted/30">
       <div className="flex items-center justify-between mb-3">
@@ -43,22 +50,55 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-          <span className="text-sm font-medium">Marketplace Fee</span>
-          <Badge variant="secondary">{config.marketplaceFee}%</Badge>
-        </div>
-        
-        <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-          <span className="text-sm font-medium">Aggregator Fee</span>
-          <Badge variant="secondary">{config.aggregatorFee}%</Badge>
-        </div>
-        
-        <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-          <span className="text-sm font-medium">Marketplace + Aggregator</span>
-          <Badge variant="secondary">{config.marketplacePlusAggregatorFee}%</Badge>
+      {/* Non-Member Pricing */}
+      <div className="mb-4">
+        <h4 className="text-sm font-medium mb-2 text-gray-600">Non-Member Pricing</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+            <span className="text-sm font-medium">Marketplace Fee</span>
+            <Badge variant="secondary">{config.marketplaceFee}%</Badge>
+          </div>
+          
+          <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+            <span className="text-sm font-medium">Aggregator Fee</span>
+            <Badge variant="secondary">{config.aggregatorFee}%</Badge>
+          </div>
+          
+          <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+            <span className="text-sm font-medium">Marketplace + Aggregator</span>
+            <Badge variant="secondary">{config.marketplacePlusAggregatorFee}%</Badge>
+          </div>
         </div>
       </div>
+
+      {/* Active Member Pricing (if discount exists) */}
+      {config.membershipStatus === 'active' && discount > 0 && (
+        <div>
+          <h4 className="text-sm font-medium mb-2 text-green-600">Active Member Pricing (After {discount}% Discount)</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
+              <span className="text-sm font-medium">Marketplace Fee</span>
+              <Badge variant="default" className="bg-green-600">
+                {calculateActiveMemberPrice(config.marketplaceFee, discount).toFixed(1)}%
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
+              <span className="text-sm font-medium">Aggregator Fee</span>
+              <Badge variant="default" className="bg-green-600">
+                {calculateActiveMemberPrice(config.aggregatorFee, discount).toFixed(1)}%
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
+              <span className="text-sm font-medium">Marketplace + Aggregator</span>
+              <Badge variant="default" className="bg-green-600">
+                {calculateActiveMemberPrice(config.marketplacePlusAggregatorFee, discount).toFixed(1)}%
+              </Badge>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
