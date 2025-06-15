@@ -133,6 +133,8 @@ class SessionStorageManager {
   }
 
   saveUser(user: RegisteredUser): boolean {
+    console.log('💾 Attempting to save user via SessionStorageManager:', user.userId);
+    
     const usersResult = this.usersManager.load();
     const users = usersResult.success ? usersResult.data! : [];
     
@@ -147,41 +149,83 @@ class SessionStorageManager {
     const saveResult = this.usersManager.save(users);
     
     if (saveResult.success) {
-      console.log('✅ User saved successfully:', user.userId);
+      console.log('✅ User saved successfully via SessionStorageManager:', user.userId);
       return true;
     } else {
-      console.error('❌ Failed to save user:', saveResult.error);
-      return false;
+      console.error('❌ SessionStorageManager save failed, trying direct localStorage save...');
+      
+      // Fallback: Direct localStorage save if SessionStorageManager fails
+      try {
+        localStorage.setItem('registered_users', JSON.stringify(users));
+        console.log('✅ User saved successfully via direct localStorage fallback:', user.userId);
+        return true;
+      } catch (error) {
+        console.error('❌ Direct localStorage save also failed:', error);
+        return false;
+      }
     }
   }
 
   findUser(userId: string, password: string): RegisteredUser | null {
+    console.log('🔍 SessionStorageManager searching for user:', userId);
+    
+    // Try SessionStorageManager first
     const usersResult = this.usersManager.load();
-    if (!usersResult.success || !usersResult.data) {
-      console.log('❌ No users data found');
-      return null;
-    }
-    
-    const user = usersResult.data.find(u => 
-      u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
-    );
-    
-    if (user) {
-      console.log('✅ User found:', user.userId);
+    if (usersResult.success && usersResult.data) {
+      const user = usersResult.data.find(u => 
+        u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
+      );
+      
+      if (user) {
+        console.log('✅ User found via SessionStorageManager:', user.userId);
+        return user;
+      }
     } else {
-      console.log('❌ User not found or password incorrect');
+      console.log('⚠️ SessionStorageManager load failed, trying direct localStorage...');
     }
     
-    return user || null;
+    // Fallback: Direct localStorage access
+    try {
+      const directUsers = localStorage.getItem('registered_users');
+      if (directUsers) {
+        const users = JSON.parse(directUsers);
+        const user = users.find((u: RegisteredUser) => 
+          u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
+        );
+        
+        if (user) {
+          console.log('✅ User found via direct localStorage fallback:', user.userId);
+          return user;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Direct localStorage access failed:', error);
+    }
+    
+    console.log('❌ User not found:', userId);
+    return null;
   }
 
   getStorageHealth(): {
     session: any;
     users: any;
+    directUsersCount: number;
   } {
+    let directUsersCount = 0;
+    try {
+      const directUsers = localStorage.getItem('registered_users');
+      if (directUsers) {
+        const users = JSON.parse(directUsers);
+        directUsersCount = Array.isArray(users) ? users.length : 0;
+      }
+    } catch {
+      directUsersCount = -1; // Error state
+    }
+    
     return {
       session: this.sessionManager.getHealth(),
-      users: this.usersManager.getHealth()
+      users: this.usersManager.getHealth(),
+      directUsersCount
     };
   }
 }

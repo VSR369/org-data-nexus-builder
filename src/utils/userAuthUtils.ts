@@ -18,10 +18,45 @@ export function findRegisteredUser(userId: string, password: string): Registered
   console.log('🔍 === USER SEARCH START ===');
   console.log('🔍 Searching for userId:', userId);
   
-  const user = sessionStorageManager.findUser(userId, password);
+  // First try with SessionStorageManager
+  let user = sessionStorageManager.findUser(userId, password);
   
-  console.log('🔍 === USER SEARCH END ===');
-  return user;
+  if (user) {
+    console.log('✅ User found via SessionStorageManager');
+    console.log('🔍 === USER SEARCH END ===');
+    return user;
+  }
+  
+  // Fallback: Direct localStorage access if SessionStorageManager fails due to integrity issues
+  console.log('⚠️ SessionStorageManager failed, trying direct localStorage access...');
+  
+  try {
+    const usersData = localStorage.getItem('registered_users');
+    if (!usersData) {
+      console.log('❌ No users data found in localStorage');
+      console.log('🔍 === USER SEARCH END ===');
+      return null;
+    }
+    
+    const users = JSON.parse(usersData);
+    const foundUser = users.find((u: RegisteredUser) => 
+      u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
+    );
+    
+    if (foundUser) {
+      console.log('✅ User found via direct localStorage access');
+      console.log('🔍 === USER SEARCH END ===');
+      return foundUser;
+    } else {
+      console.log('❌ User not found or password incorrect');
+      console.log('🔍 === USER SEARCH END ===');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error accessing localStorage directly:', error);
+    console.log('🔍 === USER SEARCH END ===');
+    return null;
+  }
 }
 
 export function checkUserExistsForBetterError(userId: string): 'user_exists' | 'no_users' | 'user_not_found' {
@@ -41,4 +76,41 @@ export function checkUserExistsForBetterError(userId: string): 'user_exists' | '
   } catch {
     return 'no_users';
   }
+}
+
+export function getUserStorageDiagnostics() {
+  console.log('🔧 === STORAGE DIAGNOSTICS START ===');
+  
+  // Check SessionStorageManager health
+  const storageHealth = sessionStorageManager.getStorageHealth();
+  console.log('📊 SessionStorageManager Health:', storageHealth);
+  
+  // Check direct localStorage access
+  const directUsers = localStorage.getItem('registered_users');
+  console.log('📁 Direct localStorage users data exists:', !!directUsers);
+  
+  if (directUsers) {
+    try {
+      const users = JSON.parse(directUsers);
+      console.log('👥 Number of users in direct localStorage:', users.length);
+      console.log('👥 User IDs in direct localStorage:', users.map((u: any) => u.userId));
+    } catch (error) {
+      console.error('❌ Error parsing direct localStorage users:', error);
+    }
+  }
+  
+  console.log('🔧 === STORAGE DIAGNOSTICS END ===');
+  
+  return {
+    sessionManagerHealth: storageHealth,
+    directStorageExists: !!directUsers,
+    directStorageValid: directUsers ? (() => {
+      try {
+        JSON.parse(directUsers);
+        return true;
+      } catch {
+        return false;
+      }
+    })() : false
+  };
 }

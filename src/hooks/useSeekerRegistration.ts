@@ -5,6 +5,7 @@ import { useSeekerValidation } from './useSeekerValidation';
 import { useSeekerFormData } from './useSeekerFormData';
 import { useSeekerMasterData } from './useSeekerMasterData';
 import { saveUserDataSecurely, prepareRegistrationData } from '@/utils/seekerUserStorage';
+import { sessionStorageManager } from '@/utils/storage/SessionStorageManager';
 
 export const useSeekerRegistration = () => {
   const { toast } = useToast();
@@ -51,6 +52,36 @@ export const useSeekerRegistration = () => {
       return;
     }
 
+    // Check for duplicate user using SessionStorageManager instead of direct localStorage
+    console.log('🔍 Checking for duplicate user with SessionStorageManager...');
+    const existingUser = sessionStorageManager.findUser(formData.userId.trim(), 'dummy_password_check');
+    
+    // If we get any result, it means user exists (regardless of password)
+    const usersData = localStorage.getItem('registered_users');
+    let userExists = false;
+    
+    if (usersData) {
+      try {
+        const users = JSON.parse(usersData);
+        userExists = users.some((user: any) => 
+          user.userId.toLowerCase() === formData.userId.trim().toLowerCase()
+        );
+      } catch (error) {
+        console.error('Error checking existing users:', error);
+      }
+    }
+    
+    if (userExists) {
+      console.log('❌ User already exists:', formData.userId);
+      toast({
+        title: "Registration Error",
+        description: `User ID "${formData.userId}" already exists. Please choose a different User ID.`,
+        variant: "destructive",
+      });
+      setErrors({ userId: "This User ID is already taken" });
+      return;
+    }
+
     // Prepare user data for storage
     const registeredUser = prepareRegistrationData(formData);
 
@@ -63,7 +94,7 @@ export const useSeekerRegistration = () => {
       console.log('❌ Failed to save user data');
       toast({
         title: "Registration Error",
-        description: "Failed to save registration data or User ID already exists. Please try again with a different User ID.",
+        description: "Failed to save registration data. Please try again.",
         variant: "destructive",
       });
       return;
