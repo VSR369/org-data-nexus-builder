@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -178,7 +179,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
         )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="country">Country *</Label>
               <Select
@@ -244,7 +245,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Quarterly Fee */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Quarterly Fee</h3>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-blue-500 pb-2">Quarterly</h3>
+              </div>
               <div>
                 <Label htmlFor="quarterlyCurrency">Currency *</Label>
                 <Select
@@ -292,7 +295,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
 
             {/* Half Yearly Fee */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Half Yearly Fee</h3>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-green-500 pb-2">Half-yearly</h3>
+              </div>
               <div>
                 <Label htmlFor="halfYearlyCurrency">Currency *</Label>
                 <Select
@@ -340,7 +345,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
 
             {/* Annual Fee */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Annual Fee</h3>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-purple-500 pb-2">Annually</h3>
+              </div>
               <div>
                 <Label htmlFor="annualCurrency">Currency *</Label>
                 <Select
