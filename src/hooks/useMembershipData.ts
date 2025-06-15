@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 
@@ -13,6 +12,7 @@ interface MembershipFeeEntry {
   annualAmount: number;
   annualCurrency: string;
   createdAt: string;
+  updatedAt: string;
   isUserCreated: boolean;
 }
 
