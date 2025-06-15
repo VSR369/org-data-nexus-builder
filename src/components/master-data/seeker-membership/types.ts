@@ -37,3 +37,9 @@ export interface DataHealth {
   entityTypes: { isValid: boolean; issues: string[] };
   membershipFees: { isValid: boolean; issues: string[] };
 }
+
+export const membershipFeeConfig = {
+  key: 'master_data_seeker_membership_fees',
+  version: 2,
+  preserveUserData: true
+};

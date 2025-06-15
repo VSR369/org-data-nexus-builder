@@ -37,7 +37,11 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
 
   React.useEffect(() => {
     if (editingEntry) {
+      console.log('Setting editing entry:', editingEntry);
       setCurrentEntry(editingEntry);
+    } else {
+      console.log('Resetting form to empty state');
+      setCurrentEntry({});
     }
   }, [editingEntry]);
 
@@ -152,6 +156,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     onCancelEdit();
   };
 
+  // Create unique keys for Select components to force re-render
+  const formKey = isEditing ? `edit-${editingEntry?.id}` : 'add-new';
+
   return (
     <Card>
       <CardHeader>
@@ -177,7 +184,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
             <div>
               <Label htmlFor="country">Country *</Label>
               <Select
-                value={currentEntry.country}
+                key={`country-${formKey}`}
+                value={currentEntry.country || ''}
                 onValueChange={handleCountryChange}
               >
                 <SelectTrigger>
@@ -196,7 +204,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
             <div>
               <Label htmlFor="entityType">Entity Type *</Label>
               <Select
-                value={currentEntry.entityType}
+                key={`entityType-${formKey}`}
+                value={currentEntry.entityType || ''}
                 onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, entityType: value }))}
               >
                 <SelectTrigger>
@@ -213,7 +222,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
             <div>
               <Label htmlFor="membershipStatus">Membership Status *</Label>
               <Select
-                value={currentEntry.membershipStatus}
+                key={`membershipStatus-${formKey}`}
+                value={currentEntry.membershipStatus || ''}
                 onValueChange={(value: 'Active' | 'Not Active' | 'Not a Member') => 
                   setCurrentEntry(prev => ({ ...prev, membershipStatus: value }))}
               >
@@ -261,7 +271,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
               <div>
                 <Label htmlFor="quarterlyCurrency">Currency *</Label>
                 <Select
-                  value={currentEntry.quarterlyCurrency}
+                  key={`quarterlyCurrency-${formKey}`}
+                  value={currentEntry.quarterlyCurrency || ''}
                   onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, quarterlyCurrency: value }))}
                 >
                   <SelectTrigger>
@@ -302,7 +313,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
               <div>
                 <Label htmlFor="halfYearlyCurrency">Currency *</Label>
                 <Select
-                  value={currentEntry.halfYearlyCurrency}
+                  key={`halfYearlyCurrency-${formKey}`}
+                  value={currentEntry.halfYearlyCurrency || ''}
                   onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, halfYearlyCurrency: value }))}
                 >
                   <SelectTrigger>
@@ -343,7 +355,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
               <div>
                 <Label htmlFor="annualCurrency">Currency *</Label>
                 <Select
-                  value={currentEntry.annualCurrency}
+                  key={`annualCurrency-${formKey}`}
+                  value={currentEntry.annualCurrency || ''}
                   onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, annualCurrency: value }))}
                 >
                   <SelectTrigger>
