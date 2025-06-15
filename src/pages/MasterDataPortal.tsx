@@ -6,6 +6,7 @@ import MasterDataContent from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Database } from "lucide-react";
 import { Link } from "react-router-dom";
+import { MasterDataSeeder } from "@/utils/masterDataSeeder";
 
 const MasterDataPortal = () => {
   const [activeSection, setActiveSection] = useState('domain-groups');
@@ -17,7 +18,6 @@ const MasterDataPortal = () => {
 
   // Initialize master data on portal load
   React.useEffect(() => {
-    const { MasterDataSeeder } = require('@/utils/masterDataSeeder');
     MasterDataSeeder.seedAllMasterData();
   }, []);
 
