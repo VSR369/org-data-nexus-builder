@@ -13,9 +13,8 @@ export interface CountryPricing {
 export interface PricingConfig {
   id: string;
   organizationType: string;
-  marketplaceFee: number;
-  aggregatorFee: number;
-  marketplacePlusAggregatorFee: number;
+  engagementModel: string;
+  engagementModelFee: number;
   membershipStatus?: 'active' | 'inactive' | 'not-a-member';
   discountPercentage?: number;
   internalPaasPricing: CountryPricing[];

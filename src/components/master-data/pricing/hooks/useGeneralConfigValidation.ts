@@ -1,56 +1,51 @@
 
-import { PricingConfig } from '../types';
 import { useToast } from "@/hooks/use-toast";
+import { PricingConfig } from '../types';
 
 export const useGeneralConfigValidation = () => {
   const { toast } = useToast();
 
-  const validateConfig = (currentConfig: Partial<PricingConfig>) => {
-    console.log('🔍 Current config before validation:', currentConfig);
-    
-    // Check if all required fields are filled
-    const isOrgTypeValid = currentConfig.organizationType && currentConfig.organizationType.trim() !== '';
-    const isMarketplaceFeeValid = currentConfig.marketplaceFee !== undefined && 
-                                   currentConfig.marketplaceFee !== null && 
-                                   !isNaN(currentConfig.marketplaceFee) &&
-                                   currentConfig.marketplaceFee >= 0;
-    const isAggregatorFeeValid = currentConfig.aggregatorFee !== undefined && 
-                                 currentConfig.aggregatorFee !== null && 
-                                 !isNaN(currentConfig.aggregatorFee) &&
-                                 currentConfig.aggregatorFee >= 0;
-    const isMarketplacePlusAggregatorFeeValid = currentConfig.marketplacePlusAggregatorFee !== undefined && 
-                                                currentConfig.marketplacePlusAggregatorFee !== null && 
-                                                !isNaN(currentConfig.marketplacePlusAggregatorFee) &&
-                                                currentConfig.marketplacePlusAggregatorFee >= 0;
-
-    // Validate membership status is selected
-    const isMembershipStatusValid = currentConfig.membershipStatus && currentConfig.membershipStatus.trim() !== '';
-
-    // If membership status is active, discount percentage is required
-    const isDiscountValid = currentConfig.membershipStatus !== 'active' || 
-                           (currentConfig.discountPercentage !== undefined && 
-                            currentConfig.discountPercentage !== null && 
-                            !isNaN(currentConfig.discountPercentage) &&
-                            currentConfig.discountPercentage >= 0 &&
-                            currentConfig.discountPercentage <= 100);
-
-    console.log('🔍 Validation checks:', {
-      isOrgTypeValid,
-      isMarketplaceFeeValid,
-      isAggregatorFeeValid,
-      isMarketplacePlusAggregatorFeeValid,
-      isMembershipStatusValid,
-      isDiscountValid
-    });
-
-    if (!isOrgTypeValid || !isMarketplaceFeeValid || !isAggregatorFeeValid || !isMarketplacePlusAggregatorFeeValid || !isMembershipStatusValid || !isDiscountValid) {
-      let errorMessage = "Please fill in all required fields with valid values.";
-      if (currentConfig.membershipStatus === 'active' && !isDiscountValid) {
-        errorMessage = "Discount percentage is required when membership status is Active and must be between 0-100%.";
-      }
+  const validateConfig = (config: Partial<PricingConfig>): boolean => {
+    if (!config.organizationType) {
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Validation Error",
+        description: "Please select an organization type.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!config.engagementModel) {
+      toast({
+        title: "Validation Error",
+        description: "Please select an engagement model.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (config.engagementModelFee === undefined || config.engagementModelFee < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid engagement model fee.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!config.membershipStatus) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a membership status.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (config.membershipStatus === 'active' && (config.discountPercentage === undefined || config.discountPercentage < 0)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid discount percentage for active members.",
         variant: "destructive",
       });
       return false;
@@ -59,16 +54,18 @@ export const useGeneralConfigValidation = () => {
     return true;
   };
 
-  const checkForDuplicates = (currentConfig: Partial<PricingConfig>, configs: PricingConfig[]) => {
-    const existingConfig = configs.find(config => 
-      config.organizationType === currentConfig.organizationType && 
-      config.id !== currentConfig.id
+  const checkForDuplicates = (config: Partial<PricingConfig>, existingConfigs: PricingConfig[]): boolean => {
+    const duplicate = existingConfigs.find(existing => 
+      existing.id !== config.id &&
+      existing.organizationType === config.organizationType &&
+      existing.engagementModel === config.engagementModel &&
+      existing.membershipStatus === config.membershipStatus
     );
 
-    if (existingConfig) {
+    if (duplicate) {
       toast({
-        title: "Error",
-        description: "Configuration for this organization type already exists.",
+        title: "Duplicate Configuration",
+        description: "A configuration with the same organization type, engagement model, and membership status already exists.",
         variant: "destructive",
       });
       return true;

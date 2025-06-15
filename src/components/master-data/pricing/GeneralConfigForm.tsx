@@ -39,9 +39,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     const configToSave = {
       id: currentConfig.id || Date.now().toString(),
       organizationType: currentConfig.organizationType!,
-      marketplaceFee: currentConfig.marketplaceFee!,
-      aggregatorFee: currentConfig.aggregatorFee!,
-      marketplacePlusAggregatorFee: currentConfig.marketplacePlusAggregatorFee!,
+      engagementModel: currentConfig.engagementModel!,
+      engagementModelFee: currentConfig.engagementModelFee!,
       membershipStatus: currentConfig.membershipStatus!,
       discountPercentage: currentConfig.membershipStatus === 'active' ? currentConfig.discountPercentage! : undefined,
       internalPaasPricing: currentConfig.internalPaasPricing || [],

@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PricingConfig } from '../types';
+import { engagementModelsDataManager } from '../../engagement-models/engagementModelsDataManager';
+import { EngagementModel } from '../../engagement-models/types';
 
 interface GeneralConfigInputProps {
   currentConfig: Partial<PricingConfig>;
@@ -22,6 +24,14 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   onSave,
   onClear
 }) => {
+  const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
+
+  useEffect(() => {
+    // Load engagement models from master data
+    const loadedModels = engagementModelsDataManager.getEngagementModels();
+    setEngagementModels(loadedModels.filter(model => model.isActive));
+  }, []);
+
   const handleInputChange = (field: string, value: string) => {
     const numericValue = parseFloat(value);
     setCurrentConfig(prev => ({ 
@@ -55,6 +65,39 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
               </Select>
             </div>
 
+            <div>
+              <Label htmlFor="engagementModel">Engagement Model *</Label>
+              <Select
+                value={currentConfig.engagementModel || ''}
+                onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, engagementModel: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select engagement model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {engagementModels.map((model) => (
+                    <SelectItem key={model.id} value={model.name}>{model.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="engagementModelFee">Engagement Model Fee (%) *</Label>
+              <Input
+                id="engagementModelFee"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={currentConfig.engagementModelFee !== undefined ? currentConfig.engagementModelFee.toString() : ''}
+                onChange={(e) => handleInputChange('engagementModelFee', e.target.value)}
+                placeholder="15"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="membershipStatus">Membership Status *</Label>
               <Select
@@ -93,50 +136,6 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 />
               </div>
             )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="marketplaceFee">Marketplace Fee (%) *</Label>
-              <Input
-                id="marketplaceFee"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={currentConfig.marketplaceFee !== undefined ? currentConfig.marketplaceFee.toString() : ''}
-                onChange={(e) => handleInputChange('marketplaceFee', e.target.value)}
-                placeholder="30"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="aggregatorFee">Aggregator Fee (%) *</Label>
-              <Input
-                id="aggregatorFee"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={currentConfig.aggregatorFee !== undefined ? currentConfig.aggregatorFee.toString() : ''}
-                onChange={(e) => handleInputChange('aggregatorFee', e.target.value)}
-                placeholder="15"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="marketplacePlusAggregatorFee">Marketplace Plus Aggregator (%) *</Label>
-              <Input
-                id="marketplacePlusAggregatorFee"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={currentConfig.marketplacePlusAggregatorFee !== undefined ? currentConfig.marketplacePlusAggregatorFee.toString() : ''}
-                onChange={(e) => handleInputChange('marketplacePlusAggregatorFee', e.target.value)}
-                placeholder="45"
-              />
-            </div>
           </div>
 
           <div className="flex gap-2">

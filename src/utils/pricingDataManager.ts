@@ -7,9 +7,8 @@ const defaultPricingConfigs: PricingConfig[] = [
   {
     id: '1',
     organizationType: 'All Organizations',
-    marketplaceFee: 30,
-    aggregatorFee: 15,
-    marketplacePlusAggregatorFee: 45,
+    engagementModel: 'Market Place',
+    engagementModelFee: 30,
     internalPaasPricing: [],
     version: 1,
     createdAt: new Date().toISOString().split('T')[0],
@@ -39,11 +38,11 @@ export class PricingDataManager {
     console.log('✅ Pricing configurations saved successfully');
   }
 
-  // Get configuration by organization type
-  static getConfigurationByOrgType(organizationType: string): PricingConfig | null {
+  // Get configuration by organization type and engagement model
+  static getConfigurationByOrgTypeAndEngagement(organizationType: string, engagementModel: string): PricingConfig | null {
     const configs = this.getAllConfigurations();
-    const config = configs.find(c => c.organizationType === organizationType);
-    console.log(`🔍 Found config for ${organizationType}:`, !!config);
+    const config = configs.find(c => c.organizationType === organizationType && c.engagementModel === engagementModel);
+    console.log(`🔍 Found config for ${organizationType} - ${engagementModel}:`, !!config);
     return config || null;
   }
 
@@ -70,13 +69,13 @@ export class PricingDataManager {
     this.saveConfigurations(filtered);
   }
 
-  // Get pricing for specific country and organization type
-  static getPricingForCountryAndOrgType(country: string, organizationType: string) {
-    console.log(`🔍 Looking for pricing: ${organizationType} in ${country}`);
+  // Get pricing for specific country, organization type, and engagement model
+  static getPricingForCountryOrgTypeAndEngagement(country: string, organizationType: string, engagementModel: string) {
+    console.log(`🔍 Looking for pricing: ${organizationType} - ${engagementModel} in ${country}`);
     
-    const config = this.getConfigurationByOrgType(organizationType);
+    const config = this.getConfigurationByOrgTypeAndEngagement(organizationType, engagementModel);
     if (!config) {
-      console.log('❌ No configuration found for organization type');
+      console.log('❌ No configuration found for organization type and engagement model');
       return null;
     }
 
@@ -115,8 +114,8 @@ export class PricingDataManager {
       configs.forEach((config, index) => {
         if (!config.id) issues.push(`Configuration ${index} missing ID`);
         if (!config.organizationType) issues.push(`Configuration ${index} missing organization type`);
-        if (typeof config.marketplaceFee !== 'number') issues.push(`Configuration ${index} invalid marketplace fee`);
-        if (typeof config.aggregatorFee !== 'number') issues.push(`Configuration ${index} invalid aggregator fee`);
+        if (!config.engagementModel) issues.push(`Configuration ${index} missing engagement model`);
+        if (typeof config.engagementModelFee !== 'number') issues.push(`Configuration ${index} invalid engagement model fee`);
       });
 
     } catch (error) {
