@@ -1,3 +1,4 @@
+
 import { DataManager } from '@/utils/core/DataManager';
 import { EngagementModel } from './types';
 
@@ -59,22 +60,42 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
 
   getEngagementModels(): EngagementModel[] {
     const data = this.loadData();
-    // Only return active models and remove duplicates based on name
+    
+    // Get active models first
     const activeModels = data.engagementModels.filter(model => model.isActive);
+    
+    // Advanced deduplication: remove duplicates based on normalized name
     const uniqueModels = activeModels.reduce((acc: EngagementModel[], current) => {
-      const exists = acc.find(model => model.name === current.name);
+      const normalizedName = current.name.toLowerCase().trim();
+      const exists = acc.find(model => 
+        model.name.toLowerCase().trim() === normalizedName
+      );
+      
       if (!exists) {
         acc.push(current);
+      } else {
+        console.log('🔄 DataManager: Duplicate engagement model filtered out:', current.name);
       }
       return acc;
     }, []);
     
-    console.log('🔄 Loaded unique engagement models:', uniqueModels.length);
+    console.log('🔄 DataManager: Loaded unique engagement models:', uniqueModels.length);
     return uniqueModels;
   }
 
   addEngagementModel(model: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>): EngagementModel {
     const data = this.loadData();
+    
+    // Check for duplicate names before adding
+    const normalizedName = model.name.toLowerCase().trim();
+    const existingModel = data.engagementModels.find(existing => 
+      existing.name.toLowerCase().trim() === normalizedName
+    );
+    
+    if (existingModel) {
+      throw new Error(`Engagement model with name '${model.name}' already exists`);
+    }
+    
     const newModel: EngagementModel = {
       ...model,
       id: Date.now().toString(),

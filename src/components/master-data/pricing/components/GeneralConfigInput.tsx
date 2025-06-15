@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -26,21 +27,30 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
 
   useEffect(() => {
-    // Load engagement models from master data and ensure no duplicates
+    // Load engagement models from master data
     const loadedModels = engagementModelsDataManager.getEngagementModels();
     console.log('🔄 GeneralConfigInput: Loading engagement models:', loadedModels);
     
-    // Additional deduplication check based on name
+    // Enhanced deduplication - normalize names and remove exact duplicates
     const uniqueModels = loadedModels.reduce((acc: EngagementModel[], current) => {
-      const exists = acc.find(model => model.name.toLowerCase() === current.name.toLowerCase());
+      const normalizedCurrentName = current.name.toLowerCase().trim();
+      const exists = acc.find(model => 
+        model.name.toLowerCase().trim() === normalizedCurrentName
+      );
+      
       if (!exists) {
         acc.push(current);
+      } else {
+        console.log('🔄 Duplicate engagement model found and skipped:', current.name);
       }
       return acc;
     }, []);
     
+    // Sort alphabetically for consistent display
+    uniqueModels.sort((a, b) => a.name.localeCompare(b.name));
+    
     setEngagementModels(uniqueModels);
-    console.log('✅ GeneralConfigInput: Set unique engagement models:', uniqueModels.length);
+    console.log('✅ GeneralConfigInput: Set unique engagement models:', uniqueModels.length, uniqueModels.map(m => m.name));
   }, []);
 
   const handleInputChange = (field: string, value: string) => {
@@ -87,7 +97,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {engagementModels.map((model) => (
-                    <SelectItem key={model.id} value={model.name}>
+                    <SelectItem key={`${model.id}-${model.name}`} value={model.name}>
                       {model.name}
                     </SelectItem>
                   ))}
@@ -96,6 +106,11 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
               {engagementModels.length === 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
                   No engagement models found. Please configure them first.
+                </p>
+              )}
+              {engagementModels.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {engagementModels.length} unique models available
                 </p>
               )}
             </div>
