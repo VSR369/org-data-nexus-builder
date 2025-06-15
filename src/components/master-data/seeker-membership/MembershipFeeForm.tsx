@@ -35,6 +35,12 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
   const userCurrencies = currencies.filter(c => c.isUserCreated !== false);
   const isEditing = !!editingEntry;
 
+  // Check if currency is auto-populated (same currency for all three periods)
+  const isCurrencyAutoSelected = currentEntry.country && 
+    currentEntry.quarterlyCurrency && 
+    currentEntry.quarterlyCurrency === currentEntry.halfYearlyCurrency && 
+    currentEntry.halfYearlyCurrency === currentEntry.annualCurrency;
+
   React.useEffect(() => {
     if (editingEntry) {
       console.log('Setting editing entry:', editingEntry);
@@ -219,8 +225,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                   key={`quarterlyCurrency-${formKey}`}
                   value={currentEntry.quarterlyCurrency || ''}
                   onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, quarterlyCurrency: value }))}
+                  disabled={isCurrencyAutoSelected}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isCurrencyAutoSelected ? "bg-gray-100 cursor-not-allowed" : ""}>
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -231,6 +238,11 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {isCurrencyAutoSelected && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Currency auto-selected based on country
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="quarterlyAmount">Amount *</Label>
@@ -261,8 +273,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                   key={`halfYearlyCurrency-${formKey}`}
                   value={currentEntry.halfYearlyCurrency || ''}
                   onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, halfYearlyCurrency: value }))}
+                  disabled={isCurrencyAutoSelected}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isCurrencyAutoSelected ? "bg-gray-100 cursor-not-allowed" : ""}>
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -273,6 +286,11 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {isCurrencyAutoSelected && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Currency auto-selected based on country
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="halfYearlyAmount">Amount *</Label>
@@ -303,8 +321,9 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                   key={`annualCurrency-${formKey}`}
                   value={currentEntry.annualCurrency || ''}
                   onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, annualCurrency: value }))}
+                  disabled={isCurrencyAutoSelected}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isCurrencyAutoSelected ? "bg-gray-100 cursor-not-allowed" : ""}>
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -315,6 +334,11 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {isCurrencyAutoSelected && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Currency auto-selected based on country
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="annualAmount">Amount *</Label>
