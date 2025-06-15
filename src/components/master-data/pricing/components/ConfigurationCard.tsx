@@ -15,9 +15,10 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
   onEdit,
   onDelete
 }) => {
-  // Calculate active member pricing based on discount
+  // Calculate active member pricing based on discount - fixed calculation
   const calculateActiveMemberPrice = (originalPrice: number, discount: number) => {
-    return originalPrice - (originalPrice * discount / 100);
+    // Apply discount as a simple percentage reduction
+    return Math.round(originalPrice * (100 - discount) / 100);
   };
 
   const discount = config.discountPercentage || 0;
@@ -79,21 +80,21 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
               <span className="text-sm font-medium">Marketplace Fee</span>
               <Badge variant="default" className="bg-green-600">
-                {Math.round(calculateActiveMemberPrice(config.marketplaceFee, discount))}%
+                {calculateActiveMemberPrice(config.marketplaceFee, discount)}%
               </Badge>
             </div>
             
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
               <span className="text-sm font-medium">Aggregator Fee</span>
               <Badge variant="default" className="bg-green-600">
-                {Math.round(calculateActiveMemberPrice(config.aggregatorFee, discount))}%
+                {calculateActiveMemberPrice(config.aggregatorFee, discount)}%
               </Badge>
             </div>
             
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
               <span className="text-sm font-medium">Marketplace + Aggregator</span>
               <Badge variant="default" className="bg-green-600">
-                {Math.round(calculateActiveMemberPrice(config.marketplacePlusAggregatorFee, discount))}%
+                {calculateActiveMemberPrice(config.marketplacePlusAggregatorFee, discount)}%
               </Badge>
             </div>
           </div>
