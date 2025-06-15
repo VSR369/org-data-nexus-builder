@@ -18,8 +18,6 @@ export interface MembershipFeeEntry {
   id: string;
   country: string;
   entityType: string;
-  membershipStatus: 'Active' | 'Not Active' | 'Not a Member';
-  memberDiscountPercentage?: number;
   quarterlyAmount: number;
   quarterlyCurrency: string;
   halfYearlyAmount: number;

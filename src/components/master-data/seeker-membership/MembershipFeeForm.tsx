@@ -86,7 +86,6 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     const requiredFields = {
       country: currentEntry.country,
       entityType: currentEntry.entityType,
-      membershipStatus: currentEntry.membershipStatus,
       quarterlyAmount: currentEntry.quarterlyAmount,
       quarterlyCurrency: currentEntry.quarterlyCurrency,
       halfYearlyAmount: currentEntry.halfYearlyAmount,
@@ -103,16 +102,6 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
       toast({
         title: "Validation Error",
         description: `Please fill in all required fields: ${missingFields.join(', ')}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate member discount percentage for Active members
-    if (currentEntry.membershipStatus === 'Active' && (!currentEntry.memberDiscountPercentage || currentEntry.memberDiscountPercentage <= 0)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid member discount percentage for active members.",
         variant: "destructive",
       });
       return;
@@ -180,7 +169,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
         )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="country">Country *</Label>
               <Select
@@ -218,51 +207,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <Label htmlFor="membershipStatus">Membership Status *</Label>
-              <Select
-                key={`membershipStatus-${formKey}`}
-                value={currentEntry.membershipStatus || ''}
-                onValueChange={(value: 'Active' | 'Not Active' | 'Not a Member') => 
-                  setCurrentEntry(prev => ({ ...prev, membershipStatus: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select membership status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Not Active">Not Active</SelectItem>
-                  <SelectItem value="Not a Member">Not a Member</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-
-          {/* Member Discount Percentage - Only show for Active members */}
-          {currentEntry.membershipStatus === 'Active' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="memberDiscountPercentage">Member Discount % *</Label>
-                <Input
-                  id="memberDiscountPercentage"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={currentEntry.memberDiscountPercentage ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setCurrentEntry(prev => ({ 
-                      ...prev, 
-                      memberDiscountPercentage: value === '' ? 0 : parseFloat(value) 
-                    }));
-                  }}
-                  placeholder="0.0"
-                />
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Quarterly Fee */}
