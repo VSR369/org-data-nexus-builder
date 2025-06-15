@@ -1,4 +1,3 @@
-
 import { DataManager } from '@/utils/core/DataManager';
 import { EngagementModel } from './types';
 
@@ -61,25 +60,39 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
   getEngagementModels(): EngagementModel[] {
     const data = this.loadData();
     
-    // Get active models first
-    const activeModels = data.engagementModels.filter(model => model.isActive);
+    // Clean up duplicates by creating a Map with normalized names as keys
+    const uniqueModelsMap = new Map<string, EngagementModel>();
     
-    // Advanced deduplication: remove duplicates based on normalized name
-    const uniqueModels = activeModels.reduce((acc: EngagementModel[], current) => {
-      const normalizedName = current.name.toLowerCase().trim();
-      const exists = acc.find(model => 
-        model.name.toLowerCase().trim() === normalizedName
-      );
-      
-      if (!exists) {
-        acc.push(current);
-      } else {
-        console.log('🔄 DataManager: Duplicate engagement model filtered out:', current.name);
+    data.engagementModels.forEach(model => {
+      if (model.isActive) {
+        const normalizedName = model.name.toLowerCase().trim();
+        
+        // Only keep the first occurrence of each unique name
+        if (!uniqueModelsMap.has(normalizedName)) {
+          uniqueModelsMap.set(normalizedName, model);
+        } else {
+          console.log('🔄 DataManager: Skipping duplicate engagement model:', model.name);
+        }
       }
-      return acc;
-    }, []);
+    });
     
-    console.log('🔄 DataManager: Loaded unique engagement models:', uniqueModels.length);
+    const uniqueModels = Array.from(uniqueModelsMap.values());
+    
+    // If we detect duplicates were removed, save the cleaned data
+    if (uniqueModels.length !== data.engagementModels.filter(m => m.isActive).length) {
+      console.log('🧹 DataManager: Cleaning up duplicate engagement models');
+      this.saveData({
+        engagementModels: [
+          ...uniqueModels,
+          ...data.engagementModels.filter(m => !m.isActive) // Keep inactive models
+        ]
+      });
+    }
+    
+    // Sort alphabetically for consistent display
+    uniqueModels.sort((a, b) => a.name.localeCompare(b.name));
+    
+    console.log('✅ DataManager: Loaded unique engagement models:', uniqueModels.length, uniqueModels.map(m => m.name));
     return uniqueModels;
   }
 
@@ -133,6 +146,12 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
     data.engagementModels.splice(index, 1);
     this.saveData(data);
     return true;
+  }
+
+  // Method to force clean duplicates - can be called manually if needed
+  cleanDuplicates(): void {
+    console.log('🧹 Force cleaning engagement model duplicates');
+    this.getEngagementModels(); // This will trigger the cleanup logic
   }
 }
 
