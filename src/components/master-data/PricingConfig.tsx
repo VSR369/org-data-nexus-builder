@@ -1,10 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign } from 'lucide-react';
 import { PricingConfig as PricingConfigType } from './pricing/types';
-import InternalPaasPricingManager from './pricing/InternalPaasPricingManager';
 import GeneralConfigForm from './pricing/GeneralConfigForm';
 import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
 import { PricingDataManager } from '@/utils/pricingDataManager';
@@ -47,29 +45,13 @@ const PricingConfig = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="general-config" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="general-config">General Config</TabsTrigger>
-              <TabsTrigger value="paas-pricing">Platform as a Service</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="general-config" className="space-y-4">
-              <GeneralConfigForm
-                currentConfig={currentGeneralConfig}
-                setCurrentConfig={setCurrentGeneralConfig}
-                organizationTypes={organizationTypes}
-                configs={configs}
-                setConfigs={setConfigs}
-              />
-            </TabsContent>
-            
-            <TabsContent value="paas-pricing" className="space-y-4">
-              <InternalPaasPricingManager
-                configs={configs}
-                setConfigs={setConfigs}
-              />
-            </TabsContent>
-          </Tabs>
+          <GeneralConfigForm
+            currentConfig={currentGeneralConfig}
+            setCurrentConfig={setCurrentGeneralConfig}
+            organizationTypes={organizationTypes}
+            configs={configs}
+            setConfigs={setConfigs}
+          />
         </CardContent>
       </Card>
     </div>
