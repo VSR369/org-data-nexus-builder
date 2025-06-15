@@ -1,5 +1,6 @@
 
 import { DataManager } from './dataManager';
+import { MasterDataPersistenceManager } from './masterDataPersistenceManager';
 
 interface Currency {
   id: string;
@@ -7,6 +8,9 @@ interface Currency {
   name: string;
   symbol: string;
   country: string;
+  createdAt: string;
+  updatedAt: string;
+  isUserCreated: boolean;
 }
 
 interface Country {
@@ -16,75 +20,60 @@ interface Country {
   region?: string;
 }
 
-// Enhanced default currencies with better country coverage
-const defaultCurrencies: Currency[] = [
-  { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
-  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States of America' },
-  { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
-  { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
-  { id: '5', code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', country: 'Canada' },
-  { id: '6', code: 'AUD', name: 'Australian Dollar', symbol: 'A$', country: 'Australia' },
-  { id: '7', code: 'JPY', name: 'Japanese Yen', symbol: '¥', country: 'Japan' },
-  { id: '8', code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', country: 'Singapore' },
-  { id: '9', code: 'CNY', name: 'Chinese Yuan', symbol: '¥', country: 'China' },
-  { id: '10', code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', country: 'Switzerland' },
-  { id: '11', code: 'AED', name: 'UAE Dirham', symbol: 'AED', country: 'United Arab Emirates' },
-  { id: '12', code: 'BRL', name: 'Brazilian Real', symbol: 'R$', country: 'Brazil' },
-  { id: '13', code: 'MXN', name: 'Mexican Peso', symbol: '$', country: 'Mexico' },
-  { id: '14', code: 'EUR', name: 'Euro', symbol: '€', country: 'Germany' },
-  { id: '15', code: 'EUR', name: 'Euro', symbol: '€', country: 'France' }
+// IMPORTANT: These are ONLY used when NO user data exists
+const emergencyFallbackCurrencies: Currency[] = [
+  { 
+    id: 'fallback_1', 
+    code: 'USD', 
+    name: 'US Dollar', 
+    symbol: '$', 
+    country: 'United States of America',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isUserCreated: false
+  },
+  { 
+    id: 'fallback_2', 
+    code: 'EUR', 
+    name: 'Euro', 
+    symbol: '€', 
+    country: 'European Union',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isUserCreated: false
+  }
 ];
 
-const defaultEntityTypes: string[] = [
+const emergencyFallbackEntityTypes: string[] = [
   'Commercial',
-  'Non-Profit Organization',
-  'Society',
-  'Trust',
-  'Government',
-  'Educational Institution',
-  'Healthcare Organization',
-  'Research Institution'
+  'Non-Profit Organization'
 ];
 
-const currencyDataManager = new DataManager<Currency[]>({
+const currencyConfig = {
   key: 'master_data_currencies',
-  defaultData: defaultCurrencies,
-  version: 1
-});
+  version: 2,
+  preserveUserData: true
+};
 
-const entityTypeDataManager = new DataManager<string[]>({
-  key: 'master_data_entity_types',
-  defaultData: defaultEntityTypes,
-  version: 1
-});
+const entityTypeConfig = {
+  key: 'master_data_entity_types', 
+  version: 2,
+  preserveUserData: true
+};
 
 export class MasterDataSeeder {
   static seedAllMasterData() {
-    console.log('🌱 Starting master data seeding...');
+    console.log('🌱 Starting master data initialization...');
     
-    // Load currencies - DO NOT reset if data exists
-    let currencies = currencyDataManager.loadData();
+    // Load currencies - NEVER overwrite user data
+    let currencies = this.getCurrencies();
     console.log('💰 Loaded currencies from storage:', currencies.length);
     
-    // Only seed defaults if truly empty (no currencies at all)
-    if (!currencies || currencies.length === 0) {
-      console.log('📦 No currencies found, seeding defaults for the first time...');
-      currencyDataManager.saveData(defaultCurrencies);
-      currencies = defaultCurrencies;
-    } else {
-      console.log('✅ Using existing currency data, count:', currencies.length);
-    }
-    
-    // Load entity types
-    let entityTypes = entityTypeDataManager.loadData();
-    if (!entityTypes || entityTypes.length === 0) {
-      console.log('📦 No entity types found, seeding defaults...');
-      entityTypeDataManager.saveData(defaultEntityTypes);
-      entityTypes = defaultEntityTypes;
-    }
+    // Load entity types - NEVER overwrite user data  
+    let entityTypes = this.getEntityTypes();
     console.log('🏢 Entity types loaded:', entityTypes.length);
     
-    console.log('✅ Master data seeding complete');
+    console.log('✅ Master data initialization complete (user data preserved)');
     
     return {
       currencies,
@@ -92,32 +81,90 @@ export class MasterDataSeeder {
     };
   }
   
-  static validateMasterDataIntegrity(): {
-    isValid: boolean;
-    issues: string[];
-  } {
-    const issues: string[] = [];
+  static getCurrencies(): Currency[] {
+    console.log('🔍 Getting currencies...');
     
-    // Check currencies
-    const currencies = currencyDataManager.loadData();
-    if (!currencies || currencies.length === 0) {
-      issues.push('No currencies found in master data');
+    // First, try to load user data
+    const userData = MasterDataPersistenceManager.loadUserData<Currency[]>(currencyConfig);
+    if (userData && userData.length > 0) {
+      console.log('✅ Using user-created currencies:', userData.length);
+      return userData;
     }
-    
-    // Check entity types
-    const entityTypes = entityTypeDataManager.loadData();
-    if (!entityTypes || entityTypes.length === 0) {
-      issues.push('No entity types found in master data');
+
+    // Check if we have any legacy data in old format
+    const legacyData = localStorage.getItem('master_data_currencies');
+    if (legacyData) {
+      try {
+        const parsed = JSON.parse(legacyData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log('⚠️ Found legacy currency data, migrating to new format');
+          const migratedData = parsed.map((item: any, index: number) => ({
+            ...item,
+            id: item.id || `migrated_${index}`,
+            createdAt: item.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isUserCreated: true // Assume legacy data is user data
+          }));
+          
+          // Save as user data
+          MasterDataPersistenceManager.saveUserData(currencyConfig, migratedData);
+          return migratedData;
+        }
+      } catch (error) {
+        console.error('❌ Failed to migrate legacy currency data:', error);
+      }
     }
+
+    // Only use emergency fallback if absolutely no data exists
+    console.log('📦 No user data found, using emergency fallback currencies (NOT saved)');
+    return emergencyFallbackCurrencies;
+  }
+  
+  static saveCurrencies(currencies: Currency[]): void {
+    console.log('💾 Saving currencies as user data:', currencies.length);
+    MasterDataPersistenceManager.saveUserData(currencyConfig, currencies);
+  }
+  
+  static getEntityTypes(): string[] {
+    console.log('🔍 Getting entity types...');
     
-    return {
-      isValid: issues.length === 0,
-      issues
-    };
+    // Check if we have user data (stored as string array)
+    const hasUserData = MasterDataPersistenceManager.hasUserData(entityTypeConfig);
+    if (hasUserData) {
+      const stored = localStorage.getItem('master_data_entity_types');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.data && Array.isArray(parsed.data)) {
+            console.log('✅ Using user-created entity types:', parsed.data.length);
+            return parsed.data;
+          }
+        } catch (error) {
+          console.error('❌ Failed to parse entity types:', error);
+        }
+      }
+    }
+
+    // Check legacy format
+    const legacyData = localStorage.getItem('master_data_entity_types');
+    if (legacyData) {
+      try {
+        const parsed = JSON.parse(legacyData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log('⚠️ Found legacy entity types, treating as user data');
+          return parsed;
+        }
+      } catch (error) {
+        console.error('❌ Failed to parse legacy entity types:', error);
+      }
+    }
+
+    console.log('📦 No user data found, using emergency fallback entity types');
+    return emergencyFallbackEntityTypes;
   }
   
   static getCurrencyByCountry(country: string): Currency | null {
-    const currencies = currencyDataManager.loadData();
+    const currencies = this.getCurrencies();
     
     console.log('🔍 getCurrencyByCountry - Looking for:', country);
     console.log('🔍 getCurrencyByCountry - Available currencies:', currencies?.length || 0);
@@ -173,24 +220,48 @@ export class MasterDataSeeder {
     return null;
   }
   
-  static getCurrencies(): Currency[] {
-    return currencyDataManager.loadData() || [];
+  static validateMasterDataIntegrity(): {
+    isValid: boolean;
+    issues: string[];
+  } {
+    const issues: string[] = [];
+    
+    try {
+      const currencyValidation = MasterDataPersistenceManager.validateDataIntegrity<Currency[]>(currencyConfig);
+      const entityTypeValidation = MasterDataPersistenceManager.validateDataIntegrity<any[]>(entityTypeConfig);
+      
+      if (!currencyValidation.hasUserData) {
+        issues.push('No user-created currencies found');
+      } else if (!currencyValidation.isValid) {
+        issues.push(...currencyValidation.issues.map(issue => `Currency: ${issue}`));
+      }
+      
+      if (!entityTypeValidation.hasUserData) {
+        issues.push('No user-created entity types found');
+      } else if (!entityTypeValidation.isValid) {
+        issues.push(...entityTypeValidation.issues.map(issue => `Entity Type: ${issue}`));
+      }
+
+    } catch (error) {
+      issues.push(`Validation error: ${error}`);
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues
+    };
   }
-  
-  static saveCurrencies(currencies: Currency[]): void {
-    console.log('💾 Saving currencies to persistent storage:', currencies.length);
-    currencyDataManager.saveData(currencies);
-  }
-  
-  static getEntityTypes(): string[] {
-    return entityTypeDataManager.loadData() || [];
-  }
-  
-  // Only use this method when explicitly requested by user for testing/reset purposes
-  static resetCurrencyData(): Currency[] {
-    console.log('🔄 MANUAL RESET: Resetting currency data to defaults...');
-    const resetData = currencyDataManager.resetToDefault();
-    console.log('🔄 MANUAL RESET: Currency data reset complete, count:', resetData.length);
-    return resetData;
+
+  // FOR TESTING/DEVELOPMENT ONLY - Use with extreme caution
+  static DANGEROUS_resetAllUserData(): void {
+    console.log('🚨 DANGEROUS: Resetting ALL user data - this should only be used in development!');
+    MasterDataPersistenceManager.clearUserData(currencyConfig);
+    MasterDataPersistenceManager.clearUserData(entityTypeConfig);
+    
+    // Also clear legacy storage
+    localStorage.removeItem('master_data_currencies');
+    localStorage.removeItem('master_data_entity_types');
+    
+    console.log('🗑️ All user master data has been cleared');
   }
 }

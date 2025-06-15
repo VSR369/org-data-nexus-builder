@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Plus, Users, RotateCcw, RefreshCw } from 'lucide-react';
+import { Edit, Trash2, Users, AlertTriangle, Database } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { MasterDataSeeder } from '@/utils/masterDataSeeder';
+import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 
 interface MembershipFeeEntry {
   id: string;
@@ -23,6 +24,8 @@ interface MembershipFeeEntry {
   annualAmount: number;
   annualCurrency: string;
   createdAt: string;
+  updatedAt: string;
+  isUserCreated: boolean;
 }
 
 interface Currency {
@@ -31,6 +34,7 @@ interface Currency {
   name: string;
   symbol: string;
   country: string;
+  isUserCreated: boolean;
 }
 
 interface Country {
@@ -40,29 +44,11 @@ interface Country {
   region?: string;
 }
 
-// Default data structure
-const defaultMembershipFees: MembershipFeeEntry[] = [];
-
-// Data managers for currencies and entity types
-const currencyDataManager = new DataManager<Currency[]>({
-  key: 'master_data_currencies',
-  defaultData: [],
-  version: 1
-});
-
-const entityTypeDataManager = new DataManager<string[]>({
-  key: 'master_data_entity_types',
-  defaultData: [],
-  version: 1
-});
-
-const membershipFeeDataManager = new DataManager<MembershipFeeEntry[]>({
+const membershipFeeConfig = {
   key: 'master_data_seeker_membership_fees',
-  defaultData: defaultMembershipFees,
-  version: 1
-});
-
-GlobalCacheManager.registerKey('master_data_seeker_membership_fees');
+  version: 2,
+  preserveUserData: true
+};
 
 const SeekerMembershipFeeConfig = () => {
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
@@ -71,29 +57,46 @@ const SeekerMembershipFeeConfig = () => {
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [currentEntry, setCurrentEntry] = useState<Partial<MembershipFeeEntry>>({});
   const [isEditing, setIsEditing] = useState(false);
+  const [dataHealth, setDataHealth] = useState<any>(null);
   const { toast } = useToast();
+
+  // Function to check data health
+  const checkDataHealth = () => {
+    const currencyHealth = MasterDataPersistenceManager.validateDataIntegrity(
+      { key: 'master_data_currencies', version: 2, preserveUserData: true }
+    );
+    const membershipHealth = MasterDataPersistenceManager.validateDataIntegrity<MembershipFeeEntry[]>(membershipFeeConfig);
+    
+    return {
+      currencies: currencyHealth,
+      membershipFees: membershipHealth
+    };
+  };
 
   // Function to reload all master data
   const reloadMasterData = () => {
-    console.log('🔄 Reloading master data...');
+    console.log('🔄 Reloading master data with persistence priority...');
     
-    // Seed master data to ensure dependencies exist (but don't force reset)
-    const seededData = MasterDataSeeder.seedAllMasterData();
-    
-    const loadedFees = membershipFeeDataManager.loadData();
+    // Load master data - this will prioritize user data
     const loadedCurrencies = MasterDataSeeder.getCurrencies();
     const loadedCountries = countriesDataManager.loadData();
     const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
     
-    console.log('🔍 SeekerMembershipFeeConfig - Reloaded countries:', loadedCountries.length);
-    console.log('🔍 SeekerMembershipFeeConfig - Reloaded currencies:', loadedCurrencies.length);
-    console.log('🔍 SeekerMembershipFeeConfig - Reloaded entity types:', loadedEntityTypes.length);
-    console.log('🔍 SeekerMembershipFeeConfig - Reloaded membership fees:', loadedFees.length);
+    // Load membership fees with persistence
+    const loadedFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
+    
+    console.log('🔍 SeekerMembershipFeeConfig - User currencies:', loadedCurrencies.length);
+    console.log('🔍 SeekerMembershipFeeConfig - Countries:', loadedCountries.length);
+    console.log('🔍 SeekerMembershipFeeConfig - Entity types:', loadedEntityTypes.length);
+    console.log('🔍 SeekerMembershipFeeConfig - User membership fees:', loadedFees.length);
     
     setMembershipFees(loadedFees);
     setCurrencies(loadedCurrencies);
     setCountries(loadedCountries);
     setEntityTypes(loadedEntityTypes);
+    
+    // Update health status
+    setDataHealth(checkDataHealth());
     
     return { loadedCurrencies, loadedCountries, loadedEntityTypes, loadedFees };
   };
@@ -103,29 +106,27 @@ const SeekerMembershipFeeConfig = () => {
     reloadMasterData();
   }, []);
 
-  // Save data whenever membershipFees change with validation
+  // Save membership fees whenever they change
   useEffect(() => {
-    if (membershipFees.length >= 0) {
-      console.log('💾 Saving membership fees:', membershipFees);
-      const saveResult = membershipFeeDataManager.saveData(membershipFees);
-      console.log('💾 Save result:', saveResult);
+    if (membershipFees.length > 0) {
+      console.log('💾 Saving membership fees as user data:', membershipFees.length);
+      MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
       
-      // Verify the save worked
-      const verification = localStorage.getItem('master_data_seeker_membership_fees');
-      console.log('✅ Verification - saved data:', verification);
+      // Update health status
+      setDataHealth(checkDataHealth());
     }
   }, [membershipFees]);
 
   // Auto-populate currency when country is selected
   const handleCountryChange = (selectedCountry: string) => {
     console.log('🌍 Country selected:', selectedCountry);
-    console.log('🔍 Available currencies for lookup:', currencies.length);
+    console.log('🔍 Available user currencies for lookup:', currencies.length);
     
-    // Find the currency for the selected country from master data
+    // Find the currency for the selected country from user data
     const countryCurrency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
     
     if (countryCurrency) {
-      console.log('✅ Found currency for country:', countryCurrency);
+      console.log('✅ Found user currency for country:', countryCurrency);
       setCurrentEntry(prev => ({
         ...prev,
         country: selectedCountry,
@@ -139,7 +140,7 @@ const SeekerMembershipFeeConfig = () => {
         description: `${countryCurrency.code} (${countryCurrency.name}) has been auto-selected for ${selectedCountry}`,
       });
     } else {
-      console.log('❌ No currency found for country');
+      console.log('❌ No user currency found for country');
       
       setCurrentEntry(prev => ({
         ...prev,
@@ -151,7 +152,7 @@ const SeekerMembershipFeeConfig = () => {
       
       toast({
         title: "No Currency Found",
-        description: `No currency mapping found for ${selectedCountry}. Please select currencies manually.`,
+        description: `No currency mapping found for ${selectedCountry}. Please create the currency in Currency Configuration first.`,
         variant: "destructive",
       });
     }
@@ -207,11 +208,19 @@ const SeekerMembershipFeeConfig = () => {
     }
 
     try {
+      const now = new Date().toISOString();
+      
       if (isEditing && currentEntry.id) {
         console.log('✏️ Updating existing entry:', currentEntry.id);
+        const updatedEntry = {
+          ...currentEntry,
+          updatedAt: now,
+          isUserCreated: true
+        } as MembershipFeeEntry;
+        
         setMembershipFees(prev => {
           const updated = prev.map(item => 
-            item.id === currentEntry.id ? { ...currentEntry as MembershipFeeEntry } : item
+            item.id === currentEntry.id ? updatedEntry : item
           );
           console.log('✏️ Updated membership fees:', updated);
           return updated;
@@ -223,8 +232,10 @@ const SeekerMembershipFeeConfig = () => {
       } else {
         const newEntry = {
           ...currentEntry,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString().split('T')[0],
+          id: `user_${Date.now()}`,
+          createdAt: now.split('T')[0],
+          updatedAt: now,
+          isUserCreated: true
         } as MembershipFeeEntry;
         
         console.log('➕ Adding new entry:', newEntry);
@@ -269,68 +280,53 @@ const SeekerMembershipFeeConfig = () => {
     setIsEditing(false);
   };
 
-  const handleResetToDefault = () => {
-    const defaultData = membershipFeeDataManager.resetToDefault();
-    setMembershipFees(defaultData);
-    toast({
-      title: "Success",
-      description: "Seeker membership fees reset to default values.",
-    });
-  };
-
-  const handleResetCurrencies = () => {
-    console.log('🔄 Manually resetting currencies...');
-    const resetCurrencies = MasterDataSeeder.resetCurrencyData();
-    setCurrencies(resetCurrencies);
-    toast({
-      title: "Success",
-      description: `Currencies reset to defaults. ${resetCurrencies.length} currencies loaded.`,
-    });
-  };
-
   const formatCurrency = (amount: number, currency: string) => {
     const currencyData = currencies.find(c => c.code === currency);
     const symbol = currencyData?.symbol || currency;
     return `${symbol} ${amount.toLocaleString()}`;
   };
 
+  // Filter to show only user-created currencies
+  const userCurrencies = currencies.filter(c => c.isUserCreated !== false);
+
   return (
     <div className="space-y-6">
+      {/* Data Health Status */}
+      {dataHealth && (
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Database className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium">Data Health Status</p>
+                <div className="text-sm text-muted-foreground mt-1">
+                  <span className={`inline-block w-2 h-2 rounded-full mr-2 ${dataHealth.currencies.hasUserData ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                  Currencies: {dataHealth.currencies.hasUserData ? 'User Data Found' : 'Using Fallback'}
+                  <span className={`inline-block w-2 h-2 rounded-full mr-2 ml-4 ${dataHealth.membershipFees.hasUserData ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                  Membership Fees: {dataHealth.membershipFees.hasUserData ? 'User Data Found' : 'No User Data'}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              {isEditing ? 'Edit Seeker Membership Fee' : 'Add Seeker Membership Fee Configuration'}
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleResetCurrencies}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Reset Currencies (Testing Only)
-              </Button>
-              <Button
-                onClick={handleResetToDefault}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Reset to Default
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            {isEditing ? 'Edit Seeker Membership Fee' : 'Add Seeker Membership Fee Configuration'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {currencies.length === 0 && (
+          {userCurrencies.length === 0 && (
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-yellow-800">
-                ⚠️ No currencies available. This should not happen - please check the currency configuration.
-              </p>
+              <div className="flex items-center gap-3 text-yellow-800">
+                <AlertTriangle className="h-5 w-5" />
+                <p>
+                  ⚠️ No user-created currencies found. Please create currencies in the Currency Configuration section first.
+                </p>
+              </div>
             </div>
           )}
           
@@ -387,7 +383,7 @@ const SeekerMembershipFeeConfig = () => {
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {currencies.map((currency) => (
+                      {userCurrencies.map((currency) => (
                         <SelectItem key={currency.code} value={currency.code}>
                           {currency.code} - {currency.name}
                         </SelectItem>
@@ -428,7 +424,7 @@ const SeekerMembershipFeeConfig = () => {
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {currencies.map((currency) => (
+                      {userCurrencies.map((currency) => (
                         <SelectItem key={currency.code} value={currency.code}>
                           {currency.code} - {currency.name}
                         </SelectItem>
@@ -469,7 +465,7 @@ const SeekerMembershipFeeConfig = () => {
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {currencies.map((currency) => (
+                      {userCurrencies.map((currency) => (
                         <SelectItem key={currency.code} value={currency.code}>
                           {currency.code} - {currency.name}
                         </SelectItem>
@@ -499,7 +495,7 @@ const SeekerMembershipFeeConfig = () => {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button type="submit">
+              <Button type="submit" disabled={userCurrencies.length === 0}>
                 {isEditing ? 'Update' : 'Submit'} Membership Fee
               </Button>
               {isEditing && (
@@ -512,15 +508,16 @@ const SeekerMembershipFeeConfig = () => {
         </CardContent>
       </Card>
 
+      {/* Existing Configurations */}
       <Card>
         <CardHeader>
-          <CardTitle>Existing Seeker Membership Fee Configurations ({membershipFees.length})</CardTitle>
+          <CardTitle>User-Created Membership Fee Configurations ({membershipFees.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {membershipFees.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No membership fee configurations found. Add one above to get started.
+                No user-created membership fee configurations found. Add one above to get started.
               </p>
             ) : (
               <Table>
@@ -547,7 +544,14 @@ const SeekerMembershipFeeConfig = () => {
                       <TableCell>{formatCurrency(fee.quarterlyAmount, fee.quarterlyCurrency)}</TableCell>
                       <TableCell>{formatCurrency(fee.halfYearlyAmount, fee.halfYearlyCurrency)}</TableCell>
                       <TableCell>{formatCurrency(fee.annualAmount, fee.annualCurrency)}</TableCell>
-                      <TableCell>{fee.createdAt}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{fee.createdAt}</div>
+                          {fee.isUserCreated && (
+                            <Badge variant="outline" className="text-xs mt-1">User Created</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleEdit(fee)}>
