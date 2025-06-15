@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building, User, LogOut, Globe, AlertTriangle, CreditCard } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Building, User, LogOut, Globe, AlertTriangle, CreditCard, CheckCircle, Clock } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSessionManager } from '@/hooks/useSessionManager';
 
@@ -21,6 +22,7 @@ const SeekerDashboard = () => {
   const [entityType, setEntityType] = useState("");
   const [country, setCountry] = useState("");
   const [userId, setUserId] = useState("");
+  const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<string>("");
   
   // Get user data from navigation state or props
   const navUserId = (location.state as SeekerDashboardProps)?.userId;
@@ -71,6 +73,13 @@ const SeekerDashboard = () => {
           userId: storedUserId
         });
       }
+
+      // Load selected membership plan
+      const savedPlan = localStorage.getItem('selectedMembershipPlan');
+      if (savedPlan) {
+        setSelectedMembershipPlan(savedPlan);
+        console.log('✅ Loaded saved membership plan:', savedPlan);
+      }
       
       console.log('📋 === DASHBOARD LOAD END ===');
     };
@@ -80,6 +89,31 @@ const SeekerDashboard = () => {
 
   // Check if user needs to log in again
   const showLoginWarning = !organizationName || !userId;
+
+  // Determine membership status for testing
+  const getMembershipStatus = () => {
+    if (selectedMembershipPlan) {
+      return {
+        status: 'active' as const,
+        plan: selectedMembershipPlan,
+        message: `Active ${selectedMembershipPlan.charAt(0).toUpperCase() + selectedMembershipPlan.slice(1)} Membership`,
+        badgeVariant: 'default' as const,
+        icon: CheckCircle,
+        iconColor: 'text-green-600'
+      };
+    } else {
+      return {
+        status: 'inactive' as const,
+        plan: '',
+        message: 'No Active Membership',
+        badgeVariant: 'secondary' as const,
+        icon: Clock,
+        iconColor: 'text-gray-500'
+      };
+    }
+  };
+
+  const membershipStatus = getMembershipStatus();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -104,6 +138,39 @@ const SeekerDashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Membership Status Card */}
+        <Card className="shadow-xl border-0 mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <CreditCard className="h-6 w-6 text-blue-600" />
+              Membership Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <membershipStatus.icon className={`h-6 w-6 ${membershipStatus.iconColor}`} />
+                <div>
+                  <p className="font-medium text-gray-900">{membershipStatus.message}</p>
+                  {membershipStatus.status === 'active' && (
+                    <p className="text-sm text-gray-600">
+                      Plan: {membershipStatus.plan.charAt(0).toUpperCase() + membershipStatus.plan.slice(1)}
+                    </p>
+                  )}
+                  {membershipStatus.status === 'active' && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Testing Mode: Membership active without payment
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Badge variant={membershipStatus.badgeVariant}>
+                {membershipStatus.status === 'active' ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Seeker Details Card */}
         <Card className="shadow-xl border-0 mb-6">
@@ -175,9 +242,10 @@ const SeekerDashboard = () => {
               onClick={handleJoinAsMember}
               className="w-full h-16 flex items-center justify-center gap-3 text-lg"
               disabled={showLoginWarning}
+              variant={membershipStatus.status === 'active' ? 'outline' : 'default'}
             >
               <CreditCard className="h-6 w-6" />
-              Join as Member
+              {membershipStatus.status === 'active' ? 'Manage Membership' : 'Join as Member'}
             </Button>
           </CardContent>
         </Card>
