@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import MasterDataContent from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Database } from "lucide-react";
@@ -30,7 +30,7 @@ const MasterDataPortal = () => {
         <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        <SidebarInset>
           {/* Header */}
           <header className="bg-white border-b border-gray-200 shadow-sm z-10">
             <div className="container mx-auto px-6">
@@ -63,12 +63,12 @@ const MasterDataPortal = () => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
               <MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />
             </div>
-          </main>
-        </div>
+          </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
