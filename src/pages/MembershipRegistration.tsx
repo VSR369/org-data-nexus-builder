@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, AlertTriangle } from 'lucide-react';
@@ -27,9 +27,20 @@ const MembershipRegistration = () => {
   
   const { membershipData, countryPricing, loading, error, debugInfo } = useMembershipData(entityType, country);
 
+  // Load saved plan selection on component mount
+  useEffect(() => {
+    const savedPlan = localStorage.getItem('selectedMembershipPlan');
+    if (savedPlan) {
+      setSelectedPlan(savedPlan);
+      console.log('✅ Restored saved membership plan:', savedPlan);
+    }
+  }, []);
+
   const handlePlanSelect = (plan: string) => {
     setSelectedPlan(plan);
-    console.log('Selected membership plan:', plan);
+    // Save to localStorage for persistence
+    localStorage.setItem('selectedMembershipPlan', plan);
+    console.log('✅ Selected and saved membership plan:', plan);
   };
 
   const handleProceedWithMembership = () => {
