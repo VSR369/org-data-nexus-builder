@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 
 interface MembershipFeeEntry {
   id: string;
   country: string;
+  organizationType: string;
   entityType: string;
   quarterlyAmount: number;
   quarterlyCurrency: string;
@@ -39,7 +41,7 @@ const membershipFeeConfig = {
   preserveUserData: true
 };
 
-export const useMembershipData = (entityType?: string, country?: string) => {
+export const useMembershipData = (entityType?: string, country?: string, organizationType?: string) => {
   const [membershipData, setMembershipData] = useState<MembershipConfig | null>(null);
   const [countryPricing, setCountryPricing] = useState<PricingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export const useMembershipData = (entityType?: string, country?: string) => {
   useEffect(() => {
     const loadMembershipData = () => {
       console.log('🔍 === MEMBERSHIP DATA LOADING START (User Data Priority) ===');
-      console.log('🔍 Looking for:', { entityType, country });
+      console.log('🔍 Looking for:', { entityType, country, organizationType });
       
       setLoading(true);
       setError(null);
@@ -71,11 +73,13 @@ export const useMembershipData = (entityType?: string, country?: string) => {
           return;
         }
 
-        debug.push(`Available user configs: ${membershipFees.map(f => `${f.entityType}/${f.country}`).join(', ')}`);
+        debug.push(`Available user configs: ${membershipFees.map(f => `${f.entityType}/${f.organizationType}/${f.country}`).join(', ')}`);
 
         // Find exact match for user data
         let matchingFee = membershipFees.find(fee => 
-          fee.entityType === entityType && fee.country === country
+          fee.entityType === entityType && 
+          fee.country === country &&
+          fee.organizationType === organizationType
         );
 
         if (!matchingFee) {
@@ -84,7 +88,8 @@ export const useMembershipData = (entityType?: string, country?: string) => {
           // Try case-insensitive matching
           matchingFee = membershipFees.find(fee => 
             fee.entityType?.toLowerCase() === entityType?.toLowerCase() && 
-            fee.country?.toLowerCase() === country?.toLowerCase()
+            fee.country?.toLowerCase() === country?.toLowerCase() &&
+            fee.organizationType?.toLowerCase() === organizationType?.toLowerCase()
           );
           
           if (matchingFee) {
@@ -93,14 +98,15 @@ export const useMembershipData = (entityType?: string, country?: string) => {
         }
 
         if (!matchingFee) {
-          // Try entity type only match from user data
-          const entityMatches = membershipFees.filter(fee => 
-            fee.entityType?.toLowerCase() === entityType?.toLowerCase()
+          // Try entity type and organization type match from user data
+          const entityOrgMatches = membershipFees.filter(fee => 
+            fee.entityType?.toLowerCase() === entityType?.toLowerCase() &&
+            fee.organizationType?.toLowerCase() === organizationType?.toLowerCase()
           );
           
-          if (entityMatches.length > 0) {
-            debug.push(`Found ${entityMatches.length} user entity type matches for different countries`);
-            matchingFee = entityMatches[0]; // Use first available user config
+          if (entityOrgMatches.length > 0) {
+            debug.push(`Found ${entityOrgMatches.length} user entity/org type matches for different countries`);
+            matchingFee = entityOrgMatches[0]; // Use first available user config
             debug.push(`Using user fallback config for ${matchingFee.country}`);
           }
         }
@@ -108,9 +114,9 @@ export const useMembershipData = (entityType?: string, country?: string) => {
         if (!matchingFee) {
           const availableConfigs = membershipFees
             .filter(fee => fee.isUserCreated)
-            .map(fee => `${fee.entityType} (${fee.country})`)
+            .map(fee => `${fee.entityType} - ${fee.organizationType} (${fee.country})`)
             .join(', ');
-          const errorMsg = `No user-created membership fee configuration found for ${entityType} in ${country}. Available user configurations: ${availableConfigs}`;
+          const errorMsg = `No user-created membership fee configuration found for ${entityType} - ${organizationType} in ${country}. Available user configurations: ${availableConfigs}`;
           debug.push(`ERROR: ${errorMsg}`);
           setError(errorMsg);
           setDebugInfo(debug);
@@ -118,12 +124,12 @@ export const useMembershipData = (entityType?: string, country?: string) => {
           return;
         }
 
-        debug.push(`Using user config: ${matchingFee.entityType}/${matchingFee.country}`);
+        debug.push(`Using user config: ${matchingFee.entityType}/${matchingFee.organizationType}/${matchingFee.country}`);
         debug.push(`User config created: ${matchingFee.createdAt}`);
 
         // Convert the user membership fee data to the expected format
         const membershipConfig: MembershipConfig = {
-          organizationType: entityType || '',
+          organizationType: organizationType || '',
           marketplaceFee: 0,
           aggregatorFee: 0,
           marketplacePlusAggregatorFee: 0,
@@ -154,13 +160,13 @@ export const useMembershipData = (entityType?: string, country?: string) => {
       }
     };
 
-    if (entityType && country) {
+    if (entityType && country && organizationType) {
       loadMembershipData();
     } else {
-      setError('Missing entity type or country information.');
+      setError('Missing entity type, organization type, or country information.');
       setLoading(false);
     }
-  }, [entityType, country]);
+  }, [entityType, country, organizationType]);
 
   return {
     membershipData,

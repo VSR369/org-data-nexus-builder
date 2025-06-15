@@ -8,9 +8,11 @@ import MembershipFeeForm from './seeker-membership/MembershipFeeForm';
 import MembershipConfigsList from './seeker-membership/MembershipConfigsList';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from 'lucide-react';
+import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
 
 const SeekerMembershipFeeConfig = () => {
   const [editingEntry, setEditingEntry] = useState<MembershipFeeEntry | null>(null);
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const { toast } = useToast();
   
   const {
@@ -25,6 +27,13 @@ const SeekerMembershipFeeConfig = () => {
     isLoading,
     isInitialized
   } = useMembershipFeeData();
+
+  // Load organization types from master data
+  useEffect(() => {
+    const loadedOrgTypes = organizationTypesDataManager.loadData();
+    console.log('🔄 Loading organization types:', loadedOrgTypes);
+    setOrganizationTypes(loadedOrgTypes);
+  }, []);
 
   // Load data on component mount only if not already initialized
   useEffect(() => {
@@ -95,6 +104,7 @@ const SeekerMembershipFeeConfig = () => {
         currencies={currencies}
         countries={countries}
         entityTypes={entityTypes}
+        organizationTypes={organizationTypes}
         membershipFees={membershipFees}
         onSubmit={handleSubmit}
         editingEntry={editingEntry}

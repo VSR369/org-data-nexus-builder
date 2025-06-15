@@ -17,6 +17,7 @@ export interface Country {
 export interface MembershipFeeEntry {
   id: string;
   country: string;
+  organizationType: string;
   entityType: string;
   quarterlyAmount: number;
   quarterlyCurrency: string;

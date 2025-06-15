@@ -43,6 +43,7 @@ const MembershipConfigsList: React.FC<MembershipConfigsListProps> = ({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Country</TableHead>
+                    <TableHead>Organization Type</TableHead>
                     <TableHead>Entity Type</TableHead>
                     <TableHead>Quarterly Fee</TableHead>
                     <TableHead>Half Yearly Fee</TableHead>
@@ -56,6 +57,9 @@ const MembershipConfigsList: React.FC<MembershipConfigsListProps> = ({
                     <TableRow key={fee.id}>
                       <TableCell>
                         <Badge variant="outline">{fee.country}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{fee.organizationType}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{fee.entityType}</Badge>

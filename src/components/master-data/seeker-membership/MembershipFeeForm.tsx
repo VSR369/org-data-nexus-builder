@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ interface MembershipFeeFormProps {
   currencies: Currency[];
   countries: Country[];
   entityTypes: string[];
+  organizationTypes: string[];
   membershipFees: MembershipFeeEntry[];
   onSubmit: (entry: MembershipFeeEntry) => void;
   editingEntry?: MembershipFeeEntry | null;
@@ -24,6 +24,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
   currencies,
   countries,
   entityTypes,
+  organizationTypes,
   membershipFees,
   onSubmit,
   editingEntry,
@@ -91,6 +92,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     
     const requiredFields = {
       country: currentEntry.country,
+      organizationType: currentEntry.organizationType,
       entityType: currentEntry.entityType,
       quarterlyAmount: currentEntry.quarterlyAmount,
       quarterlyCurrency: currentEntry.quarterlyCurrency,
@@ -115,6 +117,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
 
     const existingEntry = membershipFees.find(fee => 
       fee.country === currentEntry.country && 
+      fee.organizationType === currentEntry.organizationType &&
       fee.entityType === currentEntry.entityType && 
       fee.id !== currentEntry.id
     );
@@ -122,7 +125,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     if (existingEntry && !isEditing) {
       toast({
         title: "Duplicate Configuration",
-        description: "Membership fee configuration already exists for this country and entity type combination.",
+        description: "Membership fee configuration already exists for this country, organization type, and entity type combination.",
         variant: "destructive",
       });
       return;
@@ -175,7 +178,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
         )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="country">Country *</Label>
               <Select
@@ -194,6 +197,29 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="organizationType">Organization Type *</Label>
+              <Select
+                key={`organizationType-${formKey}`}
+                value={currentEntry.organizationType || ''}
+                onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, organizationType: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select organization type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {organizationTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {organizationTypes.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No organization types found in master data.
+                </p>
+              )}
             </div>
 
             <div>
