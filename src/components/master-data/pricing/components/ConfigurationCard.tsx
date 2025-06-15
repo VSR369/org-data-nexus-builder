@@ -28,7 +28,10 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="font-medium text-lg">{config.organizationType}</h3>
-          <div className="flex gap-2 mt-1">
+          <div className="flex gap-2 mt-1 flex-wrap">
+            {config.entityType && (
+              <Badge variant="outline">{config.entityType}</Badge>
+            )}
             <Badge variant={config.membershipStatus === 'active' ? 'default' : 'secondary'}>
               {config.membershipStatus === 'active' ? 'Active Member' : 
                config.membershipStatus === 'inactive' ? 'Inactive Member' : 'Not a Member'}
@@ -51,19 +54,38 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
         </div>
       </div>
       
-      {/* Engagement Model Pricing */}
+      {/* Engagement Model Configuration */}
       <div className="mb-4">
-        <h4 className="text-sm font-medium mb-2 text-gray-600">Engagement Model Configuration</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-            <span className="text-sm font-medium">Engagement Model</span>
-            <Badge variant="outline">{config.engagementModel}</Badge>
-          </div>
+        <h4 className="text-sm font-medium mb-2 text-gray-600">Engagement Model: {config.engagementModel}</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {config.quarterlyFee !== undefined && (
+            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+              <span className="text-sm font-medium">Quarterly Fee</span>
+              <Badge variant="secondary">{config.quarterlyFee}%</Badge>
+            </div>
+          )}
           
-          <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-            <span className="text-sm font-medium">Fee</span>
-            <Badge variant="secondary">{config.engagementModelFee}%</Badge>
-          </div>
+          {config.halfYearlyFee !== undefined && (
+            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+              <span className="text-sm font-medium">Half Yearly Fee</span>
+              <Badge variant="secondary">{config.halfYearlyFee}%</Badge>
+            </div>
+          )}
+
+          {config.annualFee !== undefined && (
+            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+              <span className="text-sm font-medium">Annual Fee</span>
+              <Badge variant="secondary">{config.annualFee}%</Badge>
+            </div>
+          )}
+
+          {/* Legacy support for old engagementModelFee */}
+          {config.engagementModelFee !== undefined && !config.quarterlyFee && !config.halfYearlyFee && !config.annualFee && (
+            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+              <span className="text-sm font-medium">Legacy Fee</span>
+              <Badge variant="secondary">{config.engagementModelFee}%</Badge>
+            </div>
+          )}
         </div>
       </div>
 
@@ -71,18 +93,33 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
       {config.membershipStatus === 'active' && discount > 0 && (
         <div>
           <h4 className="text-sm font-medium mb-2 text-green-600">Active Member Pricing (After {discount}% Discount)</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
-              <span className="text-sm font-medium">Engagement Model</span>
-              <Badge variant="outline">{config.engagementModel}</Badge>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
-              <span className="text-sm font-medium">Discounted Fee</span>
-              <Badge variant="default" className="bg-green-600">
-                {calculateActiveMemberPrice(config.engagementModelFee, discount)}%
-              </Badge>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {config.quarterlyFee !== undefined && (
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
+                <span className="text-sm font-medium">Quarterly Fee</span>
+                <Badge variant="default" className="bg-green-600">
+                  {calculateActiveMemberPrice(config.quarterlyFee, discount)}%
+                </Badge>
+              </div>
+            )}
+
+            {config.halfYearlyFee !== undefined && (
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
+                <span className="text-sm font-medium">Half Yearly Fee</span>
+                <Badge variant="default" className="bg-green-600">
+                  {calculateActiveMemberPrice(config.halfYearlyFee, discount)}%
+                </Badge>
+              </div>
+            )}
+
+            {config.annualFee !== undefined && (
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200">
+                <span className="text-sm font-medium">Annual Fee</span>
+                <Badge variant="default" className="bg-green-600">
+                  {calculateActiveMemberPrice(config.annualFee, discount)}%
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
       )}

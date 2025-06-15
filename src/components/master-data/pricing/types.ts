@@ -13,8 +13,12 @@ export interface CountryPricing {
 export interface PricingConfig {
   id: string;
   organizationType: string;
+  entityType?: string;
   engagementModel: string;
-  engagementModelFee: number;
+  engagementModelFee?: number; // Keep for backward compatibility
+  quarterlyFee?: number;
+  halfYearlyFee?: number;
+  annualFee?: number;
   membershipStatus?: 'active' | 'inactive' | 'not-a-member';
   discountPercentage?: number;
   internalPaasPricing: CountryPricing[];

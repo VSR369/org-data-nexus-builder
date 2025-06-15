@@ -8,6 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PricingConfig } from '../types';
 import { engagementModelsDataManager } from '../../engagement-models/engagementModelsDataManager';
 import { EngagementModel } from '../../engagement-models/types';
+import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
+import { DataManager } from '@/utils/dataManager';
+
+// Entity types data manager
+const entityTypeDataManager = new DataManager<string[]>({
+  key: 'master_data_entity_types',
+  defaultData: ['Commercial', 'Non-Profit Organization', 'Society/ Trust'],
+  version: 1
+});
 
 interface GeneralConfigInputProps {
   currentConfig: Partial<PricingConfig>;
@@ -25,32 +34,24 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   onClear
 }) => {
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
+  const [entityTypes, setEntityTypes] = useState<string[]>([]);
+  const [organizationTypesFromMaster, setOrganizationTypesFromMaster] = useState<string[]>([]);
 
   useEffect(() => {
     // Load engagement models from master data
     const loadedModels = engagementModelsDataManager.getEngagementModels();
     console.log('🔄 GeneralConfigInput: Loading engagement models:', loadedModels);
-    
-    // Enhanced deduplication - normalize names and remove exact duplicates
-    const uniqueModels = loadedModels.reduce((acc: EngagementModel[], current) => {
-      const normalizedCurrentName = current.name.toLowerCase().trim();
-      const exists = acc.find(model => 
-        model.name.toLowerCase().trim() === normalizedCurrentName
-      );
-      
-      if (!exists) {
-        acc.push(current);
-      } else {
-        console.log('🔄 Duplicate engagement model found and skipped:', current.name);
-      }
-      return acc;
-    }, []);
-    
-    // Sort alphabetically for consistent display
-    uniqueModels.sort((a, b) => a.name.localeCompare(b.name));
-    
-    setEngagementModels(uniqueModels);
-    console.log('✅ GeneralConfigInput: Set unique engagement models:', uniqueModels.length, uniqueModels.map(m => m.name));
+    setEngagementModels(loadedModels);
+
+    // Load entity types from master data
+    const loadedEntityTypes = entityTypeDataManager.loadData();
+    console.log('🔄 GeneralConfigInput: Loading entity types:', loadedEntityTypes);
+    setEntityTypes(loadedEntityTypes);
+
+    // Load organization types from master data
+    const loadedOrgTypes = organizationTypesDataManager.loadData();
+    console.log('🔄 GeneralConfigInput: Loading organization types:', loadedOrgTypes);
+    setOrganizationTypesFromMaster(loadedOrgTypes);
   }, []);
 
   const handleInputChange = (field: string, value: string) => {
@@ -61,6 +62,12 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     }));
   };
 
+  const membershipStatuses = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'not-a-member', label: 'Not a Member' }
+  ];
+
   return (
     <Card>
       <CardHeader>
@@ -68,7 +75,8 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Master Data Selection Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="organizationType">Organization Type *</Label>
               <Select
@@ -79,58 +87,40 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                   <SelectValue placeholder="Select organization type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {organizationTypes.map((type) => (
+                  {organizationTypesFromMaster.map((type) => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {organizationTypesFromMaster.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No organization types found in master data.
+                </p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="engagementModel">Engagement Model *</Label>
+              <Label htmlFor="entityType">Entity Type *</Label>
               <Select
-                value={currentConfig.engagementModel || ''}
-                onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, engagementModel: value }))}
+                value={currentConfig.entityType || ''}
+                onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, entityType: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select engagement model" />
+                  <SelectValue placeholder="Select entity type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {engagementModels.map((model) => (
-                    <SelectItem key={`${model.id}-${model.name}`} value={model.name}>
-                      {model.name}
-                    </SelectItem>
+                  {entityTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {engagementModels.length === 0 && (
+              {entityTypes.length === 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  No engagement models found. Please configure them first.
-                </p>
-              )}
-              {engagementModels.length > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {engagementModels.length} unique models available
+                  No entity types found in master data.
                 </p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="engagementModelFee">Engagement Model Fee (%) *</Label>
-              <Input
-                id="engagementModelFee"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={currentConfig.engagementModelFee !== undefined ? currentConfig.engagementModelFee.toString() : ''}
-                onChange={(e) => handleInputChange('engagementModelFee', e.target.value)}
-                placeholder="15"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="membershipStatus">Membership Status *</Label>
               <Select
@@ -147,16 +137,21 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                   <SelectValue placeholder="Select membership status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="not-a-member">Not a Member</SelectItem>
+                  {membershipStatuses.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            {currentConfig.membershipStatus === 'active' && (
+          {/* Discount Section for Active Members */}
+          {currentConfig.membershipStatus === 'active' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="discountPercentage">Discount (%) *</Label>
+                <Label htmlFor="discountPercentage">Member Discount (%) *</Label>
                 <Input
                   id="discountPercentage"
                   type="number"
@@ -168,7 +163,90 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                   placeholder="0"
                 />
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Engagement Model Pricing Section - 4 Rows */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Engagement Model Pricing Configuration</h3>
+            
+            {/* Row 1: Engagement Model Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="engagementModel">Engagement Model *</Label>
+                <Select
+                  value={currentConfig.engagementModel || ''}
+                  onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, engagementModel: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select engagement model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {engagementModels.map((model) => (
+                      <SelectItem key={`${model.id}-${model.name}`} value={model.name}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {engagementModels.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    No engagement models found. Please configure them first.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Row 2: Quarterly Fee */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="quarterlyFee">Quarterly Engagement Model Fee (%) *</Label>
+                <Input
+                  id="quarterlyFee"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
+                  onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
+                  placeholder="15"
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Half Yearly Fee */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="halfYearlyFee">Half Yearly Engagement Model Fee (%) *</Label>
+                <Input
+                  id="halfYearlyFee"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={currentConfig.halfYearlyFee !== undefined ? currentConfig.halfYearlyFee.toString() : ''}
+                  onChange={(e) => handleInputChange('halfYearlyFee', e.target.value)}
+                  placeholder="12"
+                />
+              </div>
+            </div>
+
+            {/* Row 4: Annual Fee */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="annualFee">Annual Engagement Model Fee (%) *</Label>
+                <Input
+                  id="annualFee"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={currentConfig.annualFee !== undefined ? currentConfig.annualFee.toString() : ''}
+                  onChange={(e) => handleInputChange('annualFee', e.target.value)}
+                  placeholder="10"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2">
