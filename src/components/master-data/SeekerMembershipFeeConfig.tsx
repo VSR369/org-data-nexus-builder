@@ -6,6 +6,8 @@ import { MembershipFeeEntry } from './seeker-membership/types';
 import DataHealthStatus from './seeker-membership/DataHealthStatus';
 import MembershipFeeForm from './seeker-membership/MembershipFeeForm';
 import MembershipConfigsList from './seeker-membership/MembershipConfigsList';
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from 'lucide-react';
 
 const SeekerMembershipFeeConfig = () => {
   const [editingEntry, setEditingEntry] = useState<MembershipFeeEntry | null>(null);
@@ -19,21 +21,36 @@ const SeekerMembershipFeeConfig = () => {
     entityTypes,
     dataHealth,
     reloadMasterData,
-    userCurrencies
+    userCurrencies,
+    isLoading,
+    isInitialized
   } = useMembershipFeeData();
 
-  // Load data on component mount
+  // Load data on component mount only if not already initialized
   useEffect(() => {
-    reloadMasterData();
-  }, []);
+    if (!isInitialized && !isLoading) {
+      console.log('🚀 Component mounted - triggering data reload...');
+      reloadMasterData();
+    }
+  }, [isInitialized, isLoading]);
 
   const handleSubmit = (entry: MembershipFeeEntry) => {
+    console.log('📝 Submitting entry:', entry);
+    
     if (editingEntry) {
       setMembershipFees(prev => 
         prev.map(item => item.id === entry.id ? entry : item)
       );
+      toast({
+        title: "Success",
+        description: "Seeker membership fee updated successfully.",
+      });
     } else {
       setMembershipFees(prev => [...prev, entry]);
+      toast({
+        title: "Success",
+        description: "Seeker membership fee created successfully.",
+      });
     }
     setEditingEntry(null);
   };
@@ -53,6 +70,22 @@ const SeekerMembershipFeeConfig = () => {
   const handleCancelEdit = () => {
     setEditingEntry(null);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading membership fee configuration...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
