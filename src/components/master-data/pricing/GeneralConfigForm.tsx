@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -44,17 +45,34 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                                                 !isNaN(currentConfig.marketplacePlusAggregatorFee) &&
                                                 currentConfig.marketplacePlusAggregatorFee >= 0;
 
+    // Validate membership status is selected
+    const isMembershipStatusValid = currentConfig.membershipStatus && currentConfig.membershipStatus.trim() !== '';
+
+    // If membership status is active, discount percentage is required
+    const isDiscountValid = currentConfig.membershipStatus !== 'active' || 
+                           (currentConfig.discountPercentage !== undefined && 
+                            currentConfig.discountPercentage !== null && 
+                            !isNaN(currentConfig.discountPercentage) &&
+                            currentConfig.discountPercentage >= 0 &&
+                            currentConfig.discountPercentage <= 100);
+
     console.log('🔍 Validation checks:', {
       isOrgTypeValid,
       isMarketplaceFeeValid,
       isAggregatorFeeValid,
-      isMarketplacePlusAggregatorFeeValid
+      isMarketplacePlusAggregatorFeeValid,
+      isMembershipStatusValid,
+      isDiscountValid
     });
 
-    if (!isOrgTypeValid || !isMarketplaceFeeValid || !isAggregatorFeeValid || !isMarketplacePlusAggregatorFeeValid) {
+    if (!isOrgTypeValid || !isMarketplaceFeeValid || !isAggregatorFeeValid || !isMarketplacePlusAggregatorFeeValid || !isMembershipStatusValid || !isDiscountValid) {
+      let errorMessage = "Please fill in all required fields with valid values.";
+      if (currentConfig.membershipStatus === 'active' && !isDiscountValid) {
+        errorMessage = "Discount percentage is required when membership status is Active and must be between 0-100%.";
+      }
       toast({
         title: "Error",
-        description: "Please fill in all required fields with valid values.",
+        description: errorMessage,
         variant: "destructive",
       });
       return;
@@ -82,6 +100,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       marketplaceFee: currentConfig.marketplaceFee!,
       aggregatorFee: currentConfig.aggregatorFee!,
       marketplacePlusAggregatorFee: currentConfig.marketplacePlusAggregatorFee!,
+      membershipStatus: currentConfig.membershipStatus!,
+      discountPercentage: currentConfig.membershipStatus === 'active' ? currentConfig.discountPercentage! : undefined,
       internalPaasPricing: currentConfig.internalPaasPricing || [],
       version: (currentConfig.version || 0) + 1,
       createdAt: currentConfig.createdAt || new Date().toISOString().split('T')[0],
@@ -137,7 +157,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="organizationType">Organization Type *</Label>
                 <Select
@@ -154,7 +174,48 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-              
+
+              <div>
+                <Label htmlFor="membershipStatus">Membership Status *</Label>
+                <Select
+                  value={currentConfig.membershipStatus || ''}
+                  onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+                    setCurrentConfig(prev => ({ 
+                      ...prev, 
+                      membershipStatus: value,
+                      discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select membership status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="not-a-member">Not a Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {currentConfig.membershipStatus === 'active' && (
+                <div>
+                  <Label htmlFor="discountPercentage">Discount (%) *</Label>
+                  <Input
+                    id="discountPercentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={currentConfig.discountPercentage !== undefined ? currentConfig.discountPercentage.toString() : ''}
+                    onChange={(e) => handleInputChange('discountPercentage', e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="marketplaceFee">Marketplace Fee (%) *</Label>
                 <Input
@@ -226,7 +287,16 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="font-medium text-lg">{config.organizationType}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant={config.membershipStatus === 'active' ? 'default' : 'secondary'}>
+                          {config.membershipStatus === 'active' ? 'Active Member' : 
+                           config.membershipStatus === 'inactive' ? 'Inactive Member' : 'Not a Member'}
+                        </Badge>
+                        {config.membershipStatus === 'active' && config.discountPercentage && (
+                          <Badge variant="outline">{config.discountPercentage}% Discount</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
                         Version {config.version} • Created: {config.createdAt}
                       </p>
                     </div>

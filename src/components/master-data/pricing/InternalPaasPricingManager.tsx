@@ -78,10 +78,26 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
   };
 
   const handleAddPricing = () => {
-    if (!newCountryPricing.organizationType || !newCountryPricing.country || !newCountryPricing.currency) {
+    // Validate required fields
+    const requiredFields = ['organizationType', 'country', 'currency', 'membershipStatus'];
+    const missingFields = requiredFields.filter(field => !newCountryPricing[field as keyof typeof newCountryPricing]);
+    
+    // If membership status is active, discount percentage is required
+    if (newCountryPricing.membershipStatus === 'active' && 
+        (newCountryPricing.discountPercentage === undefined || 
+         newCountryPricing.discountPercentage === null || 
+         isNaN(newCountryPricing.discountPercentage))) {
+      missingFields.push('discountPercentage');
+    }
+
+    if (missingFields.length > 0) {
+      let errorMessage = `Please fill in all required fields: ${missingFields.join(', ')}`;
+      if (newCountryPricing.membershipStatus === 'active' && missingFields.includes('discountPercentage')) {
+        errorMessage = "Discount percentage is required when membership status is Active.";
+      }
       toast({
         title: "Error",
-        description: "Please fill in all required fields.",
+        description: errorMessage,
         variant: "destructive",
       });
       return;
@@ -97,6 +113,8 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
       quarterlyPrice: newCountryPricing.quarterlyPrice || 0,
       halfYearlyPrice: newCountryPricing.halfYearlyPrice || 0,
       annualPrice: newCountryPricing.annualPrice || 0,
+      membershipStatus: newCountryPricing.membershipStatus!,
+      discountPercentage: newCountryPricing.membershipStatus === 'active' ? newCountryPricing.discountPercentage! : undefined,
     } as CountryPricing;
 
     if (existingConfig) {
@@ -161,7 +179,7 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
             <div className="p-6 border rounded-lg bg-muted/30">
               <h4 className="text-lg font-medium mb-4">Add New Pricing Entry</h4>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div>
                   <Label>Organization Type *</Label>
                   <Select
@@ -206,7 +224,47 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
                     className="bg-muted"
                   />
                 </div>
+
+                <div>
+                  <Label>Membership Status *</Label>
+                  <Select
+                    value={newCountryPricing.membershipStatus}
+                    onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+                      setNewCountryPricing(prev => ({ 
+                        ...prev, 
+                        membershipStatus: value,
+                        discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select membership status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="not-a-member">Not a Member</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {newCountryPricing.membershipStatus === 'active' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <Label>Discount (%) *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={newCountryPricing.discountPercentage || ''}
+                      onChange={(e) => setNewCountryPricing(prev => ({ ...prev, discountPercentage: parseFloat(e.target.value) }))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
@@ -274,6 +332,8 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
                         <TableHead>Organization Type</TableHead>
                         <TableHead>Country</TableHead>
                         <TableHead>Currency</TableHead>
+                        <TableHead>Membership Status</TableHead>
+                        <TableHead>Discount</TableHead>
                         <TableHead>Quarterly</TableHead>
                         <TableHead>Half-Yearly</TableHead>
                         <TableHead>Annual</TableHead>
@@ -286,6 +346,16 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
                           <TableCell>{pricing.country}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{pricing.currency}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={pricing.membershipStatus === 'active' ? 'default' : 'secondary'}>
+                              {pricing.membershipStatus === 'active' ? 'Active' : 
+                               pricing.membershipStatus === 'inactive' ? 'Inactive' : 'Not a Member'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {pricing.membershipStatus === 'active' && pricing.discountPercentage ? 
+                              `${pricing.discountPercentage}%` : '-'}
                           </TableCell>
                           <TableCell>{formatCurrency(pricing.quarterlyPrice, pricing.currency)}</TableCell>
                           <TableCell>{formatCurrency(pricing.halfYearlyPrice, pricing.currency)}</TableCell>

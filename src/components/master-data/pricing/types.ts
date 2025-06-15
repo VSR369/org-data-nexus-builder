@@ -6,6 +6,8 @@ export interface CountryPricing {
   quarterlyPrice: number;
   halfYearlyPrice: number;
   annualPrice: number;
+  membershipStatus?: 'active' | 'inactive' | 'not-a-member';
+  discountPercentage?: number;
 }
 
 export interface PricingConfig {
@@ -14,6 +16,8 @@ export interface PricingConfig {
   marketplaceFee: number;
   aggregatorFee: number;
   marketplacePlusAggregatorFee: number;
+  membershipStatus?: 'active' | 'inactive' | 'not-a-member';
+  discountPercentage?: number;
   internalPaasPricing: CountryPricing[];
   version: number;
   createdAt: string;
