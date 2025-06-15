@@ -15,6 +15,12 @@ const MasterDataPortal = () => {
     setIsLoggedIn(true);
   };
 
+  // Initialize master data on portal load
+  React.useEffect(() => {
+    const { MasterDataSeeder } = require('@/utils/masterDataSeeder');
+    MasterDataSeeder.seedAllMasterData();
+  }, []);
+
   console.log('MasterDataPortal - activeSection:', activeSection);
 
   return (

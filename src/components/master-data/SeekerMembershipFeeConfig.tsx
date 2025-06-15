@@ -10,6 +10,7 @@ import { Edit, Trash2, Plus, Users, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
+import { MasterDataSeeder } from '@/utils/masterDataSeeder';
 
 interface MembershipFeeEntry {
   id: string;
@@ -74,73 +75,48 @@ const SeekerMembershipFeeConfig = () => {
 
   // Load data on component mount
   useEffect(() => {
+    // Seed master data first to ensure dependencies exist
+    MasterDataSeeder.seedAllMasterData();
+    
     const loadedFees = membershipFeeDataManager.loadData();
     const loadedCurrencies = currencyDataManager.loadData();
-    const loadedCountries = countriesDataManager.loadData(); // Now returns Country[]
+    const loadedCountries = countriesDataManager.loadData();
     const loadedEntityTypes = entityTypeDataManager.loadData();
     
     console.log('🔍 SeekerMembershipFeeConfig - Loaded countries from master data:', loadedCountries);
     console.log('🔍 SeekerMembershipFeeConfig - Loaded currencies from master data:', loadedCurrencies);
     console.log('🔍 SeekerMembershipFeeConfig - Loaded entity types from master data:', loadedEntityTypes);
+    console.log('🔍 SeekerMembershipFeeConfig - Loaded membership fees:', loadedFees);
     
     setMembershipFees(loadedFees);
     setCurrencies(loadedCurrencies);
-    setCountries(loadedCountries); // Now using Country[] directly
+    setCountries(loadedCountries);
     setEntityTypes(loadedEntityTypes);
   }, []);
 
-  // Save data whenever membershipFees change
+  // Save data whenever membershipFees change with validation
   useEffect(() => {
     if (membershipFees.length >= 0) {
-      membershipFeeDataManager.saveData(membershipFees);
+      console.log('💾 Saving membership fees:', membershipFees);
+      const saveResult = membershipFeeDataManager.saveData(membershipFees);
+      console.log('💾 Save result:', saveResult);
+      
+      // Verify the save worked
+      const verification = localStorage.getItem('master_data_seeker_membership_fees');
+      console.log('✅ Verification - saved data:', verification);
     }
   }, [membershipFees]);
 
-  // Helper function to find currency by country with better matching
+  // Enhanced currency finding with better logging
   const findCurrencyByCountry = (selectedCountry: string): Currency | undefined => {
     console.log('🔍 Looking for currency for country:', selectedCountry);
     console.log('🔍 Available currencies:', currencies);
     
-    // First try exact match
-    let currency = currencies.find(curr => 
-      curr.country.toLowerCase() === selectedCountry.toLowerCase()
-    );
+    // Use the master data seeder's enhanced logic
+    const currency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
     
     if (currency) {
-      console.log('✅ Found exact match:', currency);
-      return currency;
-    }
-    
-    // Try partial matches for common variations
-    const countryMappings: { [key: string]: string } = {
-      'United States': 'United States',
-      'United States of America': 'United States', 
-      'USA': 'United States',
-      'US': 'United States',
-      'UK': 'United Kingdom',
-      'Britain': 'United Kingdom',
-      'Great Britain': 'United Kingdom'
-    };
-    
-    const mappedCountry = countryMappings[selectedCountry];
-    if (mappedCountry) {
-      currency = currencies.find(curr => 
-        curr.country.toLowerCase() === mappedCountry.toLowerCase()
-      );
-      if (currency) {
-        console.log('✅ Found mapped match:', currency);
-        return currency;
-      }
-    }
-    
-    // Try contains match (for cases like "United States" vs "United States of America")
-    currency = currencies.find(curr => 
-      curr.country.toLowerCase().includes(selectedCountry.toLowerCase()) ||
-      selectedCountry.toLowerCase().includes(curr.country.toLowerCase())
-    );
-    
-    if (currency) {
-      console.log('✅ Found partial match:', currency);
+      console.log('✅ Found currency:', currency);
       return currency;
     }
     
@@ -188,19 +164,36 @@ const SeekerMembershipFeeConfig = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentEntry.country || !currentEntry.entityType || 
-        currentEntry.quarterlyAmount === undefined || currentEntry.quarterlyAmount === null || !currentEntry.quarterlyCurrency ||
-        currentEntry.halfYearlyAmount === undefined || currentEntry.halfYearlyAmount === null || !currentEntry.halfYearlyCurrency ||
-        currentEntry.annualAmount === undefined || currentEntry.annualAmount === null || !currentEntry.annualCurrency) {
+    console.log('📝 === MEMBERSHIP FEE SUBMISSION START ===');
+    console.log('📝 Current entry:', currentEntry);
+    
+    // Enhanced validation
+    const requiredFields = {
+      country: currentEntry.country,
+      entityType: currentEntry.entityType,
+      quarterlyAmount: currentEntry.quarterlyAmount,
+      quarterlyCurrency: currentEntry.quarterlyCurrency,
+      halfYearlyAmount: currentEntry.halfYearlyAmount,
+      halfYearlyCurrency: currentEntry.halfYearlyCurrency,
+      annualAmount: currentEntry.annualAmount,
+      annualCurrency: currentEntry.annualCurrency
+    };
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => value === undefined || value === null || value === '')
+      .map(([key]) => key);
+    
+    if (missingFields.length > 0) {
+      console.log('❌ Missing required fields:', missingFields);
       toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
+        title: "Validation Error",
+        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
       return;
     }
 
-    // Check if entry already exists for this country and entity type combination
+    // Check for duplicates
     const existingEntry = membershipFees.find(fee => 
       fee.country === currentEntry.country && 
       fee.entityType === currentEntry.entityType && 
@@ -208,36 +201,58 @@ const SeekerMembershipFeeConfig = () => {
     );
 
     if (existingEntry && !isEditing) {
+      console.log('❌ Duplicate entry found:', existingEntry);
       toast({
-        title: "Error",
+        title: "Duplicate Configuration",
         description: "Membership fee configuration already exists for this country and entity type combination.",
         variant: "destructive",
       });
       return;
     }
 
-    if (isEditing && currentEntry.id) {
-      setMembershipFees(prev => prev.map(item => 
-        item.id === currentEntry.id ? { ...currentEntry as MembershipFeeEntry } : item
-      ));
+    try {
+      if (isEditing && currentEntry.id) {
+        console.log('✏️ Updating existing entry:', currentEntry.id);
+        setMembershipFees(prev => {
+          const updated = prev.map(item => 
+            item.id === currentEntry.id ? { ...currentEntry as MembershipFeeEntry } : item
+          );
+          console.log('✏️ Updated membership fees:', updated);
+          return updated;
+        });
+        toast({
+          title: "Success",
+          description: "Seeker membership fee updated successfully.",
+        });
+      } else {
+        const newEntry = {
+          ...currentEntry,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString().split('T')[0],
+        } as MembershipFeeEntry;
+        
+        console.log('➕ Adding new entry:', newEntry);
+        setMembershipFees(prev => {
+          const updated = [...prev, newEntry];
+          console.log('➕ New membership fees:', updated);
+          return updated;
+        });
+        toast({
+          title: "Success",
+          description: "Seeker membership fee created successfully.",
+        });
+      }
+
+      resetForm();
+      console.log('✅ === MEMBERSHIP FEE SUBMISSION SUCCESS ===');
+    } catch (error) {
+      console.error('❌ Submission error:', error);
       toast({
-        title: "Success",
-        description: "Seeker membership fee updated successfully.",
-      });
-    } else {
-      const newEntry = {
-        ...currentEntry,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().split('T')[0],
-      } as MembershipFeeEntry;
-      setMembershipFees(prev => [...prev, newEntry]);
-      toast({
-        title: "Success",
-        description: "Seeker membership fee created successfully.",
+        title: "Error",
+        description: "Failed to save membership fee. Please try again.",
+        variant: "destructive",
       });
     }
-
-    resetForm();
   };
 
   const handleEdit = (entry: MembershipFeeEntry) => {
