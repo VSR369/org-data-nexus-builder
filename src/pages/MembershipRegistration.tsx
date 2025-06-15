@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, AlertTriangle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useMembershipData } from '@/hooks/useMembershipData';
+import { useToast } from "@/hooks/use-toast";
 import { OrganizationDetailsSection } from '@/components/membership/OrganizationDetailsSection';
 import { MembershipPricingSection } from '@/components/membership/MembershipPricingSection';
 import { DebugSection } from '@/components/membership/DebugSection';
@@ -20,9 +21,45 @@ interface MembershipRegistrationProps {
 
 const MembershipRegistration = () => {
   const location = useLocation();
+  const { toast } = useToast();
   const { userId, organizationName, entityType, country } = location.state as MembershipRegistrationProps || {};
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
   
   const { membershipData, countryPricing, loading, error, debugInfo } = useMembershipData(entityType, country);
+
+  const handlePlanSelect = (plan: string) => {
+    setSelectedPlan(plan);
+    console.log('Selected membership plan:', plan);
+  };
+
+  const handleProceedWithMembership = () => {
+    if (!selectedPlan) {
+      toast({
+        title: "Plan Selection Required",
+        description: "Please select a membership plan to proceed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('Proceeding with membership registration:', {
+      userId,
+      organizationName,
+      entityType,
+      country,
+      selectedPlan,
+      membershipData,
+      countryPricing
+    });
+
+    toast({
+      title: "Proceeding to Payment",
+      description: `Redirecting to payment gateway for ${selectedPlan} membership plan...`,
+    });
+
+    // TODO: Implement actual payment gateway integration
+    // This is where you would integrate with Stripe or other payment providers
+  };
 
   if (loading) {
     return (
@@ -91,6 +128,8 @@ const MembershipRegistration = () => {
               <MembershipPricingSection 
                 membershipData={membershipData}
                 countryPricing={countryPricing}
+                selectedPlan={selectedPlan}
+                onPlanSelect={handlePlanSelect}
               />
             )}
 
@@ -98,6 +137,8 @@ const MembershipRegistration = () => {
 
             <MembershipActionSection 
               disabled={!membershipData || !countryPricing || !!error}
+              selectedPlan={selectedPlan}
+              onProceed={handleProceedWithMembership}
             />
           </CardContent>
         </Card>
