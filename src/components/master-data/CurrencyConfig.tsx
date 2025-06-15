@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,12 +41,16 @@ const CurrencyConfig = () => {
   // Load data on component mount
   useEffect(() => {
     const loadedCurrencies = dataManager.loadData();
-    setCurrencies(loadedCurrencies);
+    // Ensure we always have an array
+    const safeCurrencies = Array.isArray(loadedCurrencies) ? loadedCurrencies : defaultCurrencies;
+    console.log('🔍 CurrencyConfig - Loaded currencies:', safeCurrencies);
+    setCurrencies(safeCurrencies);
   }, []);
 
   // Save data whenever currencies change
   useEffect(() => {
     if (currencies.length > 0) {
+      console.log('💾 CurrencyConfig - Saving currencies:', currencies.length);
       dataManager.saveData(currencies);
     }
   }, [currencies]);
