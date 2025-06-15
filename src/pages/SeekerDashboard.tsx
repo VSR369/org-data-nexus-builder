@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const SeekerDashboard = () => {
   // Screen variables with default values
   const [organizationName, setOrganizationName] = useState("");
   const [entityType, setEntityType] = useState("");
+  const [organizationType, setOrganizationType] = useState("");
   const [country, setCountry] = useState("");
   const [userId, setUserId] = useState("");
   const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<string>("");
@@ -99,6 +101,11 @@ const SeekerDashboard = () => {
           userId: storedUserId
         });
       }
+
+      // Load organization type from localStorage
+      const storedOrgType = localStorage.getItem('seekerOrganizationType') || '';
+      setOrganizationType(storedOrgType);
+      console.log('✅ Loaded organization type:', storedOrgType);
 
       // Load selected membership plan
       const savedPlan = localStorage.getItem('selectedMembershipPlan');
@@ -195,6 +202,17 @@ const SeekerDashboard = () => {
                   <p className="text-sm text-gray-600 font-medium">Organization Name</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {organizationName || 'Not Available'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Organization Type */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <Building className="h-5 w-5 text-gray-400" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium">Organization Type</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {organizationType || 'Not Available'}
                   </p>
                 </div>
               </div>
