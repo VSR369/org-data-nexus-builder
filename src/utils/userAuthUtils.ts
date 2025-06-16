@@ -1,5 +1,5 @@
 
-import { sessionStorageManager } from './storage/SessionStorageManager';
+import { userDataManager } from './storage/UserDataManager';
 
 interface RegisteredUser {
   userId: string;
@@ -14,103 +14,97 @@ interface RegisteredUser {
   registrationTimestamp?: string;
 }
 
-export function findRegisteredUser(userId: string, password: string): RegisteredUser | null {
+export async function findRegisteredUser(userId: string, password: string): Promise<RegisteredUser | null> {
   console.log('🔍 === USER SEARCH START ===');
   console.log('🔍 Searching for userId:', userId);
   
-  // First try with SessionStorageManager
-  let user = sessionStorageManager.findUser(userId, password);
-  
-  if (user) {
-    console.log('✅ User found via SessionStorageManager');
-    console.log('🔍 === USER SEARCH END ===');
-    return user;
-  }
-  
-  // Fallback: Direct localStorage access if SessionStorageManager fails due to integrity issues
-  console.log('⚠️ SessionStorageManager failed, trying direct localStorage access...');
-  
   try {
-    const usersData = localStorage.getItem('registered_users');
-    if (!usersData) {
-      console.log('❌ No users data found in localStorage');
+    // Search in IndexedDB first
+    const user = await userDataManager.findUser(userId, password);
+    
+    if (user) {
+      console.log('✅ User found via IndexedDB');
       console.log('🔍 === USER SEARCH END ===');
-      return null;
+      return user;
     }
     
-    const users = JSON.parse(usersData);
-    const foundUser = users.find((u: RegisteredUser) => 
-      u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
-    );
+    console.log('❌ User not found in IndexedDB');
+    console.log('🔍 === USER SEARCH END ===');
+    return null;
     
-    if (foundUser) {
-      console.log('✅ User found via direct localStorage access');
-      console.log('🔍 === USER SEARCH END ===');
-      return foundUser;
-    } else {
-      console.log('❌ User not found or password incorrect');
-      console.log('🔍 === USER SEARCH END ===');
-      return null;
-    }
   } catch (error) {
-    console.error('❌ Error accessing localStorage directly:', error);
+    console.error('❌ Error during user search:', error);
     console.log('🔍 === USER SEARCH END ===');
     return null;
   }
 }
 
-export function checkUserExistsForBetterError(userId: string): 'user_exists' | 'no_users' | 'user_not_found' {
-  // Try to find user with any password to check existence
-  const usersData = localStorage.getItem('registered_users');
-  if (!usersData) {
-    return 'no_users';
-  }
-  
+export async function checkUserExistsForBetterError(userId: string): Promise<'user_exists' | 'no_users' | 'user_not_found'> {
   try {
-    const users = JSON.parse(usersData);
-    const userExists = users.find((u: any) => 
+    const allUsers = await userDataManager.getAllUsers();
+    
+    if (allUsers.length === 0) {
+      return 'no_users';
+    }
+    
+    const userExists = allUsers.find((u: any) => 
       u.userId.toLowerCase() === userId.toLowerCase()
     );
     
     return userExists ? 'user_exists' : 'user_not_found';
-  } catch {
+  } catch (error) {
+    console.error('❌ Error checking user existence:', error);
     return 'no_users';
   }
 }
 
-export function getUserStorageDiagnostics() {
+export async function getUserStorageDiagnostics() {
   console.log('🔧 === STORAGE DIAGNOSTICS START ===');
   
-  // Check SessionStorageManager health
-  const storageHealth = sessionStorageManager.getStorageHealth();
-  console.log('📊 SessionStorageManager Health:', storageHealth);
+  try {
+    // Check IndexedDB user data
+    const allUsers = await userDataManager.getAllUsers();
+    console.log('👥 Number of users in IndexedDB:', allUsers.length);
+    console.log('👥 User IDs in IndexedDB:', allUsers.map((u: any) => u.userId));
+    
+    // Check session data
+    const sessionData = await userDataManager.loadSession();
+    console.log('📊 Session data exists:', !!sessionData);
+    
+    console.log('🔧 === STORAGE DIAGNOSTICS END ===');
+    
+    return {
+      indexedDBUserCount: allUsers.length,
+      sessionExists: !!sessionData,
+      storageType: 'IndexedDB'
+    };
+  } catch (error) {
+    console.error('❌ Error during diagnostics:', error);
+    return {
+      indexedDBUserCount: 0,
+      sessionExists: false,
+      storageType: 'IndexedDB',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Legacy sync wrapper for compatibility
+export function findRegisteredUserSync(userId: string, password: string): RegisteredUser | null {
+  console.warn('⚠️ Using deprecated sync method. Use async version instead.');
   
-  // Check direct localStorage access
-  const directUsers = localStorage.getItem('registered_users');
-  console.log('📁 Direct localStorage users data exists:', !!directUsers);
-  
-  if (directUsers) {
-    try {
-      const users = JSON.parse(directUsers);
-      console.log('👥 Number of users in direct localStorage:', users.length);
-      console.log('👥 User IDs in direct localStorage:', users.map((u: any) => u.userId));
-    } catch (error) {
-      console.error('❌ Error parsing direct localStorage users:', error);
+  // Try to return from memory cache or localStorage fallback
+  try {
+    const usersData = localStorage.getItem('registered_users');
+    if (usersData) {
+      const users = JSON.parse(usersData);
+      return users.find((u: RegisteredUser) => 
+        u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
+      ) || null;
     }
+  } catch (error) {
+    console.error('❌ Error in sync fallback:', error);
   }
   
-  console.log('🔧 === STORAGE DIAGNOSTICS END ===');
-  
-  return {
-    sessionManagerHealth: storageHealth,
-    directStorageExists: !!directUsers,
-    directStorageValid: directUsers ? (() => {
-      try {
-        JSON.parse(directUsers);
-        return true;
-      } catch {
-        return false;
-      }
-    })() : false
-  };
+  return null;
 }

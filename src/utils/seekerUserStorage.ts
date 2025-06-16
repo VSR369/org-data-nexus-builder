@@ -1,16 +1,16 @@
 
 import { FormData } from '@/types/seekerRegistration';
-import { sessionStorageManager } from './storage/SessionStorageManager';
+import { userDataManager } from './storage/UserDataManager';
 
 // Generate unique organization ID
 export function generateOrganizationId(): string {
   return `ORG-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 }
 
-// Save user data with robust storage management
-export function saveUserDataSecurely(userData: any): boolean {
+// Save user data with IndexedDB
+export async function saveUserDataSecurely(userData: any): Promise<boolean> {
   try {
-    console.log('💾 Starting secure user data save process...');
+    console.log('💾 Starting secure user data save process with IndexedDB...');
     
     // Validate required fields
     const required = ['userId', 'password', 'organizationName', 'organizationType', 'entityType', 'country', 'email', 'contactPersonName'];
@@ -21,13 +21,13 @@ export function saveUserDataSecurely(userData: any): boolean {
       }
     }
     
-    const success = sessionStorageManager.saveUser(userData);
+    const success = await userDataManager.saveUser(userData);
     
     if (success) {
-      console.log('✅ User data successfully saved and verified');
+      console.log('✅ User data successfully saved and verified in IndexedDB');
       return true;
     } else {
-      console.log('❌ Failed to save user data');
+      console.log('❌ Failed to save user data to IndexedDB');
       return false;
     }
     
@@ -51,4 +51,13 @@ export function prepareRegistrationData(formData: FormData) {
     organizationId: formData.organizationId,
     registrationTimestamp: new Date().toISOString()
   };
+}
+
+// Legacy compatibility
+export function saveUserDataSecurelySync(userData: any): boolean {
+  console.warn('⚠️ Using deprecated sync save method. Use async version instead.');
+  saveUserDataSecurely(userData).catch(error => {
+    console.error('❌ Background save failed:', error);
+  });
+  return true; // Optimistic return for compatibility
 }
