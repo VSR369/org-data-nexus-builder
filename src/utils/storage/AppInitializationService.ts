@@ -1,5 +1,6 @@
 
 import { indexedDBManager } from './IndexedDBManager';
+import { userDataManager } from './UserDataManager';
 
 export interface InitializationResult {
   success: boolean;
@@ -42,9 +43,18 @@ export class AppInitializationService {
       await indexedDBManager.initialize();
       console.log('✅ IndexedDB initialization complete');
 
+      // Check for localStorage data to migrate
+      await this.migrateFromLocalStorageIfNeeded();
+
       // Check for existing data
       const hasExistingData = await this.checkForExistingData();
       console.log(`📊 Existing data found: ${hasExistingData}`);
+
+      // Verify database health
+      const healthCheck = await userDataManager.checkDatabaseHealth();
+      if (!healthCheck.healthy) {
+        throw new Error(`Database health check failed: ${healthCheck.error}`);
+      }
 
       this.isInitialized = true;
       console.log('🚀 === APP INITIALIZATION COMPLETE ===');
@@ -68,22 +78,18 @@ export class AppInitializationService {
 
   private async checkForExistingData(): Promise<boolean> {
     try {
-      const db = indexedDBManager.getDatabase();
-      const stores = ['masterData', 'userProfiles', 'membershipData'];
-      
-      for (const storeName of stores) {
-        const transaction = db.transaction([storeName], 'readonly');
-        const store = transaction.objectStore(storeName);
-        const count = await new Promise<number>((resolve, reject) => {
-          const request = store.count();
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        });
-        
-        if (count > 0) {
-          console.log(`📊 Found ${count} items in ${storeName}`);
-          return true;
-        }
+      // Check for user data
+      const users = await userDataManager.getAllUsers();
+      if (users.length > 0) {
+        console.log(`📊 Found ${users.length} registered users`);
+        return true;
+      }
+
+      // Check for session data
+      const session = await userDataManager.loadSession();
+      if (session) {
+        console.log('📊 Found session data');
+        return true;
       }
       
       return false;
@@ -93,65 +99,74 @@ export class AppInitializationService {
     }
   }
 
-  async migrateFromLocalStorage(): Promise<void> {
-    console.log('🔄 === LOCALSTORAGE MIGRATION START ===');
+  private async migrateFromLocalStorageIfNeeded(): Promise<void> {
+    console.log('🔄 === LOCALSTORAGE MIGRATION CHECK START ===');
     
     try {
-      // Get all localStorage keys that need migration
-      const keysToMigrate = [
-        'master_data_countries',
-        'master_data_organization_types',
-        'master_data_industry_segments',
-        'master_data_entity_types',
+      // Check if we have localStorage data to migrate
+      const localStorageKeys = [
         'registered_users',
-        'seeker_session_data',
-        'seeker_membership_data'
+        'seeker_session_data'
       ];
 
-      let migratedCount = 0;
-
-      for (const key of keysToMigrate) {
-        const localStorageData = localStorage.getItem(key);
-        if (localStorageData) {
-          try {
-            const parsedData = JSON.parse(localStorageData);
-            console.log(`📦 Migrating ${key}:`, parsedData);
-            
-            // Store in IndexedDB with proper structure
-            const migrationData = {
-              id: key,
-              data: parsedData,
-              version: 1,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              migratedFrom: 'localStorage'
-            };
-
-            const db = indexedDBManager.getDatabase();
-            const transaction = db.transaction(['masterData'], 'readwrite');
-            const store = transaction.objectStore('masterData');
-            
-            await new Promise<void>((resolve, reject) => {
-              const request = store.put(migrationData);
-              request.onsuccess = () => resolve();
-              request.onerror = () => reject(request.error);
-            });
-
-            migratedCount++;
-            console.log(`✅ Migrated ${key} successfully`);
-            
-          } catch (error) {
-            console.error(`❌ Failed to migrate ${key}:`, error);
-          }
+      let hasMigrationData = false;
+      for (const key of localStorageKeys) {
+        if (localStorage.getItem(key)) {
+          hasMigrationData = true;
+          break;
         }
       }
 
-      console.log(`🔄 Migration complete: ${migratedCount} items migrated`);
-      console.log('🔄 === LOCALSTORAGE MIGRATION END ===');
+      if (!hasMigrationData) {
+        console.log('⚠️ No localStorage data found to migrate');
+        return;
+      }
+
+      console.log('🔄 Starting localStorage migration...');
+
+      // Migrate registered users
+      const usersData = localStorage.getItem('registered_users');
+      if (usersData) {
+        try {
+          const users = JSON.parse(usersData);
+          if (Array.isArray(users) && users.length > 0) {
+            console.log(`📦 Migrating ${users.length} users from localStorage`);
+            
+            // Save each user individually and as a collection
+            for (const user of users) {
+              await userDataManager.saveUser({
+                ...user,
+                registrationTimestamp: user.registrationTimestamp || new Date().toISOString()
+              });
+            }
+            
+            console.log('✅ Users migrated successfully');
+            localStorage.removeItem('registered_users');
+          }
+        } catch (error) {
+          console.error('❌ Error migrating users:', error);
+        }
+      }
+
+      // Migrate session data
+      const sessionData = localStorage.getItem('seeker_session_data');
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          console.log('📦 Migrating session data from localStorage');
+          await userDataManager.saveSession(session);
+          localStorage.removeItem('seeker_session_data');
+          console.log('✅ Session data migrated successfully');
+        } catch (error) {
+          console.error('❌ Error migrating session data:', error);
+        }
+      }
+
+      console.log('🔄 === LOCALSTORAGE MIGRATION COMPLETE ===');
 
     } catch (error) {
       console.error('❌ Migration failed:', error);
-      throw error;
+      // Don't throw error here, continue with initialization
     }
   }
 

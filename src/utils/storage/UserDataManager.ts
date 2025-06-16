@@ -24,14 +24,14 @@ interface SessionData {
 
 export class UserDataManager {
   private static instance: UserDataManager;
-  private userService: IndexedDBService<UserData>;
-  private sessionService: IndexedDBService<SessionData>;
+  private userService: IndexedDBService<any>;
+  private sessionService: IndexedDBService<any>;
 
   private constructor() {
-    this.userService = new IndexedDBService<UserData>({
+    this.userService = new IndexedDBService<any>({
       storeName: 'userProfiles'
     });
-    this.sessionService = new IndexedDBService<SessionData>({
+    this.sessionService = new IndexedDBService<any>({
       storeName: 'userProfiles'
     });
   }
@@ -56,22 +56,31 @@ export class UserDataManager {
         }
       }
 
+      // Save individual user record
       const userRecord = {
+        id: userData.userId,
         ...userData,
-        id: userData.userId
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
-      await this.userService.put(userRecord as any);
+      await this.userService.put(userRecord);
       
-      // Also save to users collection for compatibility
+      // Also maintain a users collection for easier querying
       const allUsers = await this.getAllUsers();
       const updatedUsers = allUsers.filter(u => u.userId !== userData.userId);
       updatedUsers.push(userData);
       
-      await this.userService.put({
+      const usersCollectionRecord = {
         id: 'registered_users',
-        ...updatedUsers
-      } as any);
+        data: updatedUsers,
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await this.userService.put(usersCollectionRecord);
 
       console.log('✅ User data saved successfully to IndexedDB');
       return true;
@@ -85,13 +94,25 @@ export class UserDataManager {
     try {
       console.log('🔍 Searching for user in IndexedDB:', userId);
       
+      // Try to get individual user record first
+      try {
+        const userRecord = await this.userService.getById(userId);
+        if (userRecord && userRecord.password === password) {
+          console.log('✅ User found via individual record');
+          return userRecord;
+        }
+      } catch (error) {
+        console.log('⚠️ Individual user record not found, checking collection');
+      }
+
+      // Fallback to users collection
       const allUsers = await this.getAllUsers();
       const user = allUsers.find(u => 
         u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
       );
 
       if (user) {
-        console.log('✅ User found in IndexedDB');
+        console.log('✅ User found in IndexedDB collection');
         return user;
       }
 
@@ -105,13 +126,43 @@ export class UserDataManager {
 
   async getAllUsers(): Promise<UserData[]> {
     try {
+      // Try to get from users collection first
       const usersRecord = await this.userService.getById('registered_users');
-      if (usersRecord && Array.isArray((usersRecord as any).data || usersRecord)) {
-        return (usersRecord as any).data || usersRecord;
+      if (usersRecord) {
+        const users = usersRecord.data || usersRecord;
+        if (Array.isArray(users)) {
+          console.log(`✅ Retrieved ${users.length} users from collection`);
+          return users;
+        }
       }
-      return [];
+
+      // Fallback: get all individual user records
+      console.log('⚠️ Collection not found, scanning individual records');
+      const allRecords = await this.userService.getAll();
+      const userRecords = allRecords.filter(record => 
+        record.id !== 'registered_users' && 
+        record.id !== 'seeker_session_data' &&
+        record.userId && 
+        record.password
+      );
+
+      console.log(`✅ Retrieved ${userRecords.length} users from individual records`);
+      return userRecords;
     } catch (error) {
       console.error('❌ Error getting all users from IndexedDB:', error);
+      
+      // Final fallback: check localStorage
+      try {
+        const usersData = localStorage.getItem('registered_users');
+        if (usersData) {
+          const users = JSON.parse(usersData);
+          console.log('✅ Fallback: Retrieved users from localStorage');
+          return Array.isArray(users) ? users : [];
+        }
+      } catch (localStorageError) {
+        console.error('❌ Error reading from localStorage:', localStorageError);
+      }
+
       return [];
     }
   }
@@ -120,10 +171,15 @@ export class UserDataManager {
     try {
       console.log('💾 Saving session data to IndexedDB:', sessionData);
       
-      await this.sessionService.put({
+      const sessionRecord = {
         id: 'seeker_session_data',
-        ...sessionData
-      } as any);
+        ...sessionData,
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await this.sessionService.put(sessionRecord);
 
       console.log('✅ Session data saved successfully to IndexedDB');
       return true;
@@ -137,7 +193,7 @@ export class UserDataManager {
     try {
       const sessionRecord = await this.sessionService.getById('seeker_session_data');
       if (sessionRecord) {
-        const sessionData = (sessionRecord as any).data || sessionRecord;
+        const sessionData = sessionRecord.data || sessionRecord;
         console.log('✅ Session loaded from IndexedDB');
         return sessionData;
       }
@@ -157,36 +213,31 @@ export class UserDataManager {
     }
   }
 
-  async migrateFromLocalStorage(): Promise<void> {
-    console.log('🔄 Migrating user data from localStorage to IndexedDB...');
-    
+  async checkDatabaseHealth(): Promise<{ healthy: boolean; error?: string }> {
     try {
-      // Migrate registered users
-      const usersData = localStorage.getItem('registered_users');
-      if (usersData) {
-        const users = JSON.parse(usersData);
-        await this.userService.put({
-          id: 'registered_users',
-          data: users,
-          version: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        } as any);
-        localStorage.removeItem('registered_users');
-        console.log('✅ Migrated registered users');
-      }
+      // Test basic database operations
+      const testRecord = {
+        id: 'health_check',
+        timestamp: new Date().toISOString()
+      };
 
-      // Migrate session data
-      const sessionData = localStorage.getItem('seeker_session_data');
-      if (sessionData) {
-        const session = JSON.parse(sessionData);
-        await this.saveSession(session);
-        localStorage.removeItem('seeker_session_data');
-        console.log('✅ Migrated session data');
-      }
+      await this.userService.put(testRecord);
+      const retrieved = await this.userService.getById('health_check');
+      await this.userService.delete('health_check');
 
+      if (retrieved) {
+        console.log('✅ Database health check passed');
+        return { healthy: true };
+      } else {
+        console.log('❌ Database health check failed: record not retrieved');
+        return { healthy: false, error: 'Record not retrieved after save' };
+      }
     } catch (error) {
-      console.error('❌ Error during user data migration:', error);
+      console.error('❌ Database health check failed:', error);
+      return { 
+        healthy: false, 
+        error: error instanceof Error ? error.message : 'Unknown database error' 
+      };
     }
   }
 }

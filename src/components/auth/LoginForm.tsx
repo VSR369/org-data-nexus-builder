@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { findRegisteredUser, checkUserExistsForBetterError, getUserStorageDiagnostics } from '@/utils/userAuthUtils';
 import { saveSessionData } from '@/utils/sessionDataUtils';
+import { userDataManager } from '@/utils/storage/UserDataManager';
 
 const LoginForm = () => {
   const [userId, setUserId] = useState('');
@@ -25,11 +26,24 @@ const LoginForm = () => {
     console.log('🔐 === LOGIN ATTEMPT START ===');
     console.log('🔐 Attempting login for userId:', userId);
     
-    // Run storage diagnostics
-    const diagnostics = await getUserStorageDiagnostics();
-    console.log('📊 Storage diagnostics:', diagnostics);
-
     try {
+      // First check database health
+      const healthCheck = await userDataManager.checkDatabaseHealth();
+      if (!healthCheck.healthy) {
+        console.error('❌ Database health check failed:', healthCheck.error);
+        toast({
+          title: "Database Error",
+          description: "Unable to connect to user database. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Run storage diagnostics
+      const diagnostics = await getUserStorageDiagnostics();
+      console.log('📊 Storage diagnostics:', diagnostics);
+
       if (!userId.trim() || !password.trim()) {
         toast({
           title: "Login Failed",
@@ -97,9 +111,20 @@ const LoginForm = () => {
       }
     } catch (error) {
       console.error('❌ Login error:', error);
+      
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('IndexedDB')) {
+          errorMessage = "Database connection error. Please refresh the page and try again.";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "Request timed out. Please check your connection and try again.";
+        }
+      }
+      
       toast({
         title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
