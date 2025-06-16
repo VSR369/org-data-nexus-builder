@@ -5,15 +5,13 @@ import { CapabilityLevel } from './competency-capability/types';
 import { DEFAULT_CAPABILITY_LEVELS, COLOR_OPTIONS } from './competency-capability/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+import { LegacyDataManager } from '@/utils/core/DataManager';
 
-const dataManager = new DataManager<CapabilityLevel[]>({
+const dataManager = new LegacyDataManager<CapabilityLevel[]>({
   key: 'master_data_capability_levels',
   defaultData: DEFAULT_CAPABILITY_LEVELS,
   version: 1
 });
-
-GlobalCacheManager.registerKey('master_data_capability_levels');
 
 const CompetencyCapabilityConfig = () => {
   const [capabilityLevels, setCapabilityLevels] = useState<CapabilityLevel[]>([]);

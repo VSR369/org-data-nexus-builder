@@ -55,14 +55,14 @@ export const useLoginForm = () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Find the registered user
-      const registeredUser = findRegisteredUser(formData.userId.trim(), formData.password);
+      // Find the registered user (this is now async)
+      const registeredUser = await findRegisteredUser(formData.userId.trim(), formData.password);
       
       if (!registeredUser) {
         console.log('❌ Login failed: Invalid credentials');
         
-        // Check if user exists to provide better error message
-        const userCheckResult = checkUserExistsForBetterError(formData.userId);
+        // Check if user exists to provide better error message (this is now async)
+        const userCheckResult = await checkUserExistsForBetterError(formData.userId);
         
         let errorType = 'User not found';
         if (userCheckResult === 'user_exists') {
@@ -77,7 +77,7 @@ export const useLoginForm = () => {
       console.log('✅ Login successful for user:', registeredUser.userId);
       
       // Save session data with verification
-      saveSessionData(registeredUser);
+      await saveSessionData(registeredUser);
       
       // Navigate to seeker dashboard with user context
       navigate('/seeker-dashboard', { 

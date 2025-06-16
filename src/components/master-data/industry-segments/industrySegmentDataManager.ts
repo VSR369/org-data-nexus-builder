@@ -1,5 +1,5 @@
 
-import { DataManager } from '@/utils/dataManager';
+import { LegacyDataManager } from '@/utils/core/DataManager';
 import { IndustrySegmentData } from '@/types/industrySegments';
 
 const defaultIndustrySegmentData: IndustrySegmentData = {
@@ -22,22 +22,22 @@ const defaultIndustrySegmentData: IndustrySegmentData = {
   ]
 };
 
-class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
-  async loadData(): Promise<IndustrySegmentData> {
-    const rawData = await super.loadData();
+class IndustrySegmentDataManager extends LegacyDataManager<IndustrySegmentData> {
+  loadData(): IndustrySegmentData {
+    const rawData = super.loadData();
     
-    // If we get an array (legacy data), clear it and start fresh
+    // If we get an array (legacy data), convert to new format
     if (Array.isArray(rawData)) {
-      console.log('🗑️ Removing legacy industry segments array data');
-      await this.clearData();
-      await this.saveData(defaultIndustrySegmentData);
-      return defaultIndustrySegmentData;
+      console.log('🗑️ Converting legacy industry segments array data');
+      const convertedData = { industrySegments: rawData };
+      this.saveData(convertedData);
+      return convertedData;
     }
     
     // Ensure we have the correct structure
     if (!rawData || !rawData.industrySegments || !Array.isArray(rawData.industrySegments)) {
       console.log('🔧 Invalid data structure, resetting to default');
-      await this.saveData(defaultIndustrySegmentData);
+      this.saveData(defaultIndustrySegmentData);
       return defaultIndustrySegmentData;
     }
     
@@ -48,5 +48,5 @@ class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
 export const industrySegmentDataManager = new IndustrySegmentDataManager({
   key: 'master_data_industry_segments',
   defaultData: defaultIndustrySegmentData,
-  version: 3 // Increment version to force data reset with new segments
+  version: 3
 });

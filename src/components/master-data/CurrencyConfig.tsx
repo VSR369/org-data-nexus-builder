@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, DollarSign, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+import { LegacyDataManager } from '@/utils/core/DataManager';
 
 interface Currency {
   id: string;
@@ -24,13 +23,11 @@ const defaultCurrencies: Currency[] = [
   { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
 ];
 
-const dataManager = new DataManager<Currency[]>({
+const dataManager = new LegacyDataManager<Currency[]>({
   key: 'master_data_currencies',
   defaultData: defaultCurrencies,
   version: 1
 });
-
-GlobalCacheManager.registerKey('master_data_currencies');
 
 const CurrencyConfig = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
