@@ -21,6 +21,7 @@ const SeekerRegistrationForm = () => {
     requiresRegistrationDocuments,
     handleInputChange,
     handleFileUpload,
+    handleFileRemove,
     handleSubmit
   } = useSeekerRegistration();
 
@@ -60,6 +61,7 @@ const SeekerRegistrationForm = () => {
                 formData={formData}
                 requiresRegistrationDocuments={requiresRegistrationDocuments}
                 onFileUpload={handleFileUpload}
+                onFileRemove={handleFileRemove}
               />
 
               <ContactInfoSection

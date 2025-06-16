@@ -11,8 +11,8 @@ export const useSeekerFormData = () => {
     organizationType: '',
     entityType: '',
     registrationDocuments: [],
-    companyProfile: null,
-    companyLogo: null,
+    companyProfile: [],
+    companyLogo: [],
     website: '',
     country: '',
     address: '',
@@ -36,11 +36,19 @@ export const useSeekerFormData = () => {
   const handleFileUpload = (field: 'registrationDocuments' | 'companyProfile' | 'companyLogo', files: FileList | null) => {
     if (!files) return;
 
-    if (field === 'registrationDocuments') {
-      const newFiles = Array.from(files).slice(0, 3);
-      setFormData(prev => ({ ...prev, registrationDocuments: newFiles }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: files[0] }));
+    const newFiles = Array.from(files);
+    setFormData(prev => ({ 
+      ...prev, 
+      [field]: [...prev[field], ...newFiles]
+    }));
+  };
+
+  const handleFileRemove = (field: 'registrationDocuments' | 'companyProfile' | 'companyLogo', index?: number) => {
+    if (index !== undefined) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: prev[field].filter((_, i) => i !== index)
+      }));
     }
   };
 
@@ -49,6 +57,7 @@ export const useSeekerFormData = () => {
     errors,
     setErrors,
     handleInputChange,
-    handleFileUpload
+    handleFileUpload,
+    handleFileRemove
   };
 };

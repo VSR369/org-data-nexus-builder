@@ -17,7 +17,8 @@ export const useSeekerRegistration = () => {
     errors,
     setErrors,
     handleInputChange,
-    handleFileUpload
+    handleFileUpload,
+    handleFileRemove
   } = useSeekerFormData();
 
   const {
@@ -127,6 +128,7 @@ export const useSeekerRegistration = () => {
     requiresRegistrationDocuments,
     handleInputChange,
     handleFileUpload,
+    handleFileRemove,
     handleSubmit
   };
 };

@@ -19,8 +19,8 @@ export interface FormData {
   organizationType: string;
   entityType: string;
   registrationDocuments: File[];
-  companyProfile: File | null;
-  companyLogo: File | null;
+  companyProfile: File[];
+  companyLogo: File[];
   website: string;
   country: string;
   address: string;
