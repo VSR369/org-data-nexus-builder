@@ -1,5 +1,5 @@
 
-import { IndexedDBManager } from './IndexedDBManager';
+import { indexedDBManager } from '../storage/IndexedDBManager';
 
 export interface DataManagerConfig<T> {
   key: string;
@@ -34,14 +34,22 @@ export class DataManager<T> {
     this.isLoading = true;
     
     try {
-      const data = await IndexedDBManager.getData<T>(this.config.key);
-      
-      if (data === null || data === undefined) {
-        console.log(`📂 No data found for ${this.config.key}, using defaults`);
-        this.cache = this.config.defaultData;
-        await this.saveData(this.config.defaultData);
+      // Check if IndexedDB is available and initialized
+      if (await indexedDBManager.isInitialized()) {
+        const stored = localStorage.getItem(this.config.key);
+        const data = stored ? JSON.parse(stored) : null;
+        
+        if (data === null || data === undefined) {
+          console.log(`📂 No data found for ${this.config.key}, using defaults`);
+          this.cache = this.config.defaultData;
+          await this.saveData(this.config.defaultData);
+        } else {
+          this.cache = data;
+        }
       } else {
-        this.cache = data;
+        // Fallback to localStorage if IndexedDB not available
+        const stored = localStorage.getItem(this.config.key);
+        this.cache = stored ? JSON.parse(stored) : this.config.defaultData;
       }
       
       return this.cache;
@@ -60,16 +68,26 @@ export class DataManager<T> {
       return this.cache;
     }
     
-    // Start async load in background
-    this.loadData().catch(console.error);
+    // Try to load from localStorage synchronously
+    try {
+      const stored = localStorage.getItem(this.config.key);
+      if (stored) {
+        this.cache = JSON.parse(stored);
+        return this.cache;
+      }
+    } catch (error) {
+      console.warn(`⚠️ Error loading sync data for ${this.config.key}:`, error);
+    }
     
-    // Return default immediately for sync calls
+    // Return default if no cached data
+    this.cache = this.config.defaultData;
     return this.config.defaultData;
   }
 
   async saveData(data: T): Promise<void> {
     try {
-      await IndexedDBManager.setData(this.config.key, data);
+      // Save to localStorage (immediate)
+      localStorage.setItem(this.config.key, JSON.stringify(data));
       this.cache = data;
       console.log(`💾 Saved data for ${this.config.key}`);
     } catch (error) {
@@ -79,9 +97,13 @@ export class DataManager<T> {
   }
 
   saveDataSync(data: T): void {
-    this.cache = data;
-    // Save async in background
-    this.saveData(data).catch(console.error);
+    try {
+      localStorage.setItem(this.config.key, JSON.stringify(data));
+      this.cache = data;
+      console.log(`💾 Saved sync data for ${this.config.key}`);
+    } catch (error) {
+      console.error(`❌ Error saving sync data for ${this.config.key}:`, error);
+    }
   }
 
   resetToDefault(): T {
@@ -96,13 +118,27 @@ export class DataManager<T> {
 }
 
 // Legacy compatibility for components that expect sync behavior
-export class LegacyDataManager<T> extends DataManager<T> {
+export class LegacyDataManager<T> {
+  private dataManager: DataManager<T>;
+
+  constructor(config: DataManagerConfig<T>) {
+    this.dataManager = new DataManager(config);
+  }
+
   loadData(): T {
-    return this.loadDataSync();
+    return this.dataManager.loadDataSync();
   }
 
   saveData(data: T): void {
-    this.saveDataSync(data);
+    this.dataManager.saveDataSync(data);
+  }
+
+  resetToDefault(): T {
+    return this.dataManager.resetToDefault();
+  }
+
+  clearCache(): void {
+    this.dataManager.clearCache();
   }
 }
 

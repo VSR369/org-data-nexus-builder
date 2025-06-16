@@ -1,96 +1,103 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { PricingConfig } from '../types';
-import { engagementModelsDataManager } from '../../engagement-models/engagementModelsDataManager';
-import { EngagementModel } from '../../engagement-models/types';
-import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
-import { DataManager } from '@/utils/dataManager';
-import MasterDataSelectionSection from './MasterDataSelectionSection';
-import DiscountSection from './DiscountSection';
-import EngagementModelPricingSection from './EngagementModelPricingSection';
-import ConfigurationActions from './ConfigurationActions';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LegacyDataManager } from '@/utils/core/DataManager';
+import { Country } from '@/types/seekerRegistration';
 
-// Entity types data manager
-const entityTypeDataManager = new DataManager<string[]>({
-  key: 'master_data_entity_types',
-  defaultData: ['Commercial', 'Non-Profit Organization', 'Society/ Trust'],
+const currenciesDataManager = new LegacyDataManager<string[]>({
+  key: 'master_data_currencies',
+  defaultData: ['USD', 'EUR', 'GBP', 'INR', 'JPY'],
+  version: 1
+});
+
+const countriesDataManager = new LegacyDataManager<Country[]>({
+  key: 'master_data_countries',
+  defaultData: [],
   version: 1
 });
 
 interface GeneralConfigInputProps {
-  currentConfig: Partial<PricingConfig>;
-  setCurrentConfig: React.Dispatch<React.SetStateAction<Partial<PricingConfig>>>;
-  organizationTypes: string[];
-  onSave: () => void;
-  onClear: () => void;
+  configName: string;
+  setConfigName: (name: string) => void;
+  selectedCountry: string;
+  setSelectedCountry: (country: string) => void;
+  selectedCurrency: string;
+  setSelectedCurrency: (currency: string) => void;
+  selectedEngagementModel: string;
+  setSelectedEngagementModel: (model: string) => void;
 }
 
 const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
-  currentConfig,
-  setCurrentConfig,
-  organizationTypes,
-  onSave,
-  onClear
+  configName,
+  setConfigName,
+  selectedCountry,
+  setSelectedCountry,
+  selectedCurrency,
+  setSelectedCurrency,
+  selectedEngagementModel,
+  setSelectedEngagementModel
 }) => {
-  const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
-  const [entityTypes, setEntityTypes] = useState<string[]>([]);
-  const [organizationTypesFromMaster, setOrganizationTypesFromMaster] = useState<string[]>([]);
-  const [countries, setCountries] = useState<any[]>([]);
+  const [currencies, setCurrencies] = useState<string[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
 
   useEffect(() => {
-    // Load engagement models from master data
-    const loadedModels = engagementModelsDataManager.getEngagementModels();
-    console.log('🔄 GeneralConfigInput: Loading engagement models:', loadedModels);
-    setEngagementModels(loadedModels);
-
-    // Load entity types from master data
-    const loadedEntityTypes = entityTypeDataManager.loadData();
-    console.log('🔄 GeneralConfigInput: Loading entity types:', loadedEntityTypes);
-    setEntityTypes(loadedEntityTypes);
-
-    // Load organization types from master data
-    const loadedOrgTypes = organizationTypesDataManager.loadData();
-    console.log('🔄 GeneralConfigInput: Loading organization types:', loadedOrgTypes);
-    setOrganizationTypesFromMaster(loadedOrgTypes);
-
-    // Load countries from master data
+    const loadedCurrencies = currenciesDataManager.loadData();
+    setCurrencies(loadedCurrencies);
+    
     const loadedCountries = countriesDataManager.loadData();
-    console.log('🔄 GeneralConfigInput: Loading countries:', loadedCountries);
     setCountries(loadedCountries);
   }, []);
 
   return (
-    <Card>
-      <CardContent>
-        <div className="space-y-6">
-          {/* Master Data Selection Section */}
-          <MasterDataSelectionSection
-            currentConfig={currentConfig}
-            setCurrentConfig={setCurrentConfig}
-            entityTypes={entityTypes}
-            organizationTypesFromMaster={organizationTypesFromMaster}
-            countries={countries}
-          />
-
-          {/* Discount Section for Active Members */}
-          <DiscountSection
-            currentConfig={currentConfig}
-            setCurrentConfig={setCurrentConfig}
-          />
-
-          {/* Engagement Model Pricing Section */}
-          <EngagementModelPricingSection
-            currentConfig={currentConfig}
-            setCurrentConfig={setCurrentConfig}
-            engagementModels={engagementModels}
-          />
-
-          <ConfigurationActions
-            currentConfig={currentConfig}
-            onSave={onSave}
-            onClear={onClear}
-          />
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>General Configuration</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid grid-cols-3 items-center gap-4">
+          <Label htmlFor="configName">Config Name</Label>
+          <Input id="configName" value={configName} onChange={(e) => setConfigName(e.target.value)} className="col-span-2" />
+        </div>
+        <div className="grid grid-cols-3 items-center gap-4">
+          <Label htmlFor="country">Country</Label>
+          <Select value={selectedCountry} onValueChange={setSelectedCountry} className="col-span-2">
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((country) => (
+                <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-3 items-center gap-4">
+          <Label htmlFor="currency">Currency</Label>
+          <Select value={selectedCurrency} onValueChange={setSelectedCurrency} className="col-span-2">
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {currencies.map((currency) => (
+                <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-3 items-center gap-4">
+          <Label htmlFor="engagementModel">Engagement Model</Label>
+          <Select value={selectedEngagementModel} onValueChange={setSelectedEngagementModel} className="col-span-2">
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an engagement model" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Marketplace">Marketplace</SelectItem>
+              <SelectItem value="Aggregator">Aggregator</SelectItem>
+              <SelectItem value="Hybrid">Hybrid</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardContent>
     </Card>

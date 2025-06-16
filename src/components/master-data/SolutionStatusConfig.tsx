@@ -2,231 +2,123 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
+import { Trash2, Plus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DataManager, GlobalCacheManager } from '@/utils/dataManager';
+import { LegacyDataManager } from '@/utils/core/DataManager';
 
-const defaultStatuses = [
-  'Solution Submission Phase',
-  'Solution Shortlisting / Screening',
-  'Solution Selected for Full Assessment',
-  'Partial Payment Done by Client (if applicable to model)',
-  'Solution Voting (if applicable)',
-  'Solution Evaluation / Assessment',
-  'Finalized – Investment Approved',
-  'Finalized – Pilot / Proof-of-Concept (PoC)',
-  'Finalized – Ready for Full-Scale Implementation',
-  'Finalized – Suspended',
-  'Selection & Reward Declaration'
-];
-
-const dataManager = new DataManager<string[]>({
-  key: 'master_data_solution_statuses',
-  defaultData: defaultStatuses,
+const solutionStatusDataManager = new LegacyDataManager<string[]>({
+  key: 'master_data_solution_status',
+  defaultData: [
+    'Draft',
+    'Under Review',
+    'Approved',
+    'Rejected',
+    'Published',
+    'Archived'
+  ],
   version: 1
 });
 
-GlobalCacheManager.registerKey('master_data_solution_statuses');
-
 const SolutionStatusConfig = () => {
-  const { toast } = useToast();
-  const [statuses, setStatuses] = useState<string[]>([]);
+  const [solutionStatuses, setSolutionStatuses] = useState<string[]>([]);
   const [newStatus, setNewStatus] = useState('');
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingValue, setEditingValue] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
+  const { toast } = useToast();
 
-  // Load statuses from DataManager on component mount
+  // Load data on component mount
   useEffect(() => {
-    const loadedStatuses = dataManager.loadData();
-    setStatuses(loadedStatuses);
-    console.log('Loaded solution statuses from DataManager:', loadedStatuses);
+    const loadedStatuses = solutionStatusDataManager.loadData();
+    setSolutionStatuses(loadedStatuses);
   }, []);
 
-  // Save statuses to DataManager whenever statuses change
+  // Save data whenever solutionStatuses change
   useEffect(() => {
-    dataManager.saveData(statuses);
-    console.log('Saved solution statuses to DataManager:', statuses);
-  }, [statuses]);
+    if (solutionStatuses.length > 0) {
+      solutionStatusDataManager.saveData(solutionStatuses);
+    }
+  }, [solutionStatuses]);
 
-  const handleAddStatus = () => {
-    if (newStatus.trim()) {
-      setStatuses([...statuses, newStatus.trim()]);
+  const addStatus = () => {
+    if (newStatus.trim() !== '') {
+      setSolutionStatuses([...solutionStatuses, newStatus.trim()]);
       setNewStatus('');
-      setIsAdding(false);
       toast({
-        title: "Success",
-        description: "Solution status added successfully",
+        title: "Status Added",
+        description: `${newStatus.trim()} has been added to the list.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Status cannot be empty.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleEditStatus = (index: number) => {
-    setEditingIndex(index);
-    setEditingValue(statuses[index]);
-  };
-
-  const handleSaveEdit = () => {
-    if (editingValue.trim() && editingIndex !== null) {
-      const updatedStatuses = [...statuses];
-      updatedStatuses[editingIndex] = editingValue.trim();
-      setStatuses(updatedStatuses);
-      setEditingIndex(null);
-      setEditingValue('');
-      toast({
-        title: "Success",
-        description: "Solution status updated successfully",
-      });
-    }
-  };
-
-  const handleDeleteStatus = (index: number) => {
-    const updatedStatuses = statuses.filter((_, i) => i !== index);
-    setStatuses(updatedStatuses);
+  const removeStatus = (index: number) => {
+    const statusToRemove = solutionStatuses[index];
+    const updatedStatuses = [...solutionStatuses];
+    updatedStatuses.splice(index, 1);
+    setSolutionStatuses(updatedStatuses);
     toast({
-      title: "Success",
-      description: "Solution status deleted successfully",
+      title: "Status Removed",
+      description: `${statusToRemove} has been removed from the list.`,
     });
   };
 
-  const handleCancelEdit = () => {
-    setEditingIndex(null);
-    setEditingValue('');
-  };
-
-  const handleCancelAdd = () => {
-    setIsAdding(false);
-    setNewStatus('');
-  };
-
-  const handleResetToDefault = () => {
-    const resetData = dataManager.resetToDefault();
-    setStatuses(resetData);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    entityTypesDataManager.saveData(solutionStatuses);
     toast({
-      title: "Success",
-      description: "Solution statuses reset to default values",
+      title: "Statuses Saved",
+      description: "The solution statuses have been saved.",
     });
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Solution Statuses</CardTitle>
-            <CardDescription>
-              Configure available statuses for solutions throughout their evaluation process
-            </CardDescription>
+    <div className="space-y-6">
+      <div className="text-left">
+        <h2 className="text-3xl font-bold text-foreground mb-2">Solution Status Configuration</h2>
+        <p className="text-lg text-muted-foreground">
+          Manage solution statuses for projects and initiatives
+        </p>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Solution Statuses</CardTitle>
+          <CardDescription>
+            Add, remove, or modify solution statuses.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="New Status"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+            />
+            <Button type="button" variant="secondary" size="sm" onClick={addStatus}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add
+            </Button>
           </div>
-          <Button
-            onClick={handleResetToDefault}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset to Default
+          <ul className="list-none pl-0">
+            {solutionStatuses.map((status, index) => (
+              <li key={index} className="flex items-center justify-between py-2 border-b border-gray-200">
+                <span>{status}</span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => removeStatus(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <Button onClick={handleSubmit} className="w-full">
+            <Save className="h-4 w-4 mr-2" />
+            Save Changes
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Current Solution Statuses</h3>
-          <Button 
-            onClick={() => setIsAdding(true)} 
-            disabled={isAdding}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Status
-          </Button>
-        </div>
-
-        {isAdding && (
-          <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
-            <div className="flex-1">
-              <Label htmlFor="new-status">New Solution Status</Label>
-              <Input
-                id="new-status"
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                placeholder="Enter status name"
-                className="mt-1"
-              />
-            </div>
-            <div className="flex gap-2 items-end">
-              <Button onClick={handleAddStatus} size="sm" className="flex items-center gap-1">
-                <Save className="w-3 h-3" />
-                Save
-              </Button>
-              <Button onClick={handleCancelAdd} variant="outline" size="sm" className="flex items-center gap-1">
-                <X className="w-3 h-3" />
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <div className="grid gap-2">
-          {statuses.map((status, index) => (
-            <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              {editingIndex === index ? (
-                <div className="flex gap-2 flex-1">
-                  <Input
-                    value={editingValue}
-                    onChange={(e) => setEditingValue(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
-                    <Save className="w-3 h-3" />
-                    Save
-                  </Button>
-                  <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
-                    <X className="w-3 h-3" />
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary">{index + 1}</Badge>
-                    <span className="font-medium">{status}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEditStatus(index)}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Edit className="w-3 h-3" />
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteStatus(index)}
-                      variant="destructive"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {statuses.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No solution statuses found. Add one to get started.</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
