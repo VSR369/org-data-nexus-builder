@@ -19,7 +19,7 @@ export class IndexedDBManager {
   constructor() {
     this.schema = {
       name: 'lovable-app-db',
-      version: 1,
+      version: 2, // Increment version to trigger upgrade
       stores: [
         {
           name: 'masterData',
@@ -31,7 +31,7 @@ export class IndexedDBManager {
         },
         {
           name: 'userProfiles',
-          keyPath: 'userId'
+          keyPath: 'id' // Changed from 'userId' to 'id' to match the data structure
         },
         {
           name: 'membershipData',
@@ -90,17 +90,21 @@ export class IndexedDBManager {
         const db = (event.target as IDBOpenDBRequest).result;
         
         this.schema.stores.forEach(storeConfig => {
-          if (!db.objectStoreNames.contains(storeConfig.name)) {
-            console.log(`📦 Creating object store: ${storeConfig.name}`);
-            const store = db.createObjectStore(storeConfig.name, { keyPath: storeConfig.keyPath });
-            
-            // Create indexes
-            if (storeConfig.indexes) {
-              storeConfig.indexes.forEach(index => {
-                console.log(`🔍 Creating index: ${index.name} on ${storeConfig.name}`);
-                store.createIndex(index.name, index.keyPath, { unique: index.unique || false });
-              });
-            }
+          // Delete existing store if it exists with wrong keyPath
+          if (db.objectStoreNames.contains(storeConfig.name)) {
+            console.log(`🗑️ Deleting existing object store: ${storeConfig.name}`);
+            db.deleteObjectStore(storeConfig.name);
+          }
+          
+          console.log(`📦 Creating object store: ${storeConfig.name} with keyPath: ${storeConfig.keyPath}`);
+          const store = db.createObjectStore(storeConfig.name, { keyPath: storeConfig.keyPath });
+          
+          // Create indexes
+          if (storeConfig.indexes) {
+            storeConfig.indexes.forEach(index => {
+              console.log(`🔍 Creating index: ${index.name} on ${storeConfig.name}`);
+              store.createIndex(index.name, index.keyPath, { unique: index.unique || false });
+            });
           }
         });
       };
