@@ -28,22 +28,24 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="website">Website URL</Label>
+          <Label htmlFor="website" className={errors.website ? "text-red-500" : ""}>Website URL</Label>
           <Input
             id="website"
             value={formData.website}
             onChange={(e) => onInputChange('website', e.target.value)}
             placeholder="https://www.example.com"
+            className={errors.website ? "border-red-500 focus:ring-red-500" : ""}
           />
+          {errors.website && <p className="text-sm text-red-500">{errors.website}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="country">Country *</Label>
+          <Label htmlFor="country" className={errors.country ? "text-red-500" : ""}>Country *</Label>
           <Select
             value={formData.country}
             onValueChange={(value) => onInputChange('country', value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.country ? "border-red-500 focus:ring-red-500" : ""}>
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
@@ -58,13 +60,14 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="address">Address *</Label>
+          <Label htmlFor="address" className={errors.address ? "text-red-500" : ""}>Address *</Label>
           <Textarea
             id="address"
             value={formData.address}
             onChange={(e) => onInputChange('address', e.target.value)}
             placeholder="Enter complete address"
             rows={3}
+            className={errors.address ? "border-red-500 focus:ring-red-500" : ""}
           />
           {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
         </div>

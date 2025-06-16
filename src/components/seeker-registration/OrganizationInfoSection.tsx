@@ -32,12 +32,12 @@ const OrganizationInfoSection: React.FC<OrganizationInfoSectionProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="industrySegment">Industry Segment *</Label>
+          <Label htmlFor="industrySegment" className={errors.industrySegment ? "text-red-500" : ""}>Industry Segment *</Label>
           <Select
             value={formData.industrySegment}
             onValueChange={(value) => onInputChange('industrySegment', value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.industrySegment ? "border-red-500 focus:ring-red-500" : ""}>
               <SelectValue placeholder="Select industry segment" />
             </SelectTrigger>
             <SelectContent>
@@ -52,12 +52,13 @@ const OrganizationInfoSection: React.FC<OrganizationInfoSectionProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="organizationName">Organization Name *</Label>
+          <Label htmlFor="organizationName" className={errors.organizationName ? "text-red-500" : ""}>Organization Name *</Label>
           <Input
             id="organizationName"
             value={formData.organizationName}
             onChange={(e) => onInputChange('organizationName', e.target.value)}
             placeholder="Enter organization name"
+            className={errors.organizationName ? "border-red-500 focus:ring-red-500" : ""}
           />
           {errors.organizationName && <p className="text-sm text-red-500">{errors.organizationName}</p>}
         </div>
@@ -73,12 +74,12 @@ const OrganizationInfoSection: React.FC<OrganizationInfoSectionProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="organizationType">Organization Type *</Label>
+          <Label htmlFor="organizationType" className={errors.organizationType ? "text-red-500" : ""}>Organization Type *</Label>
           <Select
             value={formData.organizationType}
             onValueChange={(value) => onInputChange('organizationType', value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.organizationType ? "border-red-500 focus:ring-red-500" : ""}>
               <SelectValue placeholder="Select organization type" />
             </SelectTrigger>
             <SelectContent>
@@ -93,12 +94,12 @@ const OrganizationInfoSection: React.FC<OrganizationInfoSectionProps> = ({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="entityType">Entity Type *</Label>
+          <Label htmlFor="entityType" className={errors.entityType ? "text-red-500" : ""}>Entity Type *</Label>
           <Select
             value={formData.entityType}
             onValueChange={(value) => onInputChange('entityType', value)}
           >
-            <SelectTrigger className="md:w-1/2">
+            <SelectTrigger className={`md:w-1/2 ${errors.entityType ? "border-red-500 focus:ring-red-500" : ""}`}>
               <SelectValue placeholder="Select entity type" />
             </SelectTrigger>
             <SelectContent>
