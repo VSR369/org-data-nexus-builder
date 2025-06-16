@@ -33,6 +33,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginWarning, setShowLoginWarning] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -128,6 +129,13 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
     loadUserData();
   }, [location.state]);
 
+  const handleLogout = (userId?: string) => {
+    console.log('Logging out user:', userId);
+    // Clear session and navigate to login
+    unifiedUserStorageService.clearSession();
+    navigate('/seeker-login');
+  };
+
   const handleJoinAsMember = () => {
     console.log('Navigating to membership registration...');
     navigate('/membership-registration', {
@@ -157,7 +165,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
 
   return (
     <>
-      <AppSidebar />
+      <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -182,13 +190,19 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
             <div className="max-w-7xl mx-auto p-6">
-              <DashboardHeader userData={userData} />
+              <DashboardHeader onLogout={handleLogout} userId={userData.userId} />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                  {showLoginWarning && <LoginWarning />}
+                  <LoginWarning show={showLoginWarning} />
                   
-                  <SeekerDetailsCard userData={userData} />
+                  <SeekerDetailsCard 
+                    organizationName={userData.organizationName}
+                    organizationType={userData.entityType}
+                    entityType={userData.entityType}
+                    country={userData.country}
+                    userId={userData.userId}
+                  />
                   
                   <QuickActionsCard 
                     onJoinAsMember={handleJoinAsMember}
