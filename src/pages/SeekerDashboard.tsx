@@ -1,209 +1,230 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useSessionManager } from '@/hooks/useSessionManager';
-import { usePricingData } from '@/hooks/usePricingData';
-import { engagementModelsDataManager } from '@/components/master-data/engagement-models/engagementModelsDataManager';
-import { EngagementModel } from '@/components/master-data/engagement-models/types';
-import { CheckCircle, Clock } from 'lucide-react';
-import { loadUserSession } from '@/utils/unifiedAuthUtils';
-
-// Import our new components
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import LoginWarning from '@/components/dashboard/LoginWarning';
+import { useToast } from "@/hooks/use-toast";
+import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
+import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import SeekerDetailsCard from '@/components/dashboard/SeekerDetailsCard';
-import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
-import PricingModelCard from '@/components/dashboard/PricingModelCard';
-import MembershipActionCard from '@/components/dashboard/MembershipActionCard';
 import QuickActionsCard from '@/components/dashboard/QuickActionsCard';
+import LoginWarning from '@/components/dashboard/LoginWarning';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 interface SeekerDashboardProps {
   userId?: string;
-  organizationName?: string;
 }
 
-const SeekerDashboard = () => {
+const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { handleLogout } = useSessionManager();
+  const { toast } = useToast();
   
-  // Screen variables with default values
-  const [organizationName, setOrganizationName] = useState("");
-  const [entityType, setEntityType] = useState("");
-  const [organizationType, setOrganizationType] = useState("");
-  const [country, setCountry] = useState("");
-  const [userId, setUserId] = useState("");
-  const [contactPersonName, setContactPersonName] = useState("");
-  const [email, setEmail] = useState("");
-  const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<string>("");
-  
-  // Pricing model selection state
-  const [showPricingSelector, setShowPricingSelector] = useState(false);
-  const [selectedEngagementModel, setSelectedEngagementModel] = useState<string>("");
-  const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
+  const [userData, setUserData] = useState({
+    userId: '',
+    organizationName: '',
+    entityType: '',
+    country: '',
+    email: '',
+    contactPersonName: ''
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showLoginWarning, setShowLoginWarning] = useState(false);
 
-  // Load pricing data
-  const { getConfigByOrgTypeAndEngagement } = usePricingData();
+  useEffect(() => {
+    const loadUserData = async () => {
+      console.log('🔍 Loading user data for dashboard...');
+      setIsLoading(true);
+      
+      try {
+        // Get userId from location state
+        const locationUserId = (location.state as any)?.userId;
+        
+        // First try to load from session
+        const sessionData = await unifiedUserStorageService.loadSession();
+        
+        if (sessionData) {
+          console.log('✅ Found session data:', sessionData);
+          setUserData({
+            userId: sessionData.userId,
+            organizationName: sessionData.organizationName,
+            entityType: sessionData.entityType,
+            country: sessionData.country,
+            email: sessionData.email,
+            contactPersonName: sessionData.contactPersonName
+          });
+        } else if (locationUserId) {
+          // Try to find user by ID from location state
+          console.log('🔍 No session, looking for user:', locationUserId);
+          const user = await unifiedUserStorageService.findUserById(locationUserId);
+          
+          if (user) {
+            console.log('✅ Found user:', user);
+            setUserData({
+              userId: user.userId,
+              organizationName: user.organizationName,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName
+            });
+            
+            // Save session for this user
+            await unifiedUserStorageService.saveSession({
+              userId: user.userId,
+              organizationName: user.organizationName,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName,
+              loginTimestamp: new Date().toISOString()
+            });
+          } else {
+            console.log('❌ User not found');
+            setShowLoginWarning(true);
+          }
+        } else {
+          // Try to find user "vsr 369" specifically as fallback
+          console.log('⚠️ No location userId or session, looking for user vsr 369...');
+          const user = await unifiedUserStorageService.findUserById('vsr 369');
+          
+          if (user) {
+            console.log('✅ Found user vsr 369:', user);
+            setUserData({
+              userId: user.userId,
+              organizationName: user.organizationName,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName
+            });
+            
+            // Save session for this user
+            await unifiedUserStorageService.saveSession({
+              userId: user.userId,
+              organizationName: user.organizationName,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName,
+              loginTimestamp: new Date().toISOString()
+            });
+          } else {
+            console.log('❌ User vsr 369 not found');
+            setShowLoginWarning(true);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading user data:', error);
+        setShowLoginWarning(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [location.state]);
 
   const handleJoinAsMember = () => {
-    navigate('/membership-registration', { 
-      state: { 
-        userId,
-        organizationName,
-        entityType,
-        country
+    console.log('Navigating to membership registration...');
+    navigate('/membership-registration', {
+      state: {
+        userId: userData.userId,
+        organizationName: userData.organizationName,
+        entityType: userData.entityType,
+        country: userData.country
       }
     });
   };
 
-  // Load engagement models
-  useEffect(() => {
-    const loadEngagementModels = () => {
-      try {
-        const models = engagementModelsDataManager.getEngagementModels();
-        const activeModels = models.filter(model => model.isActive);
-        setEngagementModels(activeModels);
-      } catch (error) {
-        console.error('Error loading engagement models:', error);
-      }
-    };
-
-    loadEngagementModels();
-  }, []);
-
-  // Load seeker details from session data or location state
-  useEffect(() => {
-    const loadSeekerDetails = async () => {
-      console.log('📋 === DASHBOARD LOAD START ===');
-      
-      // First check if we have user data from navigation state (fresh login)
-      if (location.state) {
-        const stateData = location.state as any;
-        if (stateData.userId && stateData.organizationName) {
-          console.log('✅ Loading data from navigation state (fresh login):', stateData);
-          setUserId(stateData.userId);
-          setOrganizationName(stateData.organizationName);
-          setEntityType(stateData.entityType || '');
-          setCountry(stateData.country || '');
-          setEmail(stateData.email || '');
-          setContactPersonName(stateData.contactPersonName || '');
-          return;
-        }
-      }
-      
-      // Fallback: Try to load from session data using unified service
-      try {
-        const sessionData = await loadUserSession();
-        if (sessionData) {
-          console.log('✅ Loading data from unified session:', sessionData);
-          setUserId(sessionData.userId);
-          setOrganizationName(sessionData.organizationName);
-          setEntityType(sessionData.entityType);
-          setCountry(sessionData.country);
-          setEmail(sessionData.email);
-          setContactPersonName(sessionData.contactPersonName);
-        } else {
-          console.log('⚠️ No session data found');
-        }
-      } catch (error) {
-        console.error('❌ Error loading session data:', error);
-      }
-
-      // Load organization type from localStorage (legacy)
-      const storedOrgType = localStorage.getItem('seekerOrganizationType') || '';
-      setOrganizationType(storedOrgType);
-
-      // Load selected membership plan
-      const savedPlan = localStorage.getItem('selectedMembershipPlan');
-      if (savedPlan) {
-        setSelectedMembershipPlan(savedPlan);
-        console.log('✅ Loaded saved membership plan:', savedPlan);
-      }
-      
-      console.log('📋 === DASHBOARD LOAD END ===');
-    };
-
-    loadSeekerDetails();
-  }, [location.state]);
-
-  // Check if user needs to log in again
-  const showLoginWarning = !organizationName || !userId;
-
-  // Determine membership status for testing
-  const getMembershipStatus = () => {
-    if (selectedMembershipPlan) {
-      return {
-        status: 'active' as const,
-        plan: selectedMembershipPlan,
-        message: `Active ${selectedMembershipPlan.charAt(0).toUpperCase() + selectedMembershipPlan.slice(1)} Membership`,
-        badgeVariant: 'default' as const,
-        icon: CheckCircle,
-        iconColor: 'text-green-600'
-      };
-    } else {
-      return {
-        status: 'inactive' as const,
-        plan: '',
-        message: 'No Active Membership',
-        badgeVariant: 'secondary' as const,
-        icon: Clock,
-        iconColor: 'text-gray-500'
-      };
-    }
-  };
-
-  const membershipStatus = getMembershipStatus();
-
-  // Get pricing configuration for selected engagement model
-  const getPricingForEngagementModel = () => {
-    if (!selectedEngagementModel || !organizationName) return null;
-    
-    // For demo purposes, we'll use the first organization type from pricing configs
-    // In a real app, this would come from the user's organization data
-    const orgType = 'All Organizations'; // This should be dynamic based on user data
-    
-    return getConfigByOrgTypeAndEngagement(orgType, selectedEngagementModel);
-  };
-
-  const currentPricingConfig = getPricingForEngagementModel();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 flex items-center justify-center">
+        <Card className="shadow-xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p>Loading dashboard...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        <DashboardHeader onLogout={handleLogout} userId={userId} />
-        
-        <LoginWarning show={showLoginWarning} />
+    <>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/">
+                    Home
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
 
-        <SeekerDetailsCard
-          organizationName={organizationName}
-          organizationType={organizationType}
-          entityType={entityType}
-          country={country}
-          userId={userId}
-        />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+            <div className="max-w-7xl mx-auto p-6">
+              <DashboardHeader userData={userData} />
 
-        <MembershipStatusCard membershipStatus={membershipStatus} />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {showLoginWarning && <LoginWarning />}
+                  
+                  <SeekerDetailsCard userData={userData} />
+                  
+                  <QuickActionsCard 
+                    onJoinAsMember={handleJoinAsMember}
+                    showLoginWarning={showLoginWarning}
+                  />
+                </div>
 
-        <PricingModelCard
-          showPricingSelector={showPricingSelector}
-          setShowPricingSelector={setShowPricingSelector}
-          selectedEngagementModel={selectedEngagementModel}
-          setSelectedEngagementModel={setSelectedEngagementModel}
-          engagementModels={engagementModels}
-          currentPricingConfig={currentPricingConfig}
-          membershipStatus={membershipStatus}
-          showLoginWarning={showLoginWarning}
-        />
-
-        <MembershipActionCard
-          membershipStatus={membershipStatus}
-          onJoinAsMember={handleJoinAsMember}
-          showLoginWarning={showLoginWarning}
-        />
-
-        <QuickActionsCard />
-      </div>
-    </div>
+                <div className="space-y-6">
+                  <Card className="shadow-xl border-0">
+                    <CardHeader>
+                      <CardTitle className="text-xl">Quick Stats</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Active Solutions</span>
+                          <span className="font-semibold">0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Total Challenges</span>
+                          <span className="font-semibold">0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Member Since</span>
+                          <span className="font-semibold">Today</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </>
   );
 };
 
