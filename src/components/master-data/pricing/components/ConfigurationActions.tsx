@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { PricingConfig } from '../types';
+import { PricingConfig } from '@/types/pricing';
 
 interface ConfigurationActionsProps {
   currentConfig: Partial<PricingConfig>;

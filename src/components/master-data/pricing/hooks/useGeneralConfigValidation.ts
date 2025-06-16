@@ -1,6 +1,5 @@
-
 import { useToast } from "@/hooks/use-toast";
-import { PricingConfig } from '../types';
+import { PricingConfig } from '@/types/pricing';
 
 export const useGeneralConfigValidation = () => {
   const { toast } = useToast();

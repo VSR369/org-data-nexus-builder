@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign } from 'lucide-react';
-import { PricingConfig as PricingConfigType } from './pricing/types';
+import { PricingConfig as PricingConfigType } from '@/types/pricing';
 import GeneralConfigForm from './pricing/GeneralConfigForm';
 import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
 import { PricingDataManager } from '@/utils/pricingDataManager';

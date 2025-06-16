@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { PricingConfig } from '../types';
+import { PricingConfig } from '@/types/pricing';
 
 interface DiscountSectionProps {
   currentConfig: Partial<PricingConfig>;

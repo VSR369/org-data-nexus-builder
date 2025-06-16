@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PricingConfig } from '../types';
+import { PricingConfig } from '@/types/pricing';
 
 interface ConfigurationCardProps {
   config: PricingConfig;
