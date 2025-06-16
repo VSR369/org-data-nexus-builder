@@ -17,7 +17,11 @@ const currenciesDataManager = new LegacyDataManager<string[]>({
 
 const countriesDataManager = new LegacyDataManager<Country[]>({
   key: 'master_data_countries',
-  defaultData: [],
+  defaultData: [
+    { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+    { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+    { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+  ],
   version: 1
 });
 
@@ -49,8 +53,14 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     setCurrencies(safeCurrencies);
     
     const loadedCountries = countriesDataManager.loadData();
-    // Ensure we always have an array
-    const safeCountries = Array.isArray(loadedCountries) ? loadedCountries : [];
+    // Ensure we always have an array and filter out invalid entries
+    const safeCountries = Array.isArray(loadedCountries) 
+      ? loadedCountries.filter(country => country && country.code && country.name)
+      : [
+          { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+          { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+          { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+        ];
     console.log('🌍 GeneralConfigInput: Loaded countries:', safeCountries);
     setCountries(safeCountries);
   }, []);
@@ -72,7 +82,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 <SelectValue placeholder="Select organization type" />
               </SelectTrigger>
               <SelectContent>
-                {organizationTypes.map((type) => (
+                {organizationTypes.filter(type => type && typeof type === 'string').map((type) => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
               </SelectContent>
@@ -108,7 +118,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 <SelectValue placeholder="Select a currency" />
               </SelectTrigger>
               <SelectContent>
-                {currencies.map((currency) => (
+                {currencies.filter(currency => currency && typeof currency === 'string').map((currency) => (
                   <SelectItem key={currency} value={currency}>{currency}</SelectItem>
                 ))}
               </SelectContent>
