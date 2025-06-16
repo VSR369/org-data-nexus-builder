@@ -28,7 +28,6 @@ export const useSeekerValidation = () => {
     if (!formData.address) newErrors.address = 'Address is required';
     if (!formData.contactPersonName) newErrors.contactPersonName = 'Contact person name is required';
     if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.countryCode) newErrors.countryCode = 'Country code is required';
     if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
     if (!formData.userId) newErrors.userId = 'User ID is required';
     if (!formData.password) newErrors.password = 'Password is required';
