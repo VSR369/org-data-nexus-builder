@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Globe, RotateCcw } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface Country {
@@ -20,7 +19,6 @@ const CountryConfig = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
-  const { toast } = useToast();
 
   // Load data from shared manager
   useEffect(() => {
@@ -66,11 +64,7 @@ const CountryConfig = () => {
     console.log('🔄 HandleSubmit called with:', { currentCountry, isEditing });
     
     if (!currentCountry.name || !currentCountry.code) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
+      toast.error("Please fill in all required fields.");
       return;
     }
 
@@ -81,11 +75,7 @@ const CountryConfig = () => {
     );
 
     if (duplicateCode) {
-      toast({
-        title: "Error",
-        description: "A country with this code already exists.",
-        variant: "destructive",
-      });
+      toast.error("A country with this code already exists.");
       return;
     }
 
@@ -104,10 +94,7 @@ const CountryConfig = () => {
       
       console.log('✅ Updated country:', updatedCountry);
       
-      toast({
-        title: "Success",
-        description: "Country updated successfully.",
-      });
+      toast.success("Country updated successfully!");
     } else {
       // Add new country
       const newCountry: Country = {
@@ -121,10 +108,7 @@ const CountryConfig = () => {
       
       console.log('✅ Added new country:', newCountry);
       
-      toast({
-        title: "Success",
-        description: "Country created successfully.",
-      });
+      toast.success("Country created successfully!");
     }
 
     // Reset form
@@ -140,10 +124,7 @@ const CountryConfig = () => {
 
   const handleDelete = (id: string) => {
     setCountries(prev => prev.filter(item => item.id !== id));
-    toast({
-      title: "Success",
-      description: "Country deleted successfully.",
-    });
+    toast.success("Country deleted successfully!");
   };
 
   const resetForm = () => {
@@ -160,10 +141,7 @@ const CountryConfig = () => {
     setCountries(defaultCountries);
     setCurrentCountry({});
     setIsEditing(false);
-    toast({
-      title: "Success",
-      description: "Countries reset to default values (India, USA, UAE).",
-    });
+    toast.success("Countries reset to default values (India, USA, UAE).");
   };
 
   return (
