@@ -239,6 +239,24 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   // Determine membership status
   const getMembershipStatus = () => {
     if (membershipPaymentData && membershipPaymentData.membershipStatus === 'active') {
+      // Get the correct amount based on the selected plan
+      let paidAmount = 0;
+      if (membershipPaymentData.pricing) {
+        switch (membershipPaymentData.selectedPlan) {
+          case 'quarterly':
+            paidAmount = membershipPaymentData.pricing.quarterlyPrice;
+            break;
+          case 'halfyearly':
+            paidAmount = membershipPaymentData.pricing.halfYearlyPrice;
+            break;
+          case 'annual':
+            paidAmount = membershipPaymentData.pricing.annualPrice;
+            break;
+          default:
+            paidAmount = 0;
+        }
+      }
+
       return {
         status: 'active' as const,
         plan: membershipPaymentData.selectedPlan,
@@ -248,8 +266,8 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
         iconColor: 'text-green-600',
         paymentDate: membershipPaymentData.paidAt,
         pricing: {
-          currency: membershipPaymentData.pricing.currency,
-          amount: membershipPaymentData.pricing[`${membershipPaymentData.selectedPlan}Price`]
+          currency: membershipPaymentData.pricing?.currency || 'USD',
+          amount: paidAmount
         }
       };
     }

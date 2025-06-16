@@ -44,7 +44,7 @@ const MembershipStatusCard: React.FC<MembershipStatusCardProps> = ({ membershipS
                   <p className="text-sm text-gray-600">
                     Plan: {membershipStatus.plan.charAt(0).toUpperCase() + membershipStatus.plan.slice(1)}
                   </p>
-                  {membershipStatus.pricing && (
+                  {membershipStatus.pricing && membershipStatus.pricing.amount && (
                     <p className="text-sm text-green-600 font-medium">
                       Amount Paid: {membershipStatus.pricing.currency} {membershipStatus.pricing.amount.toLocaleString()}
                     </p>
