@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Upload } from 'lucide-react';
 import { FormData } from '@/types/seekerRegistration';
 
@@ -18,67 +17,45 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      {/* Registration Documents (Conditional) */}
-      {requiresRegistrationDocuments && (
-        <div className="space-y-4">
-          <h4 className="font-medium flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Registration Documents
-          </h4>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-            <Label htmlFor="registrationDocuments">Upload Registration Certificate and Supporting Documents (Max 3 files)</Label>
-            <Input
-              id="registrationDocuments"
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+        <h3 className="text-lg font-semibold text-blue-600">Company Documents</h3>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Company Profile Document</Label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+            <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+            <input
               type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              onChange={(e) => onFileUpload('registrationDocuments', e.target.files)}
-              className="mt-2"
+              onChange={(e) => onFileUpload('companyProfile', e.target.files)}
+              className="hidden"
+              id="companyProfile"
+              accept=".pdf,.doc,.docx"
             />
-            {formData.registrationDocuments.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600">Selected files:</p>
-                <ul className="text-sm text-gray-500">
-                  {formData.registrationDocuments.map((file, index) => (
-                    <li key={index}>• {file.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <Label htmlFor="companyProfile" className="cursor-pointer text-blue-600 hover:underline">
+              Choose File
+            </Label>
+            <p className="text-sm text-gray-500 mt-1">No file chosen</p>
           </div>
         </div>
-      )}
 
-      {/* File Uploads */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Upload className="h-5 w-5" />
-          Company Documents
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <Label htmlFor="companyProfile">Company Profile Document</Label>
-            <Input
-              id="companyProfile"
+        <div className="space-y-2">
+          <Label>Company Logo</Label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+            <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+            <input
               type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={(e) => onFileUpload('companyProfile', e.target.files)}
-              className="mt-2"
-            />
-            {formData.companyProfile && <p className="text-sm text-gray-500 mt-1">Selected: {formData.companyProfile.name}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="companyLogo">Company Logo</Label>
-            <Input
-              id="companyLogo"
-              type="file"
-              accept=".jpg,.jpeg,.png,.gif"
               onChange={(e) => onFileUpload('companyLogo', e.target.files)}
-              className="mt-2"
+              className="hidden"
+              id="companyLogo"
+              accept="image/*"
             />
-            {formData.companyLogo && <p className="text-sm text-gray-500 mt-1">Selected: {formData.companyLogo.name}</p>}
+            <Label htmlFor="companyLogo" className="cursor-pointer text-blue-600 hover:underline">
+              Choose File
+            </Label>
+            <p className="text-sm text-gray-500 mt-1">No file chosen</p>
           </div>
         </div>
       </div>
