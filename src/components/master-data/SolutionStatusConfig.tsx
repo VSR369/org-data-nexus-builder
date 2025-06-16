@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -182,7 +181,6 @@ const SolutionStatusConfig = () => {
               return (
                 <div key={index} className={`flex items-center justify-between py-3 px-4 border rounded-lg ${phaseColor}`}>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-600">#{index + 1}</span>
                     <span className="font-medium">{status}</span>
                   </div>
                   <Button type="button" variant="ghost" size="sm" onClick={() => removeStatus(index)}>
