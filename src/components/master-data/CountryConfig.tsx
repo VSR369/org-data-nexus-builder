@@ -63,6 +63,8 @@ const CountryConfig = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔄 HandleSubmit called with:', { currentCountry, isEditing });
+    
     if (!currentCountry.name || !currentCountry.code) {
       toast({
         title: "Error",
@@ -72,31 +74,66 @@ const CountryConfig = () => {
       return;
     }
 
+    // Check for duplicate country codes (only if not editing the same country)
+    const duplicateCode = countries.find(country => 
+      country.code.toUpperCase() === currentCountry.code!.toUpperCase() && 
+      country.id !== currentCountry.id
+    );
+
+    if (duplicateCode) {
+      toast({
+        title: "Error",
+        description: "A country with this code already exists.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (isEditing && currentCountry.id) {
+      // Update existing country
+      const updatedCountry: Country = {
+        id: currentCountry.id,
+        name: currentCountry.name,
+        code: currentCountry.code.toUpperCase(),
+        region: currentCountry.region || ''
+      };
+
       setCountries(prev => prev.map(item => 
-        item.id === currentCountry.id ? { ...currentCountry as Country } : item
+        item.id === currentCountry.id ? updatedCountry : item
       ));
+      
+      console.log('✅ Updated country:', updatedCountry);
+      
       toast({
         title: "Success",
         description: "Country updated successfully.",
       });
     } else {
-      const newCountry = {
-        ...currentCountry,
+      // Add new country
+      const newCountry: Country = {
         id: Date.now().toString(),
-      } as Country;
+        name: currentCountry.name,
+        code: currentCountry.code.toUpperCase(),
+        region: currentCountry.region || ''
+      };
+      
       setCountries(prev => [...prev, newCountry]);
+      
+      console.log('✅ Added new country:', newCountry);
+      
       toast({
         title: "Success",
         description: "Country created successfully.",
       });
     }
 
+    // Reset form
     setCurrentCountry({});
     setIsEditing(false);
   };
 
   const handleEdit = (country: Country) => {
+    console.log('✏️ Editing country:', country);
     setCurrentCountry(country);
     setIsEditing(true);
   };
@@ -121,6 +158,8 @@ const CountryConfig = () => {
       { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
     ];
     setCountries(defaultCountries);
+    setCurrentCountry({});
+    setIsEditing(false);
     toast({
       title: "Success",
       description: "Countries reset to default values (India, USA, UAE).",
@@ -157,6 +196,7 @@ const CountryConfig = () => {
                   value={currentCountry.name || ''}
                   onChange={(e) => setCurrentCountry(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., United States"
+                  required
                 />
               </div>
               <div>
@@ -166,7 +206,8 @@ const CountryConfig = () => {
                   value={currentCountry.code || ''}
                   onChange={(e) => setCurrentCountry(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
                   placeholder="e.g., US"
-                  maxLength={2}
+                  maxLength={3}
+                  required
                 />
               </div>
               <div>
