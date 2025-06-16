@@ -130,7 +130,7 @@ const MasterDataContent = ({ activeSection, setActiveSection }: MasterDataConten
       'challenge-statuses': 'Challenge Status Configuration',
       'solution-statuses': 'Solution Status Configuration',
       'competency-capabilities': 'Competency Capabilities Configuration',
-      'communication-types': 'Communication Types Configuration',
+      'communication-types': 'Communication Channels Configuration',
       'reward-types': 'Non-Monetary Reward Types Configuration',
       'seeker-membership-fee': 'Seeker Membership Fee Configuration',
       'engagement-models': 'Engagement Models Configuration',

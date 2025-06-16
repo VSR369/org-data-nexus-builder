@@ -63,7 +63,7 @@ export const challengeMenuItems = [
 export const systemMenuItems = [
   {
     id: 'communication-types',
-    title: 'Communication & Content Types',
+    title: 'Communication Channels',
     icon: MessageSquare,
   },
   {

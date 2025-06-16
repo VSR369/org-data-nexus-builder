@@ -1,96 +1,104 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Save, X, MessageSquare } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, MessageSquare, ExternalLink } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { LegacyDataManager } from '@/utils/core/DataManager';
 
-interface CommunicationType {
+interface CommunicationChannel {
   id: string;
   name: string;
-  description: string;
+  link: string;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
+
+const predefinedChannels = [
+  { name: 'Innovation Centre', placeholder: 'YouTube link' },
+  { name: 'Innovation News', placeholder: 'Blog Link' },
+  { name: 'Innovation Podcasts', placeholder: 'Podcast link' },
+  { name: 'Innovation Articles', placeholder: 'Blog Link' }
+];
+
+const defaultChannels: CommunicationChannel[] = predefinedChannels.map((channel, index) => ({
+  id: (index + 1).toString(),
+  name: channel.name,
+  link: '',
+  isActive: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+}));
+
+const channelsDataManager = new LegacyDataManager<CommunicationChannel[]>({
+  key: 'master_data_communication_channels',
+  defaultData: defaultChannels,
+  version: 1
+});
 
 const CommunicationTypeConfig = () => {
   const { toast } = useToast();
-  const [communicationTypes, setCommunicationTypes] = useState<CommunicationType[]>([
-    { id: '1', name: 'Email', description: 'Standard email communication', isActive: true },
-    { id: '2', name: 'SMS', description: 'Short message service', isActive: true },
-    { id: '3', name: 'Push Notification', description: 'Mobile app push notifications', isActive: true },
-    { id: '4', name: 'In-App Message', description: 'Messages within the application', isActive: true },
-    { id: '5', name: 'Announcement', description: 'Public announcements and updates', isActive: true }
-  ]);
-  
-  const [isAdding, setIsAdding] = useState(false);
+  const [channels, setChannels] = useState<CommunicationChannel[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [editingLink, setEditingLink] = useState('');
 
-  const handleAdd = () => {
-    if (formData.name.trim()) {
-      const newType: CommunicationType = {
-        id: Date.now().toString(),
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        isActive: true
-      };
-      setCommunicationTypes([...communicationTypes, newType]);
-      setFormData({ name: '', description: '' });
-      setIsAdding(false);
-      toast({
-        title: "Success",
-        description: "Communication type added successfully",
-      });
+  // Load data on component mount
+  useEffect(() => {
+    const loadedChannels = channelsDataManager.loadData();
+    setChannels(loadedChannels);
+  }, []);
+
+  // Save data whenever channels change
+  useEffect(() => {
+    if (channels.length > 0) {
+      channelsDataManager.saveData(channels);
     }
-  };
+  }, [channels]);
 
-  const handleEdit = (type: CommunicationType) => {
-    setEditingId(type.id);
-    setFormData({ name: type.name, description: type.description });
+  const handleEdit = (channel: CommunicationChannel) => {
+    setEditingId(channel.id);
+    setEditingLink(channel.link);
   };
 
   const handleSaveEdit = () => {
-    if (formData.name.trim() && editingId) {
-      setCommunicationTypes(prev => prev.map(type => 
-        type.id === editingId 
-          ? { ...type, name: formData.name.trim(), description: formData.description.trim() }
-          : type
+    if (editingId) {
+      setChannels(prev => prev.map(channel => 
+        channel.id === editingId 
+          ? { ...channel, link: editingLink, updatedAt: new Date().toISOString() }
+          : channel
       ));
       setEditingId(null);
-      setFormData({ name: '', description: '' });
+      setEditingLink('');
       toast({
         title: "Success",
-        description: "Communication type updated successfully",
+        description: "Communication channel updated successfully",
       });
     }
-  };
-
-  const handleDelete = (id: string) => {
-    setCommunicationTypes(prev => prev.filter(type => type.id !== id));
-    toast({
-      title: "Success",
-      description: "Communication type deleted successfully",
-    });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setFormData({ name: '', description: '' });
-  };
-
-  const handleCancelAdd = () => {
-    setIsAdding(false);
-    setFormData({ name: '', description: '' });
+    setEditingLink('');
   };
 
   const toggleActive = (id: string) => {
-    setCommunicationTypes(prev => prev.map(type => 
-      type.id === id ? { ...type, isActive: !type.isActive } : type
+    setChannels(prev => prev.map(channel => 
+      channel.id === id ? { ...channel, isActive: !channel.isActive, updatedAt: new Date().toISOString() } : channel
     ));
+    toast({
+      title: "Success",
+      description: "Channel status updated successfully",
+    });
+  };
+
+  const openLink = (link: string) => {
+    if (link) {
+      window.open(link, '_blank');
+    }
   };
 
   return (
@@ -98,78 +106,31 @@ const CommunicationTypeConfig = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
-          Communication Types
+          Communication Channels
         </CardTitle>
         <CardDescription>
-          Configure different types of communication channels available in the system
+          Configure communication channels and their links for the innovation platform
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Current Communication Types</h3>
-          <Button 
-            onClick={() => setIsAdding(true)} 
-            disabled={isAdding}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Type
-          </Button>
-        </div>
-
-        {isAdding && (
-          <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
-            <div>
-              <Label htmlFor="new-comm-type-name">Type Name</Label>
-              <Input
-                id="new-comm-type-name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter communication type name"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-comm-type-description">Description</Label>
-              <Textarea
-                id="new-comm-type-description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter description"
-                className="mt-1"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleAdd} size="sm" className="flex items-center gap-1">
-                <Save className="w-3 h-3" />
-                Save
-              </Button>
-              <Button onClick={handleCancelAdd} variant="outline" size="sm" className="flex items-center gap-1">
-                <X className="w-3 h-3" />
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <div className="grid gap-2">
-          {communicationTypes.map((type) => (
-            <div key={type.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              {editingId === type.id ? (
-                <div className="flex gap-2 flex-1 space-y-2">
-                  <div className="flex-1 space-y-2">
+        <div className="grid gap-4">
+          {channels.map((channel) => (
+            <div key={channel.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+              {editingId === channel.id ? (
+                <div className="flex gap-2 flex-1 items-center">
+                  <div className="flex-1">
+                    <Label htmlFor={`link-${channel.id}`} className="text-sm font-medium">
+                      {channel.name} Link
+                    </Label>
                     <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Type name"
-                    />
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Description"
+                      id={`link-${channel.id}`}
+                      value={editingLink}
+                      onChange={(e) => setEditingLink(e.target.value)}
+                      placeholder={`Enter ${channel.name.toLowerCase()} link`}
+                      className="mt-1"
                     />
                   </div>
-                  <div className="flex gap-2 items-start">
+                  <div className="flex gap-2">
                     <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
                       <Save className="w-3 h-3" />
                       Save
@@ -185,41 +146,44 @@ const CommunicationTypeConfig = () => {
                   <div className="flex items-center gap-3 flex-1">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{type.name}</span>
-                        <Badge variant={type.isActive ? "default" : "secondary"}>
-                          {type.isActive ? "Active" : "Inactive"}
+                        <span className="font-medium">{channel.name}</span>
+                        <Badge variant={channel.isActive ? "default" : "secondary"}>
+                          {channel.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
-                      {type.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                      {channel.link ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-sm text-muted-foreground truncate max-w-md">{channel.link}</p>
+                          <Button
+                            onClick={() => openLink(channel.link)}
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-1 h-6 px-2"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-1">No link configured</p>
                       )}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => toggleActive(type.id)}
+                      onClick={() => toggleActive(channel.id)}
                       variant="outline"
                       size="sm"
                     >
-                      {type.isActive ? "Deactivate" : "Activate"}
+                      {channel.isActive ? "Deactivate" : "Activate"}
                     </Button>
                     <Button
-                      onClick={() => handleEdit(type)}
+                      onClick={() => handleEdit(channel)}
                       variant="outline"
                       size="sm"
                       className="flex items-center gap-1"
                     >
                       <Edit className="w-3 h-3" />
                       Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(type.id)}
-                      variant="destructive"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete
                     </Button>
                   </div>
                 </>
