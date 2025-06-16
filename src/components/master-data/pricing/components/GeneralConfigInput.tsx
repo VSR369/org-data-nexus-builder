@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LegacyDataManager } from '@/utils/core/DataManager';
 import { Country } from '@/types/seekerRegistration';
 import { PricingConfig } from '@/types/pricing';
+import { getCurrencyByCountry } from '../utils/currencyUtils';
 
 const currenciesDataManager = new LegacyDataManager<string[]>({
   key: 'master_data_currencies',
@@ -65,6 +66,26 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     setCountries(safeCountries);
   }, []);
 
+  const handleCountryChange = (selectedCountryCode: string) => {
+    console.log('🌍 Country selected:', selectedCountryCode);
+    
+    // Find the selected country to get its name
+    const selectedCountry = countries.find(country => country.code === selectedCountryCode);
+    const countryName = selectedCountry?.name || '';
+    
+    // Get the currency for this country
+    const suggestedCurrency = getCurrencyByCountry(countryName);
+    
+    console.log('💰 Suggested currency for', countryName, ':', suggestedCurrency);
+    
+    // Update the configuration with both country and auto-selected currency
+    setCurrentConfig(prev => ({
+      ...prev,
+      country: selectedCountryCode,
+      currency: suggestedCurrency || prev.currency || ''
+    }));
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -94,7 +115,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
           <div className="col-span-2">
             <Select 
               value={currentConfig.country || ""} 
-              onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, country: value }))}
+              onValueChange={handleCountryChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a country" />
@@ -123,6 +144,11 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            {currentConfig.country && currentConfig.currency && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Currency auto-selected based on country selection
+              </p>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-3 items-center gap-4">
