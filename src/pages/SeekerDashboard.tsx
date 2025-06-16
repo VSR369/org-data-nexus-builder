@@ -12,9 +12,10 @@ import LoginWarning from '@/components/dashboard/LoginWarning';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
 import MembershipSelectionModal from '@/components/dashboard/MembershipSelectionModal';
+import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
-import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard } from 'lucide-react';
+import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard, CheckCircle, Clock } from 'lucide-react';
 
 interface SeekerDashboardProps {
   userId?: string;
@@ -42,6 +43,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   const [activeSection, setActiveSection] = useState('');
   const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
   const [showMembershipSelection, setShowMembershipSelection] = useState(false);
+  const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
 
   // Load master data for industry segments
   const { industrySegments } = useSeekerMasterData();
@@ -185,8 +187,27 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
       }
     };
 
-    loadUserData();
-  }, [location.state]);
+    // Load membership payment data
+    const loadMembershipPaymentData = () => {
+      try {
+        const paymentData = localStorage.getItem('completed_membership_payment');
+        if (paymentData) {
+          const parsedData = JSON.parse(paymentData);
+          setMembershipPaymentData(parsedData);
+          console.log('✅ Loaded membership payment data:', parsedData);
+        }
+      } catch (error) {
+        console.error('Error loading membership payment data:', error);
+      }
+    };
+
+    // Only load if we don't have complete user data
+    if (!userData.userId || !userData.organizationName) {
+      loadUserData();
+    }
+    
+    loadMembershipPaymentData();
+  }, [location.state, navigate, toast, userData.userId, userData.organizationName]);
 
   const handleLogout = (userId?: string) => {
     console.log('Logging out user:', userId);
@@ -214,6 +235,36 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
       }
     });
   };
+
+  // Determine membership status
+  const getMembershipStatus = () => {
+    if (membershipPaymentData && membershipPaymentData.membershipStatus === 'active') {
+      return {
+        status: 'active' as const,
+        plan: membershipPaymentData.selectedPlan,
+        message: 'Your membership is active',
+        badgeVariant: 'default' as const,
+        icon: CheckCircle,
+        iconColor: 'text-green-600',
+        paymentDate: membershipPaymentData.paidAt,
+        pricing: {
+          currency: membershipPaymentData.pricing.currency,
+          amount: membershipPaymentData.pricing[`${membershipPaymentData.selectedPlan}Price`]
+        }
+      };
+    }
+    
+    return {
+      status: 'inactive' as const,
+      plan: '',
+      message: 'No active membership found',
+      badgeVariant: 'secondary' as const,
+      icon: Clock,
+      iconColor: 'text-gray-400'
+    };
+  };
+
+  const membershipStatus = getMembershipStatus();
 
   if (isLoading) {
     return (
@@ -261,29 +312,34 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
 
               <LoginWarning show={showLoginWarning} />
 
-              {/* Join as Member Button */}
-              <div className="mt-6 mb-6">
-                <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Ready to unlock premium features?</h3>
-                        <p className="text-blue-100">
-                          Join as a member to access exclusive benefits, priority support, and enhanced marketplace features.
-                        </p>
+              {/* Membership Status Card */}
+              <MembershipStatusCard membershipStatus={membershipStatus} />
+
+              {/* Join as Member Button - Only show if membership is not active */}
+              {membershipStatus.status !== 'active' && (
+                <div className="mt-6 mb-6">
+                  <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold mb-2">Ready to unlock premium features?</h3>
+                          <p className="text-blue-100">
+                            Join as a member to access exclusive benefits, priority support, and enhanced marketplace features.
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={handleJoinAsMember}
+                          className="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 text-lg font-semibold"
+                          size="lg"
+                        >
+                          <CreditCard className="mr-2 h-5 w-5" />
+                          Join as Member
+                        </Button>
                       </div>
-                      <Button 
-                        onClick={handleJoinAsMember}
-                        className="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 text-lg font-semibold"
-                        size="lg"
-                      >
-                        <CreditCard className="mr-2 h-5 w-5" />
-                        Join as Member
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
               {/* Complete Registration Details */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, CreditCard, X, Check } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 interface PricingData {
   id: string;
@@ -37,6 +37,7 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const formatCurrency = (amount: number, currency: string) => {
     try {
@@ -76,7 +77,13 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
       description: `Your ${selectedPlan} membership has been activated successfully!`,
     });
     
-    onProceed(membershipData);
+    // Close modal and navigate back to dashboard
+    onClose();
+    
+    // Navigate back to dashboard after a short delay to show the toast
+    setTimeout(() => {
+      navigate('/seeker-dashboard', { state: { userId: userData.userId } });
+    }, 1500);
   };
 
   if (!countryPricing) {

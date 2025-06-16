@@ -11,6 +11,11 @@ interface MembershipStatus {
   badgeVariant: 'default' | 'secondary';
   icon: typeof CheckCircle | typeof Clock;
   iconColor: string;
+  paymentDate?: string;
+  pricing?: {
+    currency: string;
+    amount: number;
+  };
 }
 
 interface MembershipStatusCardProps {
@@ -35,13 +40,25 @@ const MembershipStatusCard: React.FC<MembershipStatusCardProps> = ({ membershipS
             <div>
               <p className="font-medium text-gray-900">{membershipStatus.message}</p>
               {membershipStatus.status === 'active' && (
-                <p className="text-sm text-gray-600">
-                  Plan: {membershipStatus.plan.charAt(0).toUpperCase() + membershipStatus.plan.slice(1)}
-                </p>
+                <>
+                  <p className="text-sm text-gray-600">
+                    Plan: {membershipStatus.plan.charAt(0).toUpperCase() + membershipStatus.plan.slice(1)}
+                  </p>
+                  {membershipStatus.pricing && (
+                    <p className="text-sm text-green-600 font-medium">
+                      Amount Paid: {membershipStatus.pricing.currency} {membershipStatus.pricing.amount.toLocaleString()}
+                    </p>
+                  )}
+                  {membershipStatus.paymentDate && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Payment Date: {new Date(membershipStatus.paymentDate).toLocaleDateString()}
+                    </p>
+                  )}
+                </>
               )}
               {membershipStatus.status === 'active' && (
                 <p className="text-xs text-green-600 mt-1">
-                  ✓ Testing Mode: Membership active without payment
+                  ✓ Testing Mode: Membership active without payment gateway
                 </p>
               )}
             </div>
