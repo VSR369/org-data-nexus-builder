@@ -13,9 +13,11 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
 import MembershipSelectionModal from '@/components/dashboard/MembershipSelectionModal';
 import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
+import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
-import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard, CheckCircle, Clock } from 'lucide-react';
+import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard, CheckCircle, Clock, Handshake } from 'lucide-react';
+import { EngagementModel } from '@/components/master-data/engagement-models/types';
 
 interface SeekerDashboardProps {
   userId?: string;
@@ -43,6 +45,8 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   const [activeSection, setActiveSection] = useState('');
   const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
   const [showMembershipSelection, setShowMembershipSelection] = useState(false);
+  const [showEngagementModelSelector, setShowEngagementModelSelector] = useState(false);
+  const [selectedEngagementModel, setSelectedEngagementModel] = useState<EngagementModel | null>(null);
   const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
 
   // Load master data for industry segments
@@ -221,6 +225,17 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
     setShowMembershipSelection(true);
   };
 
+  const handleSelectEngagementModel = () => {
+    console.log('Select Engagement Model clicked');
+    setShowEngagementModelSelector(true);
+  };
+
+  const handleEngagementModelSelected = (model: EngagementModel) => {
+    console.log('Engagement model selected:', model);
+    setSelectedEngagementModel(model);
+    setShowEngagementModelSelector(false);
+  };
+
   const handleProceedToMembership = (membershipData: any) => {
     console.log('Proceeding with membership data:', membershipData);
     setShowMembershipSelection(false);
@@ -332,6 +347,62 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
 
               {/* Membership Status Card */}
               <MembershipStatusCard membershipStatus={membershipStatus} />
+
+              {/* Engagement Model Selection */}
+              <div className="mt-6 mb-6">
+                <Card className="shadow-xl border-0">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                      <Handshake className="h-6 w-6 text-purple-600" />
+                      Engagement Model Selection
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {selectedEngagementModel ? (
+                      <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-6 w-6 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-900">Selected Engagement Model</p>
+                            <p className="text-lg font-semibold text-green-700">
+                              {selectedEngagementModel.name}
+                            </p>
+                            <p className="text-sm text-green-600">
+                              {selectedEngagementModel.description}
+                            </p>
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={handleSelectEngagementModel}
+                          variant="outline"
+                          className="border-green-600 text-green-600 hover:bg-green-50"
+                        >
+                          Change Model
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Select Your Engagement Model</h3>
+                          <p className="text-gray-600">
+                            Choose an engagement model that defines how services are delivered and managed 
+                            for your organization.
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={handleSelectEngagementModel}
+                          className="bg-purple-600 hover:bg-purple-700 px-6 py-3 text-lg font-semibold"
+                          size="lg"
+                          disabled={showLoginWarning}
+                        >
+                          <Handshake className="mr-2 h-5 w-5" />
+                          Select Model
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Join as Member Button - Only show if membership is not active */}
               {membershipStatus.status !== 'active' && (
@@ -588,6 +659,14 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
           }}
           onClose={() => setShowMembershipSelection(false)}
           onProceed={handleProceedToMembership}
+        />
+      )}
+
+      {/* Engagement Model Selector */}
+      {showEngagementModelSelector && (
+        <EngagementModelSelector
+          onClose={() => setShowEngagementModelSelector(false)}
+          onSelect={handleEngagementModelSelected}
         />
       )}
     </>
