@@ -26,7 +26,7 @@ const LoginForm = () => {
     console.log('🔐 Attempting login for userId:', userId);
     
     // Run storage diagnostics
-    const diagnostics = getUserStorageDiagnostics();
+    const diagnostics = await getUserStorageDiagnostics();
     console.log('📊 Storage diagnostics:', diagnostics);
 
     try {
@@ -40,7 +40,7 @@ const LoginForm = () => {
         return;
       }
 
-      const registeredUser = findRegisteredUser(userId.trim(), password);
+      const registeredUser = await findRegisteredUser(userId.trim(), password);
 
       if (registeredUser) {
         console.log('✅ Login successful for user:', registeredUser.userId);
@@ -64,7 +64,7 @@ const LoginForm = () => {
         console.log('❌ Login failed for userId:', userId);
         
         // Provide better error messages
-        const userStatus = checkUserExistsForBetterError(userId.trim());
+        const userStatus = await checkUserExistsForBetterError(userId.trim());
         let errorMessage = "Login failed. Please check your credentials.";
         
         if (userStatus === 'no_users') {

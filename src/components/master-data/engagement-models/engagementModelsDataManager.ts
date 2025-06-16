@@ -1,3 +1,4 @@
+
 import { DataManager } from '@/utils/core/DataManager';
 import { EngagementModel } from './types';
 
@@ -57,8 +58,8 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
            );
   }
 
-  getEngagementModels(): EngagementModel[] {
-    const data = this.loadData();
+  async getEngagementModels(): Promise<EngagementModel[]> {
+    const data = await this.loadData();
     
     // Clean up duplicates by creating a Map with normalized names as keys
     const uniqueModelsMap = new Map<string, EngagementModel>();
@@ -81,7 +82,7 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
     // If we detect duplicates were removed, save the cleaned data
     if (uniqueModels.length !== data.engagementModels.filter(m => m.isActive).length) {
       console.log('🧹 DataManager: Cleaning up duplicate engagement models');
-      this.saveData({
+      await this.saveData({
         engagementModels: [
           ...uniqueModels,
           ...data.engagementModels.filter(m => !m.isActive) // Keep inactive models
@@ -96,8 +97,8 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
     return uniqueModels;
   }
 
-  addEngagementModel(model: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>): EngagementModel {
-    const data = this.loadData();
+  async addEngagementModel(model: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>): Promise<EngagementModel> {
+    const data = await this.loadData();
     
     // Check for duplicate names before adding
     const normalizedName = model.name.toLowerCase().trim();
@@ -117,12 +118,12 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
     };
     
     data.engagementModels.push(newModel);
-    this.saveData(data);
+    await this.saveData(data);
     return newModel;
   }
 
-  updateEngagementModel(id: string, updates: Partial<Omit<EngagementModel, 'id' | 'createdAt'>>): EngagementModel | null {
-    const data = this.loadData();
+  async updateEngagementModel(id: string, updates: Partial<Omit<EngagementModel, 'id' | 'createdAt'>>): Promise<EngagementModel | null> {
+    const data = await this.loadData();
     const index = data.engagementModels.findIndex(model => model.id === id);
     
     if (index === -1) return null;
@@ -133,25 +134,25 @@ class EngagementModelsDataManager extends DataManager<EngagementModelsData> {
       updatedAt: new Date().toISOString()
     };
     
-    this.saveData(data);
+    await this.saveData(data);
     return data.engagementModels[index];
   }
 
-  deleteEngagementModel(id: string): boolean {
-    const data = this.loadData();
+  async deleteEngagementModel(id: string): Promise<boolean> {
+    const data = await this.loadData();
     const index = data.engagementModels.findIndex(model => model.id === id);
     
     if (index === -1) return false;
     
     data.engagementModels.splice(index, 1);
-    this.saveData(data);
+    await this.saveData(data);
     return true;
   }
 
   // Method to force clean duplicates - can be called manually if needed
-  cleanDuplicates(): void {
+  async cleanDuplicates(): Promise<void> {
     console.log('🧹 Force cleaning engagement model duplicates');
-    this.getEngagementModels(); // This will trigger the cleanup logic
+    await this.getEngagementModels(); // This will trigger the cleanup logic
   }
 }
 

@@ -5,13 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
-import Signup from "./pages/Signup";
 import SeekerRegistration from "./pages/SeekerRegistration";
 import SeekerLogin from "./pages/SeekerLogin";
 import SeekerDashboard from "./pages/SeekerDashboard";
-import MasterData from "./pages/MasterData";
-import EnrollmentLanding from "./pages/EnrollmentLanding";
-import SolutionProviderEnrollment from "./pages/SolutionProviderEnrollment";
 import { appInitializationService } from "./utils/storage/AppInitializationService";
 import { migrationService } from "./utils/storage/MigrationService";
 
@@ -75,13 +71,9 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/signup" element={<Signup />} />
             <Route path="/seeker-registration" element={<SeekerRegistration />} />
             <Route path="/seeker-login" element={<SeekerLogin />} />
             <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
-            <Route path="/master-data" element={<MasterData />} />
-            <Route path="/enrollment" element={<EnrollmentLanding />} />
-            <Route path="/solution-provider-enrollment" element={<SolutionProviderEnrollment />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

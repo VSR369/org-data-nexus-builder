@@ -23,21 +23,21 @@ const defaultIndustrySegmentData: IndustrySegmentData = {
 };
 
 class IndustrySegmentDataManager extends DataManager<IndustrySegmentData> {
-  loadData(): IndustrySegmentData {
-    const rawData = super.loadData();
+  async loadData(): Promise<IndustrySegmentData> {
+    const rawData = await super.loadData();
     
     // If we get an array (legacy data), clear it and start fresh
     if (Array.isArray(rawData)) {
       console.log('🗑️ Removing legacy industry segments array data');
-      this.clearData();
-      this.saveData(defaultIndustrySegmentData);
+      await this.clearData();
+      await this.saveData(defaultIndustrySegmentData);
       return defaultIndustrySegmentData;
     }
     
     // Ensure we have the correct structure
     if (!rawData || !rawData.industrySegments || !Array.isArray(rawData.industrySegments)) {
       console.log('🔧 Invalid data structure, resetting to default');
-      this.saveData(defaultIndustrySegmentData);
+      await this.saveData(defaultIndustrySegmentData);
       return defaultIndustrySegmentData;
     }
     
