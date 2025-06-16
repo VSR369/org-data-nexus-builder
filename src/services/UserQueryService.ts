@@ -63,9 +63,22 @@ export class UserQueryService {
   async updateUsersCollection(): Promise<void> {
     try {
       const allUsers = await this.getAllUsers();
-      const usersCollectionRecord = {
+      
+      // Create a special collection record that matches UserRecord structure
+      // We'll use a dummy user record format to store the collection
+      const usersCollectionRecord: UserRecord = {
         id: 'registered_users',
-        data: allUsers,
+        userId: 'registered_users',
+        password: '',
+        organizationName: 'System Collection',
+        organizationType: 'System',
+        entityType: 'System',
+        country: 'System',
+        email: 'system@collection',
+        contactPersonName: 'System',
+        industrySegment: 'System',
+        organizationId: 'registered_users',
+        registrationTimestamp: new Date().toISOString(),
         version: 1,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
