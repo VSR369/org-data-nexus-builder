@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ interface MembershipBenefitsCardProps {
 const MembershipBenefitsCard: React.FC<MembershipBenefitsCardProps> = ({
   countryPricing,
   userData,
-  on Close
+  onClose
 }) => {
   const navigate = useNavigate();
 
