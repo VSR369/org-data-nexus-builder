@@ -134,7 +134,7 @@ const MasterDataContent = ({ activeSection, setActiveSection }: MasterDataConten
       'solution-statuses': 'Solution Status Configuration',
       'competency-capabilities': 'Competency Capabilities Configuration',
       'communication-types': 'Communication Types Configuration',
-      'reward-types': 'Reward Types Configuration',
+      'reward-types': 'Non-Monetary Reward Types Configuration',
       'seeker-membership-fee': 'Seeker Membership Fee Configuration',
       'engagement-models': 'Engagement Models Configuration',
       'pricing': 'Pricing Configuration',

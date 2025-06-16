@@ -29,8 +29,8 @@ const defaultRewardTypes: RewardType[] = [
   },
   {
     id: '2',
-    name: 'Cash Reward',
-    description: 'Monetary incentive for performance',
+    name: 'Certificate of Excellence',
+    description: 'Official certificate for outstanding performance',
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -38,7 +38,7 @@ const defaultRewardTypes: RewardType[] = [
 ];
 
 const rewardTypesDataManager = new LegacyDataManager<RewardType[]>({
-  key: 'master_data_reward_types',
+  key: 'master_data_non_monetary_reward_types',
   defaultData: defaultRewardTypes,
   version: 1
 });
@@ -74,7 +74,7 @@ const RewardTypeConfig = () => {
       setRewardTypes([...rewardTypes, newType]);
       setNewRewardType({ name: '', description: '' });
       toast({
-        title: "Reward Type Added",
+        title: "Non-Monetary Reward Type Added",
         description: `Successfully added ${newType.name}.`,
       });
     } else {
@@ -89,7 +89,7 @@ const RewardTypeConfig = () => {
   const removeRewardType = (id: string) => {
     setRewardTypes(rewardTypes.filter(type => type.id !== id));
     toast({
-      title: "Reward Type Removed",
+      title: "Non-Monetary Reward Type Removed",
       description: "Successfully removed reward type.",
     });
   };
@@ -100,7 +100,7 @@ const RewardTypeConfig = () => {
     );
     setRewardTypes(updatedRewardTypes);
     toast({
-      title: "Reward Type Updated",
+      title: "Non-Monetary Reward Type Updated",
       description: "Successfully updated reward type.",
     });
   };
@@ -114,8 +114,8 @@ const RewardTypeConfig = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Add Reward Type</CardTitle>
-          <CardDescription>Add a new reward type to the system.</CardDescription>
+          <CardTitle>Add Non-Monetary Reward Type</CardTitle>
+          <CardDescription>Add a new non-monetary reward type to the system.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
@@ -125,21 +125,21 @@ const RewardTypeConfig = () => {
                 id="name"
                 value={newRewardType.name}
                 onChange={(e) => setNewRewardType({ ...newRewardType, name: e.target.value })}
-                placeholder="Reward Type Name"
+                placeholder="Non-Monetary Reward Type Name"
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Reward Type Description"
+                placeholder="Non-Monetary Reward Type Description"
                 value={newRewardType.description}
                 onChange={(e) => setNewRewardType({ ...newRewardType, description: e.target.value })}
               />
             </div>
             <Button type="submit" className="w-fit">
               <Plus className="w-4 h-4 mr-2" />
-              Add Reward Type
+              Add Non-Monetary Reward Type
             </Button>
           </form>
         </CardContent>
@@ -147,8 +147,8 @@ const RewardTypeConfig = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Reward Types</CardTitle>
-          <CardDescription>Manage existing reward types.</CardDescription>
+          <CardTitle>Non-Monetary Reward Types</CardTitle>
+          <CardDescription>Manage existing non-monetary reward types.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">

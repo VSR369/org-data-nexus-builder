@@ -68,7 +68,7 @@ export const systemMenuItems = [
   },
   {
     id: 'reward-types',
-    title: 'Reward Types',
+    title: 'Non-Monetary Reward Types',
     icon: Gift,
   },
   {
