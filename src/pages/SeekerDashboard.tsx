@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import LoginWarning from '@/components/dashboard/LoginWarning';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
 import { useMembershipData } from '@/hooks/useMembershipData';
+import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
 import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard } from 'lucide-react';
 
 interface SeekerDashboardProps {
@@ -41,12 +43,23 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   const [activeSection, setActiveSection] = useState('');
   const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
 
+  // Load master data for industry segments
+  const { industrySegments } = useSeekerMasterData();
+
   // Load membership data for the current user
   const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
     userData.entityType, 
     userData.country, 
     userData.organizationType
   );
+
+  // Helper function to get industry segment name by ID
+  const getIndustrySegmentName = (segmentId: string) => {
+    if (!segmentId || !industrySegments.length) return 'Not Available';
+    
+    const segment = industrySegments.find(seg => seg.id === segmentId);
+    return segment ? segment.industrySegment : segmentId; // fallback to ID if not found
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -62,18 +75,39 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
         
         if (sessionData) {
           console.log('✅ Found session data:', sessionData);
-          setUserData({
-            userId: sessionData.userId,
-            organizationName: sessionData.organizationName,
-            entityType: sessionData.entityType,
-            country: sessionData.country,
-            email: sessionData.email,
-            contactPersonName: sessionData.contactPersonName,
-            organizationType: sessionData.entityType, // Fallback
-            industrySegment: 'Not Available',
-            organizationId: sessionData.userId, // Fallback
-            registrationTimestamp: sessionData.loginTimestamp || new Date().toISOString()
-          });
+          
+          // Try to get full user data from storage
+          const fullUserData = await unifiedUserStorageService.findUserById(sessionData.userId);
+          
+          if (fullUserData) {
+            console.log('✅ Found full user data:', fullUserData);
+            setUserData({
+              userId: fullUserData.userId,
+              organizationName: fullUserData.organizationName,
+              entityType: fullUserData.entityType,
+              country: fullUserData.country,
+              email: fullUserData.email,
+              contactPersonName: fullUserData.contactPersonName,
+              organizationType: fullUserData.organizationType || fullUserData.entityType,
+              industrySegment: fullUserData.industrySegment || 'Not Available',
+              organizationId: fullUserData.organizationId || fullUserData.userId,
+              registrationTimestamp: fullUserData.registrationTimestamp || fullUserData.createdAt || new Date().toISOString()
+            });
+          } else {
+            // Fallback to session data only
+            setUserData({
+              userId: sessionData.userId,
+              organizationName: sessionData.organizationName,
+              entityType: sessionData.entityType,
+              country: sessionData.country,
+              email: sessionData.email,
+              contactPersonName: sessionData.contactPersonName,
+              organizationType: sessionData.entityType, // Fallback
+              industrySegment: 'Not Available',
+              organizationId: sessionData.userId, // Fallback
+              registrationTimestamp: sessionData.loginTimestamp || new Date().toISOString()
+            });
+          }
         } else if (locationUserId) {
           // Try to find user by ID from location state
           console.log('🔍 No session, looking for user:', locationUserId);
@@ -91,7 +125,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
               organizationType: user.organizationType || user.entityType,
               industrySegment: user.industrySegment || 'Not Available',
               organizationId: user.organizationId || user.userId,
-              registrationTimestamp: user.registrationTimestamp || new Date().toISOString()
+              registrationTimestamp: user.registrationTimestamp || user.createdAt || new Date().toISOString()
             });
             
             // Save session for this user
@@ -110,11 +144,11 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
           }
         } else {
           // Try to find user "vsr 369" specifically as fallback
-          console.log('⚠️ No location userId or session, looking for user vsr 369...');
-          const user = await unifiedUserStorageService.findUserById('vsr 369');
+          console.log('⚠️ No location userId or session, looking for user vsr369...');
+          const user = await unifiedUserStorageService.findUserById('vsr369');
           
           if (user) {
-            console.log('✅ Found user vsr 369:', user);
+            console.log('✅ Found user vsr369:', user);
             setUserData({
               userId: user.userId,
               organizationName: user.organizationName,
@@ -125,7 +159,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
               organizationType: user.organizationType || user.entityType,
               industrySegment: user.industrySegment || 'Not Available',
               organizationId: user.organizationId || user.userId,
-              registrationTimestamp: user.registrationTimestamp || new Date().toISOString()
+              registrationTimestamp: user.registrationTimestamp || user.createdAt || new Date().toISOString()
             });
             
             // Save session for this user
@@ -139,7 +173,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
               loginTimestamp: new Date().toISOString()
             });
           } else {
-            console.log('❌ User vsr 369 not found');
+            console.log('❌ User vsr369 not found');
             setShowLoginWarning(true);
           }
         }
@@ -263,7 +297,8 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
                         <div className="flex-1">
                           <p className="text-sm text-gray-600 font-medium">Organization ID</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {userData.organizationId || 'Not Available'}
+                            {userData.organizationId && userData.organizationId !== userData.userId ? 
+                              userData.organizationId : 'Not Available'}
                           </p>
                         </div>
                       </div>
@@ -283,7 +318,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
                         <div className="flex-1">
                           <p className="text-sm text-gray-600 font-medium">Industry Segment</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {userData.industrySegment || 'Not Available'}
+                            {getIndustrySegmentName(userData.industrySegment)}
                           </p>
                         </div>
                       </div>
@@ -456,3 +491,4 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
 };
 
 export default SeekerDashboard;
+
