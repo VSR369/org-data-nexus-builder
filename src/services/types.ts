@@ -1,0 +1,38 @@
+
+export interface UserRecord {
+  id: string;
+  userId: string;
+  password: string;
+  organizationName: string;
+  organizationType: string;
+  entityType: string;
+  country: string;
+  email: string;
+  contactPersonName: string;
+  industrySegment: string;
+  organizationId: string;
+  registrationTimestamp: string;
+  lastLoginTimestamp?: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionData {
+  userId: string;
+  organizationName: string;
+  entityType: string;
+  country: string;
+  email: string;
+  contactPersonName: string;
+  loginTimestamp: string;
+}
+
+export interface StorageHealthCheck {
+  healthy: boolean;
+  indexedDBWorking: boolean;
+  localStorageWorking: boolean;
+  migrationNeeded: boolean;
+  userCount: number;
+  error?: string;
+}
