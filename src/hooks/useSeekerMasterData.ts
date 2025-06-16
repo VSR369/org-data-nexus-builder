@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { LegacyDataManager } from '@/utils/core/DataManager';
 import { Country } from '@/types/seekerRegistration';
-import { IndustrySegment } from '@/types/industrySegments';
+import { IndustrySegment, IndustrySegmentData } from '@/types/industrySegments';
+import { industrySegmentDataManager } from '@/components/master-data/industry-segments/industrySegmentDataManager';
 
 const countriesDataManager = new LegacyDataManager<Country[]>({
   key: 'master_data_countries',
@@ -12,12 +13,6 @@ const countriesDataManager = new LegacyDataManager<Country[]>({
 
 const organizationTypesDataManager = new LegacyDataManager<string[]>({
   key: 'master_data_organization_types',
-  defaultData: [],
-  version: 1
-});
-
-const industrySegmentsDataManager = new LegacyDataManager<IndustrySegment[]>({
-  key: 'master_data_industry_segments',
   defaultData: [],
   version: 1
 });
@@ -38,19 +33,30 @@ export const useSeekerMasterData = () => {
   useEffect(() => {
     const loadData = () => {
       try {
+        console.log('🔍 Loading seeker master data...');
+        
         const loadedCountries = countriesDataManager.loadData();
         setCountries(loadedCountries);
+        console.log('📍 Loaded countries:', loadedCountries.length);
         
         const loadedOrgTypes = organizationTypesDataManager.loadData();
         setOrganizationTypes(loadedOrgTypes);
+        console.log('🏢 Loaded organization types:', loadedOrgTypes.length);
 
-        const loadedIndustrySegments = industrySegmentsDataManager.loadData();
+        // Use the industry segment data manager to get the proper data structure
+        const industrySegmentData: IndustrySegmentData = industrySegmentDataManager.loadData();
+        console.log('📊 Raw industry segment data:', industrySegmentData);
+        
+        // Extract the industrySegments array from the data structure
+        const loadedIndustrySegments = industrySegmentData.industrySegments || [];
         setIndustrySegments(loadedIndustrySegments);
+        console.log('🏭 Loaded industry segments:', loadedIndustrySegments.length, loadedIndustrySegments);
 
         const loadedEntityTypes = entityTypesDataManager.loadData();
         setEntityTypes(loadedEntityTypes);
+        console.log('🏛️ Loaded entity types:', loadedEntityTypes.length);
       } catch (error) {
-        console.error('Error loading seeker master data:', error);
+        console.error('❌ Error loading seeker master data:', error);
       } finally {
         setIsLoading(false);
       }
