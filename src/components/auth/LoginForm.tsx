@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,32 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { findRegisteredUser, checkUserExistsForBetterError, getUserStorageDiagnostics } from '@/utils/userAuthUtils';
 import { saveSessionData } from '@/utils/sessionDataUtils';
 
-interface LoginFormProps {
-  prefilledCredentials?: {
-    userId: string;
-    password: string;
-  } | null;
-}
-
-const LoginForm: React.FC<LoginFormProps> = ({ prefilledCredentials }) => {
+const LoginForm = () => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Update form when prefilled credentials change
-  useEffect(() => {
-    if (prefilledCredentials) {
-      setUserId(prefilledCredentials.userId);
-      setPassword(prefilledCredentials.password);
-      toast({
-        title: "Credentials Loaded",
-        description: `Credentials for ${prefilledCredentials.userId} have been loaded.`,
-      });
-    }
-  }, [prefilledCredentials, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
