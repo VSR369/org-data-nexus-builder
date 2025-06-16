@@ -44,22 +44,36 @@ const LoginForm = () => {
 
       if (registeredUser) {
         console.log('✅ Login successful for user:', registeredUser.userId);
+        console.log('✅ User details:', {
+          userId: registeredUser.userId,
+          organizationName: registeredUser.organizationName,
+          entityType: registeredUser.entityType,
+          country: registeredUser.country,
+          email: registeredUser.email,
+          contactPersonName: registeredUser.contactPersonName
+        });
         
         // Save session data
         saveSessionData(registeredUser);
         
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${registeredUser.contactPersonName}!`,
+          description: `Welcome back, ${registeredUser.contactPersonName}! Redirecting to dashboard...`,
         });
 
-        // Navigate to dashboard
-        navigate('/seeker-dashboard', { 
-          state: { 
-            userId: registeredUser.userId,
-            organizationName: registeredUser.organizationName 
-          }
-        });
+        // Navigate to dashboard with user details
+        setTimeout(() => {
+          navigate('/seeker-dashboard', { 
+            state: { 
+              userId: registeredUser.userId,
+              organizationName: registeredUser.organizationName,
+              entityType: registeredUser.entityType,
+              country: registeredUser.country,
+              email: registeredUser.email,
+              contactPersonName: registeredUser.contactPersonName
+            }
+          });
+        }, 1000);
       } else {
         console.log('❌ Login failed for userId:', userId);
         
