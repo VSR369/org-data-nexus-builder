@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CreditCard, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +17,7 @@ interface MembershipRegistrationProps {
   organizationName?: string;
   entityType?: string;
   country?: string;
+  membershipData?: any;
 }
 
 const MembershipRegistration = () => {
@@ -36,10 +36,11 @@ const MembershipRegistration = () => {
   
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [isLoadingUserData, setIsLoadingUserData] = useState(false);
+  const [savedMembershipData, setSavedMembershipData] = useState<any>(null);
   
   const { membershipData, countryPricing, loading, error, debugInfo } = useMembershipData(userData.entityType, userData.country);
 
-  // Load user data on component mount
+  // Load user data and saved membership selection on component mount
   useEffect(() => {
     const loadUserData = async () => {
       console.log('🔍 Loading user data for membership registration...');
@@ -103,20 +104,39 @@ const MembershipRegistration = () => {
       }
     };
 
+    // Load saved membership data if available
+    const loadSavedMembershipData = () => {
+      try {
+        const saved = localStorage.getItem('pending_membership_registration');
+        if (saved) {
+          const membershipData = JSON.parse(saved);
+          setSavedMembershipData(membershipData);
+          setSelectedPlan(membershipData.selectedPlan);
+          console.log('✅ Loaded saved membership data:', membershipData);
+        }
+      } catch (error) {
+        console.error('Error loading saved membership data:', error);
+      }
+    };
+
     // Only load if we don't have complete user data
     if (!userData.userId || !userData.organizationName) {
       loadUserData();
     }
+    
+    loadSavedMembershipData();
   }, [navigate, toast, userData.userId, userData.organizationName]);
 
   // Load saved plan selection on component mount
   useEffect(() => {
-    const savedPlan = localStorage.getItem('selectedMembershipPlan');
-    if (savedPlan) {
-      setSelectedPlan(savedPlan);
-      console.log('✅ Restored saved membership plan:', savedPlan);
+    if (!selectedPlan) {
+      const savedPlan = localStorage.getItem('selectedMembershipPlan');
+      if (savedPlan) {
+        setSelectedPlan(savedPlan);
+        console.log('✅ Restored saved membership plan:', savedPlan);
+      }
     }
-  }, []);
+  }, [selectedPlan]);
 
   const handlePlanSelect = (plan: string) => {
     setSelectedPlan(plan);
@@ -135,20 +155,35 @@ const MembershipRegistration = () => {
       return;
     }
 
-    console.log('Proceeding with membership registration:', {
+    const finalMembershipData = {
+      ...savedMembershipData,
       userData,
       selectedPlan,
       membershipData,
-      countryPricing
-    });
+      countryPricing,
+      registeredAt: new Date().toISOString()
+    };
+
+    // Save final membership registration
+    localStorage.setItem('completed_membership_registration', JSON.stringify(finalMembershipData));
+    
+    // Clear pending data
+    localStorage.removeItem('pending_membership_registration');
+
+    console.log('Membership registration completed:', finalMembershipData);
 
     toast({
-      title: "Proceeding to Payment",
-      description: `Redirecting to payment gateway for ${selectedPlan} membership plan...`,
+      title: "Membership Registration Completed",
+      description: `Your ${selectedPlan} membership has been registered successfully!`,
     });
 
     // TODO: Implement actual payment gateway integration
     // This is where you would integrate with Stripe or other payment providers
+    
+    // Navigate back to dashboard after successful registration
+    setTimeout(() => {
+      navigate('/seeker-dashboard', { state: { userId: userData.userId } });
+    }, 2000);
   };
 
   if (loading || isLoadingUserData) {
@@ -184,7 +219,7 @@ const MembershipRegistration = () => {
                     Membership Registration
                   </CardTitle>
                   <p className="text-muted-foreground">
-                    Join as a member to access premium features
+                    Complete your membership registration
                   </p>
                 </div>
               </div>
@@ -192,6 +227,23 @@ const MembershipRegistration = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Show saved membership data if available */}
+            {savedMembershipData && (
+              <Card className="bg-green-50 border border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium">Membership Plan Selected</p>
+                      <p className="text-sm text-green-700">
+                        {savedMembershipData.selectedPlan.charAt(0).toUpperCase() + savedMembershipData.selectedPlan.slice(1)} plan selected on {new Date(savedMembershipData.selectedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Debug Information (only show when there's an error) */}
             {error && <DebugSection debugInfo={debugInfo} />}
 

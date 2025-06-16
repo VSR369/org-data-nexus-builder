@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +11,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import LoginWarning from '@/components/dashboard/LoginWarning';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
+import MembershipSelectionModal from '@/components/dashboard/MembershipSelectionModal';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
 import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard } from 'lucide-react';
@@ -42,6 +41,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   const [showLoginWarning, setShowLoginWarning] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
+  const [showMembershipSelection, setShowMembershipSelection] = useState(false);
 
   // Load master data for industry segments
   const { industrySegments } = useSeekerMasterData();
@@ -196,8 +196,23 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   };
 
   const handleJoinAsMember = () => {
-    console.log('Join as Member clicked - showing benefits');
-    setShowMembershipBenefits(true);
+    console.log('Join as Member clicked - showing membership selection');
+    setShowMembershipSelection(true);
+  };
+
+  const handleProceedToMembership = (membershipData: any) => {
+    console.log('Proceeding with membership data:', membershipData);
+    setShowMembershipSelection(false);
+    
+    navigate('/membership-registration', {
+      state: {
+        userId: userData.userId,
+        organizationName: userData.organizationName,
+        entityType: userData.entityType,
+        country: userData.country,
+        membershipData
+      }
+    });
   };
 
   if (isLoading) {
@@ -486,9 +501,23 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
           onClose={() => setShowMembershipBenefits(false)}
         />
       )}
+
+      {/* Membership Selection Modal */}
+      {showMembershipSelection && (
+        <MembershipSelectionModal
+          countryPricing={countryPricing}
+          userData={{
+            userId: userData.userId,
+            organizationName: userData.organizationName,
+            entityType: userData.entityType,
+            country: userData.country
+          }}
+          onClose={() => setShowMembershipSelection(false)}
+          onProceed={handleProceedToMembership}
+        />
+      )}
     </>
   );
 };
 
 export default SeekerDashboard;
-
