@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,72 +22,33 @@ const CountryConfig = () => {
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
   const { toast } = useToast();
 
-  // Helper functions to get country codes and regions
-  const getCountryCode = (countryName: string): string => {
-    const codeMap: { [key: string]: string } = {
-      'India': 'IN',
-      'United States': 'US',
-      'United States of America': 'US',
-      'United Arab Emirates': 'AE',
-      'United Kingdom': 'GB',
-      'Germany': 'DE',
-      'France': 'FR',
-      'Japan': 'JP',
-      'Australia': 'AU',
-      'China': 'CN',
-      'Brazil': 'BR',
-      'Canada': 'CA',
-      'Mexico': 'MX',
-      'Netherlands': 'NL',
-      'Sweden': 'SE',
-      'Switzerland': 'CH',
-      'Singapore': 'SG'
-    };
-    return codeMap[countryName] || countryName.substring(0, 2).toUpperCase();
-  };
-
-  const getCountryRegion = (countryName: string): string => {
-    const regionMap: { [key: string]: string } = {
-      'India': 'Asia',
-      'United States': 'North America',
-      'United States of America': 'North America',
-      'United Arab Emirates': 'Middle East',
-      'United Kingdom': 'Europe',
-      'Germany': 'Europe',
-      'France': 'Europe',
-      'Japan': 'Asia',
-      'Australia': 'Oceania',
-      'China': 'Asia',
-      'Brazil': 'South America',
-      'Canada': 'North America',
-      'Mexico': 'North America',
-      'Netherlands': 'Europe',
-      'Sweden': 'Europe',
-      'Switzerland': 'Europe',
-      'Singapore': 'Asia'
-    };
-    return regionMap[countryName] || 'Unknown';
-  };
-
-  // Load data from shared manager - now expects Country[] directly
+  // Load data from shared manager
   useEffect(() => {
     try {
       const sharedCountries = countriesDataManager.loadData();
       console.log('🌍 CountryConfig - Loaded countries from shared manager:', sharedCountries);
       
-      // The shared manager now returns Country[] directly
       if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
         setCountries(sharedCountries);
       } else {
-        // This should not happen with the updated data manager, but keeping as safety
-        console.log('⚠️ No countries data, using shared manager defaults');
-        const defaultData = countriesDataManager.resetToDefault();
-        setCountries(defaultData);
+        // Initialize with the three required countries
+        const defaultCountries = [
+          { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+          { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+          { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+        ];
+        setCountries(defaultCountries);
+        countriesDataManager.saveData(defaultCountries);
       }
     } catch (error) {
       console.error('❌ Error loading countries:', error);
-      const defaultData = countriesDataManager.resetToDefault();
-      setCountries(defaultData);
+      const defaultCountries = [
+        { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+        { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+        { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+      ];
+      setCountries(defaultCountries);
+      countriesDataManager.saveData(defaultCountries);
     }
   }, []);
 
@@ -153,11 +115,15 @@ const CountryConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    const defaultData = countriesDataManager.resetToDefault();
-    setCountries(defaultData);
+    const defaultCountries = [
+      { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+      { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+      { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+    ];
+    setCountries(defaultCountries);
     toast({
       title: "Success",
-      description: "Countries reset to default values.",
+      description: "Countries reset to default values (India, USA, UAE).",
     });
   };
 
@@ -230,7 +196,7 @@ const CountryConfig = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Existing Countries ({countries.length})</CardTitle>
+          <CardTitle>Countries ({countries.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
