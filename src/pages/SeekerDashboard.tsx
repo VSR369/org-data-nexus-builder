@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import LoginWarning from '@/components/dashboard/LoginWarning';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import { Building, User, Globe, Mail, Calendar, Shield, Database } from 'lucide-react';
+import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
+import { useMembershipData } from '@/hooks/useMembershipData';
+import { Building, User, Globe, Mail, Calendar, Shield, Database, CreditCard } from 'lucide-react';
 
 interface SeekerDashboardProps {
   userId?: string;
@@ -37,6 +38,14 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginWarning, setShowLoginWarning] = useState(false);
   const [activeSection, setActiveSection] = useState('');
+  const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
+
+  // Load membership data for the current user
+  const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
+    userData.entityType, 
+    userData.country, 
+    userData.organizationType
+  );
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -151,6 +160,11 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
     navigate('/seeker-login');
   };
 
+  const handleJoinAsMember = () => {
+    console.log('Join as Member clicked - showing benefits');
+    setShowMembershipBenefits(true);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 flex items-center justify-center">
@@ -168,7 +182,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
 
   return (
     <>
-      <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+      <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -196,6 +210,30 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
               <DashboardHeader onLogout={handleLogout} userId={userData.userId} />
 
               <LoginWarning show={showLoginWarning} />
+
+              {/* Join as Member Button */}
+              <div className="mt-6 mb-6">
+                <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">Ready to unlock premium features?</h3>
+                        <p className="text-blue-100">
+                          Join as a member to access exclusive benefits, priority support, and enhanced marketplace features.
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={handleJoinAsMember}
+                        className="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 text-lg font-semibold"
+                        size="lg"
+                      >
+                        <CreditCard className="mr-2 h-5 w-5" />
+                        Join as Member
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Complete Registration Details */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
@@ -398,6 +436,20 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = () => {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Membership Benefits Modal */}
+      {showMembershipBenefits && (
+        <MembershipBenefitsCard
+          countryPricing={countryPricing}
+          userData={{
+            userId: userData.userId,
+            organizationName: userData.organizationName,
+            entityType: userData.entityType,
+            country: userData.country
+          }}
+          onClose={() => setShowMembershipBenefits(false)}
+        />
+      )}
     </>
   );
 };
