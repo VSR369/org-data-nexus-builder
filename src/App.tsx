@@ -1,83 +1,51 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
-import Index from "./pages/Index";
-import SeekerRegistration from "./pages/SeekerRegistration";
-import SeekerLogin from "./pages/SeekerLogin";
-import SeekerDashboard from "./pages/SeekerDashboard";
-import { appInitializationService } from "./utils/storage/AppInitializationService";
-import { migrationService } from "./utils/storage/MigrationService";
-
-const queryClient = new QueryClient();
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from "@/components/ui/sonner";
+import Index from './pages/Index';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import SeekerLogin from './pages/SeekerLogin';
+import SeekerRegistration from './pages/SeekerRegistration';
+import SeekerDashboard from './pages/SeekerDashboard';
+import SeekerMembership from './pages/SeekerMembership';
+import MembershipRegistration from './pages/MembershipRegistration';
+import OrganizationRegistration from './pages/OrganizationRegistration';
+import ContributorEnrollment from './pages/ContributorEnrollment';
+import MasterDataPortal from './pages/MasterDataPortal';
+import Solutions from './pages/Solutions';
+import Challenges from './pages/Challenges';
+import Community from './pages/Community';
+import Resources from './pages/Resources';
+import Events from './pages/Events';
+import NotFound from './pages/NotFound';
 
 function App() {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [initError, setInitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        console.log('🚀 Starting app initialization...');
-        
-        // Initialize IndexedDB
-        const initResult = await appInitializationService.initialize();
-        
-        if (!initResult.success) {
-          throw new Error(initResult.error || 'App initialization failed');
-        }
-
-        // Run migration if not completed
-        if (!migrationService.isMigrationComplete()) {
-          console.log('🔄 Running localStorage to IndexedDB migration...');
-          await migrationService.migrateAllLocalStorageData();
-        }
-
-        setIsInitialized(true);
-        console.log('✅ App initialization complete');
-        
-      } catch (error) {
-        console.error('❌ App initialization failed:', error);
-        setInitError(error instanceof Error ? error.message : 'Unknown initialization error');
-        setIsInitialized(true); // Still allow app to load with limited functionality
-      }
-    };
-
-    initializeApp();
-  }, []);
-
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Initializing Application</h2>
-          <p className="text-gray-600">Setting up data persistence and migration...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (initError) {
-    console.warn('⚠️ App running with initialization error:', initError);
-  }
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+    <BrowserRouter>
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/seeker-login" element={<SeekerLogin />} />
+          <Route path="/register" element={<SeekerRegistration />} />
+          <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
+          <Route path="/seeker-membership" element={<SeekerMembership />} />
+          <Route path="/membership" element={<MembershipRegistration />} />
+          <Route path="/organization-registration" element={<OrganizationRegistration />} />
+          <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
+          <Route path="/master-data" element={<MasterDataPortal />} />
+          <Route path="/solutions" element={<Solutions />} />
+          <Route path="/challenges" element={<Challenges />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/resources" element={<Resources />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
         <Toaster />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/seeker-registration" element={<SeekerRegistration />} />
-            <Route path="/seeker-login" element={<SeekerLogin />} />
-            <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+      </div>
+    </BrowserRouter>
   );
 }
 
