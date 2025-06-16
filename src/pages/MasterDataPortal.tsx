@@ -30,13 +30,13 @@ const MasterDataPortal = () => {
         <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         
         {/* Main Content Area */}
-        <SidebarInset>
+        <SidebarInset className="flex-1">
           {/* Header */}
-          <header className="bg-white border-b border-gray-200 shadow-sm z-10">
+          <header className="bg-white border-b border-gray-200 shadow-sm z-10 sticky top-0">
             <div className="container mx-auto px-6">
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center space-x-4">
-                  <SidebarTrigger />
+                  <SidebarTrigger className="md:hidden" />
                   <Link to="/">
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <ArrowLeft className="h-4 w-4" />
