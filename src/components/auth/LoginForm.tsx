@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, User, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { findRegisteredUser, checkUserExistsForBetterError, getUserStorageDiagnostics } from '@/utils/userAuthUtils';
 import { saveSessionData } from '@/utils/sessionDataUtils';
 import { userDataManager } from '@/utils/storage/UserDataManager';
@@ -17,7 +17,6 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +30,8 @@ const LoginForm = () => {
       const healthCheck = await userDataManager.checkDatabaseHealth();
       if (!healthCheck.healthy) {
         console.error('❌ Database health check failed:', healthCheck.error);
-        toast({
-          title: "Database Error",
+        toast.error("Database Error", {
           description: "Unable to connect to user database. Please try again.",
-          variant: "destructive",
         });
         setIsLoading(false);
         return;
@@ -45,10 +42,8 @@ const LoginForm = () => {
       console.log('📊 Storage diagnostics:', diagnostics);
 
       if (!userId.trim() || !password.trim()) {
-        toast({
-          title: "Login Failed",
+        toast.error("Login Failed", {
           description: "Please enter both User ID and password",
-          variant: "destructive",
         });
         setIsLoading(false);
         return;
@@ -70,8 +65,7 @@ const LoginForm = () => {
         // Save session data
         saveSessionData(registeredUser);
         
-        toast({
-          title: "Login Successful",
+        toast.success("Login Successful", {
           description: `Welcome back, ${registeredUser.contactPersonName}! Redirecting to dashboard...`,
         });
 
@@ -96,17 +90,15 @@ const LoginForm = () => {
         let errorMessage = "Login failed. Please check your credentials.";
         
         if (userStatus === 'no_users') {
-          errorMessage = "No registered users found. Please register first.";
+          errorMessage = "No registered users found. Please register first by clicking the 'Register here' link below.";
         } else if (userStatus === 'user_not_found') {
           errorMessage = `User ID "${userId}" not found. Please check your User ID or register first.`;
         } else if (userStatus === 'user_exists') {
           errorMessage = "User ID exists but password is incorrect. Please check your password.";
         }
         
-        toast({
-          title: "Login Failed",
+        toast.error("Login Failed", {
           description: errorMessage,
-          variant: "destructive",
         });
       }
     } catch (error) {
@@ -122,10 +114,8 @@ const LoginForm = () => {
         }
       }
       
-      toast({
-        title: "Login Error",
+      toast.error("Login Error", {
         description: errorMessage,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
