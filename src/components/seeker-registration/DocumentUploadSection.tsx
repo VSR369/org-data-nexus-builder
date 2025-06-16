@@ -46,6 +46,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                 }
               </p>
               <p className="text-xs text-gray-400 mt-1">Required for Non-Profit Organization, Society, or Trust</p>
+              <p className="text-xs text-blue-600 mt-1">Accepted formats: PDF, DOC, DOCX</p>
             </div>
           </div>
         )}
@@ -67,6 +68,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
             <p className="text-sm text-gray-500 mt-1">
               {formData.companyProfile ? formData.companyProfile.name : 'No file chosen'}
             </p>
+            <p className="text-xs text-blue-600 mt-1">Accepted formats: PDF, DOC, DOCX</p>
           </div>
         </div>
 
@@ -87,6 +89,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
             <p className="text-sm text-gray-500 mt-1">
               {formData.companyLogo ? formData.companyLogo.name : 'No file chosen'}
             </p>
+            <p className="text-xs text-blue-600 mt-1">Accepted formats: JPG, PNG, GIF, SVG</p>
           </div>
         </div>
       </div>
