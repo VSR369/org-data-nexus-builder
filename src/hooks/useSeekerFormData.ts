@@ -18,6 +18,7 @@ export const useSeekerFormData = () => {
     address: '',
     contactPersonName: '',
     email: '',
+    countryCode: '',
     phoneNumber: '',
     userId: '',
     password: '',
