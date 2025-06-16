@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, CreditCard, X, Check } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 interface PricingData {
   id: string;
@@ -35,6 +36,7 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
   onProceed
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const { toast } = useToast();
 
   const formatCurrency = (amount: number, currency: string) => {
     try {
@@ -47,7 +49,7 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
     }
   };
 
-  const handleProceed = () => {
+  const handlePayMembershipFee = () => {
     if (!selectedPlan || !countryPricing) return;
 
     const membershipData = {
@@ -57,11 +59,22 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
       country: userData.country,
       selectedPlan,
       pricing: countryPricing,
-      selectedAt: new Date().toISOString()
+      selectedAt: new Date().toISOString(),
+      paymentStatus: 'paid',
+      membershipStatus: 'active',
+      paidAt: new Date().toISOString()
     };
 
     // Save to localStorage
-    localStorage.setItem('pending_membership_registration', JSON.stringify(membershipData));
+    localStorage.setItem('completed_membership_payment', JSON.stringify(membershipData));
+    localStorage.removeItem('pending_membership_registration');
+    
+    console.log('Membership payment completed:', membershipData);
+    
+    toast({
+      title: "Membership Payment Successful",
+      description: `Your ${selectedPlan} membership has been activated successfully!`,
+    });
     
     onProceed(membershipData);
   };
@@ -200,11 +213,11 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
 
           <div className="flex gap-4 pt-4">
             <Button 
-              onClick={handleProceed}
+              onClick={handlePayMembershipFee}
               disabled={!selectedPlan}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              Proceed to Membership Registration
+              Pay Membership Fee
             </Button>
             <Button variant="outline" onClick={onClose}>
               Cancel
