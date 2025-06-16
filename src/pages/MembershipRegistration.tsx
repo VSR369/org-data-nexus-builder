@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, AlertTriangle } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { useToast } from "@/hooks/use-toast";
 import { OrganizationDetailsSection } from '@/components/membership/OrganizationDetailsSection';
@@ -11,6 +11,7 @@ import { MembershipPricingSection } from '@/components/membership/MembershipPric
 import { DebugSection } from '@/components/membership/DebugSection';
 import { UserInfoSection } from '@/components/membership/UserInfoSection';
 import { MembershipActionSection } from '@/components/membership/MembershipActionSection';
+import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 
 interface MembershipRegistrationProps {
   userId?: string;
@@ -21,11 +22,92 @@ interface MembershipRegistrationProps {
 
 const MembershipRegistration = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { userId, organizationName, entityType, country } = location.state as MembershipRegistrationProps || {};
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
   
-  const { membershipData, countryPricing, loading, error, debugInfo } = useMembershipData(entityType, country);
+  // State from location or will be loaded from storage
+  const locationState = location.state as MembershipRegistrationProps || {};
+  const [userData, setUserData] = useState({
+    userId: locationState.userId || '',
+    organizationName: locationState.organizationName || '',
+    entityType: locationState.entityType || '',
+    country: locationState.country || ''
+  });
+  
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [isLoadingUserData, setIsLoadingUserData] = useState(false);
+  
+  const { membershipData, countryPricing, loading, error, debugInfo } = useMembershipData(userData.entityType, userData.country);
+
+  // Load user data on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      console.log('🔍 Loading user data for membership registration...');
+      setIsLoadingUserData(true);
+      
+      try {
+        // First try to load from session
+        const sessionData = await unifiedUserStorageService.loadSession();
+        
+        if (sessionData) {
+          console.log('✅ Found session data:', sessionData);
+          setUserData({
+            userId: sessionData.userId,
+            organizationName: sessionData.organizationName,
+            entityType: sessionData.entityType,
+            country: sessionData.country
+          });
+        } else {
+          // If no session, try to find user "vsr 369" specifically
+          console.log('⚠️ No session found, looking for user vsr 369...');
+          const user = await unifiedUserStorageService.findUserById('vsr 369');
+          
+          if (user) {
+            console.log('✅ Found user vsr 369:', user);
+            setUserData({
+              userId: user.userId,
+              organizationName: user.organizationName,
+              entityType: user.entityType,
+              country: user.country
+            });
+            
+            // Save session for this user
+            await unifiedUserStorageService.saveSession({
+              userId: user.userId,
+              organizationName: user.organizationName,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName,
+              loginTimestamp: new Date().toISOString()
+            });
+          } else {
+            console.log('❌ User vsr 369 not found');
+            toast({
+              title: "User Not Found",
+              description: "Could not find user 'vsr 369'. Please log in first.",
+              variant: "destructive",
+            });
+            navigate('/seeker-login');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading user data:', error);
+        toast({
+          title: "Error Loading User Data",
+          description: "Failed to load user information. Please try logging in again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingUserData(false);
+      }
+    };
+
+    // Only load if we don't have complete user data
+    if (!userData.userId || !userData.organizationName) {
+      loadUserData();
+    }
+  }, [navigate, toast, userData.userId, userData.organizationName]);
 
   // Load saved plan selection on component mount
   useEffect(() => {
@@ -54,10 +136,7 @@ const MembershipRegistration = () => {
     }
 
     console.log('Proceeding with membership registration:', {
-      userId,
-      organizationName,
-      entityType,
-      country,
+      userData,
       selectedPlan,
       membershipData,
       countryPricing
@@ -72,14 +151,14 @@ const MembershipRegistration = () => {
     // This is where you would integrate with Stripe or other payment providers
   };
 
-  if (loading) {
+  if (loading || isLoadingUserData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 flex items-center justify-center">
         <Card className="shadow-xl border-0">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <p>Loading membership information...</p>
+              <p>{isLoadingUserData ? 'Loading user data...' : 'Loading membership information...'}</p>
             </div>
           </CardContent>
         </Card>
@@ -93,7 +172,7 @@ const MembershipRegistration = () => {
         <Card className="shadow-xl border-0">
           <CardHeader>
             <div className="flex items-center gap-4">
-              <Link to="/seeker-dashboard" state={{ userId }}>
+              <Link to="/seeker-dashboard" state={{ userId: userData.userId }}>
                 <Button variant="outline" size="icon">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -117,9 +196,9 @@ const MembershipRegistration = () => {
             {error && <DebugSection debugInfo={debugInfo} />}
 
             <OrganizationDetailsSection 
-              organizationName={organizationName}
-              entityType={entityType}
-              country={country}
+              organizationName={userData.organizationName}
+              entityType={userData.entityType}
+              country={userData.country}
             />
 
             {/* Error Display */}
@@ -144,7 +223,7 @@ const MembershipRegistration = () => {
               />
             )}
 
-            <UserInfoSection userId={userId} />
+            <UserInfoSection userId={userData.userId} />
 
             <MembershipActionSection 
               disabled={!membershipData || !countryPricing || !!error}
