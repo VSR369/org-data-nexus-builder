@@ -7,9 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, User, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { findRegisteredUser, checkUserExistsForBetterError, getUserStorageDiagnostics } from '@/utils/userAuthUtils';
-import { saveSessionData } from '@/utils/sessionDataUtils';
-import { userDataManager } from '@/utils/storage/UserDataManager';
+import { authenticateUser, saveUserSession, checkStorageHealth } from '@/utils/unifiedAuthUtils';
 
 const LoginForm = () => {
   const [userId, setUserId] = useState('');
@@ -22,87 +20,69 @@ const LoginForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    console.log('🔐 === LOGIN ATTEMPT START ===');
-    console.log('🔐 Attempting login for userId:', userId);
+    console.log('🔐 === UNIFIED LOGIN ATTEMPT START ===');
+    console.log('🔐 Attempting unified login for userId:', userId);
     
     try {
-      // First check database health
-      const healthCheck = await userDataManager.checkDatabaseHealth();
+      // Check storage health first
+      const healthCheck = await checkStorageHealth();
+      console.log('📊 Storage health check:', healthCheck);
+      
       if (!healthCheck.healthy) {
-        console.error('❌ Database health check failed:', healthCheck.error);
-        toast.error("Database Error", {
-          description: "Unable to connect to user database. Please try again.",
+        console.error('❌ Storage health check failed:', healthCheck.error);
+        toast.error("Storage Error", {
+          description: "Unable to access user storage. Please try refreshing the page.",
         });
         setIsLoading(false);
         return;
       }
 
-      // Run storage diagnostics
-      const diagnostics = await getUserStorageDiagnostics();
-      console.log('📊 Storage diagnostics:', diagnostics);
+      // Authenticate user
+      const result = await authenticateUser(userId, password);
 
-      if (!userId.trim() || !password.trim()) {
-        toast.error("Login Failed", {
-          description: "Please enter both User ID and password",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      const registeredUser = await findRegisteredUser(userId.trim(), password);
-
-      if (registeredUser) {
-        console.log('✅ Login successful for user:', registeredUser.userId);
+      if (result.success && result.user) {
+        console.log('✅ Unified login successful for user:', result.user.userId);
         console.log('✅ User details:', {
-          userId: registeredUser.userId,
-          organizationName: registeredUser.organizationName,
-          entityType: registeredUser.entityType,
-          country: registeredUser.country,
-          email: registeredUser.email,
-          contactPersonName: registeredUser.contactPersonName
+          userId: result.user.userId,
+          organizationName: result.user.organizationName,
+          entityType: result.user.entityType,
+          country: result.user.country,
+          email: result.user.email,
+          contactPersonName: result.user.contactPersonName
         });
         
         // Save session data
-        saveSessionData(registeredUser);
+        const sessionSaved = await saveUserSession(result.user);
+        if (!sessionSaved) {
+          console.warn('⚠️ Session save failed, but continuing with login');
+        }
         
         toast.success("Login Successful", {
-          description: `Welcome back, ${registeredUser.contactPersonName}! Redirecting to dashboard...`,
+          description: `Welcome back, ${result.user.contactPersonName}! Redirecting to dashboard...`,
         });
 
         // Navigate to dashboard with user details
         setTimeout(() => {
           navigate('/seeker-dashboard', { 
             state: { 
-              userId: registeredUser.userId,
-              organizationName: registeredUser.organizationName,
-              entityType: registeredUser.entityType,
-              country: registeredUser.country,
-              email: registeredUser.email,
-              contactPersonName: registeredUser.contactPersonName
+              userId: result.user!.userId,
+              organizationName: result.user!.organizationName,
+              entityType: result.user!.entityType,
+              country: result.user!.country,
+              email: result.user!.email,
+              contactPersonName: result.user!.contactPersonName
             }
           });
         }, 1000);
       } else {
-        console.log('❌ Login failed for userId:', userId);
-        
-        // Provide better error messages
-        const userStatus = await checkUserExistsForBetterError(userId.trim());
-        let errorMessage = "Login failed. Please check your credentials.";
-        
-        if (userStatus === 'no_users') {
-          errorMessage = "No registered users found. Please register first by clicking the 'Register here' link below.";
-        } else if (userStatus === 'user_not_found') {
-          errorMessage = `User ID "${userId}" not found. Please check your User ID or register first.`;
-        } else if (userStatus === 'user_exists') {
-          errorMessage = "User ID exists but password is incorrect. Please check your password.";
-        }
+        console.log('❌ Unified login failed:', result.error);
         
         toast.error("Login Failed", {
-          description: errorMessage,
+          description: result.error || "Login failed. Please check your credentials.",
         });
       }
     } catch (error) {
-      console.error('❌ Login error:', error);
+      console.error('❌ Unified login error:', error);
       
       let errorMessage = "An unexpected error occurred. Please try again.";
       
@@ -119,7 +99,7 @@ const LoginForm = () => {
       });
     } finally {
       setIsLoading(false);
-      console.log('🔐 === LOGIN ATTEMPT END ===');
+      console.log('🔐 === UNIFIED LOGIN ATTEMPT END ===');
     }
   };
 

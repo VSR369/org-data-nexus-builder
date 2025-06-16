@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useSeekerRegistration } from '@/hooks/useSeekerRegistration';
+import { useUnifiedRegistration } from '@/hooks/useUnifiedRegistration';
 import OrganizationInfoSection from './OrganizationInfoSection';
 import DocumentUploadSection from './DocumentUploadSection';
 import ContactInfoSection from './ContactInfoSection';
@@ -23,7 +23,7 @@ const SeekerRegistrationForm = () => {
     handleFileUpload,
     handleFileRemove,
     handleSubmit
-  } = useSeekerRegistration();
+  } = useUnifiedRegistration();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
