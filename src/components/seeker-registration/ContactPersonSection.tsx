@@ -2,19 +2,16 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormData, Country } from '@/types/seekerRegistration';
+import { FormData } from '@/types/seekerRegistration';
 
 interface ContactPersonSectionProps {
   formData: FormData;
-  countries: Country[];
   errors: { [key: string]: string };
   onInputChange: (field: keyof FormData, value: string) => void;
 }
 
 const ContactPersonSection: React.FC<ContactPersonSectionProps> = ({
   formData,
-  countries,
   errors,
   onInputChange
 }) => {
@@ -50,32 +47,12 @@ const ContactPersonSection: React.FC<ContactPersonSectionProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="countryCode">Country Code *</Label>
-          <Select
-            value={formData.countryCode}
-            onValueChange={(value) => onInputChange('countryCode', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select code" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {country.code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.countryCode && <p className="text-sm text-red-500">{errors.countryCode}</p>}
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="phoneNumber">Phone Number *</Label>
           <Input
             id="phoneNumber"
             value={formData.phoneNumber}
             onChange={(e) => onInputChange('phoneNumber', e.target.value)}
-            placeholder="Enter phone number"
+            placeholder="Enter phone number with country code (e.g., +1 123-456-7890)"
           />
           {errors.phoneNumber && <p className="text-sm text-red-500">{errors.phoneNumber}</p>}
         </div>
@@ -103,7 +80,7 @@ const ContactPersonSection: React.FC<ContactPersonSectionProps> = ({
           {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
         </div>
 
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password *</Label>
           <Input
             id="confirmPassword"
@@ -111,7 +88,6 @@ const ContactPersonSection: React.FC<ContactPersonSectionProps> = ({
             value={formData.confirmPassword}
             onChange={(e) => onInputChange('confirmPassword', e.target.value)}
             placeholder="Confirm password"
-            className="md:w-1/2"
           />
           {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
         </div>

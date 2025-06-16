@@ -71,7 +71,6 @@ const SeekerRegistrationForm = () => {
 
               <ContactPersonSection
                 formData={formData}
-                countries={countries}
                 errors={errors}
                 onInputChange={handleInputChange}
               />

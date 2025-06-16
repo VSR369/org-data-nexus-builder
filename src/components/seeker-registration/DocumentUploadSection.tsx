@@ -23,6 +23,33 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {requiresRegistrationDocuments && (
+          <div className="space-y-2 md:col-span-2">
+            <Label>Registration Documents *</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+              <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <input
+                type="file"
+                onChange={(e) => onFileUpload('registrationDocuments', e.target.files)}
+                className="hidden"
+                id="registrationDocuments"
+                accept=".pdf,.doc,.docx"
+                multiple
+              />
+              <Label htmlFor="registrationDocuments" className="cursor-pointer text-blue-600 hover:underline">
+                Choose Files
+              </Label>
+              <p className="text-sm text-gray-500 mt-1">
+                {formData.registrationDocuments && formData.registrationDocuments.length > 0 
+                  ? `${formData.registrationDocuments.length} file(s) selected`
+                  : 'No files chosen'
+                }
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Required for Non-Profit Organization, Society, or Trust</p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label>Company Profile Document</Label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -37,7 +64,9 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
             <Label htmlFor="companyProfile" className="cursor-pointer text-blue-600 hover:underline">
               Choose File
             </Label>
-            <p className="text-sm text-gray-500 mt-1">No file chosen</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {formData.companyProfile ? formData.companyProfile.name : 'No file chosen'}
+            </p>
           </div>
         </div>
 
@@ -55,7 +84,9 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
             <Label htmlFor="companyLogo" className="cursor-pointer text-blue-600 hover:underline">
               Choose File
             </Label>
-            <p className="text-sm text-gray-500 mt-1">No file chosen</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {formData.companyLogo ? formData.companyLogo.name : 'No file chosen'}
+            </p>
           </div>
         </div>
       </div>
