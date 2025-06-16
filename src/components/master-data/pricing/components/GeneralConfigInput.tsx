@@ -40,11 +40,19 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   const [countries, setCountries] = useState<Country[]>([]);
 
   useEffect(() => {
+    console.log('🔄 GeneralConfigInput: Loading data...');
+    
     const loadedCurrencies = currenciesDataManager.loadData();
-    setCurrencies(loadedCurrencies);
+    // Ensure we always have an array, fallback to default if needed
+    const safeCurrencies = Array.isArray(loadedCurrencies) ? loadedCurrencies : ['USD', 'EUR', 'GBP', 'INR', 'JPY'];
+    console.log('💰 GeneralConfigInput: Loaded currencies:', safeCurrencies);
+    setCurrencies(safeCurrencies);
     
     const loadedCountries = countriesDataManager.loadData();
-    setCountries(loadedCountries);
+    // Ensure we always have an array
+    const safeCountries = Array.isArray(loadedCountries) ? loadedCountries : [];
+    console.log('🌍 GeneralConfigInput: Loaded countries:', safeCountries);
+    setCountries(safeCountries);
   }, []);
 
   return (
