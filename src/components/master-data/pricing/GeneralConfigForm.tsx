@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { PricingConfig } from './types';
+import { PricingConfig } from '@/types/pricing';
 import GeneralConfigInput from './components/GeneralConfigInput';
 import SavedConfigurationsList from './components/SavedConfigurationsList';
 import { useGeneralConfigValidation } from './hooks/useGeneralConfigValidation';

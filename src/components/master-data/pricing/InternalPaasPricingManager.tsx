@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { CountryPricing, PricingConfig } from './types';
+import { CountryPricing, PricingConfig } from '@/types/pricing';
 import { countriesDataManager, organizationTypesDataManager } from '@/utils/sharedDataManagers';
 import PaasPricingForm from './components/PaasPricingForm';
 import PaasPricingTable from './components/PaasPricingTable';

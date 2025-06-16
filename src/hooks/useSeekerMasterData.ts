@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { LegacyDataManager } from '@/utils/core/DataManager';
 import { Country } from '@/types/seekerRegistration';
+import { IndustrySegment } from '@/types/industrySegments';
 
 const countriesDataManager = new LegacyDataManager<Country[]>({
   key: 'master_data_countries',
@@ -15,7 +16,7 @@ const organizationTypesDataManager = new LegacyDataManager<string[]>({
   version: 1
 });
 
-const industrySegmentsDataManager = new LegacyDataManager<string[]>({
+const industrySegmentsDataManager = new LegacyDataManager<IndustrySegment[]>({
   key: 'master_data_industry_segments',
   defaultData: [],
   version: 1
@@ -30,7 +31,7 @@ const entityTypesDataManager = new LegacyDataManager<string[]>({
 export const useSeekerMasterData = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
-  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,3 +67,6 @@ export const useSeekerMasterData = () => {
     isLoading
   };
 };
+
+// Export types for convenience
+export type { IndustrySegment };

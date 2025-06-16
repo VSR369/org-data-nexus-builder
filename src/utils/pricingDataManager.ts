@@ -1,32 +1,6 @@
 
 import { LegacyDataManager } from './core/DataManager';
-
-export interface PricingConfig {
-  id: string;
-  configName: string;
-  country: string;
-  currency: string;
-  engagementModel: string;
-  generalConfig: {
-    marketPlaceFee: number;
-    aggregatorFee: number;
-    platformUsageFee: number;
-    transactionFee: number;
-  };
-  paasPricing: {
-    basicTier: number;
-    standardTier: number;
-    premiumTier: number;
-    enterpriseTier: number;
-  };
-  discounts: {
-    earlyBird: number;
-    bulk: number;
-    loyalty: number;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+import { PricingConfig } from '@/types/pricing';
 
 const pricingDataManager = new LegacyDataManager<PricingConfig[]>({
   key: 'master_data_pricing_configs',
@@ -80,3 +54,6 @@ export class PricingDataManager {
     return configs.find(c => c.engagementModel === engagementModel) || null;
   }
 }
+
+// Re-export types for convenience
+export type { PricingConfig, CountryPricing } from '@/types/pricing';

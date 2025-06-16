@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign } from 'lucide-react';
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
-import { PricingConfig } from '@/components/master-data/pricing/types';
+import { PricingConfig } from '@/types/pricing';
 
 interface MembershipStatus {
   status: 'active' | 'inactive';

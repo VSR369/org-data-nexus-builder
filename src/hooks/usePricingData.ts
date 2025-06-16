@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { PricingDataManager, PricingConfig } from '@/utils/pricingDataManager';
+import { PricingDataManager } from '@/utils/pricingDataManager';
+import { PricingConfig } from '@/types/pricing';
 
 export const usePricingData = (organizationType?: string, country?: string) => {
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);

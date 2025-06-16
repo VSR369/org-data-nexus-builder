@@ -12,18 +12,37 @@ export interface CountryPricing {
 
 export interface PricingConfig {
   id: string;
-  country: string;
-  currency: string;
+  configName?: string;
+  country?: string;
+  currency?: string;
   organizationType: string;
   entityType?: string;
   engagementModel: string;
-  engagementModelFee?: number; // Keep for backward compatibility
+  engagementModelFee?: number;
   quarterlyFee?: number;
   halfYearlyFee?: number;
   annualFee?: number;
   membershipStatus?: 'active' | 'inactive' | 'not-a-member';
   discountPercentage?: number;
+  generalConfig?: {
+    marketPlaceFee: number;
+    aggregatorFee: number;
+    platformUsageFee: number;
+    transactionFee: number;
+  };
+  paasPricing?: {
+    basicTier: number;
+    standardTier: number;
+    premiumTier: number;
+    enterpriseTier: number;
+  };
+  discounts?: {
+    earlyBird: number;
+    bulk: number;
+    loyalty: number;
+  };
   internalPaasPricing: CountryPricing[];
   version: number;
   createdAt: string;
+  updatedAt?: string;
 }
