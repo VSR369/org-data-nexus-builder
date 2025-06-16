@@ -6,6 +6,7 @@ import { usePricingData } from '@/hooks/usePricingData';
 import { engagementModelsDataManager } from '@/components/master-data/engagement-models/engagementModelsDataManager';
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
 import { CheckCircle, Clock } from 'lucide-react';
+import { loadUserSession } from '@/utils/unifiedAuthUtils';
 
 // Import our new components
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -24,7 +25,7 @@ interface SeekerDashboardProps {
 const SeekerDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { handleLogout, recoverSession } = useSessionManager();
+  const { handleLogout } = useSessionManager();
   
   // Screen variables with default values
   const [organizationName, setOrganizationName] = useState("");
@@ -32,6 +33,8 @@ const SeekerDashboard = () => {
   const [organizationType, setOrganizationType] = useState("");
   const [country, setCountry] = useState("");
   const [userId, setUserId] = useState("");
+  const [contactPersonName, setContactPersonName] = useState("");
+  const [email, setEmail] = useState("");
   const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<string>("");
   
   // Pricing model selection state
@@ -68,46 +71,47 @@ const SeekerDashboard = () => {
     loadEngagementModels();
   }, []);
 
-  // Load seeker details from localStorage on screen load
+  // Load seeker details from session data or location state
   useEffect(() => {
-    const loadSeekerDetails = () => {
+    const loadSeekerDetails = async () => {
       console.log('📋 === DASHBOARD LOAD START ===');
       
-      // First try to recover session data
-      const sessionData = recoverSession();
+      // First check if we have user data from navigation state (fresh login)
+      if (location.state) {
+        const stateData = location.state as any;
+        if (stateData.userId && stateData.organizationName) {
+          console.log('✅ Loading data from navigation state (fresh login):', stateData);
+          setUserId(stateData.userId);
+          setOrganizationName(stateData.organizationName);
+          setEntityType(stateData.entityType || '');
+          setCountry(stateData.country || '');
+          setEmail(stateData.email || '');
+          setContactPersonName(stateData.contactPersonName || '');
+          return;
+        }
+      }
       
-      if (sessionData) {
-        // Use recovered session data
-        setOrganizationName(sessionData.seekerOrganizationName);
-        setEntityType(sessionData.seekerEntityType);
-        setCountry(sessionData.seekerCountry);
-        setUserId(sessionData.seekerUserId);
-        
-        console.log('✅ Loaded seeker details from session recovery:', sessionData);
-      } else {
-        // Fallback to individual localStorage reads
-        const storedOrgName = localStorage.getItem('seekerOrganizationName') || '';
-        const storedEntityType = localStorage.getItem('seekerEntityType') || '';
-        const storedCountry = localStorage.getItem('seekerCountry') || '';
-        const storedUserId = localStorage.getItem('seekerUserId') || '';
-        
-        setOrganizationName(storedOrgName);
-        setEntityType(storedEntityType);
-        setCountry(storedCountry);
-        setUserId(storedUserId);
-        
-        console.log('⚠️ Fallback: Loaded seeker details from individual localStorage:', {
-          organizationName: storedOrgName,
-          entityType: storedEntityType,
-          country: storedCountry,
-          userId: storedUserId
-        });
+      // Fallback: Try to load from session data using unified service
+      try {
+        const sessionData = await loadUserSession();
+        if (sessionData) {
+          console.log('✅ Loading data from unified session:', sessionData);
+          setUserId(sessionData.userId);
+          setOrganizationName(sessionData.organizationName);
+          setEntityType(sessionData.entityType);
+          setCountry(sessionData.country);
+          setEmail(sessionData.email);
+          setContactPersonName(sessionData.contactPersonName);
+        } else {
+          console.log('⚠️ No session data found');
+        }
+      } catch (error) {
+        console.error('❌ Error loading session data:', error);
       }
 
-      // Load organization type from localStorage
+      // Load organization type from localStorage (legacy)
       const storedOrgType = localStorage.getItem('seekerOrganizationType') || '';
       setOrganizationType(storedOrgType);
-      console.log('✅ Loaded organization type:', storedOrgType);
 
       // Load selected membership plan
       const savedPlan = localStorage.getItem('selectedMembershipPlan');
@@ -120,7 +124,7 @@ const SeekerDashboard = () => {
     };
 
     loadSeekerDetails();
-  }, [recoverSession]);
+  }, [location.state]);
 
   // Check if user needs to log in again
   const showLoginWarning = !organizationName || !userId;

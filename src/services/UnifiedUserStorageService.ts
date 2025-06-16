@@ -431,7 +431,8 @@ export class UnifiedUserStorageService {
         updatedAt: new Date().toISOString()
       };
       
-      await this.userService.put(usersCollectionRecord);
+      // Save as a generic record, not a UserRecord
+      await this.sessionService.put(usersCollectionRecord);
       console.log('✅ Users collection updated');
       
     } catch (error) {
