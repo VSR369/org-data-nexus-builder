@@ -11,7 +11,6 @@ import SeekerRegistration from './pages/SeekerRegistration';
 import SeekerLogin from './pages/SeekerLogin';
 import SeekerDashboard from './pages/SeekerDashboard';
 import MasterDataPortal from './pages/MasterDataPortal';
-import SolutionProviderEnrollment from './pages/SolutionProviderEnrollment';
 import MembershipRegistration from './pages/MembershipRegistration';
 
 // Create a client
@@ -29,7 +28,6 @@ function App() {
               <Route path="/seeker-login" element={<SeekerLogin />} />
               <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />
-              <Route path="/solution-provider-enrollment" element={<SolutionProviderEnrollment />} />
               <Route path="/membership-registration" element={<MembershipRegistration />} />
             </Routes>
           </Router>
