@@ -67,7 +67,7 @@ const SolutionStatusConfig = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    entityTypesDataManager.saveData(solutionStatuses);
+    solutionStatusDataManager.saveData(solutionStatuses);
     toast({
       title: "Statuses Saved",
       description: "The solution statuses have been saved.",

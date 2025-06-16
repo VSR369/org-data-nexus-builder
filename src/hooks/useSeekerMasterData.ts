@@ -15,9 +15,23 @@ const organizationTypesDataManager = new LegacyDataManager<string[]>({
   version: 1
 });
 
+const industrySegmentsDataManager = new LegacyDataManager<string[]>({
+  key: 'master_data_industry_segments',
+  defaultData: [],
+  version: 1
+});
+
+const entityTypesDataManager = new LegacyDataManager<string[]>({
+  key: 'master_data_entity_types',
+  defaultData: ['Commercial', 'Non-Profit Organization', 'Society', 'Trust'],
+  version: 1
+});
+
 export const useSeekerMasterData = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
+  const [industrySegments, setIndustrySegments] = useState<string[]>([]);
+  const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +42,12 @@ export const useSeekerMasterData = () => {
         
         const loadedOrgTypes = organizationTypesDataManager.loadData();
         setOrganizationTypes(loadedOrgTypes);
+
+        const loadedIndustrySegments = industrySegmentsDataManager.loadData();
+        setIndustrySegments(loadedIndustrySegments);
+
+        const loadedEntityTypes = entityTypesDataManager.loadData();
+        setEntityTypes(loadedEntityTypes);
       } catch (error) {
         console.error('Error loading seeker master data:', error);
       } finally {
@@ -41,6 +61,8 @@ export const useSeekerMasterData = () => {
   return {
     countries,
     organizationTypes,
+    industrySegments,
+    entityTypes,
     isLoading
   };
 };

@@ -62,42 +62,48 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
         </div>
         <div className="grid grid-cols-3 items-center gap-4">
           <Label htmlFor="country">Country</Label>
-          <Select value={selectedCountry} onValueChange={setSelectedCountry} className="col-span-2">
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a country" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="col-span-2">
+            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a country" />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="grid grid-cols-3 items-center gap-4">
           <Label htmlFor="currency">Currency</Label>
-          <Select value={selectedCurrency} onValueChange={setSelectedCurrency} className="col-span-2">
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a currency" />
-            </SelectTrigger>
-            <SelectContent>
-              {currencies.map((currency) => (
-                <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="col-span-2">
+            <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map((currency) => (
+                  <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="grid grid-cols-3 items-center gap-4">
           <Label htmlFor="engagementModel">Engagement Model</Label>
-          <Select value={selectedEngagementModel} onValueChange={setSelectedEngagementModel} className="col-span-2">
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select an engagement model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Marketplace">Marketplace</SelectItem>
-              <SelectItem value="Aggregator">Aggregator</SelectItem>
-              <SelectItem value="Hybrid">Hybrid</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="col-span-2">
+            <Select value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an engagement model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Marketplace">Marketplace</SelectItem>
+                <SelectItem value="Aggregator">Aggregator</SelectItem>
+                <SelectItem value="Hybrid">Hybrid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardContent>
     </Card>
