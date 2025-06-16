@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,8 +91,6 @@ const MasterDataContent = ({ activeSection, setActiveSection }: MasterDataConten
         return <EngagementModelsConfig />;
       case 'pricing':
         return <PricingConfig />;
-      case 'solution-voting-assessment':
-        return <SolutionVotingAssessmentConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
       
@@ -138,7 +135,6 @@ const MasterDataContent = ({ activeSection, setActiveSection }: MasterDataConten
       'seeker-membership-fee': 'Seeker Membership Fee Configuration',
       'engagement-models': 'Engagement Models Configuration',
       'pricing': 'Pricing Configuration',
-      'solution-voting-assessment': 'Solution Voting & Assessment Configuration',
       'events-calendar': 'Events Calendar Configuration',
       'global-cache-manager': 'Global Cache Manager',
       'debug': 'Data Health Panel',

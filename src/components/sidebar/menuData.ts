@@ -87,11 +87,6 @@ export const systemMenuItems = [
     icon: CreditCard,
   },
   {
-    id: 'solution-voting-assessment',
-    title: 'Solution Voting & Assessment',
-    icon: Vote,
-  },
-  {
     id: 'events-calendar',
     title: 'Events Calendar',
     icon: Calendar,
