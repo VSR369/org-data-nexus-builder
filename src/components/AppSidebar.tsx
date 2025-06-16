@@ -41,7 +41,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   };
 
   return (
-    <Sidebar className="border-r bg-sidebar" collapsible="icon">
+    <Sidebar collapsible="offcanvas">
       <AppSidebarHeader />
       <SidebarContent className="gap-0">
         <SidebarMenuGroup

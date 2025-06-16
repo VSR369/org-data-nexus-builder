@@ -36,7 +36,7 @@ const MasterDataPortal = () => {
             <div className="container mx-auto px-6">
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center space-x-4">
-                  <SidebarTrigger className="md:hidden" />
+                  <SidebarTrigger />
                   <Link to="/">
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <ArrowLeft className="h-4 w-4" />
