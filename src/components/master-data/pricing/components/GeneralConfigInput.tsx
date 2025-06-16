@@ -9,19 +9,17 @@ import { LegacyDataManager } from '@/utils/core/DataManager';
 import { Country } from '@/types/seekerRegistration';
 import { PricingConfig } from '@/types/pricing';
 import { getCurrencyByCountry } from '../utils/currencyUtils';
+import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
+import { EntityTypeService } from '@/utils/masterData/entityTypeService';
 
-const currenciesDataManager = new LegacyDataManager<string[]>({
-  key: 'master_data_currencies',
-  defaultData: ['USD', 'EUR', 'GBP', 'INR', 'JPY'],
-  version: 1
-});
-
-const countriesDataManager = new LegacyDataManager<Country[]>({
-  key: 'master_data_countries',
+// Engagement Models Data Manager
+const engagementModelsDataManager = new LegacyDataManager<any[]>({
+  key: 'master_data_engagement_models',
   defaultData: [
-    { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-    { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-    { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+    { id: '1', name: 'Marketplace', isActive: true },
+    { id: '2', name: 'Aggregator', isActive: true },
+    { id: '3', name: 'Marketplace+Aggregator', isActive: true },
+    { id: '4', name: 'Platform as a Service', isActive: true }
   ],
   version: 1
 });
@@ -41,20 +39,16 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   onSave,
   onClear
 }) => {
-  const [currencies, setCurrencies] = useState<string[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
+  const [organizationTypesFromMaster, setOrganizationTypesFromMaster] = useState<string[]>([]);
+  const [entityTypes, setEntityTypes] = useState<string[]>([]);
+  const [engagementModels, setEngagementModels] = useState<any[]>([]);
 
   useEffect(() => {
-    console.log('🔄 GeneralConfigInput: Loading data...');
+    console.log('🔄 GeneralConfigInput: Loading master data...');
     
-    const loadedCurrencies = currenciesDataManager.loadData();
-    // Ensure we always have an array, fallback to default if needed
-    const safeCurrencies = Array.isArray(loadedCurrencies) ? loadedCurrencies : ['USD', 'EUR', 'GBP', 'INR', 'JPY'];
-    console.log('💰 GeneralConfigInput: Loaded currencies:', safeCurrencies);
-    setCurrencies(safeCurrencies);
-    
+    // Load countries
     const loadedCountries = countriesDataManager.loadData();
-    // Ensure we always have an array and filter out invalid entries
     const safeCountries = Array.isArray(loadedCountries) 
       ? loadedCountries.filter(country => country && country.code && country.name)
       : [
@@ -64,6 +58,30 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
         ];
     console.log('🌍 GeneralConfigInput: Loaded countries:', safeCountries);
     setCountries(safeCountries);
+    
+    // Load organization types from master data
+    const loadedOrgTypes = organizationTypesDataManager.loadData();
+    const safeOrgTypes = Array.isArray(loadedOrgTypes) ? loadedOrgTypes : [];
+    console.log('🏢 GeneralConfigInput: Loaded organization types:', safeOrgTypes);
+    setOrganizationTypesFromMaster(safeOrgTypes);
+    
+    // Load entity types from master data
+    const loadedEntityTypes = EntityTypeService.getEntityTypes();
+    console.log('🏛️ GeneralConfigInput: Loaded entity types:', loadedEntityTypes);
+    setEntityTypes(loadedEntityTypes);
+    
+    // Load engagement models from master data
+    const loadedEngagementModels = engagementModelsDataManager.loadData();
+    const safeEngagementModels = Array.isArray(loadedEngagementModels) 
+      ? loadedEngagementModels.filter(model => model && model.name && model.isActive)
+      : [
+          { id: '1', name: 'Marketplace', isActive: true },
+          { id: '2', name: 'Aggregator', isActive: true },
+          { id: '3', name: 'Marketplace+Aggregator', isActive: true },
+          { id: '4', name: 'Platform as a Service', isActive: true }
+        ];
+    console.log('🤝 GeneralConfigInput: Loaded engagement models:', safeEngagementModels);
+    setEngagementModels(safeEngagementModels);
   }, []);
 
   const handleCountryChange = (selectedCountryCode: string) => {
@@ -86,39 +104,44 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     }));
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    const numericValue = parseFloat(value);
+    setCurrentConfig(prev => ({ 
+      ...prev, 
+      [field]: isNaN(numericValue) ? undefined : numericValue 
+    }));
+  };
+
+  // Check if engagement model is Platform as a Service (PaaS)
+  const isPaaSModel = (engagementModel: string) => {
+    return engagementModel?.toLowerCase().includes('platform as a service') || 
+           engagementModel?.toLowerCase().includes('paas');
+  };
+
+  const isCurrentModelPaaS = isPaaSModel(currentConfig.engagementModel || '');
+
+  const membershipStatuses = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'not-a-member', label: 'Not a Member' }
+  ];
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>General Configuration</CardTitle>
+        <CardTitle>Pricing Configuration</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="grid grid-cols-3 items-center gap-4">
-          <Label htmlFor="organizationType">Organization Type</Label>
-          <div className="col-span-2">
-            <Select 
-              value={currentConfig.organizationType || ""} 
-              onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, organizationType: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select organization type" />
-              </SelectTrigger>
-              <SelectContent>
-                {organizationTypes.filter(type => type && typeof type === 'string').map((type) => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-4">
-          <Label htmlFor="country">Country</Label>
-          <div className="col-span-2">
+      <CardContent className="space-y-6">
+        {/* Master Data Selection Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="country">Country *</Label>
             <Select 
               value={currentConfig.country || ""} 
               onValueChange={handleCountryChange}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a country" />
+                <SelectValue placeholder="Select country" />
               </SelectTrigger>
               <SelectContent>
                 {countries.map((country) => (
@@ -127,48 +150,183 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-4">
-          <Label htmlFor="currency">Currency</Label>
-          <div className="col-span-2">
-            <Select 
-              value={currentConfig.currency || ""} 
-              onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, currency: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a currency" />
-              </SelectTrigger>
-              <SelectContent>
-                {currencies.filter(currency => currency && typeof currency === 'string').map((currency) => (
-                  <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          <div>
+            <Label htmlFor="currency">Currency</Label>
+            <Input
+              id="currency"
+              value={currentConfig.currency || ''}
+              readOnly
+              placeholder="Auto-populated from master data"
+              className="bg-muted"
+            />
             {currentConfig.country && currentConfig.currency && (
               <p className="text-xs text-muted-foreground mt-1">
                 Currency auto-selected based on country selection
               </p>
             )}
           </div>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-4">
-          <Label htmlFor="engagementModel">Engagement Model</Label>
-          <div className="col-span-2">
+
+          <div>
+            <Label htmlFor="organizationType">Organization Type *</Label>
             <Select 
-              value={currentConfig.engagementModel || ""} 
-              onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, engagementModel: value }))}
+              value={currentConfig.organizationType || ""} 
+              onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, organizationType: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select an engagement model" />
+                <SelectValue placeholder="Select organization type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Marketplace">Marketplace</SelectItem>
-                <SelectItem value="Aggregator">Aggregator</SelectItem>
-                <SelectItem value="Hybrid">Hybrid</SelectItem>
+                {organizationTypesFromMaster.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="entityType">Entity Type *</Label>
+            <Select 
+              value={currentConfig.entityType || ""} 
+              onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, entityType: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select entity type" />
+              </SelectTrigger>
+              <SelectContent>
+                {entityTypes.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="membershipStatus">Membership Status *</Label>
+            <Select 
+              value={currentConfig.membershipStatus || ""} 
+              onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+                setCurrentConfig(prev => ({ 
+                  ...prev, 
+                  membershipStatus: value,
+                  discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select membership status" />
+              </SelectTrigger>
+              <SelectContent>
+                {membershipStatuses.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
+
+        {/* Member Discount Section - Only show if membership status is active */}
+        {currentConfig.membershipStatus === 'active' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="discountPercentage">Member Discount (%) *</Label>
+              <Input
+                id="discountPercentage"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={currentConfig.discountPercentage !== undefined ? currentConfig.discountPercentage.toString() : ''}
+                onChange={(e) => handleInputChange('discountPercentage', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Engagement Model Pricing Configuration */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Engagement Model Pricing Configuration</h3>
+          
+          {/* Engagement Model Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="engagementModel">Engagement Model *</Label>
+              <Select
+                value={currentConfig.engagementModel || ''}
+                onValueChange={(value) => setCurrentConfig(prev => ({ ...prev, engagementModel: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select engagement model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {engagementModels.map((model) => (
+                    <SelectItem key={model.id} value={model.name}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Fee Configuration - Show only if engagement model is selected */}
+          {currentConfig.engagementModel && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="quarterlyFee">
+                  Quarterly Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
+                </Label>
+                <Input
+                  id="quarterlyFee"
+                  type="number"
+                  min="0"
+                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
+                  max={isCurrentModelPaaS ? undefined : "100"}
+                  value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
+                  onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
+                  placeholder={isCurrentModelPaaS ? "1000" : "15"}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="halfYearlyFee">
+                  Half Yearly Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
+                </Label>
+                <Input
+                  id="halfYearlyFee"
+                  type="number"
+                  min="0"
+                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
+                  max={isCurrentModelPaaS ? undefined : "100"}
+                  value={currentConfig.halfYearlyFee !== undefined ? currentConfig.halfYearlyFee.toString() : ''}
+                  onChange={(e) => handleInputChange('halfYearlyFee', e.target.value)}
+                  placeholder={isCurrentModelPaaS ? "1800" : "12"}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="annualFee">
+                  Annual Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
+                </Label>
+                <Input
+                  id="annualFee"
+                  type="number"
+                  min="0"
+                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
+                  max={isCurrentModelPaaS ? undefined : "100"}
+                  value={currentConfig.annualFee !== undefined ? currentConfig.annualFee.toString() : ''}
+                  onChange={(e) => handleInputChange('annualFee', e.target.value)}
+                  placeholder={isCurrentModelPaaS ? "3000" : "10"}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
         <div className="flex gap-4 pt-4">
           <Button onClick={onSave} className="flex-1">
             Save Configuration
