@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,35 @@ const SeekerDashboardContent: React.FC = () => {
     loadMembershipPaymentData();
   }, []);
 
+  // Load saved engagement model selection on component mount
+  useEffect(() => {
+    const loadSavedSelection = () => {
+      try {
+        const savedSelection = localStorage.getItem('engagement_model_selection');
+        if (savedSelection) {
+          const selectionData = JSON.parse(savedSelection);
+          console.log('✅ Loading saved engagement model selection:', selectionData);
+          
+          // Only load if it's for the current user
+          if (selectionData.userId === userData.userId) {
+            setSelectedEngagementModel(selectionData.engagementModel);
+            setSelectedPricing(selectionData.pricing);
+            setSelectedPricingPlan(selectionData.pricingPlan);
+            setIsSelectionSubmitted(true);
+            console.log('✅ Restored engagement model selection for user:', userData.userId);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved engagement model selection:', error);
+      }
+    };
+
+    // Only load if we have user data and no current selection
+    if (userData.userId && !selectedEngagementModel) {
+      loadSavedSelection();
+    }
+  }, [userData.userId, selectedEngagementModel]);
+
   const handleJoinAsMember = () => {
     console.log('Join as Member clicked - showing membership selection');
     setShowMembershipSelection(true);
@@ -71,11 +101,28 @@ const SeekerDashboardContent: React.FC = () => {
     console.log('Engagement model selected:', model);
     console.log('Pricing configuration:', pricing);
     console.log('Selected pricing plan:', pricingPlan);
+    
     setSelectedEngagementModel(model);
     setSelectedPricing(pricing || null);
     setSelectedPricingPlan(pricingPlan || '');
     setShowEngagementModelSelector(false);
-    setIsSelectionSubmitted(false);
+    
+    // Save the selection immediately
+    const selectionData = {
+      engagementModel: model,
+      pricing: pricing,
+      pricingPlan: pricingPlan,
+      membershipStatus: membershipStatus.status,
+      submittedAt: new Date().toISOString(),
+      userId: userData.userId,
+      organizationName: userData.organizationName
+    };
+
+    localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
+    console.log('✅ Engagement model selection saved:', selectionData);
+    
+    // Mark as submitted to show final result
+    setIsSelectionSubmitted(true);
   };
 
   const handlePricingPlanChange = (plan: string) => {

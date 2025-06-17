@@ -153,6 +153,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
 
     const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === selectedModelId);
     if (selectedModelWithPricing) {
+      console.log('✅ Selecting engagement model:', selectedModelWithPricing.model.name, 'with plan:', selectedPricingPlan);
       onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing, selectedPricingPlan);
       toast({
         title: "Engagement Model Selected",
