@@ -12,10 +12,16 @@ const SignIn = () => {
   const navigate = useNavigate();
 
   const handleContinue = () => {
+    console.log('🔄 SignIn handleContinue called with selectedRole:', selectedRole);
+    
     if (selectedRole === 'seeker') {
+      console.log('🎯 Navigating to seeker login');
       navigate('/seeker-login');
     } else if (selectedRole === 'contributor') {
-      navigate('/contributor-login'); // Navigate to contributor login
+      console.log('👥 Navigating to contributor login');
+      navigate('/contributor-login');
+    } else {
+      console.log('❌ No valid role selected');
     }
   };
 
