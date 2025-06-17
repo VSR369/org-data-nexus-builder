@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +73,19 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
     }
   };
 
+  // Check if engagement model is fee-based (percentage) or fixed pricing
+  const isFeeBasedModel = (modelName: string) => {
+    const feeBasedModels = ['Market Place', 'Aggregator', 'Market Place & Aggregator'];
+    return feeBasedModels.includes(modelName);
+  };
+
+  const formatPricing = (amount: number, currency: string = 'USD', modelName: string) => {
+    if (isFeeBasedModel(modelName)) {
+      return `${amount}% of Solution Fee`;
+    }
+    return formatCurrency(amount, currency);
+  };
+
   // If selection is submitted, show final pricing summary
   if (isSubmitted && selectedEngagementModel && selectedPricing && selectedPricingPlan) {
     const originalPrice = getCurrentPriceForPlan();
@@ -109,15 +121,17 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                 
                 <div className="border-t pt-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total Amount:</span>
+                    <span className="text-lg font-semibold">
+                      {isFeeBasedModel(selectedEngagementModel.name) ? 'Fee Rate:' : 'Total Amount:'}
+                    </span>
                     <div className="text-right">
                       {membershipStatus === 'active' && selectedPricing.discountPercentage && finalPrice < originalPrice ? (
                         <div>
                           <div className="text-2xl font-bold text-green-600">
-                            {formatCurrency(finalPrice, selectedPricing.currency)}
+                            {formatPricing(finalPrice, selectedPricing.currency, selectedEngagementModel.name)}
                           </div>
                           <div className="text-sm text-gray-500 line-through">
-                            {formatCurrency(originalPrice, selectedPricing.currency)}
+                            {formatPricing(originalPrice, selectedPricing.currency, selectedEngagementModel.name)}
                           </div>
                           <div className="text-xs text-green-600">
                             {selectedPricing.discountPercentage}% member discount applied
@@ -125,7 +139,7 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                         </div>
                       ) : (
                         <div className="text-2xl font-bold text-gray-900">
-                          {formatCurrency(finalPrice, selectedPricing.currency || 'USD')}
+                          {formatPricing(finalPrice, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                         </div>
                       )}
                     </div>
@@ -220,15 +234,15 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                             {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
                               <div>
                                 <div className="text-lg font-bold text-green-600">
-                                  {formatCurrency(getDiscountedPrice(selectedPricing.quarterlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency)}
+                                  {formatPricing(getDiscountedPrice(selectedPricing.quarterlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
                                 </div>
                                 <div className="text-sm text-gray-500 line-through">
-                                  {formatCurrency(selectedPricing.quarterlyFee || 0, selectedPricing.currency)}
+                                  {formatPricing(selectedPricing.quarterlyFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
                                 </div>
                               </div>
                             ) : (
                               <div className="text-lg font-bold">
-                                {formatCurrency(selectedPricing.quarterlyFee || 0, selectedPricing.currency || 'USD')}
+                                {formatPricing(selectedPricing.quarterlyFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                               </div>
                             )}
                           </>
@@ -255,15 +269,15 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                             {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
                               <div>
                                 <div className="text-lg font-bold text-green-600">
-                                  {formatCurrency(getDiscountedPrice(selectedPricing.halfYearlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency)}
+                                  {formatPricing(getDiscountedPrice(selectedPricing.halfYearlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
                                 </div>
                                 <div className="text-sm text-gray-500 line-through">
-                                  {formatCurrency(selectedPricing.halfYearlyFee || 0, selectedPricing.currency)}
+                                  {formatPricing(selectedPricing.halfYearlyFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
                                 </div>
                               </div>
                             ) : (
                               <div className="text-lg font-bold">
-                                {formatCurrency(selectedPricing.halfYearlyFee || 0, selectedPricing.currency || 'USD')}
+                                {formatPricing(selectedPricing.halfYearlyFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                               </div>
                             )}
                           </>
@@ -290,15 +304,15 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                             {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
                               <div>
                                 <div className="text-lg font-bold text-green-600">
-                                  {formatCurrency(getDiscountedPrice(selectedPricing.annualFee || 0, selectedPricing.discountPercentage), selectedPricing.currency)}
+                                  {formatPricing(getDiscountedPrice(selectedPricing.annualFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
                                 </div>
                                 <div className="text-sm text-gray-500 line-through">
-                                  {formatCurrency(selectedPricing.annualFee || 0, selectedPricing.currency)}
+                                  {formatPricing(selectedPricing.annualFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
                                 </div>
                               </div>
                             ) : (
                               <div className="text-lg font-bold">
-                                {formatCurrency(selectedPricing.annualFee || 0, selectedPricing.currency || 'USD')}
+                                {formatPricing(selectedPricing.annualFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                               </div>
                             )}
                           </>

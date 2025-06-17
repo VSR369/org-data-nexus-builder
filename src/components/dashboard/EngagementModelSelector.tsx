@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -152,6 +153,19 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
     }).format(amount);
   };
 
+  // Check if engagement model is fee-based (percentage) or fixed pricing
+  const isFeeBasedModel = (modelName: string) => {
+    const feeBasedModels = ['Market Place', 'Aggregator', 'Market Place & Aggregator'];
+    return feeBasedModels.includes(modelName);
+  };
+
+  const formatPricing = (amount: number, currency: string = 'USD', modelName: string) => {
+    if (isFeeBasedModel(modelName)) {
+      return `${amount}% of Solution Fee`;
+    }
+    return formatCurrency(amount, currency);
+  };
+
   const getCurrentPrice = (modelWithPricing: ModelWithPricing) => {
     if (!modelWithPricing.pricing || !selectedPricingPlan) return 0;
 
@@ -299,17 +313,18 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                                           <DollarSign className="h-4 w-4 text-green-600" />
                                           <span className="text-sm font-medium">
                                             {selectedPricingPlan === 'quarterly' ? 'Quarterly' : 
-                                             selectedPricingPlan === 'halfyearly' ? 'Half-Yearly' : 'Annual'} Pricing
+                                             selectedPricingPlan === 'halfyearly' ? 'Half-Yearly' : 'Annual'} 
+                                            {isFeeBasedModel(item.model.name) ? ' Fee Rate' : ' Pricing'}
                                           </span>
                                         </div>
                                         
                                         {membershipStatus === 'active' && item.pricing.discountPercentage && getCurrentPrice(item) < getOriginalPrice(item) ? (
                                           <div className="space-y-1">
                                             <div className="text-lg font-bold text-green-600">
-                                              {formatCurrency(getCurrentPrice(item), item.pricing.currency)}
+                                              {formatPricing(getCurrentPrice(item), item.pricing.currency, item.model.name)}
                                             </div>
                                             <div className="text-sm text-gray-500 line-through">
-                                              {formatCurrency(getOriginalPrice(item), item.pricing.currency)}
+                                              {formatPricing(getOriginalPrice(item), item.pricing.currency, item.model.name)}
                                             </div>
                                             <div className="text-xs text-green-600">
                                               {item.pricing.discountPercentage}% member discount
@@ -317,13 +332,17 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                                           </div>
                                         ) : (
                                           <div className="text-lg font-bold text-gray-900">
-                                            {getCurrentPrice(item) > 0 ? formatCurrency(getCurrentPrice(item), item.pricing.currency || 'USD') : 'Contact for pricing'}
+                                            {getCurrentPrice(item) > 0 ? formatPricing(getCurrentPrice(item), item.pricing.currency || 'USD', item.model.name) : 'Contact for pricing'}
                                           </div>
                                         )}
                                         
                                         <div className="text-xs text-gray-500">
-                                          per {selectedPricingPlan === 'quarterly' ? 'quarter' : 
-                                               selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}
+                                          {isFeeBasedModel(item.model.name) ? (
+                                            'Applied per solution transaction'
+                                          ) : (
+                                            `per ${selectedPricingPlan === 'quarterly' ? 'quarter' : 
+                                                  selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}`
+                                          )}
                                         </div>
                                       </div>
                                     ) : selectedPricingPlan ? (
