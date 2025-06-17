@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Handshake, X, Check } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
-import { engagementModelsDataManager } from '@/components/master-data/engagement-models/engagementModelsDataManager';
+import { getCleanEngagementModels } from '@/components/master-data/engagement-models/engagementModelsDataManager';
 
 interface EngagementModelSelectorProps {
   onClose: () => void;
@@ -27,10 +27,10 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   useEffect(() => {
     const loadEngagementModels = () => {
       try {
-        console.log('🔄 Loading engagement models from master data...');
-        const models = engagementModelsDataManager.getEngagementModels();
+        console.log('🔄 Loading clean engagement models...');
+        const models = getCleanEngagementModels();
+        console.log('✅ Loaded engagement models:', models.length, models.map(m => m.name));
         setEngagementModels(models);
-        console.log('✅ Loaded engagement models:', models.length, models);
       } catch (error) {
         console.error('❌ Error loading engagement models:', error);
         toast({
@@ -113,7 +113,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           ) : (
             <>
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Available Engagement Models</h3>
+                <h3 className="font-medium text-blue-900 mb-2">Available Engagement Models ({engagementModels.length})</h3>
                 <p className="text-sm text-blue-700">
                   Choose an engagement model that best fits your organization's needs. 
                   Each model defines how services are delivered and managed.

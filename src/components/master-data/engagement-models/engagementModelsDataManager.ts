@@ -1,158 +1,63 @@
+
 import { LegacyDataManager } from '@/utils/core/DataManager';
 import { EngagementModel } from './types';
 
-// Define the default models here only, not exported to avoid duplication
-const DEFAULT_ENGAGEMENT_MODELS: EngagementModel[] = [
+const defaultEngagementModels: EngagementModel[] = [
   {
-    id: '1',
+    id: 'marketplace',
     name: 'Market Place',
-    description: 'Standard marketplace engagement model',
+    description: 'A platform where solution seekers and providers connect directly for marketplace transactions',
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
   {
-    id: '2',
+    id: 'marketplace-aggregator',
+    name: 'Market Place & Aggregator',
+    description: 'Combined marketplace and aggregation services for comprehensive solution management',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'aggregator',
     name: 'Aggregator',
-    description: 'Aggregator engagement model',
+    description: 'Aggregation services that collect and organize solutions from multiple sources',
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
   {
-    id: '3',
-    name: 'Market Place Plus Aggregator',
-    description: 'Combined marketplace and aggregator model',
+    id: 'platform-service',
+    name: 'Platform as a Service',
+    description: 'Complete platform infrastructure and services for solution development and deployment',
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
 ];
 
-export interface EngagementModelsData {
-  engagementModels: EngagementModel[];
-}
+export const engagementModelsDataManager = new LegacyDataManager<EngagementModel[]>({
+  key: 'master_data_engagement_models',
+  defaultData: defaultEngagementModels,
+  version: 2 // Increment version to force refresh
+});
 
-class EngagementModelsDataManager extends LegacyDataManager<EngagementModelsData> {
-  constructor() {
-    super({
-      key: 'master_data_engagement_models',
-      defaultData: {
-        engagementModels: DEFAULT_ENGAGEMENT_MODELS
-      },
-      version: 1
-    });
+// Helper function to get clean engagement models without duplicates
+export const getCleanEngagementModels = (): EngagementModel[] => {
+  const models = engagementModelsDataManager.loadData();
+  
+  // Remove duplicates based on name and ensure we have exactly 4 models
+  const uniqueModels = models.filter((model, index, self) => 
+    index === self.findIndex(m => m.name.toLowerCase() === model.name.toLowerCase())
+  );
+  
+  // If we don't have exactly 4 models or have duplicates, reset to default
+  if (uniqueModels.length !== 4) {
+    console.log('🔄 Detected duplicate or missing engagement models, resetting to default 4 models');
+    engagementModelsDataManager.saveData(defaultEngagementModels);
+    return defaultEngagementModels;
   }
-
-  protected validateDataStructure(data: any): boolean {
-    return data && 
-           typeof data === 'object' && 
-           Array.isArray(data.engagementModels) &&
-           data.engagementModels.every((model: any) => 
-             model && 
-             typeof model.id === 'string' && 
-             typeof model.name === 'string' && 
-             typeof model.description === 'string' &&
-             typeof model.isActive === 'boolean'
-           );
-  }
-
-  getEngagementModels(): EngagementModel[] {
-    const data = this.loadData();
-    
-    // Clean up duplicates by creating a Map with normalized names as keys
-    const uniqueModelsMap = new Map<string, EngagementModel>();
-    
-    data.engagementModels.forEach(model => {
-      if (model.isActive) {
-        const normalizedName = model.name.toLowerCase().trim();
-        
-        // Only keep the first occurrence of each unique name
-        if (!uniqueModelsMap.has(normalizedName)) {
-          uniqueModelsMap.set(normalizedName, model);
-        } else {
-          console.log('🔄 DataManager: Skipping duplicate engagement model:', model.name);
-        }
-      }
-    });
-    
-    const uniqueModels = Array.from(uniqueModelsMap.values());
-    
-    // If we detect duplicates were removed, save the cleaned data
-    if (uniqueModels.length !== data.engagementModels.filter(m => m.isActive).length) {
-      console.log('🧹 DataManager: Cleaning up duplicate engagement models');
-      this.saveData({
-        engagementModels: [
-          ...uniqueModels,
-          ...data.engagementModels.filter(m => !m.isActive) // Keep inactive models
-        ]
-      });
-    }
-    
-    // Sort alphabetically for consistent display
-    uniqueModels.sort((a, b) => a.name.localeCompare(b.name));
-    
-    console.log('✅ DataManager: Loaded unique engagement models:', uniqueModels.length, uniqueModels.map(m => m.name));
-    return uniqueModels;
-  }
-
-  addEngagementModel(model: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>): EngagementModel {
-    const data = this.loadData();
-    
-    // Check for duplicate names before adding
-    const normalizedName = model.name.toLowerCase().trim();
-    const existingModel = data.engagementModels.find(existing => 
-      existing.name.toLowerCase().trim() === normalizedName
-    );
-    
-    if (existingModel) {
-      throw new Error(`Engagement model with name '${model.name}' already exists`);
-    }
-    
-    const newModel: EngagementModel = {
-      ...model,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    data.engagementModels.push(newModel);
-    this.saveData(data);
-    return newModel;
-  }
-
-  updateEngagementModel(id: string, updates: Partial<Omit<EngagementModel, 'id' | 'createdAt'>>): EngagementModel | null {
-    const data = this.loadData();
-    const index = data.engagementModels.findIndex(model => model.id === id);
-    
-    if (index === -1) return null;
-    
-    data.engagementModels[index] = {
-      ...data.engagementModels[index],
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
-    
-    this.saveData(data);
-    return data.engagementModels[index];
-  }
-
-  deleteEngagementModel(id: string): boolean {
-    const data = this.loadData();
-    const index = data.engagementModels.findIndex(model => model.id === id);
-    
-    if (index === -1) return false;
-    
-    data.engagementModels.splice(index, 1);
-    this.saveData(data);
-    return true;
-  }
-
-  // Method to force clean duplicates - can be called manually if needed
-  cleanDuplicates(): void {
-    console.log('🧹 Force cleaning engagement model duplicates');
-    this.getEngagementModels(); // This will trigger the cleanup logic
-  }
-}
-
-export const engagementModelsDataManager = new EngagementModelsDataManager();
+  
+  return uniqueModels;
+};

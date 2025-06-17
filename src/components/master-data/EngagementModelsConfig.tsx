@@ -1,135 +1,118 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Handshake, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { Handshake } from 'lucide-react';
 import { EngagementModel } from './engagement-models/types';
-import { engagementModelsDataManager } from './engagement-models/engagementModelsDataManager';
+import { getCleanEngagementModels, engagementModelsDataManager } from './engagement-models/engagementModelsDataManager';
 import EngagementModelForm from './engagement-models/EngagementModelForm';
 import EngagementModelsList from './engagement-models/EngagementModelsList';
 
 const EngagementModelsConfig = () => {
-  const [models, setModels] = useState<EngagementModel[]>([]);
-  const [editingModel, setEditingModel] = useState<EngagementModel | null>(null);
   const { toast } = useToast();
+  const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load data on component mount
   useEffect(() => {
-    loadModels();
+    console.log('🔄 EngagementModelsConfig: Loading clean engagement models...');
+    const loadedModels = getCleanEngagementModels();
+    console.log('✅ EngagementModelsConfig: Loaded models:', loadedModels.length, loadedModels.map(m => m.name));
+    setEngagementModels(loadedModels);
   }, []);
 
-  const loadModels = () => {
-    try {
-      const loadedModels = engagementModelsDataManager.getEngagementModels();
-      setModels(loadedModels);
-      console.log('Loaded engagement models:', loadedModels);
-    } catch (error) {
-      console.error('Error loading engagement models:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load engagement models.",
-        variant: "destructive",
-      });
+  const handleRefreshData = () => {
+    console.log('🔄 Refreshing engagement models data...');
+    const refreshedData = getCleanEngagementModels();
+    setEngagementModels(refreshedData);
+    toast({
+      title: "Success",
+      description: "Engagement models data refreshed and cleaned",
+    });
+  };
+
+  const handleResetToDefault = () => {
+    console.log('🔄 Resetting engagement models to default 4 models...');
+    const defaultData = engagementModelsDataManager.forceReseed();
+    setEngagementModels(defaultData);
+    toast({
+      title: "Success",
+      description: "Engagement models reset to default 4 models",
+    });
+  };
+
+  const handleModelSaved = (model: EngagementModel) => {
+    const updatedModels = [...engagementModels];
+    const existingIndex = updatedModels.findIndex(m => m.id === model.id);
+    
+    if (existingIndex >= 0) {
+      updatedModels[existingIndex] = model;
+    } else {
+      updatedModels.push(model);
     }
+    
+    setEngagementModels(updatedModels);
+    engagementModelsDataManager.saveData(updatedModels);
   };
 
-  const handleAddModel = (modelData: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const newModel = engagementModelsDataManager.addEngagementModel(modelData);
-      setModels(prev => [...prev, newModel]);
-      toast({
-        title: "Success",
-        description: "Engagement model added successfully.",
-      });
-    } catch (error) {
-      console.error('Error adding engagement model:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add engagement model.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateModel = (id: string, updates: Partial<Omit<EngagementModel, 'id' | 'createdAt'>>) => {
-    try {
-      const updatedModel = engagementModelsDataManager.updateEngagementModel(id, updates);
-      if (updatedModel) {
-        setModels(prev => prev.map(model => model.id === id ? updatedModel : model));
-        setEditingModel(null);
-        toast({
-          title: "Success",
-          description: "Engagement model updated successfully.",
-        });
-      }
-    } catch (error) {
-      console.error('Error updating engagement model:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update engagement model.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteModel = (id: string) => {
-    try {
-      const success = engagementModelsDataManager.deleteEngagementModel(id);
-      if (success) {
-        setModels(prev => prev.filter(model => model.id !== id));
-        toast({
-          title: "Success",
-          description: "Engagement model deleted successfully.",
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting engagement model:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete engagement model.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEditModel = (model: EngagementModel) => {
-    setEditingModel(model);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingModel(null);
+  const handleModelDeleted = (modelId: string) => {
+    const updatedModels = engagementModels.filter(m => m.id !== modelId);
+    setEngagementModels(updatedModels);
+    engagementModelsDataManager.saveData(updatedModels);
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Handshake className="w-5 h-5" />
-            Engagement Models Configuration
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Handshake className="h-5 w-5" />
+                Engagement Models Configuration
+              </CardTitle>
+              <CardDescription>
+                Configure engagement models that define how services are delivered and managed. 
+                You should have exactly 4 distinct models: Market Place, Market Place & Aggregator, Aggregator, and Platform as a Service.
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleRefreshData}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Clean & Refresh
+              </Button>
+              <Button
+                onClick={handleResetToDefault}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset to Default 4
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-6">
-            Configure different engagement models like Marketplace, Aggregator, and Marketplace Plus Aggregator 
-            that define how services are delivered and managed.
-          </p>
-          
-          <div className="space-y-6">
-            <EngagementModelForm
-              onAdd={handleAddModel}
-              editingModel={editingModel}
-              onUpdate={handleUpdateModel}
-              onCancelEdit={handleCancelEdit}
-            />
-            
-            <EngagementModelsList
-              models={models}
-              onEdit={handleEditModel}
-              onDelete={handleDeleteModel}
-            />
+          <div className="text-sm text-muted-foreground mb-4">
+            Current engagement models: {engagementModels.length}/4 expected models
           </div>
         </CardContent>
       </Card>
+
+      <EngagementModelForm onModelSaved={handleModelSaved} />
+      
+      <EngagementModelsList 
+        models={engagementModels}
+        onModelDeleted={handleModelDeleted}
+        onModelUpdated={handleModelSaved}
+      />
     </div>
   );
 };
