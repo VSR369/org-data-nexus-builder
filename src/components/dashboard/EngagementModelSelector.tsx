@@ -19,6 +19,8 @@ interface EngagementModelSelectorProps {
   userCountry?: string;
   userOrgType?: string;
   membershipStatus?: 'active' | 'inactive';
+  currentSelectedModel?: EngagementModel | null;
+  currentSelectedPricingPlan?: string;
 }
 
 interface ModelWithPricing {
@@ -33,12 +35,14 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   onSelect,
   userCountry = '',
   userOrgType = '',
-  membershipStatus = 'inactive'
+  membershipStatus = 'inactive',
+  currentSelectedModel = null,
+  currentSelectedPricingPlan = ''
 }) => {
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
   const [modelsWithPricing, setModelsWithPricing] = useState<ModelWithPricing[]>([]);
-  const [selectedModelId, setSelectedModelId] = useState<string>('');
-  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
+  const [selectedModelId, setSelectedModelId] = useState<string>(currentSelectedModel?.id || '');
+  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>(currentSelectedPricingPlan || '');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 

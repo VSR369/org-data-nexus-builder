@@ -275,6 +275,8 @@ const SeekerDashboardContent: React.FC = () => {
           userCountry={userData.country}
           userOrgType={userData.organizationType}
           membershipStatus={membershipStatus.status}
+          currentSelectedModel={selectedEngagementModel}
+          currentSelectedPricingPlan={selectedPricingPlan}
         />
       )}
     </DashboardLayout>
