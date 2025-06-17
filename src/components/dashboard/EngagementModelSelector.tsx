@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,6 +119,18 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
 
     loadEngagementModelsWithPricing();
   }, [toast, membershipStatus]);
+
+  // Auto-select if user already has both model and pricing plan selected
+  useEffect(() => {
+    if (currentSelectedModel && currentSelectedPricingPlan && modelsWithPricing.length > 0) {
+      const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === currentSelectedModel.id);
+      if (selectedModelWithPricing) {
+        console.log('🔄 Auto-selecting existing choice:', currentSelectedModel.name, currentSelectedPricingPlan);
+        onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing, currentSelectedPricingPlan);
+        return;
+      }
+    }
+  }, [modelsWithPricing, currentSelectedModel, currentSelectedPricingPlan, onSelect]);
 
   const handleSelectModel = () => {
     if (!selectedModelId) {
