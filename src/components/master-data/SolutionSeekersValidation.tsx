@@ -6,14 +6,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { UserRecord } from '@/services/types';
+import { useToast } from "@/hooks/use-toast";
 
 interface SeekerDetails extends UserRecord {
   membershipStatus?: 'active' | 'inactive';
   engagementModel?: any;
   pricingPlan?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  adminDetails?: SeekerAdminDetails;
+}
+
+interface SeekerAdminDetails {
+  name: string;
+  contactNumber: string;
+  email: string;
+  userId: string;
+  password: string;
+  createdAt: string;
 }
 
 const SolutionSeekersValidation: React.FC = () => {
@@ -21,6 +36,17 @@ const SolutionSeekersValidation: React.FC = () => {
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [seekerToApprove, setSeekerToApprove] = useState<SeekerDetails | null>(null);
+  const [adminDetails, setAdminDetails] = useState<SeekerAdminDetails>({
+    name: '',
+    contactNumber: '',
+    email: '',
+    userId: '',
+    password: '',
+    createdAt: ''
+  });
+  const { toast } = useToast();
 
   useEffect(() => {
     loadSeekers();
@@ -49,7 +75,7 @@ const SolutionSeekersValidation: React.FC = () => {
       
       // Enhance user data with membership and engagement model information
       const enhancedSeekers = allUsers.map(user => {
-        const seekerDetails: SeekerDetails = { ...user };
+        const seekerDetails: SeekerDetails = { ...user, approvalStatus: 'pending' };
         
         // Check membership status
         try {
@@ -105,6 +131,128 @@ const SolutionSeekersValidation: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleApproveSeeker = (seeker: SeekerDetails) => {
+    console.log('🔄 Initiating approval for seeker:', seeker.userId);
+    setSeekerToApprove(seeker);
+    setAdminDetails({
+      name: '',
+      contactNumber: '',
+      email: '',
+      userId: `${seeker.userId}_admin`,
+      password: '',
+      createdAt: ''
+    });
+    setShowApprovalDialog(true);
+  };
+
+  const handleAdminDetailsSubmit = async () => {
+    if (!seekerToApprove) return;
+
+    // Validate required fields
+    if (!adminDetails.name || !adminDetails.contactNumber || !adminDetails.email || !adminDetails.userId || !adminDetails.password) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('💾 Saving admin details for seeker:', seekerToApprove.userId);
+      
+      // Create admin details with timestamp
+      const completeAdminDetails: SeekerAdminDetails = {
+        ...adminDetails,
+        createdAt: new Date().toISOString()
+      };
+
+      // Save admin details to localStorage (you can modify this to use IndexedDB if needed)
+      const approvalKey = `seeker_approval_${seekerToApprove.userId}`;
+      const approvalData = {
+        seekerUserId: seekerToApprove.userId,
+        organizationName: seekerToApprove.organizationName,
+        approvalStatus: 'approved',
+        adminDetails: completeAdminDetails,
+        approvedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem(approvalKey, JSON.stringify(approvalData));
+      
+      // Also save to a master approvals list
+      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      existingApprovals.push(approvalData);
+      localStorage.setItem('seeker_approvals', JSON.stringify(existingApprovals));
+
+      // Update the seeker's approval status in our local state
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.userId === seekerToApprove.userId 
+            ? { ...s, approvalStatus: 'approved', adminDetails: completeAdminDetails }
+            : s
+        )
+      );
+
+      console.log('✅ Admin details saved successfully');
+      
+      toast({
+        title: "Approval Successful",
+        description: `${seekerToApprove.organizationName} has been approved and admin details created.`,
+      });
+
+      // Close the dialog and reset state
+      setShowApprovalDialog(false);
+      setSeekerToApprove(null);
+      setAdminDetails({
+        name: '',
+        contactNumber: '',
+        email: '',
+        userId: '',
+        password: '',
+        createdAt: ''
+      });
+
+    } catch (error) {
+      console.error('❌ Error saving admin details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save admin details. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load existing approvals when component mounts
+  useEffect(() => {
+    const loadApprovals = () => {
+      try {
+        const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+        console.log('📋 Loaded existing approvals:', existingApprovals.length);
+        
+        // Update seekers with approval status
+        setSeekers(prevSeekers => 
+          prevSeekers.map(seeker => {
+            const approval = existingApprovals.find((a: any) => a.seekerUserId === seeker.userId);
+            if (approval) {
+              return {
+                ...seeker,
+                approvalStatus: approval.approvalStatus,
+                adminDetails: approval.adminDetails
+              };
+            }
+            return { ...seeker, approvalStatus: 'pending' };
+          })
+        );
+      } catch (error) {
+        console.error('❌ Error loading approvals:', error);
+      }
+    };
+
+    if (seekers.length > 0) {
+      loadApprovals();
+    }
+  }, [seekers.length]);
 
   const handleSeekerDoubleClick = (seeker: SeekerDetails) => {
     console.log('📋 Opening details for seeker:', seeker.userId);
@@ -174,7 +322,7 @@ const SolutionSeekersValidation: React.FC = () => {
       </Card>
 
       {/* Stats Card */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -228,6 +376,20 @@ const SolutionSeekersValidation: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">
+                  {seekers.filter(s => s.approvalStatus === 'approved').length}
+                </p>
+                <p className="text-sm text-muted-foreground">Approved</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Seekers List */}
@@ -238,7 +400,7 @@ const SolutionSeekersValidation: React.FC = () => {
             Registered Solution Seekers
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Double-click on any seeker to view detailed registration information
+            Double-click on any seeker to view detailed registration information. Click "Approve" to create admin access.
           </p>
         </CardHeader>
         
@@ -260,6 +422,7 @@ const SolutionSeekersValidation: React.FC = () => {
                     <TableHead>Country</TableHead>
                     <TableHead>Industry</TableHead>
                     <TableHead>Membership</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Registered</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -290,20 +453,40 @@ const SolutionSeekersValidation: React.FC = () => {
                           {seeker.membershipStatus === 'active' ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge variant={seeker.approvalStatus === 'approved' ? 'default' : seeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'}>
+                          {seeker.approvalStatus === 'approved' ? 'Approved' : seeker.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Approval'}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-sm">
                         {formatDate(seeker.registrationTimestamp || seeker.createdAt)}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSeekerDoubleClick(seeker);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSeekerDoubleClick(seeker);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {seeker.approvalStatus !== 'approved' && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApproveSeeker(seeker);
+                              }}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -443,6 +626,58 @@ const SolutionSeekersValidation: React.FC = () => {
                   </CardContent>
                 </Card>
 
+                {/* Approval Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Approval Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Current Status</label>
+                        <div className="mt-1">
+                          <Badge variant={selectedSeeker.approvalStatus === 'approved' ? 'default' : selectedSeeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'}>
+                            {selectedSeeker.approvalStatus === 'approved' ? 'Approved' : selectedSeeker.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Approval'}
+                          </Badge>
+                        </div>
+                      </div>
+                      {selectedSeeker.approvalStatus === 'approved' && selectedSeeker.adminDetails && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Admin Created</label>
+                          <p>{formatDate(selectedSeeker.adminDetails.createdAt)}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedSeeker.approvalStatus === 'approved' && selectedSeeker.adminDetails && (
+                      <div className="border rounded-lg p-4 bg-green-50">
+                        <h4 className="font-medium text-green-800 mb-3">Admin Details</h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="font-medium text-green-700">Name:</span>
+                            <p>{selectedSeeker.adminDetails.name}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-green-700">Contact:</span>
+                            <p>{selectedSeeker.adminDetails.contactNumber}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-green-700">Email:</span>
+                            <p>{selectedSeeker.adminDetails.email}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-green-700">User ID:</span>
+                            <p className="font-mono">{selectedSeeker.adminDetails.userId}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* System Information */}
                 <Card>
                   <CardHeader>
@@ -467,6 +702,84 @@ const SolutionSeekersValidation: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Approval Dialog */}
+      <AlertDialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Create Seeker Admin
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Create admin access for {seekerToApprove?.organizationName}. Please fill in all the required details.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="adminName">Name *</Label>
+              <Input
+                id="adminName"
+                value={adminDetails.name}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter admin name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="adminContact">Contact Number *</Label>
+              <Input
+                id="adminContact"
+                value={adminDetails.contactNumber}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, contactNumber: e.target.value }))}
+                placeholder="Enter contact number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="adminEmail">Email ID *</Label>
+              <Input
+                id="adminEmail"
+                type="email"
+                value={adminDetails.email}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="adminUserId">User ID *</Label>
+              <Input
+                id="adminUserId"
+                value={adminDetails.userId}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, userId: e.target.value }))}
+                placeholder="Enter user ID"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="adminPassword">Password *</Label>
+              <Input
+                id="adminPassword"
+                type="password"
+                value={adminDetails.password}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Enter password"
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowApprovalDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAdminDetailsSubmit}>
+              Submit & Approve
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
