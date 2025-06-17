@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,8 +31,21 @@ const SolutionSeekersValidation: React.FC = () => {
       setLoading(true);
       console.log('🔍 Loading all registered solution seekers...');
       
+      // Ensure service is initialized first
+      await unifiedUserStorageService.initialize();
+      
       const allUsers = await unifiedUserStorageService.getAllUsers();
       console.log('📊 Retrieved users:', allUsers.length);
+      
+      // Filter for the specific seekers mentioned (GE and VSR369) and others
+      const filteredSeekers = allUsers.filter(user => 
+        user.organizationName?.toLowerCase().includes('ge') || 
+        user.userId?.toLowerCase().includes('vsr369') ||
+        user.organizationName?.toLowerCase().includes('vsr369') ||
+        user.userId?.toLowerCase().includes('ge')
+      );
+      
+      console.log('🎯 Found matching seekers:', filteredSeekers.length);
       
       // Enhance user data with membership and engagement model information
       const enhancedSeekers = allUsers.map(user => {
@@ -71,6 +83,21 @@ const SolutionSeekersValidation: React.FC = () => {
       
       setSeekers(enhancedSeekers);
       console.log('✅ Loaded and enhanced seekers data:', enhancedSeekers.length);
+      
+      // Log specific seekers found
+      const geSeeker = enhancedSeekers.find(s => 
+        s.organizationName?.toLowerCase().includes('ge') || s.userId?.toLowerCase().includes('ge')
+      );
+      const vsrSeeker = enhancedSeekers.find(s => 
+        s.organizationName?.toLowerCase().includes('vsr369') || s.userId?.toLowerCase().includes('vsr369')
+      );
+      
+      if (geSeeker) {
+        console.log('✅ Found GE seeker:', geSeeker.organizationName, geSeeker.userId);
+      }
+      if (vsrSeeker) {
+        console.log('✅ Found VSR369 seeker:', vsrSeeker.organizationName, vsrSeeker.userId);
+      }
       
     } catch (error) {
       console.error('❌ Error loading seekers:', error);
