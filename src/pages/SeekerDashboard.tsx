@@ -30,6 +30,7 @@ const SeekerDashboardContent: React.FC = () => {
   const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
   const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
   const [isSelectionSubmitted, setIsSelectionSubmitted] = useState(false);
+  const [previousMembershipStatus, setPreviousMembershipStatus] = useState<'active' | 'inactive'>('inactive');
 
   // Load membership data for the current user
   const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
@@ -97,6 +98,42 @@ const SeekerDashboardContent: React.FC = () => {
     }
   }, [userData.userId, selectedEngagementModel]);
 
+  // Track membership status changes and auto-update pricing when user becomes a member
+  useEffect(() => {
+    const currentMembershipStatus = getMembershipStatus().status;
+    
+    // Check if membership status changed from inactive to active
+    if (previousMembershipStatus === 'inactive' && currentMembershipStatus === 'active') {
+      console.log('🎉 Membership activated! Auto-updating engagement model pricing with discounts');
+      
+      // If user has an existing engagement model selection, automatically update it with discounted pricing
+      if (selectedEngagementModel && selectedPricing && selectedPricingPlan) {
+        const updatedSelectionData = {
+          engagementModel: selectedEngagementModel,
+          pricing: selectedPricing,
+          pricingPlan: selectedPricingPlan,
+          membershipStatus: currentMembershipStatus,
+          submittedAt: new Date().toISOString(),
+          userId: userData.userId,
+          organizationName: userData.organizationName
+        };
+
+        try {
+          localStorage.setItem('engagement_model_selection', JSON.stringify(updatedSelectionData));
+          console.log('✅ Auto-updated engagement model selection with member pricing:', updatedSelectionData);
+          
+          // Force re-render to show discounted pricing
+          setIsSelectionSubmitted(true);
+        } catch (error) {
+          console.error('❌ Error auto-updating engagement model selection:', error);
+        }
+      }
+    }
+    
+    // Update previous membership status
+    setPreviousMembershipStatus(currentMembershipStatus);
+  }, [membershipPaymentData, selectedEngagementModel, selectedPricing, selectedPricingPlan, userData.userId, userData.organizationName]);
+
   const handleJoinAsMember = () => {
     console.log('Join as Member clicked - showing membership selection');
     setShowMembershipSelection(true);
@@ -124,7 +161,7 @@ const SeekerDashboardContent: React.FC = () => {
       engagementModel: model,
       pricing: pricing,
       pricingPlan: pricingPlan,
-      membershipStatus: membershipStatus.status,
+      membershipStatus: getMembershipStatus().status,
       submittedAt: new Date().toISOString(),
       userId: userData.userId,
       organizationName: userData.organizationName
@@ -155,7 +192,7 @@ const SeekerDashboardContent: React.FC = () => {
         engagementModel: selectedEngagementModel,
         pricing: selectedPricing,
         pricingPlan: plan,
-        membershipStatus: membershipStatus.status,
+        membershipStatus: getMembershipStatus().status,
         submittedAt: new Date().toISOString(),
         userId: userData.userId,
         organizationName: userData.organizationName
@@ -180,7 +217,7 @@ const SeekerDashboardContent: React.FC = () => {
       engagementModel: selectedEngagementModel,
       pricing: selectedPricing,
       pricingPlan: selectedPricingPlan,
-      membershipStatus: membershipStatus.status,
+      membershipStatus: getMembershipStatus().status,
       submittedAt: new Date().toISOString(),
       userId: userData.userId,
       organizationName: userData.organizationName
