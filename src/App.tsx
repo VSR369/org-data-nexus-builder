@@ -30,6 +30,7 @@ function App() {
               <Route path="/seeker-login" element={<SeekerLogin />} />
               <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />
+              <Route path="/master-data" element={<MasterDataPortal />} />
               <Route path="/membership-registration" element={<MembershipRegistration />} />
             </Routes>
           </Router>
