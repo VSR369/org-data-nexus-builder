@@ -3,7 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Handshake, CheckCircle, DollarSign } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Handshake, CheckCircle, DollarSign, Send } from 'lucide-react';
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
 import { PricingConfig } from '@/types/pricing';
 
@@ -12,6 +14,8 @@ interface EngagementModelCardProps {
   selectedPricing?: PricingConfig | null;
   selectedPricingPlan?: string;
   onSelectEngagementModel: () => void;
+  onSubmitSelection: () => void;
+  onPricingPlanChange: (plan: string) => void;
   showLoginWarning: boolean;
   membershipStatus?: 'active' | 'inactive';
 }
@@ -21,6 +25,8 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
   selectedPricing,
   selectedPricingPlan,
   onSelectEngagementModel,
+  onSubmitSelection,
+  onPricingPlanChange,
   showLoginWarning,
   membershipStatus = 'inactive'
 }) => {
@@ -71,85 +77,178 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
           <Handshake className="h-6 w-6 text-purple-600" />
-          Engagement Model Selection
+          Engagement Model & Pricing
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {selectedEngagementModel ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-                <div>
-                  <p className="font-medium text-green-900">Selected Engagement Model</p>
-                  <p className="text-lg font-semibold text-green-700">
-                    {selectedEngagementModel.name}
-                  </p>
-                  <p className="text-sm text-green-600">
-                    {selectedEngagementModel.description}
-                  </p>
-                  {selectedPricingPlan && (
-                    <p className="text-sm font-medium text-green-800 mt-1">
-                      Plan: {getPlanDisplayName()}
+          <div className="space-y-6">
+            {/* Selected Engagement Model */}
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">Selected Engagement Model</p>
+                    <p className="text-lg font-semibold text-green-700">
+                      {selectedEngagementModel.name}
                     </p>
-                  )}
+                    <p className="text-sm text-green-600">
+                      {selectedEngagementModel.description}
+                    </p>
+                  </div>
                 </div>
+                <Button 
+                  onClick={onSelectEngagementModel}
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                  size="sm"
+                >
+                  Change Model
+                </Button>
               </div>
-              <Button 
-                onClick={onSelectEngagementModel}
-                variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-50"
-              >
-                Change Model
-              </Button>
             </div>
 
-            {/* Selected Plan Pricing Information */}
-            {selectedPricing && selectedPricingPlan && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-blue-900">Selected Plan Pricing</h3>
-                  <Badge variant={membershipStatus === 'active' ? 'default' : 'secondary'}>
-                    {membershipStatus}
-                  </Badge>
-                </div>
-                
-                <div className="bg-white p-4 rounded border">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 mb-2">{getPlanDisplayName()} Plan</div>
-                    {membershipStatus === 'active' && selectedPricing.discountPercentage && getCurrentPriceForPlan() > 0 ? (
+            {/* Pricing Plan Selection */}
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-4">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-blue-900">Select Your Pricing Plan</h3>
+                <Badge variant={membershipStatus === 'active' ? 'default' : 'secondary'}>
+                  {membershipStatus}
+                </Badge>
+              </div>
+
+              <RadioGroup 
+                value={selectedPricingPlan || ''} 
+                onValueChange={onPricingPlanChange}
+                className="space-y-3"
+              >
+                {/* Quarterly Option */}
+                <div className="flex items-center space-x-2 p-3 border rounded-lg bg-white">
+                  <RadioGroupItem value="quarterly" id="quarterly" />
+                  <Label htmlFor="quarterly" className="flex-1 cursor-pointer">
+                    <div className="flex justify-between items-center">
                       <div>
-                        <div className="text-2xl font-bold text-green-600">
-                          {formatCurrency(getDiscountedPrice(getCurrentPriceForPlan(), selectedPricing.discountPercentage), selectedPricing.currency)}
-                        </div>
-                        <div className="text-lg text-gray-500 line-through">
-                          {formatCurrency(getCurrentPriceForPlan(), selectedPricing.currency)}
-                        </div>
-                        <div className="text-sm text-green-600 mt-1">
-                          {selectedPricing.discountPercentage}% member discount applied
-                        </div>
+                        <div className="font-medium">Quarterly Plan</div>
+                        <div className="text-sm text-gray-600">3 months billing cycle</div>
                       </div>
-                    ) : (
-                      <div className="text-2xl font-bold text-gray-900">
-                        {getCurrentPriceForPlan() > 0 ? 
-                          formatCurrency(getCurrentPriceForPlan(), selectedPricing.currency) : 
-                          'Contact for pricing'
-                        }
+                      <div className="text-right">
+                        {selectedPricing ? (
+                          <>
+                            {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
+                              <div>
+                                <div className="text-lg font-bold text-green-600">
+                                  {formatCurrency(getDiscountedPrice(selectedPricing.quarterlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency)}
+                                </div>
+                                <div className="text-sm text-gray-500 line-through">
+                                  {formatCurrency(selectedPricing.quarterlyFee || 0, selectedPricing.currency)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-lg font-bold">
+                                {formatCurrency(selectedPricing.quarterlyFee || 0, selectedPricing.currency || 'USD')}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-sm text-gray-500">No pricing available</div>
+                        )}
                       </div>
-                    )}
-                    <div className="text-sm text-gray-500 mt-1">
-                      per {selectedPricingPlan === 'quarterly' ? 'quarter' : 
-                           selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}
                     </div>
-                  </div>
+                  </Label>
                 </div>
 
-                {membershipStatus === 'active' && selectedPricing.discountPercentage && (
-                  <div className="mt-3 p-2 bg-green-100 rounded text-sm text-green-800">
-                    🎉 You're saving {selectedPricing.discountPercentage}% with your active membership!
-                  </div>
-                )}
+                {/* Half-Yearly Option */}
+                <div className="flex items-center space-x-2 p-3 border rounded-lg bg-white">
+                  <RadioGroupItem value="halfyearly" id="halfyearly" />
+                  <Label htmlFor="halfyearly" className="flex-1 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">Half-Yearly Plan</div>
+                        <div className="text-sm text-gray-600">6 months billing cycle</div>
+                      </div>
+                      <div className="text-right">
+                        {selectedPricing ? (
+                          <>
+                            {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
+                              <div>
+                                <div className="text-lg font-bold text-green-600">
+                                  {formatCurrency(getDiscountedPrice(selectedPricing.halfYearlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency)}
+                                </div>
+                                <div className="text-sm text-gray-500 line-through">
+                                  {formatCurrency(selectedPricing.halfYearlyFee || 0, selectedPricing.currency)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-lg font-bold">
+                                {formatCurrency(selectedPricing.halfYearlyFee || 0, selectedPricing.currency || 'USD')}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-sm text-gray-500">No pricing available</div>
+                        )}
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+
+                {/* Annual Option */}
+                <div className="flex items-center space-x-2 p-3 border rounded-lg bg-white">
+                  <RadioGroupItem value="annual" id="annual" />
+                  <Label htmlFor="annual" className="flex-1 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">Annual Plan</div>
+                        <div className="text-sm text-gray-600">12 months billing cycle</div>
+                      </div>
+                      <div className="text-right">
+                        {selectedPricing ? (
+                          <>
+                            {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
+                              <div>
+                                <div className="text-lg font-bold text-green-600">
+                                  {formatCurrency(getDiscountedPrice(selectedPricing.annualFee || 0, selectedPricing.discountPercentage), selectedPricing.currency)}
+                                </div>
+                                <div className="text-sm text-gray-500 line-through">
+                                  {formatCurrency(selectedPricing.annualFee || 0, selectedPricing.currency)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-lg font-bold">
+                                {formatCurrency(selectedPricing.annualFee || 0, selectedPricing.currency || 'USD')}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-sm text-gray-500">No pricing available</div>
+                        )}
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              {membershipStatus === 'active' && selectedPricing?.discountPercentage && (
+                <div className="mt-3 p-2 bg-green-100 rounded text-sm text-green-800">
+                  🎉 You're saving {selectedPricing.discountPercentage}% with your active membership!
+                </div>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            {selectedPricingPlan && (
+              <div className="flex justify-center pt-4">
+                <Button 
+                  onClick={onSubmitSelection}
+                  className="bg-purple-600 hover:bg-purple-700 px-8 py-3 text-lg font-semibold"
+                  size="lg"
+                  disabled={showLoginWarning}
+                >
+                  <Send className="mr-2 h-5 w-5" />
+                  Submit Selection
+                </Button>
               </div>
             )}
           </div>

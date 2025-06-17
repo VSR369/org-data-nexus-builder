@@ -75,6 +75,36 @@ const SeekerDashboardContent: React.FC = () => {
     setShowEngagementModelSelector(false);
   };
 
+  const handlePricingPlanChange = (plan: string) => {
+    console.log('Pricing plan changed to:', plan);
+    setSelectedPricingPlan(plan);
+  };
+
+  const handleSubmitSelection = () => {
+    if (!selectedEngagementModel || !selectedPricingPlan) {
+      console.error('Missing engagement model or pricing plan');
+      return;
+    }
+
+    const selectionData = {
+      engagementModel: selectedEngagementModel,
+      pricing: selectedPricing,
+      pricingPlan: selectedPricingPlan,
+      membershipStatus: membershipStatus.status,
+      submittedAt: new Date().toISOString(),
+      userId: userData.userId,
+      organizationName: userData.organizationName
+    };
+
+    // Store the selection
+    localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
+    
+    console.log('✅ Engagement model selection submitted:', selectionData);
+    
+    // Show success message or navigate to next step
+    alert(`Successfully submitted selection:\nModel: ${selectedEngagementModel.name}\nPlan: ${selectedPricingPlan}\nClick OK to continue.`);
+  };
+
   const handleProceedToMembership = (membershipData: any) => {
     console.log('Proceeding with membership data:', membershipData);
     setShowMembershipSelection(false);
@@ -169,6 +199,8 @@ const SeekerDashboardContent: React.FC = () => {
           selectedPricing={selectedPricing}
           selectedPricingPlan={selectedPricingPlan}
           onSelectEngagementModel={handleSelectEngagementModel}
+          onSubmitSelection={handleSubmitSelection}
+          onPricingPlanChange={handlePricingPlanChange}
           showLoginWarning={showLoginWarning}
           membershipStatus={membershipStatus.status}
         />

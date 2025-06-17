@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           return;
         }
         
-        // Load pricing configurations
+        // Load pricing configurations using the improved manager
         const pricingConfigs = PricingDataManager.getAllConfigurations();
         console.log('✅ EngagementModelSelector: Loaded pricing configs:', pricingConfigs.length);
         
@@ -70,11 +69,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
         const modelsWithPricingData: ModelWithPricing[] = models.map(model => {
           console.log(`🔄 Processing model: ${model.name}`);
           
-          // Find pricing config that matches the engagement model
-          const pricingConfig = pricingConfigs.find(config => 
-            config.engagementModel === model.name ||
-            config.engagementModel?.toLowerCase() === model.name.toLowerCase()
-          );
+          // Find pricing config that matches the engagement model using the new method
+          const pricingConfig = PricingDataManager.getPricingForEngagementModel(model.name);
           
           console.log(`💰 Pricing config for ${model.name}:`, pricingConfig ? 'Found' : 'Not found');
           
