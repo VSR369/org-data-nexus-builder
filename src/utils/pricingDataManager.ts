@@ -16,6 +16,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     halfYearlyFee: 900,
     annualFee: 1600,
     discountPercentage: 20,
+    internalPaasPricing: [],
     version: 1,
     createdAt: new Date().toISOString()
   },
@@ -31,6 +32,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     halfYearlyFee: 1350,
     annualFee: 2400,
     discountPercentage: 20,
+    internalPaasPricing: [],
     version: 1,
     createdAt: new Date().toISOString()
   },
@@ -46,6 +48,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     halfYearlyFee: 1080,
     annualFee: 1920,
     discountPercentage: 20,
+    internalPaasPricing: [],
     version: 1,
     createdAt: new Date().toISOString()
   },
@@ -61,6 +64,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     halfYearlyFee: 1800,
     annualFee: 3200,
     discountPercentage: 20,
+    internalPaasPricing: [],
     version: 1,
     createdAt: new Date().toISOString()
   }

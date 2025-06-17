@@ -29,6 +29,7 @@ const SeekerDashboardContent: React.FC = () => {
   const [selectedPricing, setSelectedPricing] = useState<PricingConfig | null>(null);
   const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
   const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
+  const [isSelectionSubmitted, setIsSelectionSubmitted] = useState(false);
 
   // Load membership data for the current user
   const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
@@ -62,6 +63,7 @@ const SeekerDashboardContent: React.FC = () => {
 
   const handleSelectEngagementModel = () => {
     console.log('Select Engagement Model clicked');
+    setIsSelectionSubmitted(false);
     setShowEngagementModelSelector(true);
   };
 
@@ -73,11 +75,13 @@ const SeekerDashboardContent: React.FC = () => {
     setSelectedPricing(pricing || null);
     setSelectedPricingPlan(pricingPlan || '');
     setShowEngagementModelSelector(false);
+    setIsSelectionSubmitted(false);
   };
 
   const handlePricingPlanChange = (plan: string) => {
     console.log('Pricing plan changed to:', plan);
     setSelectedPricingPlan(plan);
+    setIsSelectionSubmitted(false);
   };
 
   const handleSubmitSelection = () => {
@@ -101,8 +105,8 @@ const SeekerDashboardContent: React.FC = () => {
     
     console.log('✅ Engagement model selection submitted:', selectionData);
     
-    // Show success message or navigate to next step
-    alert(`Successfully submitted selection:\nModel: ${selectedEngagementModel.name}\nPlan: ${selectedPricingPlan}\nClick OK to continue.`);
+    // Mark as submitted to show final pricing
+    setIsSelectionSubmitted(true);
   };
 
   const handleProceedToMembership = (membershipData: any) => {
@@ -203,6 +207,7 @@ const SeekerDashboardContent: React.FC = () => {
           onPricingPlanChange={handlePricingPlanChange}
           showLoginWarning={showLoginWarning}
           membershipStatus={membershipStatus.status}
+          isSubmitted={isSelectionSubmitted}
         />
       </div>
 

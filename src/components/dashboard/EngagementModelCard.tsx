@@ -18,6 +18,7 @@ interface EngagementModelCardProps {
   onPricingPlanChange: (plan: string) => void;
   showLoginWarning: boolean;
   membershipStatus?: 'active' | 'inactive';
+  isSubmitted?: boolean;
 }
 
 const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
@@ -28,7 +29,8 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
   onSubmitSelection,
   onPricingPlanChange,
   showLoginWarning,
-  membershipStatus = 'inactive'
+  membershipStatus = 'inactive',
+  isSubmitted = false
 }) => {
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
@@ -71,6 +73,85 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
         return '';
     }
   };
+
+  // If selection is submitted, show final pricing summary
+  if (isSubmitted && selectedEngagementModel && selectedPricing && selectedPricingPlan) {
+    const originalPrice = getCurrentPriceForPlan();
+    const finalPrice = getDiscountedPrice(originalPrice, selectedPricing.discountPercentage);
+    
+    return (
+      <Card className="shadow-xl border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+            Selection Submitted Successfully
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+                <h2 className="text-2xl font-bold text-green-800">Final Selection</h2>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-left">
+                  <div>
+                    <p className="text-sm text-gray-600">Engagement Model</p>
+                    <p className="font-semibold text-lg">{selectedEngagementModel.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Billing Cycle</p>
+                    <p className="font-semibold text-lg">{getPlanDisplayName()}</p>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Total Amount:</span>
+                    <div className="text-right">
+                      {membershipStatus === 'active' && selectedPricing.discountPercentage && finalPrice < originalPrice ? (
+                        <div>
+                          <div className="text-2xl font-bold text-green-600">
+                            {formatCurrency(finalPrice, selectedPricing.currency)}
+                          </div>
+                          <div className="text-sm text-gray-500 line-through">
+                            {formatCurrency(originalPrice, selectedPricing.currency)}
+                          </div>
+                          <div className="text-xs text-green-600">
+                            {selectedPricing.discountPercentage}% member discount applied
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(finalPrice, selectedPricing.currency || 'USD')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 rounded p-3 mt-4">
+                  <p className="text-sm text-blue-800 text-center">
+                    Your selection has been saved. You can proceed with the next steps or modify your selection if needed.
+                  </p>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={onSelectEngagementModel}
+                variant="outline"
+                className="mt-4"
+              >
+                Modify Selection
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-xl border-0">
