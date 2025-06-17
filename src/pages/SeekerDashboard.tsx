@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,7 @@ const SeekerDashboardContent: React.FC = () => {
   const [showEngagementModelSelector, setShowEngagementModelSelector] = useState(false);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<EngagementModel | null>(null);
   const [selectedPricing, setSelectedPricing] = useState<PricingConfig | null>(null);
+  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
   const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
 
   // Load membership data for the current user
@@ -65,11 +65,13 @@ const SeekerDashboardContent: React.FC = () => {
     setShowEngagementModelSelector(true);
   };
 
-  const handleEngagementModelSelected = (model: EngagementModel, pricing?: PricingConfig | null) => {
+  const handleEngagementModelSelected = (model: EngagementModel, pricing?: PricingConfig | null, pricingPlan?: string) => {
     console.log('Engagement model selected:', model);
     console.log('Pricing configuration:', pricing);
+    console.log('Selected pricing plan:', pricingPlan);
     setSelectedEngagementModel(model);
     setSelectedPricing(pricing || null);
+    setSelectedPricingPlan(pricingPlan || '');
     setShowEngagementModelSelector(false);
   };
 
@@ -165,6 +167,7 @@ const SeekerDashboardContent: React.FC = () => {
         <EngagementModelCard
           selectedEngagementModel={selectedEngagementModel}
           selectedPricing={selectedPricing}
+          selectedPricingPlan={selectedPricingPlan}
           onSelectEngagementModel={handleSelectEngagementModel}
           showLoginWarning={showLoginWarning}
           membershipStatus={membershipStatus.status}

@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Handshake, X, Check, DollarSign } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
@@ -13,7 +15,7 @@ import { PricingConfig } from '@/types/pricing';
 
 interface EngagementModelSelectorProps {
   onClose: () => void;
-  onSelect: (model: EngagementModel, pricing?: PricingConfig | null) => void;
+  onSelect: (model: EngagementModel, pricing?: PricingConfig | null, selectedPlan?: string) => void;
   userCountry?: string;
   userOrgType?: string;
   membershipStatus?: 'active' | 'inactive';
@@ -36,6 +38,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
   const [modelsWithPricing, setModelsWithPricing] = useState<ModelWithPricing[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>('');
+  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -127,12 +130,21 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       return;
     }
 
+    if (!selectedPricingPlan) {
+      toast({
+        title: "Pricing Plan Required",
+        description: "Please select a pricing plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === selectedModelId);
     if (selectedModelWithPricing) {
-      onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing);
+      onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing, selectedPricingPlan);
       toast({
         title: "Engagement Model Selected",
-        description: `You have selected: ${selectedModelWithPricing.model.name}`,
+        description: `You have selected: ${selectedModelWithPricing.model.name} with ${selectedPricingPlan} pricing`,
       });
     }
   };
@@ -142,6 +154,47 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       style: 'currency',
       currency: currency,
     }).format(amount);
+  };
+
+  const getCurrentPrice = (modelWithPricing: ModelWithPricing) => {
+    if (!modelWithPricing.pricing || !selectedPricingPlan) return 0;
+
+    let basePrice = 0;
+    switch (selectedPricingPlan) {
+      case 'quarterly':
+        basePrice = modelWithPricing.pricing.quarterlyFee || 0;
+        break;
+      case 'halfyearly':
+        basePrice = modelWithPricing.pricing.halfYearlyFee || 0;
+        break;
+      case 'annual':
+        basePrice = modelWithPricing.pricing.annualFee || 0;
+        break;
+      default:
+        return 0;
+    }
+
+    // Apply discount if membership is active
+    if (membershipStatus === 'active' && modelWithPricing.pricing.discountPercentage) {
+      return basePrice * (1 - modelWithPricing.pricing.discountPercentage / 100);
+    }
+
+    return basePrice;
+  };
+
+  const getOriginalPrice = (modelWithPricing: ModelWithPricing) => {
+    if (!modelWithPricing.pricing || !selectedPricingPlan) return 0;
+
+    switch (selectedPricingPlan) {
+      case 'quarterly':
+        return modelWithPricing.pricing.quarterlyFee || 0;
+      case 'halfyearly':
+        return modelWithPricing.pricing.halfYearlyFee || 0;
+      case 'annual':
+        return modelWithPricing.pricing.annualFee || 0;
+      default:
+        return 0;
+    }
   };
 
   if (loading) {
@@ -202,6 +255,21 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                 </div>
               </div>
 
+              {/* Pricing Plan Selection */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-3">Select Pricing Plan</h3>
+                <Select value={selectedPricingPlan} onValueChange={setSelectedPricingPlan}>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Choose your pricing plan" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-md z-50">
+                    <SelectItem value="quarterly">Quarterly (3 months)</SelectItem>
+                    <SelectItem value="halfyearly">Half-Yearly (6 months)</SelectItem>
+                    <SelectItem value="annual">Annual (12 months)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <RadioGroup value={selectedModelId} onValueChange={setSelectedModelId}>
                 <div className="grid grid-cols-1 gap-4">
                   {modelsWithPricing.map((item) => (
@@ -229,20 +297,23 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                                   
                                   {/* Pricing Information */}
                                   <div className="text-right min-w-[200px]">
-                                    {item.pricing ? (
+                                    {item.pricing && selectedPricingPlan ? (
                                       <div className="space-y-1">
                                         <div className="flex items-center gap-2 justify-end">
                                           <DollarSign className="h-4 w-4 text-green-600" />
-                                          <span className="text-sm font-medium">Quarterly Pricing</span>
+                                          <span className="text-sm font-medium">
+                                            {selectedPricingPlan === 'quarterly' ? 'Quarterly' : 
+                                             selectedPricingPlan === 'halfyearly' ? 'Half-Yearly' : 'Annual'} Pricing
+                                          </span>
                                         </div>
                                         
-                                        {membershipStatus === 'active' && item.discountedPrice && item.discountedPrice < item.originalPrice ? (
+                                        {membershipStatus === 'active' && item.pricing.discountPercentage && getCurrentPrice(item) < getOriginalPrice(item) ? (
                                           <div className="space-y-1">
                                             <div className="text-lg font-bold text-green-600">
-                                              {formatCurrency(item.discountedPrice, item.pricing.currency)}
+                                              {formatCurrency(getCurrentPrice(item), item.pricing.currency)}
                                             </div>
                                             <div className="text-sm text-gray-500 line-through">
-                                              {formatCurrency(item.originalPrice, item.pricing.currency)}
+                                              {formatCurrency(getOriginalPrice(item), item.pricing.currency)}
                                             </div>
                                             <div className="text-xs text-green-600">
                                               {item.pricing.discountPercentage}% member discount
@@ -250,18 +321,23 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                                           </div>
                                         ) : (
                                           <div className="text-lg font-bold text-gray-900">
-                                            {item.originalPrice > 0 ? formatCurrency(item.originalPrice, item.pricing.currency || 'USD') : 'Contact for pricing'}
+                                            {getCurrentPrice(item) > 0 ? formatCurrency(getCurrentPrice(item), item.pricing.currency || 'USD') : 'Contact for pricing'}
                                           </div>
                                         )}
                                         
                                         <div className="text-xs text-gray-500">
-                                          per quarter
+                                          per {selectedPricingPlan === 'quarterly' ? 'quarter' : 
+                                               selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}
                                         </div>
                                       </div>
-                                    ) : (
+                                    ) : selectedPricingPlan ? (
                                       <div className="text-center">
                                         <div className="text-sm text-gray-500">No pricing configured</div>
                                         <div className="text-xs text-gray-400">Contact administrator</div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center">
+                                        <div className="text-sm text-gray-500">Select pricing plan first</div>
                                       </div>
                                     )}
                                   </div>
@@ -286,7 +362,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
               <div className="flex gap-4 pt-4">
                 <Button 
                   onClick={handleSelectModel}
-                  disabled={!selectedModelId}
+                  disabled={!selectedModelId || !selectedPricingPlan}
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   <Handshake className="mr-2 h-4 w-4" />
