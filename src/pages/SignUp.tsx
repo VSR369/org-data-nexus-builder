@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,12 +11,18 @@ const SignUp = () => {
   const navigate = useNavigate();
 
   const handleContinue = () => {
+    console.log('🔄 SignUp handleContinue called with selectedRole:', selectedRole);
+    
     if (selectedRole === 'seeker') {
+      console.log('🎯 Navigating to seeker registration');
       // Navigate to Solution Seeker organization registration
       navigate('/seeker-registration');
     } else if (selectedRole === 'contributor') {
+      console.log('👥 Navigating to contributor enrollment/registration');
       // Navigate to contributor enrollment flow
       navigate('/contributor-enrollment');
+    } else {
+      console.log('❌ No valid role selected');
     }
   };
 
@@ -111,7 +116,7 @@ const SignUp = () => {
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/" className="text-blue-600 hover:underline font-medium">
+                <Link to="/signin" className="text-blue-600 hover:underline font-medium">
                   Sign In
                 </Link>
               </p>
