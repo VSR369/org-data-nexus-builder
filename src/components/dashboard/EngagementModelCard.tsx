@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,9 +80,19 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
     return feeBasedModels.includes(modelName);
   };
 
+  // Get the actual percentage fee from master data configuration
+  const getEngagementModelFeePercentage = (modelName: string) => {
+    if (!selectedPricing) return 0;
+    
+    // Use engagementModelFee if available, otherwise use quarterlyFee as fallback
+    return selectedPricing.engagementModelFee || selectedPricing.quarterlyFee || 0;
+  };
+
   const formatPricing = (amount: number, currency: string = 'USD', modelName: string) => {
     if (isFeeBasedModel(modelName)) {
-      return `${amount}% of Solution Fee`;
+      // For fee-based models, show the actual percentage from master data
+      const feePercentage = getEngagementModelFeePercentage(modelName);
+      return `${feePercentage}% of Solution Fee`;
     }
     return formatCurrency(amount, currency);
   };
@@ -125,22 +136,30 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                       {isFeeBasedModel(selectedEngagementModel.name) ? 'Fee Rate:' : 'Total Amount:'}
                     </span>
                     <div className="text-right">
-                      {membershipStatus === 'active' && selectedPricing.discountPercentage && finalPrice < originalPrice ? (
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">
-                            {formatPricing(finalPrice, selectedPricing.currency, selectedEngagementModel.name)}
-                          </div>
-                          <div className="text-sm text-gray-500 line-through">
-                            {formatPricing(originalPrice, selectedPricing.currency, selectedEngagementModel.name)}
-                          </div>
-                          <div className="text-xs text-green-600">
-                            {selectedPricing.discountPercentage}% member discount applied
-                          </div>
+                      {isFeeBasedModel(selectedEngagementModel.name) ? (
+                        // For fee-based models, show percentage from master data
+                        <div className="text-2xl font-bold text-gray-900">
+                          {formatPricing(0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                         </div>
                       ) : (
-                        <div className="text-2xl font-bold text-gray-900">
-                          {formatPricing(finalPrice, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
-                        </div>
+                        // For fixed pricing models, show discounted price
+                        membershipStatus === 'active' && selectedPricing.discountPercentage && finalPrice < originalPrice ? (
+                          <div>
+                            <div className="text-2xl font-bold text-green-600">
+                              {formatPricing(finalPrice, selectedPricing.currency, selectedEngagementModel.name)}
+                            </div>
+                            <div className="text-sm text-gray-500 line-through">
+                              {formatPricing(originalPrice, selectedPricing.currency, selectedEngagementModel.name)}
+                            </div>
+                            <div className="text-xs text-green-600">
+                              {selectedPricing.discountPercentage}% member discount applied
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-2xl font-bold text-gray-900">
+                            {formatPricing(finalPrice, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
+                          </div>
+                        )
                       )}
                     </div>
                   </div>
@@ -231,19 +250,25 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                       <div className="text-right">
                         {selectedPricing ? (
                           <>
-                            {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
-                              <div>
-                                <div className="text-lg font-bold text-green-600">
-                                  {formatPricing(getDiscountedPrice(selectedPricing.quarterlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
-                                </div>
-                                <div className="text-sm text-gray-500 line-through">
-                                  {formatPricing(selectedPricing.quarterlyFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
-                                </div>
+                            {isFeeBasedModel(selectedEngagementModel.name) ? (
+                              <div className="text-lg font-bold">
+                                {formatPricing(0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                               </div>
                             ) : (
-                              <div className="text-lg font-bold">
-                                {formatPricing(selectedPricing.quarterlyFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
-                              </div>
+                              membershipStatus === 'active' && selectedPricing.discountPercentage ? (
+                                <div>
+                                  <div className="text-lg font-bold text-green-600">
+                                    {formatPricing(getDiscountedPrice(selectedPricing.quarterlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
+                                  </div>
+                                  <div className="text-sm text-gray-500 line-through">
+                                    {formatPricing(selectedPricing.quarterlyFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-lg font-bold">
+                                  {formatPricing(selectedPricing.quarterlyFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
+                                </div>
+                              )
                             )}
                           </>
                         ) : (
@@ -266,19 +291,25 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                       <div className="text-right">
                         {selectedPricing ? (
                           <>
-                            {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
-                              <div>
-                                <div className="text-lg font-bold text-green-600">
-                                  {formatPricing(getDiscountedPrice(selectedPricing.halfYearlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
-                                </div>
-                                <div className="text-sm text-gray-500 line-through">
-                                  {formatPricing(selectedPricing.halfYearlyFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
-                                </div>
+                            {isFeeBasedModel(selectedEngagementModel.name) ? (
+                              <div className="text-lg font-bold">
+                                {formatPricing(0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                               </div>
                             ) : (
-                              <div className="text-lg font-bold">
-                                {formatPricing(selectedPricing.halfYearlyFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
-                              </div>
+                              membershipStatus === 'active' && selectedPricing.discountPercentage ? (
+                                <div>
+                                  <div className="text-lg font-bold text-green-600">
+                                    {formatPricing(getDiscountedPrice(selectedPricing.halfYearlyFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
+                                  </div>
+                                  <div className="text-sm text-gray-500 line-through">
+                                    {formatPricing(selectedPricing.halfYearlyFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-lg font-bold">
+                                  {formatPricing(selectedPricing.halfYearlyFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
+                                </div>
+                              )
                             )}
                           </>
                         ) : (
@@ -301,19 +332,25 @@ const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                       <div className="text-right">
                         {selectedPricing ? (
                           <>
-                            {membershipStatus === 'active' && selectedPricing.discountPercentage ? (
-                              <div>
-                                <div className="text-lg font-bold text-green-600">
-                                  {formatPricing(getDiscountedPrice(selectedPricing.annualFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
-                                </div>
-                                <div className="text-sm text-gray-500 line-through">
-                                  {formatPricing(selectedPricing.annualFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
-                                </div>
+                            {isFeeBasedModel(selectedEngagementModel.name) ? (
+                              <div className="text-lg font-bold">
+                                {formatPricing(0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
                               </div>
                             ) : (
-                              <div className="text-lg font-bold">
-                                {formatPricing(selectedPricing.annualFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
-                              </div>
+                              membershipStatus === 'active' && selectedPricing.discountPercentage ? (
+                                <div>
+                                  <div className="text-lg font-bold text-green-600">
+                                    {formatPricing(getDiscountedPrice(selectedPricing.annualFee || 0, selectedPricing.discountPercentage), selectedPricing.currency, selectedEngagementModel.name)}
+                                  </div>
+                                  <div className="text-sm text-gray-500 line-through">
+                                    {formatPricing(selectedPricing.annualFee || 0, selectedPricing.currency, selectedEngagementModel.name)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-lg font-bold">
+                                  {formatPricing(selectedPricing.annualFee || 0, selectedPricing.currency || 'USD', selectedEngagementModel.name)}
+                                </div>
+                              )
                             )}
                           </>
                         ) : (

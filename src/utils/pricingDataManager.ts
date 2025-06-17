@@ -12,6 +12,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     organizationType: 'All',
     entityType: 'All',
     engagementModel: 'Market Place',
+    engagementModelFee: 5, // 5% of solution fee
     quarterlyFee: 500,
     halfYearlyFee: 900,
     annualFee: 1600,
@@ -28,6 +29,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     organizationType: 'All',
     entityType: 'All',
     engagementModel: 'Market Place & Aggregator',
+    engagementModelFee: 8, // 8% of solution fee
     quarterlyFee: 750,
     halfYearlyFee: 1350,
     annualFee: 2400,
@@ -44,6 +46,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     organizationType: 'All',
     entityType: 'All',
     engagementModel: 'Aggregator',
+    engagementModelFee: 6, // 6% of solution fee
     quarterlyFee: 600,
     halfYearlyFee: 1080,
     annualFee: 1920,
@@ -60,6 +63,7 @@ const defaultPricingConfigs: PricingConfig[] = [
     organizationType: 'All',
     entityType: 'All',
     engagementModel: 'Platform as a Service',
+    engagementModelFee: 0, // Not percentage-based, uses fixed pricing
     quarterlyFee: 1000,
     halfYearlyFee: 1800,
     annualFee: 3200,
@@ -73,7 +77,7 @@ const defaultPricingConfigs: PricingConfig[] = [
 const pricingDataManager = new LegacyDataManager<PricingConfig[]>({
   key: 'master_data_pricing_configs',
   defaultData: defaultPricingConfigs,
-  version: 2 // Increment version to force refresh with default data
+  version: 3 // Increment version to force refresh with updated percentage data
 });
 
 export const getPricingConfigs = (): PricingConfig[] => {

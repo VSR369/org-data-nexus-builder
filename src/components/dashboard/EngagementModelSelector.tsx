@@ -159,9 +159,19 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
     return feeBasedModels.includes(modelName);
   };
 
-  const formatPricing = (amount: number, currency: string = 'USD', modelName: string) => {
+  // Get the actual percentage fee from master data configuration
+  const getEngagementModelFeePercentage = (pricing: PricingConfig | null) => {
+    if (!pricing) return 0;
+    
+    // Use engagementModelFee if available, otherwise use quarterlyFee as fallback
+    return pricing.engagementModelFee || pricing.quarterlyFee || 0;
+  };
+
+  const formatPricing = (amount: number, currency: string = 'USD', modelName: string, pricing: PricingConfig | null = null) => {
     if (isFeeBasedModel(modelName)) {
-      return `${amount}% of Solution Fee`;
+      // For fee-based models, show the actual percentage from master data
+      const feePercentage = getEngagementModelFeePercentage(pricing);
+      return `${feePercentage}% of Solution Fee`;
     }
     return formatCurrency(amount, currency);
   };
@@ -318,32 +328,46 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                                           </span>
                                         </div>
                                         
-                                        {membershipStatus === 'active' && item.pricing.discountPercentage && getCurrentPrice(item) < getOriginalPrice(item) ? (
+                                        {isFeeBasedModel(item.model.name) ? (
+                                          // For fee-based models, show percentage from master data
                                           <div className="space-y-1">
-                                            <div className="text-lg font-bold text-green-600">
-                                              {formatPricing(getCurrentPrice(item), item.pricing.currency, item.model.name)}
+                                            <div className="text-lg font-bold text-gray-900">
+                                              {formatPricing(0, item.pricing.currency || 'USD', item.model.name, item.pricing)}
                                             </div>
-                                            <div className="text-sm text-gray-500 line-through">
-                                              {formatPricing(getOriginalPrice(item), item.pricing.currency, item.model.name)}
-                                            </div>
-                                            <div className="text-xs text-green-600">
-                                              {item.pricing.discountPercentage}% member discount
+                                            <div className="text-xs text-gray-500">
+                                              Applied per solution transaction
                                             </div>
                                           </div>
                                         ) : (
-                                          <div className="text-lg font-bold text-gray-900">
-                                            {getCurrentPrice(item) > 0 ? formatPricing(getCurrentPrice(item), item.pricing.currency || 'USD', item.model.name) : 'Contact for pricing'}
-                                          </div>
-                                        )}
-                                        
-                                        <div className="text-xs text-gray-500">
-                                          {isFeeBasedModel(item.model.name) ? (
-                                            'Applied per solution transaction'
+                                          // For fixed pricing models, show discounted price
+                                          membershipStatus === 'active' && item.pricing.discountPercentage && getCurrentPrice(item) < getOriginalPrice(item) ? (
+                                            <div className="space-y-1">
+                                              <div className="text-lg font-bold text-green-600">
+                                                {formatPricing(getCurrentPrice(item), item.pricing.currency, item.model.name)}
+                                              </div>
+                                              <div className="text-sm text-gray-500 line-through">
+                                                {formatPricing(getOriginalPrice(item), item.pricing.currency, item.model.name)}
+                                              </div>
+                                              <div className="text-xs text-green-600">
+                                                {item.pricing.discountPercentage}% member discount
+                                              </div>
+                                              <div className="text-xs text-gray-500">
+                                                per {selectedPricingPlan === 'quarterly' ? 'quarter' : 
+                                                     selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}
+                                              </div>
+                                            </div>
                                           ) : (
-                                            `per ${selectedPricingPlan === 'quarterly' ? 'quarter' : 
-                                                  selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}`
-                                          )}
-                                        </div>
+                                            <div className="space-y-1">
+                                              <div className="text-lg font-bold text-gray-900">
+                                                {getCurrentPrice(item) > 0 ? formatPricing(getCurrentPrice(item), item.pricing.currency || 'USD', item.model.name) : 'Contact for pricing'}
+                                              </div>
+                                              <div className="text-xs text-gray-500">
+                                                per {selectedPricingPlan === 'quarterly' ? 'quarter' : 
+                                                     selectedPricingPlan === 'halfyearly' ? '6 months' : 'year'}
+                                              </div>
+                                            </div>
+                                          )
+                                        )}
                                       </div>
                                     ) : selectedPricingPlan ? (
                                       <div className="text-center">
