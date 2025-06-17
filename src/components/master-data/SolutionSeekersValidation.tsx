@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus, XCircle } from 'lucide-react';
+import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus, XCircle, Edit, Upload, DollarSign } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { UserRecord } from '@/services/types';
 import { useToast } from "@/hooks/use-toast";
+import { usePricingData } from '@/hooks/usePricingData';
 
 interface SeekerDetails extends UserRecord {
   membershipStatus?: 'active' | 'inactive';
@@ -23,6 +24,7 @@ interface SeekerDetails extends UserRecord {
   adminDetails?: SeekerAdminDetails;
   declineReason?: string;
   declinedAt?: string;
+  reApprovalData?: ReApprovalData;
 }
 
 interface SeekerAdminDetails {
@@ -34,6 +36,13 @@ interface SeekerAdminDetails {
   createdAt: string;
 }
 
+interface ReApprovalData {
+  reason: string;
+  documents: File[];
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 const SolutionSeekersValidation: React.FC = () => {
   const [seekers, setSeekers] = useState<SeekerDetails[]>([]);
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
@@ -41,9 +50,13 @@ const SolutionSeekersValidation: React.FC = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [showReApprovalDialog, setShowReApprovalDialog] = useState(false);
   const [seekerToApprove, setSeekerToApprove] = useState<SeekerDetails | null>(null);
   const [seekerToDecline, setSeekerToDecline] = useState<SeekerDetails | null>(null);
+  const [seekerToReApprove, setSeekerToReApprove] = useState<SeekerDetails | null>(null);
   const [declineReason, setDeclineReason] = useState('');
+  const [reApprovalReason, setReApprovalReason] = useState('');
+  const [reApprovalDocuments, setReApprovalDocuments] = useState<File[]>([]);
   const [adminDetails, setAdminDetails] = useState<SeekerAdminDetails>({
     name: '',
     contactNumber: '',
@@ -53,6 +66,34 @@ const SolutionSeekersValidation: React.FC = () => {
     createdAt: ''
   });
   const { toast } = useToast();
+  const { getConfigByOrgTypeAndEngagement } = usePricingData();
+
+  // Industry segments mapping - this should ideally come from your master data
+  const industrySegments = {
+    '1': 'Banking & Financial Services',
+    '2': 'Healthcare & Life Sciences',
+    '3': 'Information Technology',
+    '4': 'Retail & E-commerce',
+    '5': 'Manufacturing',
+    '6': 'Energy & Utilities',
+    '7': 'Education',
+    '8': 'Government & Public Sector',
+    '9': 'Telecommunications',
+    '10': 'Real Estate'
+  };
+
+  const getIndustrySegmentName = (industryCode: string) => {
+    return industrySegments[industryCode as keyof typeof industrySegments] || industryCode;
+  };
+
+  const getPricingDetails = (seeker: SeekerDetails) => {
+    if (!seeker.organizationType || !seeker.engagementModel?.name) {
+      return null;
+    }
+
+    const pricingConfig = getConfigByOrgTypeAndEngagement(seeker.organizationType, seeker.engagementModel.name);
+    return pricingConfig;
+  };
 
   useEffect(() => {
     loadSeekers();
@@ -157,6 +198,87 @@ const SolutionSeekersValidation: React.FC = () => {
     setSeekerToDecline(seeker);
     setDeclineReason('');
     setShowDeclineDialog(true);
+  };
+
+  const handleReApprovalRequest = (seeker: SeekerDetails) => {
+    console.log('🔄 Initiating re-approval for seeker:', seeker.userId);
+    setSeekerToReApprove(seeker);
+    setReApprovalReason('');
+    setReApprovalDocuments([]);
+    setShowReApprovalDialog(true);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setReApprovalDocuments(prev => [...prev, ...files]);
+  };
+
+  const removeDocument = (index: number) => {
+    setReApprovalDocuments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleReApprovalSubmit = async () => {
+    if (!seekerToReApprove) return;
+
+    // Validate required fields
+    if (!reApprovalReason.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a reason for re-approval request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('💾 Saving re-approval request for seeker:', seekerToReApprove.userId);
+      
+      // Create re-approval data
+      const reApprovalData: ReApprovalData = {
+        reason: reApprovalReason.trim(),
+        documents: reApprovalDocuments,
+        submittedAt: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      // Save re-approval request
+      const reApprovalKey = `seeker_reapproval_${seekerToReApprove.userId}`;
+      localStorage.setItem(reApprovalKey, JSON.stringify(reApprovalData));
+      
+      // Update the seeker's status in our local state
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.userId === seekerToReApprove.userId 
+            ? { 
+                ...s, 
+                reApprovalData: reApprovalData,
+                approvalStatus: 'pending' // Change status back to pending for review
+              }
+            : s
+        )
+      );
+
+      console.log('✅ Re-approval request saved successfully');
+      
+      toast({
+        title: "Re-approval Request Submitted",
+        description: `Re-approval request for ${seekerToReApprove.organizationName} has been submitted for review.`,
+      });
+
+      // Close the dialog and reset state
+      setShowReApprovalDialog(false);
+      setSeekerToReApprove(null);
+      setReApprovalReason('');
+      setReApprovalDocuments([]);
+
+    } catch (error) {
+      console.error('❌ Error saving re-approval request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save re-approval request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeclineSubmit = async () => {
@@ -547,7 +669,7 @@ const SolutionSeekersValidation: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{seeker.country}</TableCell>
-                      <TableCell>{seeker.industrySegment}</TableCell>
+                      <TableCell>{getIndustrySegmentName(seeker.industrySegment || '')}</TableCell>
                       <TableCell>
                         <Badge variant={seeker.membershipStatus === 'active' ? 'default' : 'secondary'}>
                           {seeker.membershipStatus === 'active' ? 'Active' : 'Inactive'}
@@ -598,6 +720,19 @@ const SolutionSeekersValidation: React.FC = () => {
                                 Decline
                               </Button>
                             </>
+                          )}
+                          {seeker.approvalStatus === 'rejected' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReApprovalRequest(seeker);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
                           )}
                         </div>
                       </TableCell>
@@ -660,7 +795,7 @@ const SolutionSeekersValidation: React.FC = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Industry Segment</label>
-                      <p>{selectedSeeker.industrySegment}</p>
+                      <p>{getIndustrySegmentName(selectedSeeker.industrySegment || '')}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Country</label>
@@ -739,6 +874,55 @@ const SolutionSeekersValidation: React.FC = () => {
                   </CardContent>
                 </Card>
 
+                {/* Pricing Details */}
+                {selectedSeeker.organizationType && selectedSeeker.engagementModel && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <DollarSign className="h-5 w-5" />
+                        Pricing Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const pricingConfig = getPricingDetails(selectedSeeker);
+                        if (pricingConfig) {
+                          return (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Engagement Model Fee</label>
+                                <p className="font-semibold">${pricingConfig.engagementModelFee || 0}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Quarterly Fee</label>
+                                <p className="font-semibold">${pricingConfig.quarterlyFee || 0}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Half-Yearly Fee</label>
+                                <p className="font-semibold">${pricingConfig.halfYearlyFee || 0}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Annual Fee</label>
+                                <p className="font-semibold">${pricingConfig.annualFee || 0}</p>
+                              </div>
+                              {pricingConfig.discountPercentage && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Discount</label>
+                                  <p className="font-semibold text-green-600">{pricingConfig.discountPercentage}%</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <p className="text-muted-foreground">No pricing configuration found for this organization type and engagement model.</p>
+                          );
+                        }
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Approval Status */}
                 <Card>
                   <CardHeader>
@@ -804,6 +988,34 @@ const SolutionSeekersValidation: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    {selectedSeeker.reApprovalData && (
+                      <div className="border rounded-lg p-4 bg-blue-50">
+                        <h4 className="font-medium text-blue-800 mb-3">Re-approval Request</h4>
+                        <div className="text-sm space-y-2">
+                          <div>
+                            <span className="font-medium text-blue-700">Reason:</span>
+                            <p className="mt-1">{selectedSeeker.reApprovalData.reason}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">Submitted:</span>
+                            <p>{formatDate(selectedSeeker.reApprovalData.submittedAt)}</p>
+                          </div>
+                          {selectedSeeker.reApprovalData.documents.length > 0 && (
+                            <div>
+                              <span className="font-medium text-blue-700">Documents:</span>
+                              <ul className="mt-1 space-y-1">
+                                {selectedSeeker.reApprovalData.documents.map((doc, index) => (
+                                  <li key={index} className="text-xs bg-white px-2 py-1 rounded">
+                                    {doc.name}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -863,6 +1075,36 @@ const SolutionSeekersValidation: React.FC = () => {
                       </div>
                       <p className="text-sm text-muted-foreground mt-3">
                         Use these actions to approve or decline this solution seeker's application.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Edit Action for Declined Seekers */}
+                {selectedSeeker.approvalStatus === 'rejected' && (
+                  <Card className="border-2 border-dashed border-red-200 bg-red-50">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Edit className="h-5 w-5" />
+                        Request Re-approval
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            handleReApprovalRequest(selectedSeeker);
+                            setShowDetails(false);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Submit Re-approval Request
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-3">
+                        Submit additional information and documents to request re-approval for this declined seeker.
                       </p>
                     </CardContent>
                   </Card>
@@ -986,6 +1228,80 @@ const SolutionSeekersValidation: React.FC = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Submit & Decline
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Re-approval Dialog */}
+      <AlertDialog open={showReApprovalDialog} onOpenChange={setShowReApprovalDialog}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Request Re-approval
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Submit additional information for {seekerToReApprove?.organizationName} to request re-approval after decline.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reApprovalReason">Reason for Re-approval Request *</Label>
+              <Textarea
+                id="reApprovalReason"
+                value={reApprovalReason}
+                onChange={(e) => setReApprovalReason(e.target.value)}
+                placeholder="Explain why this seeker should be reconsidered for approval..."
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reApprovalDocuments">Supporting Documents</Label>
+              <Input
+                id="reApprovalDocuments"
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                onChange={handleFileUpload}
+              />
+              <p className="text-xs text-muted-foreground">
+                Upload supporting documents (PDF, DOC, DOCX, PNG, JPG)
+              </p>
+            </div>
+
+            {reApprovalDocuments.length > 0 && (
+              <div className="space-y-2">
+                <Label>Uploaded Documents</Label>
+                <div className="space-y-2">
+                  {reApprovalDocuments.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        <span className="text-sm">{file.name}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeDocument(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowReApprovalDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleReApprovalSubmit}>
+              Submit Re-approval Request
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
