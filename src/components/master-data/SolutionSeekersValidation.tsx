@@ -181,37 +181,77 @@ const SolutionSeekersValidation: React.FC = () => {
 
   const handleApproveSeeker = (seeker: SeekerDetails) => {
     console.log('🔄 Initiating approval for seeker:', seeker.userId);
-    setSeekerToApprove(seeker);
-    setAdminDetails({
-      name: '',
-      contactNumber: '',
-      email: '',
-      userId: `${seeker.userId}_admin`,
-      password: '',
-      createdAt: ''
-    });
-    setShowApprovalDialog(true);
+    try {
+      setSeekerToApprove(seeker);
+      setAdminDetails({
+        name: '',
+        contactNumber: '',
+        email: '',
+        userId: `${seeker.userId}_admin`,
+        password: '',
+        createdAt: ''
+      });
+      setShowApprovalDialog(true);
+      console.log('✅ Approval dialog opened successfully');
+    } catch (error) {
+      console.error('❌ Error opening approval dialog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open approval dialog. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeclineSeeker = (seeker: SeekerDetails) => {
     console.log('🔄 Initiating decline for seeker:', seeker.userId);
-    setSeekerToDecline(seeker);
-    setDeclineReason('');
-    setShowDeclineDialog(true);
+    try {
+      setSeekerToDecline(seeker);
+      setDeclineReason('');
+      setShowDeclineDialog(true);
+      console.log('✅ Decline dialog opened successfully');
+    } catch (error) {
+      console.error('❌ Error opening decline dialog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open decline dialog. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReApprovalRequest = (seeker: SeekerDetails) => {
     console.log('🔄 Initiating re-approval for seeker:', seeker.userId);
-    setSeekerToReApprove(seeker);
-    setReApprovalReason('');
-    setReApprovalDocuments([]);
-    setShowReApprovalDialog(true);
+    try {
+      setSeekerToReApprove(seeker);
+      setReApprovalReason('');
+      setReApprovalDocuments([]);
+      setShowReApprovalDialog(true);
+      console.log('✅ Re-approval dialog opened successfully');
+    } catch (error) {
+      console.error('❌ Error opening re-approval dialog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open re-approval dialog. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewSeeker = (seeker: SeekerDetails) => {
     console.log('📋 Opening details for seeker:', seeker.userId);
-    setSelectedSeeker(seeker);
-    setShowDetails(true);
+    try {
+      setSelectedSeeker(seeker);
+      setShowDetails(true);
+      console.log('✅ Details dialog opened successfully');
+    } catch (error) {
+      console.error('❌ Error opening details dialog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open details view. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -469,9 +509,7 @@ const SolutionSeekersValidation: React.FC = () => {
   }, [seekers.length]);
 
   const handleSeekerDoubleClick = (seeker: SeekerDetails) => {
-    console.log('📋 Opening details for seeker:', seeker.userId);
-    setSelectedSeeker(seeker);
-    setShowDetails(true);
+    handleViewSeeker(seeker);
   };
 
   const formatDate = (dateString: string) => {
@@ -660,7 +698,7 @@ const SolutionSeekersValidation: React.FC = () => {
                     <TableRow 
                       key={seeker.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onDoubleClick={() => handleViewSeeker(seeker)}
+                      onDoubleClick={() => handleSeekerDoubleClick(seeker)}
                     >
                       <TableCell className="font-medium">
                         <div>
@@ -695,9 +733,8 @@ const SolutionSeekersValidation: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={(e) => {
-                              e.preventDefault();
                               e.stopPropagation();
-                              console.log('View button clicked for:', seeker.userId);
+                              console.log('🔍 View button clicked for:', seeker.userId);
                               handleViewSeeker(seeker);
                             }}
                           >
@@ -709,9 +746,8 @@ const SolutionSeekersValidation: React.FC = () => {
                                 size="sm"
                                 variant="default"
                                 onClick={(e) => {
-                                  e.preventDefault();
                                   e.stopPropagation();
-                                  console.log('Approve button clicked for:', seeker.userId);
+                                  console.log('✅ Approve button clicked for:', seeker.userId);
                                   handleApproveSeeker(seeker);
                                 }}
                               >
@@ -722,9 +758,8 @@ const SolutionSeekersValidation: React.FC = () => {
                                 size="sm"
                                 variant="destructive"
                                 onClick={(e) => {
-                                  e.preventDefault();
                                   e.stopPropagation();
-                                  console.log('Decline button clicked for:', seeker.userId);
+                                  console.log('❌ Decline button clicked for:', seeker.userId);
                                   handleDeclineSeeker(seeker);
                                 }}
                               >
@@ -738,9 +773,8 @@ const SolutionSeekersValidation: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={(e) => {
-                                e.preventDefault();
                                 e.stopPropagation();
-                                console.log('Edit button clicked for:', seeker.userId);
+                                console.log('✏️ Edit button clicked for:', seeker.userId);
                                 handleReApprovalRequest(seeker);
                               }}
                             >
