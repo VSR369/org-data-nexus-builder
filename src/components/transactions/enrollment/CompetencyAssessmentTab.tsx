@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -257,7 +256,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Domain Groups Hierarchy with Rating Sliders */}
+      {/* Domain Groups Hierarchy with Rating Sliders - Collapsed by default */}
       <div className="space-y-4">
         {hierarchicalData.map((domainGroup) => (
           <Card key={domainGroup.id}>
@@ -273,7 +272,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
             </CardHeader>
             <CardContent>
               {domainGroup.categories.length > 0 ? (
-                <Accordion type="multiple" defaultValue={domainGroup.categories.map(cat => `category-${cat.id}`)} className="w-full">
+                <Accordion type="multiple" className="w-full">
                   {domainGroup.categories.map((category, categoryIndex) => {
                     // Calculate category average if function is provided
                     const categoryAverage = getCategoryAverage ? getCategoryAverage(selectedIndustrySegment, domainGroup.name, category.name) : 0;
@@ -292,12 +291,9 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                                 {category.subCategories.length} sub-categories
                               </div>
                             </div>
-                            {/* Category Average Display */}
+                            {/* Category Competency Level Display */}
                             {categoryAverage > 0 && competencyLevel && (
                               <div className="flex items-center gap-2 mr-4">
-                                <span className="text-sm text-muted-foreground">
-                                  Avg: {categoryAverage.toFixed(1)}
-                                </span>
                                 <Badge className={competencyLevel.color}>
                                   {competencyLevel.label}
                                 </Badge>
@@ -311,10 +307,10 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                           )}
                           
                           {/* Category Average Progress Bar */}
-                          {categoryAverage > 0 && (
+                          {categoryAverage > 0 && competencyLevel && (
                             <div className="mb-6 p-3 bg-muted/30 rounded-lg">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">Category Average</span>
+                                <span className="text-sm font-medium">Category Level: {competencyLevel.label}</span>
                                 <span className="text-sm text-muted-foreground">{categoryAverage.toFixed(1)}/5</span>
                               </div>
                               <Progress value={(categoryAverage / 5) * 100} className="h-2" />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -140,11 +139,13 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
 
   // Get competency level from rating
   const getCompetencyLevel = (rating: number) => {
-    if (rating >= RATING_THRESHOLDS.GURU.min && rating <= RATING_THRESHOLDS.GURU.max) {
+    if (rating === 0) {
+      return RATING_THRESHOLDS.NO_COMPETENCY;
+    } else if (rating >= RATING_THRESHOLDS.GURU.min && rating <= RATING_THRESHOLDS.GURU.max) {
       return RATING_THRESHOLDS.GURU;
-    } else if (rating >= RATING_THRESHOLDS.ADVANCED.min && rating < RATING_THRESHOLDS.ADVANCED.max) {
+    } else if (rating >= RATING_THRESHOLDS.ADVANCED.min && rating <= RATING_THRESHOLDS.ADVANCED.max) {
       return RATING_THRESHOLDS.ADVANCED;
-    } else if (rating >= RATING_THRESHOLDS.BASIC.min && rating < RATING_THRESHOLDS.BASIC.max) {
+    } else if (rating >= RATING_THRESHOLDS.BASIC.min && rating <= RATING_THRESHOLDS.BASIC.max) {
       return RATING_THRESHOLDS.BASIC;
     } else {
       return RATING_THRESHOLDS.NO_COMPETENCY;
@@ -261,9 +262,6 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium">{domainGroupName}</h4>
                               <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">
-                                  Avg: {average.toFixed(1)}
-                                </span>
                                 <Badge className={level.color}>
                                   {level.label}
                                 </Badge>

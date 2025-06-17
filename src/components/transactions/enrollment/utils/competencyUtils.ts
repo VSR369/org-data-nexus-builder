@@ -1,3 +1,4 @@
+
 import { CompetencyData, CompetencySummary } from '../types/competencyTypes';
 import { COMPETENCY_STORAGE_KEY, RATING_THRESHOLDS } from '../constants/competencyConstants';
 
@@ -174,11 +175,11 @@ export const getCompetencySummaryFromData = (data: CompetencyData): CompetencySu
     Object.values(industrySegmentData).forEach(domainGroup =>
       Object.values(domainGroup).forEach(category =>
         Object.values(category).forEach(rating => {
-          if (rating >= 0 && rating < RATING_THRESHOLDS.NO_COMPETENCY_MAX) {
+          if (rating === 0 || rating <= RATING_THRESHOLDS.NO_COMPETENCY_MAX) {
             summary.noCompetency++;
-          } else if (rating >= RATING_THRESHOLDS.BASIC_MIN && rating < RATING_THRESHOLDS.BASIC_MAX) {
+          } else if (rating >= RATING_THRESHOLDS.BASIC_MIN && rating <= RATING_THRESHOLDS.BASIC_MAX) {
             summary.basic++;
-          } else if (rating >= RATING_THRESHOLDS.ADVANCED_MIN && rating < RATING_THRESHOLDS.ADVANCED_MAX) {
+          } else if (rating >= RATING_THRESHOLDS.ADVANCED_MIN && rating <= RATING_THRESHOLDS.ADVANCED_MAX) {
             summary.advanced++;
           } else if (rating >= RATING_THRESHOLDS.GURU_MIN && rating <= RATING_THRESHOLDS.GURU_MAX) {
             summary.guru++;
