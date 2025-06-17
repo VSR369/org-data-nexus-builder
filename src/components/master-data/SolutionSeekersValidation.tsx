@@ -284,31 +284,48 @@ const SolutionSeekersValidation: React.FC = () => {
         reason: reApprovalReason.trim(),
         documents: reApprovalDocuments,
         submittedAt: new Date().toISOString(),
-        status: 'pending'
+        status: 'approved' // Set to approved instead of pending
       };
 
       // Save re-approval request
       const reApprovalKey = `seeker_reapproval_${seekerToReApprove.userId}`;
       localStorage.setItem(reApprovalKey, JSON.stringify(reApprovalData));
       
-      // Update the seeker's status in our local state
+      // Create approval record in the main approvals list
+      const approvalData = {
+        seekerUserId: seekerToReApprove.userId,
+        organizationName: seekerToReApprove.organizationName,
+        approvalStatus: 'approved',
+        reApprovalData: reApprovalData,
+        approvedAt: new Date().toISOString()
+      };
+
+      // Update the master approvals list
+      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      const updatedApprovals = existingApprovals.filter((a: any) => a.seekerUserId !== seekerToReApprove.userId);
+      updatedApprovals.push(approvalData);
+      localStorage.setItem('seeker_approvals', JSON.stringify(updatedApprovals));
+      
+      // Update the seeker's status in our local state to approved
       setSeekers(prevSeekers => 
         prevSeekers.map(s => 
           s.userId === seekerToReApprove.userId 
             ? { 
                 ...s, 
                 reApprovalData: reApprovalData,
-                approvalStatus: 'pending' // Change status back to pending for review
+                approvalStatus: 'approved', // Set to approved
+                declineReason: undefined, // Clear previous decline reason
+                declinedAt: undefined // Clear previous decline date
               }
             : s
         )
       );
 
-      console.log('✅ Re-approval request saved successfully');
+      console.log('✅ Re-approval request processed and seeker approved');
       
       toast({
-        title: "Re-approval Request Submitted",
-        description: `Re-approval request for ${seekerToReApprove.organizationName} has been submitted for review.`,
+        title: "Re-approval Successful",
+        description: `${seekerToReApprove.organizationName} has been re-approved successfully.`,
       });
 
       // Close the dialog and reset state
@@ -318,10 +335,10 @@ const SolutionSeekersValidation: React.FC = () => {
       setReApprovalDocuments([]);
 
     } catch (error) {
-      console.error('❌ Error saving re-approval request:', error);
+      console.error('❌ Error processing re-approval request:', error);
       toast({
         title: "Error",
-        description: "Failed to save re-approval request. Please try again.",
+        description: "Failed to process re-approval request. Please try again.",
         variant: "destructive",
       });
     }
@@ -740,6 +757,7 @@ const SolutionSeekersValidation: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {/* Only show Approve/Decline buttons for pending seekers */}
                           {seeker.approvalStatus === 'pending' && (
                             <>
                               <Button
@@ -768,6 +786,7 @@ const SolutionSeekersValidation: React.FC = () => {
                               </Button>
                             </>
                           )}
+                          {/* Only show Edit button for rejected seekers */}
                           {seeker.approvalStatus === 'rejected' && (
                             <Button
                               size="sm"
@@ -1349,7 +1368,7 @@ const SolutionSeekersValidation: React.FC = () => {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleReApprovalSubmit}>
-              Submit Re-approval Request
+              Submit & Approve
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
