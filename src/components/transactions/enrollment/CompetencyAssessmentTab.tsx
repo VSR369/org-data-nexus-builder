@@ -4,7 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Building2, FolderTree, Target, RefreshCw, ExternalLink } from 'lucide-react';
+import { Building2, FolderTree, Target, RefreshCw, ExternalLink, Award } from 'lucide-react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from '../../master-data/domain-groups/domainGroupsDataManager';
 import RatingSlider from './components/RatingSlider';
@@ -153,6 +153,70 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     }
   };
 
+  // Calculate category average competency from subcategories
+  const calculateCategoryAverage = (domainGroupName: string, categoryName: string, subCategories: any[]) => {
+    const ratings = subCategories.map(sub => getCurrentRating(domainGroupName, categoryName, sub.name));
+    const validRatings = ratings.filter(rating => rating > 0);
+    
+    if (validRatings.length === 0) return 0;
+    
+    const sum = validRatings.reduce((acc, rating) => acc + rating, 0);
+    const average = sum / validRatings.length;
+    
+    console.log('Category average calculation:', { domainGroupName, categoryName, ratings, validRatings, average });
+    return average;
+  };
+
+  // Calculate domain group average competency from categories
+  const calculateDomainGroupAverage = (domainGroup: any) => {
+    const categoryAverages = domainGroup.categories.map((category: any) => 
+      calculateCategoryAverage(domainGroup.name, category.name, category.subCategories)
+    );
+    
+    const validAverages = categoryAverages.filter(avg => avg > 0);
+    
+    if (validAverages.length === 0) return 0;
+    
+    const sum = validAverages.reduce((acc, avg) => acc + avg, 0);
+    const average = sum / validAverages.length;
+    
+    console.log('Domain group average calculation:', { domainGroupName: domainGroup.name, categoryAverages, validAverages, average });
+    return average;
+  };
+
+  // Calculate overall competency across all domain groups
+  const calculateOverallCompetency = () => {
+    const domainGroupAverages = hierarchicalData.map(domainGroup => calculateDomainGroupAverage(domainGroup));
+    const validAverages = domainGroupAverages.filter(avg => avg > 0);
+    
+    if (validAverages.length === 0) return 0;
+    
+    const sum = validAverages.reduce((acc, avg) => acc + avg, 0);
+    const average = sum / validAverages.length;
+    
+    console.log('Overall competency calculation:', { domainGroupAverages, validAverages, average });
+    return average;
+  };
+
+  // Get competency statistics for display
+  const getCompetencyStats = () => {
+    const totalSubCategories = hierarchicalData.reduce((total, group) => 
+      total + group.categories.reduce((catTotal: number, cat: any) => catTotal + cat.subCategories.length, 0), 0
+    );
+    
+    const ratedSubCategories = hierarchicalData.reduce((total, group) => 
+      total + group.categories.reduce((catTotal: number, cat: any) => 
+        catTotal + cat.subCategories.filter((sub: any) => getCurrentRating(group.name, cat.name, sub.name) > 0).length, 0
+      ), 0
+    );
+
+    return { totalSubCategories, ratedSubCategories };
+  };
+
+  const overallCompetency = calculateOverallCompetency();
+  const overallCompetencyLevel = overallCompetency > 0 ? getCompetencyLevelFromRating(overallCompetency) : null;
+  const { totalSubCategories, ratedSubCategories } = getCompetencyStats();
+
   if (!selectedIndustrySegment) {
     return (
       <Card>
@@ -264,114 +328,190 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
               {hierarchicalData.reduce((total, group) => total + group.categories.length, 0)} Categories
             </Badge>
             <Badge variant="outline">
-              {hierarchicalData.reduce((total, group) => 
-                total + group.categories.reduce((catTotal, cat) => catTotal + cat.subCategories.length, 0), 0
-              )} Sub-Categories
+              {totalSubCategories} Sub-Categories
+            </Badge>
+            <Badge variant="outline">
+              {ratedSubCategories} Rated
             </Badge>
           </div>
         </CardContent>
       </Card>
 
+      {/* Overall Competency Summary */}
+      {overallCompetency > 0 && overallCompetencyLevel && (
+        <Card className="border-2 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              Overall Competency Level
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <Badge className={`${overallCompetencyLevel.color} text-lg px-3 py-1`}>
+                  {overallCompetencyLevel.label}
+                </Badge>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Average Rating: {overallCompetency.toFixed(2)}/5.0
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-primary">
+                  {((overallCompetency / 5) * 100).toFixed(0)}%
+                </div>
+                <div className="text-sm text-muted-foreground">Overall Progress</div>
+              </div>
+            </div>
+            <Progress value={(overallCompetency / 5) * 100} className="h-3" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Based on {ratedSubCategories} rated subcategories across {hierarchicalData.length} domain groups
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Domain Groups Hierarchy with Rating Sliders - All collapsed by default */}
       <div className="space-y-4">
-        {hierarchicalData.map((domainGroup) => (
-          <Card key={domainGroup.id}>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">{domainGroup.name}</CardTitle>
-                <Badge variant="default">Domain Group</Badge>
-              </div>
-              {domainGroup.description && (
-                <p className="text-sm text-muted-foreground">{domainGroup.description}</p>
-              )}
-            </CardHeader>
-            <CardContent>
-              {domainGroup.categories.length > 0 ? (
-                <Accordion type="multiple" className="w-full">
-                  {domainGroup.categories.map((category, categoryIndex) => {
-                    // Calculate category average if function is provided
-                    const categoryAverage = getCategoryAverage ? getCategoryAverage(selectedIndustrySegment, domainGroup.name, category.name) : 0;
-                    const competencyLevel = categoryAverage > 0 ? getCompetencyLevelFromRating(categoryAverage) : null;
-                    
-                    return (
-                      <AccordionItem key={category.id} value={`category-${category.id}`}>
-                        <AccordionTrigger className="text-left">
-                          <div className="flex items-center gap-2 w-full">
-                            <span className="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
-                              {categoryIndex + 1}
-                            </span>
-                            <div className="flex-1">
-                              <div className="font-medium">{category.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {category.subCategories.length} sub-categories
+        {hierarchicalData.map((domainGroup) => {
+          const domainGroupAverage = calculateDomainGroupAverage(domainGroup);
+          const domainGroupLevel = domainGroupAverage > 0 ? getCompetencyLevelFromRating(domainGroupAverage) : null;
+          
+          return (
+            <Card key={domainGroup.id} className="border-l-4 border-l-primary/30">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-primary" />
+                    <div>
+                      <CardTitle className="text-lg">{domainGroup.name}</CardTitle>
+                      <Badge variant="default" className="mt-1">Domain Group</Badge>
+                    </div>
+                  </div>
+                  {/* Domain Group Competency Level */}
+                  {domainGroupLevel && (
+                    <div className="text-right">
+                      <Badge className={`${domainGroupLevel.color} mb-1`}>
+                        {domainGroupLevel.label}
+                      </Badge>
+                      <div className="text-sm text-muted-foreground">
+                        Avg: {domainGroupAverage.toFixed(2)}/5.0
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {domainGroup.description && (
+                  <p className="text-sm text-muted-foreground">{domainGroup.description}</p>
+                )}
+                {/* Domain Group Progress Bar */}
+                {domainGroupAverage > 0 && (
+                  <div className="mt-3">
+                    <Progress value={(domainGroupAverage / 5) * 100} className="h-2" />
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent>
+                {domainGroup.categories.length > 0 ? (
+                  <Accordion type="multiple" className="w-full">
+                    {domainGroup.categories.map((category, categoryIndex) => {
+                      // Calculate category average competency
+                      const categoryAverage = calculateCategoryAverage(domainGroup.name, category.name, category.subCategories);
+                      const competencyLevel = categoryAverage > 0 ? getCompetencyLevelFromRating(categoryAverage) : null;
+                      
+                      return (
+                        <AccordionItem key={category.id} value={`category-${category.id}`}>
+                          <AccordionTrigger className="text-left">
+                            <div className="flex items-center gap-2 w-full">
+                              <span className="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
+                                {categoryIndex + 1}
+                              </span>
+                              <div className="flex-1">
+                                <div className="font-medium">{category.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {category.subCategories.length} sub-categories
+                                </div>
                               </div>
+                              {/* Category Competency Level Display */}
+                              {categoryAverage > 0 && competencyLevel && (
+                                <div className="flex items-center gap-2 mr-4">
+                                  <Badge className={competencyLevel.color}>
+                                    {competencyLevel.label}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {categoryAverage.toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                            {/* Category Competency Level Display */}
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-4">
+                            {category.description && (
+                              <p className="text-muted-foreground mb-6 italic">{category.description}</p>
+                            )}
+                            
+                            {/* Category Average Progress Bar */}
                             {categoryAverage > 0 && competencyLevel && (
-                              <div className="flex items-center gap-2 mr-4">
-                                <Badge className={competencyLevel.color}>
-                                  {competencyLevel.label}
-                                </Badge>
+                              <div className="mb-6 p-3 bg-muted/30 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-medium">Category Level: {competencyLevel.label}</span>
+                                  <span className="text-sm text-muted-foreground">{categoryAverage.toFixed(2)}/5.0</span>
+                                </div>
+                                <Progress value={(categoryAverage / 5) * 100} className="h-2" />
                               </div>
                             )}
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-4">
-                          {category.description && (
-                            <p className="text-muted-foreground mb-6 italic">{category.description}</p>
-                          )}
-                          
-                          {/* Category Average Progress Bar */}
-                          {categoryAverage > 0 && competencyLevel && (
-                            <div className="mb-6 p-3 bg-muted/30 rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">Category Level: {competencyLevel.label}</span>
-                                <span className="text-sm text-muted-foreground">{categoryAverage.toFixed(1)}/5</span>
-                              </div>
-                              <Progress value={(categoryAverage / 5) * 100} className="h-2" />
-                            </div>
-                          )}
-                          
-                          {/* Sub-Categories with Rating Sliders */}
-                          <div className="space-y-4 ml-4">
-                            {category.subCategories.map((subCategory, subIndex) => (
-                              <div key={`${subCategory.id}-${subCategory.name}`} className="border rounded-lg p-4 bg-muted/20">
-                                <div className="flex items-start gap-3 mb-3">
-                                  <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
-                                    {categoryIndex + 1}.{subIndex + 1}
-                                  </span>
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-sm mb-1">{subCategory.name}</h4>
-                                    {subCategory.description && (
-                                      <p className="text-muted-foreground text-xs">{subCategory.description}</p>
-                                    )}
-                                  </div>
-                                </div>
+                            
+                            {/* Sub-Categories with Rating Sliders */}
+                            <div className="space-y-4 ml-4">
+                              {category.subCategories.map((subCategory, subIndex) => {
+                                const currentRating = getCurrentRating(domainGroup.name, category.name, subCategory.name);
+                                const subCompetencyLevel = currentRating > 0 ? getCompetencyLevelFromRating(currentRating) : null;
                                 
-                                {/* Rating Slider - integrated into subcategory display */}
-                                <RatingSlider
-                                  currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
-                                  onRatingChange={(rating) => 
-                                    handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
-                                  }
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              ) : (
-                <p className="text-muted-foreground text-center py-4">
-                  No categories configured for this domain group.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                                return (
+                                  <div key={`${subCategory.id}-${subCategory.name}`} className="border rounded-lg p-4 bg-muted/20">
+                                    <div className="flex items-start gap-3 mb-3">
+                                      <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
+                                        {categoryIndex + 1}.{subIndex + 1}
+                                      </span>
+                                      <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="font-medium text-sm mb-1">{subCategory.name}</h4>
+                                          {subCompetencyLevel && (
+                                            <Badge className={`${subCompetencyLevel.color} text-xs`}>
+                                              {subCompetencyLevel.label}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        {subCategory.description && (
+                                          <p className="text-muted-foreground text-xs">{subCategory.description}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Rating Slider - integrated into subcategory display */}
+                                    <RatingSlider
+                                      currentRating={currentRating}
+                                      onRatingChange={(rating) => 
+                                        handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
+                                      }
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">
+                    No categories configured for this domain group.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
