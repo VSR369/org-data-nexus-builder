@@ -660,7 +660,7 @@ const SolutionSeekersValidation: React.FC = () => {
                     <TableRow 
                       key={seeker.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onDoubleClick={() => handleSeekerDoubleClick(seeker)}
+                      onDoubleClick={() => handleViewSeeker(seeker)}
                     >
                       <TableCell className="font-medium">
                         <div>
@@ -695,7 +695,9 @@ const SolutionSeekersValidation: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
+                              console.log('View button clicked for:', seeker.userId);
                               handleViewSeeker(seeker);
                             }}
                           >
@@ -707,7 +709,9 @@ const SolutionSeekersValidation: React.FC = () => {
                                 size="sm"
                                 variant="default"
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
+                                  console.log('Approve button clicked for:', seeker.userId);
                                   handleApproveSeeker(seeker);
                                 }}
                               >
@@ -718,7 +722,9 @@ const SolutionSeekersValidation: React.FC = () => {
                                 size="sm"
                                 variant="destructive"
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
+                                  console.log('Decline button clicked for:', seeker.userId);
                                   handleDeclineSeeker(seeker);
                                 }}
                               >
@@ -732,7 +738,9 @@ const SolutionSeekersValidation: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
+                                console.log('Edit button clicked for:', seeker.userId);
                                 handleReApprovalRequest(seeker);
                               }}
                             >
