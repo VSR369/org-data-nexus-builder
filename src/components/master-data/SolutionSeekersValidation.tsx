@@ -1163,9 +1163,9 @@ const SolutionSeekersValidation: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Approval Dialog */}
+      {/* Approval Dialog - Fixed sizing and visibility */}
       <AlertDialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
@@ -1176,7 +1176,7 @@ const SolutionSeekersValidation: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="adminName">Name *</Label>
               <Input
@@ -1230,7 +1230,7 @@ const SolutionSeekersValidation: React.FC = () => {
             </div>
           </div>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-shrink-0">
             <AlertDialogCancel onClick={() => setShowApprovalDialog(false)}>
               Cancel
             </AlertDialogCancel>
