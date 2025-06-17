@@ -208,6 +208,12 @@ const SolutionSeekersValidation: React.FC = () => {
     setShowReApprovalDialog(true);
   };
 
+  const handleViewSeeker = (seeker: SeekerDetails) => {
+    console.log('📋 Opening details for seeker:', seeker.userId);
+    setSelectedSeeker(seeker);
+    setShowDetails(true);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setReApprovalDocuments(prev => [...prev, ...files]);
@@ -690,7 +696,7 @@ const SolutionSeekersValidation: React.FC = () => {
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSeekerDoubleClick(seeker);
+                              handleViewSeeker(seeker);
                             }}
                           >
                             <Eye className="h-4 w-4" />
