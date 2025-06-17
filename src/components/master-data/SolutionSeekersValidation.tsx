@@ -826,6 +826,47 @@ const SolutionSeekersValidation: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Action Buttons Section - Added to details view */}
+                {selectedSeeker.approvalStatus === 'pending' && (
+                  <Card className="border-2 border-dashed border-orange-200 bg-orange-50">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <UserPlus className="h-5 w-5" />
+                        Approval Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-4">
+                        <Button
+                          variant="default"
+                          onClick={() => {
+                            handleApproveSeeker(selectedSeeker);
+                            setShowDetails(false);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Approve Seeker
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            handleDeclineSeeker(selectedSeeker);
+                            setShowDetails(false);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Decline Seeker
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-3">
+                        Use these actions to approve or decline this solution seeker's application.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </ScrollArea>
           )}
