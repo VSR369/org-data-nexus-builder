@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { EngagementModel } from './types';
 
 interface EngagementModelFormProps {
-  onAdd: (model: Omit<EngagementModel, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onAdd: (model: EngagementModel) => void;
   editingModel?: EngagementModel | null;
-  onUpdate?: (id: string, updates: Partial<Omit<EngagementModel, 'id' | 'createdAt'>>) => void;
+  onUpdate?: (model: EngagementModel) => void;
   onCancelEdit?: () => void;
 }
 
@@ -30,18 +30,19 @@ const EngagementModelForm: React.FC<EngagementModelFormProps> = ({
     
     if (!name.trim()) return;
 
+    const modelData: EngagementModel = {
+      id: editingModel?.id || `model-${Date.now()}`,
+      name: name.trim(),
+      description: description.trim(),
+      isActive,
+      createdAt: editingModel?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
     if (editingModel && onUpdate) {
-      onUpdate(editingModel.id, {
-        name: name.trim(),
-        description: description.trim(),
-        isActive
-      });
+      onUpdate(modelData);
     } else {
-      onAdd({
-        name: name.trim(),
-        description: description.trim(),
-        isActive
-      });
+      onAdd(modelData);
     }
 
     // Reset form

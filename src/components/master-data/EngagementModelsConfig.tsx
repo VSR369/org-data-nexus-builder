@@ -34,7 +34,43 @@ const EngagementModelsConfig = () => {
 
   const handleResetToDefault = () => {
     console.log('🔄 Resetting engagement models to default 4 models...');
-    const defaultData = engagementModelsDataManager.forceReseed();
+    // Get default data and save it
+    const defaultData = [
+      {
+        id: 'marketplace',
+        name: 'Market Place',
+        description: 'A platform where solution seekers and providers connect directly for marketplace transactions',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'marketplace-aggregator',
+        name: 'Market Place & Aggregator',
+        description: 'Combined marketplace and aggregation services for comprehensive solution management',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'aggregator',
+        name: 'Aggregator',
+        description: 'Aggregation services that collect and organize solutions from multiple sources',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'platform-service',
+        name: 'Platform as a Service',
+        description: 'Complete platform infrastructure and services for solution development and deployment',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    engagementModelsDataManager.saveData(defaultData);
     setEngagementModels(defaultData);
     toast({
       title: "Success",
@@ -106,12 +142,12 @@ const EngagementModelsConfig = () => {
         </CardContent>
       </Card>
 
-      <EngagementModelForm onModelSaved={handleModelSaved} />
+      <EngagementModelForm onAdd={handleModelSaved} />
       
       <EngagementModelsList 
         models={engagementModels}
-        onModelDeleted={handleModelDeleted}
-        onModelUpdated={handleModelSaved}
+        onEdit={handleModelSaved}
+        onDelete={handleModelDeleted}
       />
     </div>
   );
