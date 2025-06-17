@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,20 +42,38 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   useEffect(() => {
     const loadEngagementModelsWithPricing = () => {
       try {
-        console.log('🔄 Loading engagement models with pricing...');
-        const models = getCleanEngagementModels();
-        const pricingConfigs = PricingDataManager.getAllConfigurations();
+        console.log('🔄 EngagementModelSelector: Loading engagement models with pricing...');
         
-        console.log('✅ Loaded models:', models.length);
-        console.log('✅ Loaded pricing configs:', pricingConfigs.length);
+        // Load engagement models with improved error handling
+        const models = getCleanEngagementModels();
+        console.log('✅ EngagementModelSelector: Loaded engagement models:', models.length, models.map(m => m.name));
+        
+        if (!Array.isArray(models) || models.length === 0) {
+          console.error('❌ EngagementModelSelector: No valid engagement models found');
+          toast({
+            title: "Error",
+            description: "No engagement models are configured. Please check master data configuration.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        
+        // Load pricing configurations
+        const pricingConfigs = PricingDataManager.getAllConfigurations();
+        console.log('✅ EngagementModelSelector: Loaded pricing configs:', pricingConfigs.length);
         
         // Map models with their pricing configurations
         const modelsWithPricingData: ModelWithPricing[] = models.map(model => {
+          console.log(`🔄 Processing model: ${model.name}`);
+          
           // Find pricing config that matches the engagement model
           const pricingConfig = pricingConfigs.find(config => 
             config.engagementModel === model.name ||
             config.engagementModel?.toLowerCase() === model.name.toLowerCase()
           );
+          
+          console.log(`💰 Pricing config for ${model.name}:`, pricingConfig ? 'Found' : 'Not found');
           
           let originalPrice = 0;
           let discountedPrice = 0;
@@ -69,6 +86,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
             if (membershipStatus === 'active' && pricingConfig.discountPercentage) {
               discountedPrice = originalPrice * (1 - pricingConfig.discountPercentage / 100);
             }
+            
+            console.log(`💰 Pricing for ${model.name}: Original: ${originalPrice}, Discounted: ${discountedPrice}`);
           }
           
           return {
@@ -81,12 +100,13 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
         
         setEngagementModels(models);
         setModelsWithPricing(modelsWithPricingData);
+        console.log('✅ EngagementModelSelector: Models with pricing data prepared:', modelsWithPricingData.length);
         
       } catch (error) {
-        console.error('❌ Error loading engagement models with pricing:', error);
+        console.error('❌ EngagementModelSelector: Error loading engagement models with pricing:', error);
         toast({
           title: "Error",
-          description: "Failed to load engagement models and pricing.",
+          description: "Failed to load engagement models and pricing. Please try again.",
           variant: "destructive",
         });
       } finally {
