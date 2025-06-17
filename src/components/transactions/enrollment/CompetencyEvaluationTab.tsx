@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import CompetencyAssessmentTab from './CompetencyAssessmentTab';
 import { FormData } from './types';
 import { useCompetencyState } from './hooks/useCompetencyState';
@@ -18,6 +19,14 @@ interface CompetencyEvaluationTabProps {
   formData: FormData;
   onFormDataUpdate: (field: string, value: string | string[]) => void;
 }
+
+// Competency level thresholds
+const RATING_THRESHOLDS = {
+  NO_COMPETENCY: { min: 0, max: 0.9, label: 'No Competency', color: 'bg-gray-100 text-gray-800' },
+  BASIC: { min: 1, max: 2.9, label: 'Basic', color: 'bg-blue-100 text-blue-800' },
+  ADVANCED: { min: 3, max: 4.9, label: 'Advanced', color: 'bg-green-100 text-green-800' },
+  GURU: { min: 5, max: 5, label: 'Guru', color: 'bg-purple-100 text-purple-800' }
+};
 
 const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
   selectedIndustrySegments,
@@ -89,6 +98,85 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
     return segment ? segment.industrySegment : segmentId;
   };
 
+  // Calculate average rating for a category
+  const getCategoryAverage = (segmentId: string, domainGroupName: string, categoryName: string) => {
+    const segmentData = competencyData[segmentId];
+    if (!segmentData || !segmentData[domainGroupName] || !segmentData[domainGroupName][categoryName]) {
+      return 0;
+    }
+
+    const subCategoryRatings = Object.values(segmentData[domainGroupName][categoryName]);
+    const validRatings = subCategoryRatings.filter(rating => rating > 0);
+    
+    if (validRatings.length === 0) return 0;
+    
+    const sum = validRatings.reduce((acc, rating) => acc + rating, 0);
+    return sum / validRatings.length;
+  };
+
+  // Calculate average rating for a domain group
+  const getDomainGroupAverage = (segmentId: string, domainGroupName: string) => {
+    const segmentData = competencyData[segmentId];
+    if (!segmentData || !segmentData[domainGroupName]) {
+      return 0;
+    }
+
+    const categories = Object.keys(segmentData[domainGroupName]);
+    let totalSum = 0;
+    let totalCount = 0;
+
+    categories.forEach(categoryName => {
+      const subCategoryRatings = Object.values(segmentData[domainGroupName][categoryName]);
+      const validRatings = subCategoryRatings.filter(rating => rating > 0);
+      
+      if (validRatings.length > 0) {
+        totalSum += validRatings.reduce((acc, rating) => acc + rating, 0);
+        totalCount += validRatings.length;
+      }
+    });
+
+    return totalCount > 0 ? totalSum / totalCount : 0;
+  };
+
+  // Get competency level from rating
+  const getCompetencyLevel = (rating: number) => {
+    if (rating >= RATING_THRESHOLDS.GURU.min && rating <= RATING_THRESHOLDS.GURU.max) {
+      return RATING_THRESHOLDS.GURU;
+    } else if (rating >= RATING_THRESHOLDS.ADVANCED.min && rating < RATING_THRESHOLDS.ADVANCED.max) {
+      return RATING_THRESHOLDS.ADVANCED;
+    } else if (rating >= RATING_THRESHOLDS.BASIC.min && rating < RATING_THRESHOLDS.BASIC.max) {
+      return RATING_THRESHOLDS.BASIC;
+    } else {
+      return RATING_THRESHOLDS.NO_COMPETENCY;
+    }
+  };
+
+  // Get category distribution for a domain group
+  const getCategoryDistribution = (segmentId: string, domainGroupName: string) => {
+    const segmentData = competencyData[segmentId];
+    if (!segmentData || !segmentData[domainGroupName]) {
+      return { noCompetency: 0, basic: 0, advanced: 0, guru: 0, total: 0 };
+    }
+
+    const categories = Object.keys(segmentData[domainGroupName]);
+    const distribution = { noCompetency: 0, basic: 0, advanced: 0, guru: 0, total: 0 };
+
+    categories.forEach(categoryName => {
+      const average = getCategoryAverage(segmentId, domainGroupName, categoryName);
+      if (average > 0) {
+        const level = getCompetencyLevel(average);
+        distribution.total++;
+        
+        if (level.label === 'No Competency') distribution.noCompetency++;
+        else if (level.label === 'Basic') distribution.basic++;
+        else if (level.label === 'Advanced') distribution.advanced++;
+        else if (level.label === 'Guru') distribution.guru++;
+      }
+    });
+
+    return distribution;
+  };
+
   if (selectedIndustrySegments.length === 0) {
     return (
       <Card>
@@ -156,10 +244,70 @@ const CompetencyEvaluationTab: React.FC<CompetencyEvaluationTabProps> = ({
                   </Badge>
                 </div>
                 
+                {/* Domain Group Averages Summary */}
+                {hasCompetencyRatings() && (
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="text-base">Domain Groups Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {Object.keys(getCompetencyDataForSegment(segmentId)).map((domainGroupName) => {
+                        const average = getDomainGroupAverage(segmentId, domainGroupName);
+                        const level = getCompetencyLevel(average);
+                        const distribution = getCategoryDistribution(segmentId, domainGroupName);
+                        
+                        return (
+                          <div key={domainGroupName} className="mb-4 p-4 border rounded-lg bg-muted/20">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium">{domainGroupName}</h4>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">
+                                  Avg: {average.toFixed(1)}
+                                </span>
+                                <Badge className={level.color}>
+                                  {level.label}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            {/* Progress bar for domain group average */}
+                            <div className="mb-3">
+                              <Progress value={(average / 5) * 100} className="h-2" />
+                            </div>
+                            
+                            {/* Category distribution */}
+                            {distribution.total > 0 && (
+                              <div className="flex flex-wrap gap-2 text-xs">
+                                <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                  No Comp: {distribution.noCompetency}
+                                </span>
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Basic: {distribution.basic}
+                                </span>
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                                  Advanced: {distribution.advanced}
+                                </span>
+                                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                  Guru: {distribution.guru}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  Total Categories: {distribution.total}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
+                
                 <CompetencyAssessmentTab
                   selectedIndustrySegment={segmentId}
                   competencyData={getCompetencyDataForSegment(segmentId)}
                   updateCompetencyData={handleCompetencyUpdate}
+                  getCategoryAverage={getCategoryAverage}
+                  getCompetencyLevel={getCompetencyLevel}
                 />
               </TabsContent>
             ))}

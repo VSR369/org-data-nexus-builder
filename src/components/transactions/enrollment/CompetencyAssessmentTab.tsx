@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Building2, FolderTree, Target, RefreshCw, ExternalLink } from 'lucide-react';
 import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from '../../master-data/domain-groups/domainGroupsDataManager';
@@ -14,12 +15,16 @@ interface CompetencyAssessmentTabProps {
   selectedIndustrySegment: string;
   competencyData: any;
   updateCompetencyData: (domainGroup: string, category: string, subCategory: string, rating: number) => void;
+  getCategoryAverage?: (segmentId: string, domainGroupName: string, categoryName: string) => number;
+  getCompetencyLevel?: (rating: number) => { min: number; max: number; label: string; color: string };
 }
 
 const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   selectedIndustrySegment,
   competencyData,
-  updateCompetencyData
+  updateCompetencyData,
+  getCategoryAverage,
+  getCompetencyLevel
 }) => {
   const [domainGroupsData, setDomainGroupsData] = useState<DomainGroupsData>({
     domainGroups: [],
@@ -269,55 +274,83 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
             <CardContent>
               {domainGroup.categories.length > 0 ? (
                 <Accordion type="multiple" defaultValue={domainGroup.categories.map(cat => `category-${cat.id}`)} className="w-full">
-                  {domainGroup.categories.map((category, categoryIndex) => (
-                    <AccordionItem key={category.id} value={`category-${category.id}`}>
-                      <AccordionTrigger className="text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
-                            {categoryIndex + 1}
-                          </span>
-                          <div>
-                            <div className="font-medium">{category.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {category.subCategories.length} sub-categories
-                            </div>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-4">
-                        {category.description && (
-                          <p className="text-muted-foreground mb-6 italic">{category.description}</p>
-                        )}
-                        
-                        {/* Sub-Categories with Rating Sliders */}
-                        <div className="space-y-4 ml-4">
-                          {category.subCategories.map((subCategory, subIndex) => (
-                            <div key={`${subCategory.id}-${subCategory.name}`} className="border rounded-lg p-4 bg-muted/20">
-                              <div className="flex items-start gap-3 mb-3">
-                                <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
-                                  {categoryIndex + 1}.{subIndex + 1}
-                                </span>
-                                <div className="flex-1">
-                                  <h4 className="font-medium text-sm mb-1">{subCategory.name}</h4>
-                                  {subCategory.description && (
-                                    <p className="text-muted-foreground text-xs">{subCategory.description}</p>
-                                  )}
-                                </div>
+                  {domainGroup.categories.map((category, categoryIndex) => {
+                    // Calculate category average if function is provided
+                    const categoryAverage = getCategoryAverage ? getCategoryAverage(selectedIndustrySegment, domainGroup.name, category.name) : 0;
+                    const competencyLevel = getCompetencyLevel && categoryAverage > 0 ? getCompetencyLevel(categoryAverage) : null;
+                    
+                    return (
+                      <AccordionItem key={category.id} value={`category-${category.id}`}>
+                        <AccordionTrigger className="text-left">
+                          <div className="flex items-center gap-2 w-full">
+                            <span className="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
+                              {categoryIndex + 1}
+                            </span>
+                            <div className="flex-1">
+                              <div className="font-medium">{category.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {category.subCategories.length} sub-categories
                               </div>
-                              
-                              {/* Rating Slider - integrated into subcategory display */}
-                              <RatingSlider
-                                currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
-                                onRatingChange={(rating) => 
-                                  handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
-                                }
-                              />
                             </div>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+                            {/* Category Average Display */}
+                            {categoryAverage > 0 && competencyLevel && (
+                              <div className="flex items-center gap-2 mr-4">
+                                <span className="text-sm text-muted-foreground">
+                                  Avg: {categoryAverage.toFixed(1)}
+                                </span>
+                                <Badge className={competencyLevel.color}>
+                                  {competencyLevel.label}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-4">
+                          {category.description && (
+                            <p className="text-muted-foreground mb-6 italic">{category.description}</p>
+                          )}
+                          
+                          {/* Category Average Progress Bar */}
+                          {categoryAverage > 0 && (
+                            <div className="mb-6 p-3 bg-muted/30 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium">Category Average</span>
+                                <span className="text-sm text-muted-foreground">{categoryAverage.toFixed(1)}/5</span>
+                              </div>
+                              <Progress value={(categoryAverage / 5) * 100} className="h-2" />
+                            </div>
+                          )}
+                          
+                          {/* Sub-Categories with Rating Sliders */}
+                          <div className="space-y-4 ml-4">
+                            {category.subCategories.map((subCategory, subIndex) => (
+                              <div key={`${subCategory.id}-${subCategory.name}`} className="border rounded-lg p-4 bg-muted/20">
+                                <div className="flex items-start gap-3 mb-3">
+                                  <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-medium mt-0.5">
+                                    {categoryIndex + 1}.{subIndex + 1}
+                                  </span>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-sm mb-1">{subCategory.name}</h4>
+                                    {subCategory.description && (
+                                      <p className="text-muted-foreground text-xs">{subCategory.description}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Rating Slider - integrated into subcategory display */}
+                                <RatingSlider
+                                  currentRating={getCurrentRating(domainGroup.name, category.name, subCategory.name)}
+                                  onRatingChange={(rating) => 
+                                    handleRatingChange(domainGroup.name, category.name, subCategory.name, rating)
+                                  }
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
                 </Accordion>
               ) : (
                 <p className="text-muted-foreground text-center py-4">
