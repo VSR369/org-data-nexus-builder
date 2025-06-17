@@ -1,5 +1,5 @@
 
-import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree, Handshake } from 'lucide-react';
+import { Building2, Users, Gift, DollarSign, Globe, MessageSquare, Calendar, Target, Database, CheckCircle, Award, CreditCard, Brain, Vote, Settings, BarChart3, Trash2, Factory, FolderTree, Handshake, Inbox } from 'lucide-react';
 
 export const foundationMenuItems = [
   {
@@ -90,6 +90,14 @@ export const systemMenuItems = [
     id: 'events-calendar',
     title: 'Events Calendar',
     icon: Calendar,
+  },
+];
+
+export const validationMenuItems = [
+  {
+    id: 'solution-seekers-validation',
+    title: 'Solution Seekers Validation',
+    icon: Inbox,
   },
 ];
 

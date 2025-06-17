@@ -12,6 +12,7 @@ import {
   organizationMenuItems,
   challengeMenuItems,
   systemMenuItems,
+  validationMenuItems,
   administrationMenuItems
 } from './sidebar/menuData';
 
@@ -68,6 +69,13 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         <SidebarMenuGroup
           title="System Configuration"
           items={systemMenuItems}
+          activeSection={activeSection}
+          isOnMasterDataPortal={isOnMasterDataPortal}
+          onItemClick={handleMasterDataClick}
+        />
+        <SidebarMenuGroup
+          title="Validations"
+          items={validationMenuItems}
           activeSection={activeSection}
           isOnMasterDataPortal={isOnMasterDataPortal}
           onItemClick={handleMasterDataClick}
