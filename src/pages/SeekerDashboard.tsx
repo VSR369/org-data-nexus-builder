@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,12 +101,13 @@ const SeekerDashboardContent: React.FC = () => {
     console.log('Pricing configuration:', pricing);
     console.log('Selected pricing plan:', pricingPlan);
     
+    // Update state with new selection
     setSelectedEngagementModel(model);
     setSelectedPricing(pricing || null);
     setSelectedPricingPlan(pricingPlan || '');
     setShowEngagementModelSelector(false);
     
-    // Save the selection immediately
+    // Save the selection to localStorage immediately
     const selectionData = {
       engagementModel: model,
       pricing: pricing,
@@ -118,17 +118,44 @@ const SeekerDashboardContent: React.FC = () => {
       organizationName: userData.organizationName
     };
 
-    localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
-    console.log('✅ Engagement model selection saved:', selectionData);
-    
-    // Mark as submitted to show final result
-    setIsSelectionSubmitted(true);
+    try {
+      localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
+      console.log('✅ Engagement model selection saved to localStorage:', selectionData);
+      
+      // Mark as submitted to show final result
+      setIsSelectionSubmitted(true);
+      
+      // Show success message
+      console.log('✅ Selection completed and saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving engagement model selection:', error);
+    }
   };
 
   const handlePricingPlanChange = (plan: string) => {
     console.log('Pricing plan changed to:', plan);
     setSelectedPricingPlan(plan);
     setIsSelectionSubmitted(false);
+    
+    // Update saved selection if we have an engagement model
+    if (selectedEngagementModel) {
+      const selectionData = {
+        engagementModel: selectedEngagementModel,
+        pricing: selectedPricing,
+        pricingPlan: plan,
+        membershipStatus: membershipStatus.status,
+        submittedAt: new Date().toISOString(),
+        userId: userData.userId,
+        organizationName: userData.organizationName
+      };
+      
+      try {
+        localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
+        console.log('✅ Updated pricing plan saved:', plan);
+      } catch (error) {
+        console.error('❌ Error updating pricing plan:', error);
+      }
+    }
   };
 
   const handleSubmitSelection = () => {
@@ -147,13 +174,16 @@ const SeekerDashboardContent: React.FC = () => {
       organizationName: userData.organizationName
     };
 
-    // Store the selection
-    localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
-    
-    console.log('✅ Engagement model selection submitted:', selectionData);
-    
-    // Mark as submitted to show final pricing
-    setIsSelectionSubmitted(true);
+    try {
+      // Store the selection
+      localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
+      console.log('✅ Engagement model selection submitted and saved:', selectionData);
+      
+      // Mark as submitted to show final pricing
+      setIsSelectionSubmitted(true);
+    } catch (error) {
+      console.error('❌ Error submitting engagement model selection:', error);
+    }
   };
 
   const handleProceedToMembership = (membershipData: any) => {

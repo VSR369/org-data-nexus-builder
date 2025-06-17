@@ -120,17 +120,17 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
     loadEngagementModelsWithPricing();
   }, [toast, membershipStatus]);
 
-  // Auto-select if user already has both model and pricing plan selected
+  // Set initial values when component loads
   useEffect(() => {
-    if (currentSelectedModel && currentSelectedPricingPlan && modelsWithPricing.length > 0) {
-      const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === currentSelectedModel.id);
-      if (selectedModelWithPricing) {
-        console.log('🔄 Auto-selecting existing choice:', currentSelectedModel.name, currentSelectedPricingPlan);
-        onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing, currentSelectedPricingPlan);
-        return;
-      }
+    if (currentSelectedModel) {
+      setSelectedModelId(currentSelectedModel.id);
+      console.log('🔄 Setting initial model selection:', currentSelectedModel.name);
     }
-  }, [modelsWithPricing, currentSelectedModel, currentSelectedPricingPlan, onSelect]);
+    if (currentSelectedPricingPlan) {
+      setSelectedPricingPlan(currentSelectedPricingPlan);
+      console.log('🔄 Setting initial pricing plan:', currentSelectedPricingPlan);
+    }
+  }, [currentSelectedModel, currentSelectedPricingPlan]);
 
   const handleSelectModel = () => {
     if (!selectedModelId) {
@@ -256,7 +256,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
             <div className="flex items-center gap-3">
               <Handshake className="h-6 w-6 text-blue-600" />
               <CardTitle className="text-xl font-bold">
-                Select Engagement Model with Pricing
+                {currentSelectedModel ? 'Modify Engagement Model Selection' : 'Select Engagement Model with Pricing'}
               </CardTitle>
             </div>
             <Button variant="outline" size="icon" onClick={onClose}>
@@ -287,6 +287,9 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                   <span>Membership Status: <Badge variant={membershipStatus === 'active' ? 'default' : 'secondary'}>{membershipStatus}</Badge></span>
                   {membershipStatus === 'active' && (
                     <span className="text-green-600">✓ Eligible for member discounts</span>
+                  )}
+                  {currentSelectedModel && (
+                    <span className="text-purple-600">✓ Modifying existing selection</span>
                   )}
                 </div>
               </div>
@@ -325,6 +328,9 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                                     <div className="flex items-center gap-2 mb-1">
                                       <h4 className="font-semibold text-lg">{item.model.name}</h4>
                                       <Badge variant="default">Active</Badge>
+                                      {currentSelectedModel?.id === item.model.id && (
+                                        <Badge variant="secondary">Currently Selected</Badge>
+                                      )}
                                     </div>
                                     <p className="text-gray-600 text-sm">
                                       {item.model.description}
@@ -421,7 +427,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   <Handshake className="mr-2 h-4 w-4" />
-                  Select Engagement Model
+                  {currentSelectedModel ? 'Update Selection' : 'Select Engagement Model'}
                 </Button>
                 <Button variant="outline" onClick={onClose}>
                   Cancel
