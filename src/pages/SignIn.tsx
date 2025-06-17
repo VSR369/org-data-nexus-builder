@@ -15,8 +15,7 @@ const SignIn = () => {
     if (selectedRole === 'seeker') {
       navigate('/seeker-login');
     } else if (selectedRole === 'contributor') {
-      // Navigate to contributor login (to be implemented)
-      console.log('Navigating to Contributor login');
+      navigate('/contributor-login'); // Navigate to contributor login
     }
   };
 
