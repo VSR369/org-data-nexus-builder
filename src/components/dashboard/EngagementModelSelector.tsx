@@ -5,37 +5,88 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Handshake, X, Check } from 'lucide-react';
+import { Handshake, X, Check, DollarSign } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
 import { getCleanEngagementModels } from '@/components/master-data/engagement-models/engagementModelsDataManager';
+import { PricingDataManager } from '@/utils/pricingDataManager';
+import { PricingConfig } from '@/types/pricing';
 
 interface EngagementModelSelectorProps {
   onClose: () => void;
-  onSelect: (model: EngagementModel) => void;
+  onSelect: (model: EngagementModel, pricing?: PricingConfig | null) => void;
+  userCountry?: string;
+  userOrgType?: string;
+  membershipStatus?: 'active' | 'inactive';
+}
+
+interface ModelWithPricing {
+  model: EngagementModel;
+  pricing: PricingConfig | null;
+  originalPrice?: number;
+  discountedPrice?: number;
 }
 
 const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   onClose,
-  onSelect
+  onSelect,
+  userCountry = '',
+  userOrgType = '',
+  membershipStatus = 'inactive'
 }) => {
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
+  const [modelsWithPricing, setModelsWithPricing] = useState<ModelWithPricing[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadEngagementModels = () => {
+    const loadEngagementModelsWithPricing = () => {
       try {
-        console.log('🔄 Loading clean engagement models...');
+        console.log('🔄 Loading engagement models with pricing...');
         const models = getCleanEngagementModels();
-        console.log('✅ Loaded engagement models:', models.length, models.map(m => m.name));
+        const pricingConfigs = PricingDataManager.getAllConfigurations();
+        
+        console.log('✅ Loaded models:', models.length);
+        console.log('✅ Loaded pricing configs:', pricingConfigs.length);
+        
+        // Map models with their pricing configurations
+        const modelsWithPricingData: ModelWithPricing[] = models.map(model => {
+          // Find pricing config that matches the engagement model
+          const pricingConfig = pricingConfigs.find(config => 
+            config.engagementModel === model.name ||
+            config.engagementModel?.toLowerCase() === model.name.toLowerCase()
+          );
+          
+          let originalPrice = 0;
+          let discountedPrice = 0;
+          
+          if (pricingConfig) {
+            // Use quarterly fee as base price (you can modify this logic)
+            originalPrice = pricingConfig.quarterlyFee || 0;
+            
+            // Apply discount if membership is active and discount is available
+            if (membershipStatus === 'active' && pricingConfig.discountPercentage) {
+              discountedPrice = originalPrice * (1 - pricingConfig.discountPercentage / 100);
+            }
+          }
+          
+          return {
+            model,
+            pricing: pricingConfig || null,
+            originalPrice,
+            discountedPrice
+          };
+        });
+        
         setEngagementModels(models);
+        setModelsWithPricing(modelsWithPricingData);
+        
       } catch (error) {
-        console.error('❌ Error loading engagement models:', error);
+        console.error('❌ Error loading engagement models with pricing:', error);
         toast({
           title: "Error",
-          description: "Failed to load engagement models.",
+          description: "Failed to load engagement models and pricing.",
           variant: "destructive",
         });
       } finally {
@@ -43,8 +94,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       }
     };
 
-    loadEngagementModels();
-  }, [toast]);
+    loadEngagementModelsWithPricing();
+  }, [toast, membershipStatus]);
 
   const handleSelectModel = () => {
     if (!selectedModelId) {
@@ -56,14 +107,21 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       return;
     }
 
-    const selectedModel = engagementModels.find(model => model.id === selectedModelId);
-    if (selectedModel) {
-      onSelect(selectedModel);
+    const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === selectedModelId);
+    if (selectedModelWithPricing) {
+      onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing);
       toast({
         title: "Engagement Model Selected",
-        description: `You have selected: ${selectedModel.name}`,
+        description: `You have selected: ${selectedModelWithPricing.model.name}`,
       });
     }
+  };
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
   };
 
   if (loading) {
@@ -73,7 +131,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <p>Loading engagement models...</p>
+              <p>Loading engagement models and pricing...</p>
             </div>
           </CardContent>
         </Card>
@@ -83,13 +141,13 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Card className="w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Handshake className="h-6 w-6 text-blue-600" />
               <CardTitle className="text-xl font-bold">
-                Select Engagement Model
+                Select Engagement Model with Pricing
               </CardTitle>
             </div>
             <Button variant="outline" size="icon" onClick={onClose}>
@@ -99,7 +157,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {engagementModels.length === 0 ? (
+          {modelsWithPricing.length === 0 ? (
             <div className="p-6 text-center">
               <Handshake className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -113,41 +171,89 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           ) : (
             <>
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Available Engagement Models ({engagementModels.length})</h3>
-                <p className="text-sm text-blue-700">
-                  Choose an engagement model that best fits your organization's needs. 
-                  Each model defines how services are delivered and managed.
-                </p>
+                <h3 className="font-medium text-blue-900 mb-2">
+                  Available Engagement Models with Pricing ({modelsWithPricing.length})
+                </h3>
+                <div className="flex items-center gap-4 text-sm text-blue-700">
+                  <span>Membership Status: <Badge variant={membershipStatus === 'active' ? 'default' : 'secondary'}>{membershipStatus}</Badge></span>
+                  {membershipStatus === 'active' && (
+                    <span className="text-green-600">✓ Eligible for member discounts</span>
+                  )}
+                </div>
               </div>
 
               <RadioGroup value={selectedModelId} onValueChange={setSelectedModelId}>
                 <div className="grid grid-cols-1 gap-4">
-                  {engagementModels.map((model) => (
-                    <div key={model.id} className="relative">
-                      <Label htmlFor={model.id} className="cursor-pointer">
+                  {modelsWithPricing.map((item) => (
+                    <div key={item.model.id} className="relative">
+                      <Label htmlFor={item.model.id} className="cursor-pointer">
                         <Card className={`border-2 transition-all hover:shadow-md ${
-                          selectedModelId === model.id 
+                          selectedModelId === item.model.id 
                             ? 'border-blue-500 bg-blue-50' 
                             : 'border-gray-200'
                         }`}>
                           <CardHeader className="pb-3">
-                            <div className="flex items-center gap-3">
-                              <RadioGroupItem value={model.id} id={model.id} />
+                            <div className="flex items-start gap-3">
+                              <RadioGroupItem value={item.model.id} id={item.model.id} className="mt-1" />
                               <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-semibold text-lg">{model.name}</h4>
-                                  <Badge variant="default">Active</Badge>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-semibold text-lg">{item.model.name}</h4>
+                                      <Badge variant="default">Active</Badge>
+                                    </div>
+                                    <p className="text-gray-600 text-sm">
+                                      {item.model.description}
+                                    </p>
+                                  </div>
+                                  
+                                  {/* Pricing Information */}
+                                  <div className="text-right min-w-[200px]">
+                                    {item.pricing ? (
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2 justify-end">
+                                          <DollarSign className="h-4 w-4 text-green-600" />
+                                          <span className="text-sm font-medium">Quarterly Pricing</span>
+                                        </div>
+                                        
+                                        {membershipStatus === 'active' && item.discountedPrice && item.discountedPrice < item.originalPrice ? (
+                                          <div className="space-y-1">
+                                            <div className="text-lg font-bold text-green-600">
+                                              {formatCurrency(item.discountedPrice, item.pricing.currency)}
+                                            </div>
+                                            <div className="text-sm text-gray-500 line-through">
+                                              {formatCurrency(item.originalPrice, item.pricing.currency)}
+                                            </div>
+                                            <div className="text-xs text-green-600">
+                                              {item.pricing.discountPercentage}% member discount
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="text-lg font-bold text-gray-900">
+                                            {item.originalPrice > 0 ? formatCurrency(item.originalPrice, item.pricing.currency || 'USD') : 'Contact for pricing'}
+                                          </div>
+                                        )}
+                                        
+                                        <div className="text-xs text-gray-500">
+                                          per quarter
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center">
+                                        <div className="text-sm text-gray-500">No pricing configured</div>
+                                        <div className="text-xs text-gray-400">Contact administrator</div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-gray-600 text-sm mt-1">
-                                  {model.description}
-                                </p>
+                                
+                                {selectedModelId === item.model.id && (
+                                  <div className="flex items-center gap-2 text-blue-600 mt-2">
+                                    <Check className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Selected</span>
+                                  </div>
+                                )}
                               </div>
-                              {selectedModelId === model.id && (
-                                <div className="flex items-center gap-2 text-blue-600">
-                                  <Check className="h-4 w-4" />
-                                  <span className="text-sm font-medium">Selected</span>
-                                </div>
-                              )}
                             </div>
                           </CardHeader>
                         </Card>

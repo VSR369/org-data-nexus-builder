@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, CheckCircle, Clock } from 'lucide-react';
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
+import { PricingConfig } from '@/types/pricing';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -26,6 +27,7 @@ const SeekerDashboardContent: React.FC = () => {
   const [showMembershipSelection, setShowMembershipSelection] = useState(false);
   const [showEngagementModelSelector, setShowEngagementModelSelector] = useState(false);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<EngagementModel | null>(null);
+  const [selectedPricing, setSelectedPricing] = useState<PricingConfig | null>(null);
   const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
 
   // Load membership data for the current user
@@ -63,9 +65,11 @@ const SeekerDashboardContent: React.FC = () => {
     setShowEngagementModelSelector(true);
   };
 
-  const handleEngagementModelSelected = (model: EngagementModel) => {
+  const handleEngagementModelSelected = (model: EngagementModel, pricing?: PricingConfig | null) => {
     console.log('Engagement model selected:', model);
+    console.log('Pricing configuration:', pricing);
     setSelectedEngagementModel(model);
+    setSelectedPricing(pricing || null);
     setShowEngagementModelSelector(false);
   };
 
@@ -160,8 +164,10 @@ const SeekerDashboardContent: React.FC = () => {
       <div className="mt-6 mb-6">
         <EngagementModelCard
           selectedEngagementModel={selectedEngagementModel}
+          selectedPricing={selectedPricing}
           onSelectEngagementModel={handleSelectEngagementModel}
           showLoginWarning={showLoginWarning}
+          membershipStatus={membershipStatus.status}
         />
       </div>
 
@@ -226,6 +232,9 @@ const SeekerDashboardContent: React.FC = () => {
         <EngagementModelSelector
           onClose={() => setShowEngagementModelSelector(false)}
           onSelect={handleEngagementModelSelected}
+          userCountry={userData.country}
+          userOrgType={userData.organizationType}
+          membershipStatus={membershipStatus.status}
         />
       )}
     </DashboardLayout>
