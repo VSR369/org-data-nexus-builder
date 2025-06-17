@@ -45,16 +45,28 @@ const SeekerDashboardContent: React.FC = () => {
         const paymentData = localStorage.getItem('completed_membership_payment');
         if (paymentData) {
           const parsedData = JSON.parse(paymentData);
-          setMembershipPaymentData(parsedData);
-          console.log('✅ Loaded membership payment data:', parsedData);
+          // Only set payment data if it's actually for the current user and has active status
+          if (parsedData.userId === userData.userId && parsedData.membershipStatus === 'active') {
+            setMembershipPaymentData(parsedData);
+            console.log('✅ Loaded membership payment data for user:', parsedData);
+          } else {
+            console.log('❌ No valid membership payment data found for current user');
+            setMembershipPaymentData(null);
+          }
+        } else {
+          console.log('❌ No membership payment data found in localStorage');
+          setMembershipPaymentData(null);
         }
       } catch (error) {
         console.error('Error loading membership payment data:', error);
+        setMembershipPaymentData(null);
       }
     };
     
-    loadMembershipPaymentData();
-  }, []);
+    if (userData.userId) {
+      loadMembershipPaymentData();
+    }
+  }, [userData.userId]);
 
   // Load saved engagement model selection on component mount
   useEffect(() => {
@@ -201,9 +213,13 @@ const SeekerDashboardContent: React.FC = () => {
     });
   };
 
-  // Determine membership status
+  // Determine membership status - FIXED: Now properly checks for actual payment data
   const getMembershipStatus = () => {
-    if (membershipPaymentData && membershipPaymentData.membershipStatus === 'active') {
+    // Only return active if we have valid membership payment data for the current user
+    if (membershipPaymentData && 
+        membershipPaymentData.membershipStatus === 'active' && 
+        membershipPaymentData.userId === userData.userId) {
+      
       // Get the correct amount based on the selected plan
       let paidAmount = 0;
       if (membershipPaymentData.pricing) {
@@ -237,10 +253,11 @@ const SeekerDashboardContent: React.FC = () => {
       };
     }
     
+    // Default to inactive status - user needs to join as member
     return {
       status: 'inactive' as const,
       plan: '',
-      message: 'No active membership found',
+      message: 'No active membership - Join as member to unlock premium features',
       badgeVariant: 'secondary' as const,
       icon: Clock,
       iconColor: 'text-gray-400'
@@ -273,22 +290,7 @@ const SeekerDashboardContent: React.FC = () => {
       {/* Membership Status Card */}
       <MembershipStatusCard membershipStatus={membershipStatus} />
 
-      {/* Engagement Model Selection */}
-      <div className="mt-6 mb-6">
-        <EngagementModelCard
-          selectedEngagementModel={selectedEngagementModel}
-          selectedPricing={selectedPricing}
-          selectedPricingPlan={selectedPricingPlan}
-          onSelectEngagementModel={handleSelectEngagementModel}
-          onSubmitSelection={handleSubmitSelection}
-          onPricingPlanChange={handlePricingPlanChange}
-          showLoginWarning={showLoginWarning}
-          membershipStatus={membershipStatus.status}
-          isSubmitted={isSelectionSubmitted}
-        />
-      </div>
-
-      {/* Join as Member Button - Only show if membership is not active */}
+      {/* Join as Member Button - Show when membership is not active */}
       {membershipStatus.status !== 'active' && (
         <div className="mt-6 mb-6">
           <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
@@ -313,6 +315,21 @@ const SeekerDashboardContent: React.FC = () => {
           </Card>
         </div>
       )}
+
+      {/* Engagement Model Selection */}
+      <div className="mt-6 mb-6">
+        <EngagementModelCard
+          selectedEngagementModel={selectedEngagementModel}
+          selectedPricing={selectedPricing}
+          selectedPricingPlan={selectedPricingPlan}
+          onSelectEngagementModel={handleSelectEngagementModel}
+          onSubmitSelection={handleSubmitSelection}
+          onPricingPlanChange={handlePricingPlanChange}
+          showLoginWarning={showLoginWarning}
+          membershipStatus={membershipStatus.status}
+          isSubmitted={isSelectionSubmitted}
+        />
+      </div>
 
       {/* Organization Information Cards */}
       <OrganizationInfoCards />
