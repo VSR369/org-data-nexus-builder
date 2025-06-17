@@ -8,8 +8,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus } from 'lucide-react';
+import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus, XCircle } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { UserRecord } from '@/services/types';
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,8 @@ interface SeekerDetails extends UserRecord {
   pricingPlan?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
   adminDetails?: SeekerAdminDetails;
+  declineReason?: string;
+  declinedAt?: string;
 }
 
 interface SeekerAdminDetails {
@@ -37,7 +40,10 @@ const SolutionSeekersValidation: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [seekerToApprove, setSeekerToApprove] = useState<SeekerDetails | null>(null);
+  const [seekerToDecline, setSeekerToDecline] = useState<SeekerDetails | null>(null);
+  const [declineReason, setDeclineReason] = useState('');
   const [adminDetails, setAdminDetails] = useState<SeekerAdminDetails>({
     name: '',
     contactNumber: '',
@@ -146,6 +152,84 @@ const SolutionSeekersValidation: React.FC = () => {
     setShowApprovalDialog(true);
   };
 
+  const handleDeclineSeeker = (seeker: SeekerDetails) => {
+    console.log('🔄 Initiating decline for seeker:', seeker.userId);
+    setSeekerToDecline(seeker);
+    setDeclineReason('');
+    setShowDeclineDialog(true);
+  };
+
+  const handleDeclineSubmit = async () => {
+    if (!seekerToDecline) return;
+
+    // Validate required field
+    if (!declineReason.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a reason for declining.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('💾 Saving decline details for seeker:', seekerToDecline.userId);
+      
+      // Create decline record
+      const declineData = {
+        seekerUserId: seekerToDecline.userId,
+        organizationName: seekerToDecline.organizationName,
+        approvalStatus: 'rejected',
+        declineReason: declineReason.trim(),
+        declinedAt: new Date().toISOString()
+      };
+
+      // Save decline details to localStorage
+      const declineKey = `seeker_decline_${seekerToDecline.userId}`;
+      localStorage.setItem(declineKey, JSON.stringify(declineData));
+      
+      // Also save to a master approvals list
+      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      existingApprovals.push(declineData);
+      localStorage.setItem('seeker_approvals', JSON.stringify(existingApprovals));
+
+      // Update the seeker's approval status in our local state
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.userId === seekerToDecline.userId 
+            ? { 
+                ...s, 
+                approvalStatus: 'rejected', 
+                declineReason: declineReason.trim(),
+                declinedAt: new Date().toISOString()
+              }
+            : s
+        )
+      );
+
+      console.log('✅ Decline details saved successfully');
+      
+      toast({
+        title: "Seeker Declined",
+        description: `${seekerToDecline.organizationName} has been declined successfully.`,
+        variant: "destructive",
+      });
+
+      // Close the dialog and reset state
+      setShowDeclineDialog(false);
+      setSeekerToDecline(null);
+      setDeclineReason('');
+
+    } catch (error) {
+      console.error('❌ Error saving decline details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save decline details. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAdminDetailsSubmit = async () => {
     if (!seekerToApprove) return;
 
@@ -238,7 +322,9 @@ const SolutionSeekersValidation: React.FC = () => {
               return {
                 ...seeker,
                 approvalStatus: approval.approvalStatus,
-                adminDetails: approval.adminDetails
+                adminDetails: approval.adminDetails,
+                declineReason: approval.declineReason,
+                declinedAt: approval.declinedAt
               };
             }
             return { ...seeker, approvalStatus: 'pending' };
@@ -322,7 +408,7 @@ const SolutionSeekersValidation: React.FC = () => {
       </Card>
 
       {/* Stats Card */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -390,6 +476,20 @@ const SolutionSeekersValidation: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <XCircle className="h-8 w-8 text-red-600" />
+              <div>
+                <p className="text-2xl font-bold">
+                  {seekers.filter(s => s.approvalStatus === 'rejected').length}
+                </p>
+                <p className="text-sm text-muted-foreground">Declined</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Seekers List */}
@@ -400,7 +500,7 @@ const SolutionSeekersValidation: React.FC = () => {
             Registered Solution Seekers
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Double-click on any seeker to view detailed registration information. Click "Approve" to create admin access.
+            Double-click on any seeker to view detailed registration information. Click "Approve" or "Decline" to manage seeker status.
           </p>
         </CardHeader>
         
@@ -455,7 +555,7 @@ const SolutionSeekersValidation: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant={seeker.approvalStatus === 'approved' ? 'default' : seeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'}>
-                          {seeker.approvalStatus === 'approved' ? 'Approved' : seeker.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Approval'}
+                          {seeker.approvalStatus === 'approved' ? 'Approved' : seeker.approvalStatus === 'rejected' ? 'Declined' : 'Pending Approval'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
@@ -473,18 +573,31 @@ const SolutionSeekersValidation: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {seeker.approvalStatus !== 'approved' && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleApproveSeeker(seeker);
-                              }}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
+                          {seeker.approvalStatus === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleApproveSeeker(seeker);
+                                }}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeclineSeeker(seeker);
+                                }}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Decline
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
@@ -640,7 +753,7 @@ const SolutionSeekersValidation: React.FC = () => {
                         <label className="text-sm font-medium text-muted-foreground">Current Status</label>
                         <div className="mt-1">
                           <Badge variant={selectedSeeker.approvalStatus === 'approved' ? 'default' : selectedSeeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'}>
-                            {selectedSeeker.approvalStatus === 'approved' ? 'Approved' : selectedSeeker.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Approval'}
+                            {selectedSeeker.approvalStatus === 'approved' ? 'Approved' : selectedSeeker.approvalStatus === 'rejected' ? 'Declined' : 'Pending Approval'}
                           </Badge>
                         </div>
                       </div>
@@ -648,6 +761,12 @@ const SolutionSeekersValidation: React.FC = () => {
                         <div>
                           <label className="text-sm font-medium text-muted-foreground">Admin Created</label>
                           <p>{formatDate(selectedSeeker.adminDetails.createdAt)}</p>
+                        </div>
+                      )}
+                      {selectedSeeker.approvalStatus === 'rejected' && selectedSeeker.declinedAt && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Declined Date</label>
+                          <p>{formatDate(selectedSeeker.declinedAt)}</p>
                         </div>
                       )}
                     </div>
@@ -672,6 +791,16 @@ const SolutionSeekersValidation: React.FC = () => {
                             <span className="font-medium text-green-700">User ID:</span>
                             <p className="font-mono">{selectedSeeker.adminDetails.userId}</p>
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedSeeker.approvalStatus === 'rejected' && selectedSeeker.declineReason && (
+                      <div className="border rounded-lg p-4 bg-red-50">
+                        <h4 className="font-medium text-red-800 mb-3">Decline Details</h4>
+                        <div className="text-sm">
+                          <span className="font-medium text-red-700">Reason:</span>
+                          <p className="mt-1">{selectedSeeker.declineReason}</p>
                         </div>
                       </div>
                     )}
@@ -776,6 +905,46 @@ const SolutionSeekersValidation: React.FC = () => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleAdminDetailsSubmit}>
               Submit & Approve
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Decline Dialog */}
+      <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5" />
+              Decline Seeker
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Decline access for {seekerToDecline?.organizationName}. Please provide a reason for declining.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="declineReason">Reason for Decline *</Label>
+              <Textarea
+                id="declineReason"
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="Enter reason for declining this seeker..."
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeclineDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeclineSubmit}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Submit & Decline
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
