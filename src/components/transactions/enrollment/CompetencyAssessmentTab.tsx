@@ -9,7 +9,7 @@ import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from '../../master-data/domain-groups/domainGroupsDataManager';
 import RatingSlider from './components/RatingSlider';
 import { useToast } from "@/hooks/use-toast";
-import { RATING_THRESHOLDS } from './constants/competencyConstants';
+import { RATING_THRESHOLDS, COMPETENCY_LEVELS } from './constants/competencyConstants';
 
 interface CompetencyAssessmentTabProps {
   selectedIndustrySegment: string;
@@ -138,22 +138,22 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     updateCompetencyData(domainGroupName, categoryName, subCategoryName, rating);
   };
 
-  // Get competency level from rating using proper thresholds
+  // Get competency level from rating using 0-10 scale
   const getCompetencyLevelFromRating = (rating: number) => {
-    if (rating === 0 || rating <= RATING_THRESHOLDS.NO_COMPETENCY_MAX) {
-      return { min: 0, max: RATING_THRESHOLDS.NO_COMPETENCY_MAX, label: 'No Competency', color: 'bg-gray-100 text-gray-800' };
-    } else if (rating >= RATING_THRESHOLDS.BASIC_MIN && rating <= RATING_THRESHOLDS.BASIC_MAX) {
-      return { min: RATING_THRESHOLDS.BASIC_MIN, max: RATING_THRESHOLDS.BASIC_MAX, label: 'Basic', color: 'bg-blue-100 text-blue-800' };
-    } else if (rating >= RATING_THRESHOLDS.ADVANCED_MIN && rating <= RATING_THRESHOLDS.ADVANCED_MAX) {
-      return { min: RATING_THRESHOLDS.ADVANCED_MIN, max: RATING_THRESHOLDS.ADVANCED_MAX, label: 'Advanced', color: 'bg-green-100 text-green-800' };
-    } else if (rating >= RATING_THRESHOLDS.GURU_MIN && rating <= RATING_THRESHOLDS.GURU_MAX) {
-      return { min: RATING_THRESHOLDS.GURU_MIN, max: RATING_THRESHOLDS.GURU_MAX, label: 'Guru', color: 'bg-purple-100 text-purple-800' };
+    if (rating === 0) {
+      return COMPETENCY_LEVELS.NO_COMPETENCY;
+    } else if (rating >= COMPETENCY_LEVELS.GURU.min && rating <= COMPETENCY_LEVELS.GURU.max) {
+      return COMPETENCY_LEVELS.GURU;
+    } else if (rating >= COMPETENCY_LEVELS.ADVANCED.min && rating <= COMPETENCY_LEVELS.ADVANCED.max) {
+      return COMPETENCY_LEVELS.ADVANCED;
+    } else if (rating >= COMPETENCY_LEVELS.BASIC.min && rating <= COMPETENCY_LEVELS.BASIC.max) {
+      return COMPETENCY_LEVELS.BASIC;
     } else {
-      return { min: 0, max: RATING_THRESHOLDS.NO_COMPETENCY_MAX, label: 'No Competency', color: 'bg-gray-100 text-gray-800' };
+      return COMPETENCY_LEVELS.NO_COMPETENCY;
     }
   };
 
-  // Calculate category average competency from subcategories
+  // Calculate category average competency from subcategories (0-10 scale)
   const calculateCategoryAverage = (domainGroupName: string, categoryName: string, subCategories: any[]) => {
     const ratings = subCategories.map(sub => getCurrentRating(domainGroupName, categoryName, sub.name));
     const validRatings = ratings.filter(rating => rating > 0);
@@ -163,11 +163,11 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     const sum = validRatings.reduce((acc, rating) => acc + rating, 0);
     const average = sum / validRatings.length;
     
-    console.log('Category average calculation:', { domainGroupName, categoryName, ratings, validRatings, average });
+    console.log('Category average calculation (0-10 scale):', { domainGroupName, categoryName, ratings, validRatings, average });
     return average;
   };
 
-  // Calculate domain group average competency from categories
+  // Calculate domain group average competency from categories (0-10 scale)
   const calculateDomainGroupAverage = (domainGroup: any) => {
     const categoryAverages = domainGroup.categories.map((category: any) => 
       calculateCategoryAverage(domainGroup.name, category.name, category.subCategories)
@@ -180,11 +180,11 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     const sum = validAverages.reduce((acc, avg) => acc + avg, 0);
     const average = sum / validAverages.length;
     
-    console.log('Domain group average calculation:', { domainGroupName: domainGroup.name, categoryAverages, validAverages, average });
+    console.log('Domain group average calculation (0-10 scale):', { domainGroupName: domainGroup.name, categoryAverages, validAverages, average });
     return average;
   };
 
-  // Calculate overall competency across all domain groups
+  // Calculate overall competency across all domain groups (0-10 scale)
   const calculateOverallCompetency = () => {
     const domainGroupAverages = hierarchicalData.map(domainGroup => calculateDomainGroupAverage(domainGroup));
     const validAverages = domainGroupAverages.filter(avg => avg > 0);
@@ -194,7 +194,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     const sum = validAverages.reduce((acc, avg) => acc + avg, 0);
     const average = sum / validAverages.length;
     
-    console.log('Overall competency calculation:', { domainGroupAverages, validAverages, average });
+    console.log('Overall competency calculation (0-10 scale):', { domainGroupAverages, validAverages, average });
     return average;
   };
 
@@ -318,7 +318,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Rate your competency levels across different domain groups, categories, and sub-categories using the interactive sliders below.
+            Rate your competency levels across different domain groups, categories, and sub-categories using the 0-10 scale below.
           </p>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
@@ -353,17 +353,17 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                   {overallCompetencyLevel.label}
                 </Badge>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Average Rating: {overallCompetency.toFixed(2)}/5.0
+                  Average Rating: {overallCompetency.toFixed(2)}/10.0
                 </p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-primary">
-                  {((overallCompetency / 5) * 100).toFixed(0)}%
+                  {overallCompetencyLevel.label}
                 </div>
-                <div className="text-sm text-muted-foreground">Overall Progress</div>
+                <div className="text-sm text-muted-foreground">Overall Level</div>
               </div>
             </div>
-            <Progress value={(overallCompetency / 5) * 100} className="h-3" />
+            <Progress value={(overallCompetency / 10) * 100} className="h-3" />
             <p className="text-xs text-muted-foreground mt-2">
               Based on {ratedSubCategories} rated subcategories across {hierarchicalData.length} domain groups
             </p>
@@ -395,7 +395,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                         {domainGroupLevel.label}
                       </Badge>
                       <div className="text-sm text-muted-foreground">
-                        Avg: {domainGroupAverage.toFixed(2)}/5.0
+                        Avg: {domainGroupAverage.toFixed(2)}/10.0
                       </div>
                     </div>
                   )}
@@ -406,7 +406,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                 {/* Domain Group Progress Bar */}
                 {domainGroupAverage > 0 && (
                   <div className="mt-3">
-                    <Progress value={(domainGroupAverage / 5) * 100} className="h-2" />
+                    <Progress value={(domainGroupAverage / 10) * 100} className="h-2" />
                   </div>
                 )}
               </CardHeader>
@@ -438,7 +438,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                                     {competencyLevel.label}
                                   </Badge>
                                   <span className="text-xs text-muted-foreground">
-                                    {categoryAverage.toFixed(2)}
+                                    {categoryAverage.toFixed(2)}/10
                                   </span>
                                 </div>
                               )}
@@ -454,9 +454,9 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                               <div className="mb-6 p-3 bg-muted/30 rounded-lg">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-sm font-medium">Category Level: {competencyLevel.label}</span>
-                                  <span className="text-sm text-muted-foreground">{categoryAverage.toFixed(2)}/5.0</span>
+                                  <span className="text-sm text-muted-foreground">{categoryAverage.toFixed(2)}/10.0</span>
                                 </div>
-                                <Progress value={(categoryAverage / 5) * 100} className="h-2" />
+                                <Progress value={(categoryAverage / 10) * 100} className="h-2" />
                               </div>
                             )}
                             

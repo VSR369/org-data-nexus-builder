@@ -1,4 +1,3 @@
-
 import { CompetencyData, CompetencySummary } from '../types/competencyTypes';
 import { COMPETENCY_STORAGE_KEY, RATING_THRESHOLDS } from '../constants/competencyConstants';
 
@@ -159,7 +158,7 @@ export const countRatedSubcategories = (data: CompetencyData): number => {
   return count;
 };
 
-// Get competency summary by rating levels for all segments (with validation)
+// Get competency summary by rating levels for all segments (with validation) - Updated for 0-10 scale
 export const getCompetencySummaryFromData = (data: CompetencyData): CompetencySummary => {
   // First validate the data structure
   const validatedData = validateAndCleanCompetencyData(data);
@@ -189,6 +188,6 @@ export const getCompetencySummaryFromData = (data: CompetencyData): CompetencySu
     )
   );
 
-  console.log('📈 Generated competency summary from validated data:', summary);
+  console.log('📈 Generated competency summary from validated data (0-10 scale):', summary);
   return summary;
 };
