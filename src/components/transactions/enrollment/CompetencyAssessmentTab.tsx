@@ -9,6 +9,7 @@ import { DomainGroupsData } from '@/types/domainGroups';
 import { domainGroupsDataManager } from '../../master-data/domain-groups/domainGroupsDataManager';
 import RatingSlider from './components/RatingSlider';
 import { useToast } from "@/hooks/use-toast";
+import { RATING_THRESHOLDS } from './constants/competencyConstants';
 
 interface CompetencyAssessmentTabProps {
   selectedIndustrySegment: string;
@@ -137,6 +138,21 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     updateCompetencyData(domainGroupName, categoryName, subCategoryName, rating);
   };
 
+  // Get competency level from rating using proper thresholds
+  const getCompetencyLevelFromRating = (rating: number) => {
+    if (rating === 0 || rating <= RATING_THRESHOLDS.NO_COMPETENCY_MAX) {
+      return { min: 0, max: RATING_THRESHOLDS.NO_COMPETENCY_MAX, label: 'No Competency', color: 'bg-gray-100 text-gray-800' };
+    } else if (rating >= RATING_THRESHOLDS.BASIC_MIN && rating <= RATING_THRESHOLDS.BASIC_MAX) {
+      return { min: RATING_THRESHOLDS.BASIC_MIN, max: RATING_THRESHOLDS.BASIC_MAX, label: 'Basic', color: 'bg-blue-100 text-blue-800' };
+    } else if (rating >= RATING_THRESHOLDS.ADVANCED_MIN && rating <= RATING_THRESHOLDS.ADVANCED_MAX) {
+      return { min: RATING_THRESHOLDS.ADVANCED_MIN, max: RATING_THRESHOLDS.ADVANCED_MAX, label: 'Advanced', color: 'bg-green-100 text-green-800' };
+    } else if (rating >= RATING_THRESHOLDS.GURU_MIN && rating <= RATING_THRESHOLDS.GURU_MAX) {
+      return { min: RATING_THRESHOLDS.GURU_MIN, max: RATING_THRESHOLDS.GURU_MAX, label: 'Guru', color: 'bg-purple-100 text-purple-800' };
+    } else {
+      return { min: 0, max: RATING_THRESHOLDS.NO_COMPETENCY_MAX, label: 'No Competency', color: 'bg-gray-100 text-gray-800' };
+    }
+  };
+
   if (!selectedIndustrySegment) {
     return (
       <Card>
@@ -256,7 +272,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Domain Groups Hierarchy with Rating Sliders - Collapsed by default */}
+      {/* Domain Groups Hierarchy with Rating Sliders - All collapsed by default */}
       <div className="space-y-4">
         {hierarchicalData.map((domainGroup) => (
           <Card key={domainGroup.id}>
@@ -276,7 +292,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
                   {domainGroup.categories.map((category, categoryIndex) => {
                     // Calculate category average if function is provided
                     const categoryAverage = getCategoryAverage ? getCategoryAverage(selectedIndustrySegment, domainGroup.name, category.name) : 0;
-                    const competencyLevel = getCompetencyLevel && categoryAverage > 0 ? getCompetencyLevel(categoryAverage) : null;
+                    const competencyLevel = categoryAverage > 0 ? getCompetencyLevelFromRating(categoryAverage) : null;
                     
                     return (
                       <AccordionItem key={category.id} value={`category-${category.id}`}>
