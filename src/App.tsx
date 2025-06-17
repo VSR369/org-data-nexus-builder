@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Import pages
 import Index from './pages/Index';
 import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
 import SeekerRegistration from './pages/SeekerRegistration';
 import SeekerLogin from './pages/SeekerLogin';
 import SeekerDashboard from './pages/SeekerDashboard';
@@ -26,6 +27,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
               <Route path="/seeker-registration" element={<SeekerRegistration />} />
               <Route path="/seeker-login" element={<SeekerLogin />} />
               <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
