@@ -14,6 +14,7 @@ interface MembershipData {
   };
   activationDate?: string;
   paymentStatus?: string;
+  hasActualSelection?: boolean;
 }
 
 export const useMembershipData = () => {
@@ -23,113 +24,83 @@ export const useMembershipData = () => {
 
   useEffect(() => {
     const loadMembershipData = async () => {
-      console.log('🔍 Loading actual membership data for organization:', userData.organizationName);
+      console.log('🔍 Loading membership data for organization:', userData.organizationName);
       
       try {
-        // Initialize storage service
         await unifiedUserStorageService.initialize();
         
-        // Look for membership data associated with this user/organization
-        const userMembershipKey = `membership_${userData.userId}`;
-        const orgMembershipKey = `membership_${userData.organizationId}`;
-        
-        // Try multiple storage keys to find membership data
+        // Check for completed membership payment (this indicates actual active membership)
+        const completedPayment = localStorage.getItem('completed_membership_payment');
+        let hasActiveMembership = false;
         let membershipInfo = null;
         
-        // Check localStorage for membership selections
-        const possibleKeys = [
-          userMembershipKey,
-          orgMembershipKey,
-          `${userData.organizationName}_membership`,
-          `seeker_membership_${userData.userId}`,
-          'selected_membership_plan',
-          'membership_selection'
-        ];
-        
-        for (const key of possibleKeys) {
-          const stored = localStorage.getItem(key);
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus)) {
-                membershipInfo = parsed;
-                console.log(`✅ Found membership data in key: ${key}`, parsed);
-                break;
-              }
-            } catch (e) {
-              // Continue checking other keys
-            }
-          }
-        }
-        
-        // Check for pricing selection data
-        const pricingKeys = [
-          `pricing_${userData.userId}`,
-          `selected_pricing_${userData.organizationId}`,
-          'selected_engagement_model',
-          'pricing_selection'
-        ];
-        
-        let pricingInfo = null;
-        for (const key of pricingKeys) {
-          const stored = localStorage.getItem(key);
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency)) {
-                pricingInfo = parsed;
-                console.log(`✅ Found pricing data in key: ${key}`, parsed);
-                break;
-              }
-            } catch (e) {
-              // Continue checking other keys
-            }
-          }
-        }
-        
-        // Try to get from unified storage service
-        if (!membershipInfo) {
+        if (completedPayment) {
           try {
-            const allUsers = await unifiedUserStorageService.getAllUsers();
-            const currentUser = allUsers.find(u => u.userId === userData.userId || u.organizationId === userData.organizationId);
-            
-            if (currentUser && (currentUser.membershipStatus || currentUser.selectedPlan)) {
+            const paymentData = JSON.parse(completedPayment);
+            if (paymentData.userId === userData.userId && paymentData.membershipStatus === 'active') {
+              hasActiveMembership = true;
               membershipInfo = {
-                status: currentUser.membershipStatus || 'not-member',
-                selectedPlan: currentUser.selectedPlan,
-                selectedEngagementModel: currentUser.selectedEngagementModel,
-                activationDate: currentUser.membershipActivationDate,
-                paymentStatus: currentUser.paymentStatus
+                status: 'active',
+                selectedPlan: paymentData.selectedPlan,
+                activationDate: paymentData.paidAt,
+                paymentStatus: 'completed',
+                pricingDetails: paymentData.pricing ? {
+                  currency: paymentData.pricing.currency,
+                  amount: paymentData.pricing[`${paymentData.selectedPlan}Price`] || 0,
+                  paymentFrequency: paymentData.selectedPlan
+                } : undefined
               };
-              console.log('✅ Found membership data in user profile', membershipInfo);
+              console.log('✅ Found active membership payment:', membershipInfo);
             }
           } catch (error) {
-            console.log('⚠️ Error accessing unified storage:', error);
+            console.log('❌ Error parsing membership payment data:', error);
           }
         }
         
-        // Combine membership and pricing data
+        // Check for confirmed engagement model selection (only if properly submitted)
+        let engagementModelInfo = null;
+        const engagementSelection = localStorage.getItem('engagement_model_selection');
+        if (engagementSelection) {
+          try {
+            const selectionData = JSON.parse(engagementSelection);
+            // Only consider it a real selection if it has submittedAt and matches current user
+            if (selectionData.submittedAt && 
+                selectionData.userId === userData.userId && 
+                selectionData.engagementModel) {
+              engagementModelInfo = {
+                selectedEngagementModel: selectionData.engagementModel.name || selectionData.engagementModel,
+                pricingDetails: selectionData.pricing ? {
+                  currency: selectionData.pricing.currency || 'USD',
+                  amount: selectionData.pricing.amount || 0,
+                  paymentFrequency: selectionData.pricingPlan || 'monthly'
+                } : undefined
+              };
+              console.log('✅ Found confirmed engagement model selection:', engagementModelInfo);
+            }
+          } catch (error) {
+            console.log('❌ Error parsing engagement model selection:', error);
+          }
+        }
+        
+        // Combine the data with proper flags
         const combinedData: MembershipData = {
-          status: membershipInfo?.status || membershipInfo?.membershipStatus || 'not-member',
-          selectedPlan: membershipInfo?.selectedPlan || membershipInfo?.plan,
-          selectedEngagementModel: pricingInfo?.engagementModel || pricingInfo?.selectedModel || membershipInfo?.selectedEngagementModel,
-          pricingDetails: pricingInfo ? {
-            currency: pricingInfo.currency || 'USD',
-            amount: pricingInfo.amount || pricingInfo.price || 0,
-            paymentFrequency: pricingInfo.frequency || pricingInfo.paymentFrequency || 'monthly'
-          } : undefined,
-          activationDate: membershipInfo?.activationDate || membershipInfo?.membershipDate,
-          paymentStatus: membershipInfo?.paymentStatus || 'pending'
+          status: hasActiveMembership ? 'active' : 'not-member',
+          selectedPlan: membershipInfo?.selectedPlan,
+          selectedEngagementModel: engagementModelInfo?.selectedEngagementModel,
+          pricingDetails: membershipInfo?.pricingDetails || engagementModelInfo?.pricingDetails,
+          activationDate: membershipInfo?.activationDate,
+          paymentStatus: membershipInfo?.paymentStatus || 'not-paid',
+          hasActualSelection: !!(hasActiveMembership || engagementModelInfo)
         };
         
-        console.log('📋 Final combined membership data:', combinedData);
+        console.log('📋 Final membership data:', combinedData);
         setMembershipData(combinedData);
         
       } catch (error) {
         console.error('❌ Error loading membership data:', error);
-        // Set default state if no data found
         setMembershipData({
-          status: 'not-member'
+          status: 'not-member',
+          hasActualSelection: false
         });
       } finally {
         setLoading(false);

@@ -12,7 +12,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoginWarning from '@/components/dashboard/LoginWarning';
 import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
 import EngagementModelCard from '@/components/dashboard/EngagementModelCard';
-import OrganizationInfoCards from '@/components/dashboard/OrganizationInfoCards';
+import ReadOnlyOrganizationData from '@/components/dashboard/ReadOnlyOrganizationData';
 import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
 import MembershipSelectionModal from '@/components/dashboard/MembershipSelectionModal';
@@ -368,8 +368,11 @@ const SeekerDashboardContent: React.FC = () => {
         />
       </div>
 
-      {/* Organization Information Cards */}
-      <OrganizationInfoCards />
+      {/* Organization Information Cards - Replace OrganizationInfoCards with ReadOnlyOrganizationData */}
+      <ReadOnlyOrganizationData 
+        onJoinAsMember={handleJoinAsMember}
+        onSelectEngagementModel={handleSelectEngagementModel}
+      />
 
       {/* Modals */}
       {showMembershipBenefits && (

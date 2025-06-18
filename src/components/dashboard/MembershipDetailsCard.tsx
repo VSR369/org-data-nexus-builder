@@ -2,10 +2,19 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { CreditCard, CheckCircle, XCircle, Clock, Plus } from 'lucide-react';
 import { useMembershipData } from "./hooks/useMembershipData";
 
-const MembershipDetailsCard: React.FC = () => {
+interface MembershipDetailsCardProps {
+  onJoinAsMember?: () => void;
+  onSelectMembershipPlan?: () => void;
+}
+
+const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
+  onJoinAsMember,
+  onSelectMembershipPlan
+}) => {
   const { membershipData, loading } = useMembershipData();
 
   const formatDate = (dateString: string) => {
@@ -22,7 +31,14 @@ const MembershipDetailsCard: React.FC = () => {
   };
 
   const getMembershipStatusDetails = () => {
-    if (!membershipData) return { icon: Clock, color: 'text-gray-500', badge: 'secondary', message: 'Loading...' };
+    if (!membershipData || !membershipData.hasActualSelection) {
+      return {
+        icon: Clock,
+        color: 'text-gray-500',
+        badge: 'secondary',
+        message: 'No Membership Selected'
+      };
+    }
     
     switch (membershipData.status) {
       case 'active':
@@ -44,7 +60,7 @@ const MembershipDetailsCard: React.FC = () => {
           icon: Clock,
           color: 'text-gray-500',
           badge: 'secondary',
-          message: 'Not a Member'
+          message: 'No Membership Selected'
         };
     }
   };
@@ -57,13 +73,13 @@ const MembershipDetailsCard: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
           <CreditCard className="h-6 w-6 text-blue-600" />
-          Selected Membership & Pricing Details
+          Membership Status & Pricing Details
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-gray-600">Loading membership selection details...</p>
+            <p className="text-gray-600">Loading membership details...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -72,14 +88,9 @@ const MembershipDetailsCard: React.FC = () => {
                 <StatusIcon className={`h-6 w-6 ${statusDetails.color}`} />
                 <div>
                   <p className="font-medium text-gray-900">{statusDetails.message}</p>
-                  {membershipData?.selectedPlan && (
+                  {membershipData?.hasActualSelection && membershipData?.selectedPlan && (
                     <p className="text-sm text-gray-600">
                       Selected Plan: {membershipData.selectedPlan}
-                    </p>
-                  )}
-                  {membershipData?.selectedEngagementModel && (
-                    <p className="text-sm text-gray-600">
-                      Engagement Model: {membershipData.selectedEngagementModel}
                     </p>
                   )}
                   {membershipData?.activationDate && (
@@ -90,48 +101,49 @@ const MembershipDetailsCard: React.FC = () => {
                 </div>
               </div>
               <Badge variant={statusDetails.badge as any}>
-                {membershipData?.status === 'active' ? 'Active' : 
-                 membershipData?.status === 'inactive' ? 'Inactive' : 'Not Selected'}
+                {membershipData?.status === 'active' ? 'Active' : 'Not Selected'}
               </Badge>
             </div>
 
+            {/* Show action button if no membership selected */}
+            {(!membershipData?.hasActualSelection || membershipData?.status !== 'active') && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-blue-900 mb-1">Join as Member</h4>
+                    <p className="text-sm text-blue-800">
+                      Access premium features, priority support, and member benefits
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={onJoinAsMember}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Join Now
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Show pricing details if active membership */}
             {membershipData?.status === 'active' && membershipData.pricingDetails && (
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-900 mb-3">Selected Pricing Configuration</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <h4 className="font-medium text-green-900 mb-3">Active Membership Pricing</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <label className="text-gray-600">Currency:</label>
                     <p className="font-medium">{membershipData.pricingDetails.currency}</p>
                   </div>
                   <div>
-                    <label className="text-gray-600">Amount:</label>
+                    <label className="text-gray-600">Amount Paid:</label>
                     <p className="font-medium">{membershipData.pricingDetails.amount.toLocaleString()}</p>
                   </div>
                   <div>
-                    <label className="text-gray-600">Payment Frequency:</label>
+                    <label className="text-gray-600">Plan:</label>
                     <p className="font-medium capitalize">{membershipData.pricingDetails.paymentFrequency}</p>
                   </div>
-                  <div>
-                    <label className="text-gray-600">Payment Status:</label>
-                    <p className="font-medium capitalize">{membershipData.paymentStatus || 'Pending'}</p>
-                  </div>
                 </div>
-              </div>
-            )}
-
-            {membershipData?.selectedEngagementModel && membershipData?.status !== 'not-member' && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">Selected Engagement Model</h4>
-                <p className="text-sm text-blue-800">{membershipData.selectedEngagementModel}</p>
-              </div>
-            )}
-
-            {membershipData?.status === 'not-member' && (
-              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <h4 className="font-medium text-yellow-900 mb-2">No Membership Selected</h4>
-                <p className="text-sm text-yellow-800">
-                  This organization has not yet selected a membership plan or pricing model after registration.
-                </p>
               </div>
             )}
           </div>
