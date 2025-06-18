@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,20 +89,23 @@ const PricingModelCard: React.FC<PricingModelCardProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Country:</span>
-                    <span className="text-sm font-medium">{currentPricingConfig.country}</span>
+                    <span className="text-sm font-medium">{currentPricingConfig.country || 'Global'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Currency:</span>
-                    <span className="text-sm font-medium">{currentPricingConfig.currency}</span>
+                    <span className="text-sm font-medium">{currentPricingConfig.currency || 'USD'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Engagement Model Fee:</span>
-                    <span className="text-sm font-medium">{currentPricingConfig.engagementModelFee}%</span>
+                    <span className="text-sm font-medium">{currentPricingConfig.engagementModelFee || 0}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Membership Status:</span>
                     <span className="text-sm font-medium capitalize">
-                      {currentPricingConfig.membershipStatus.replace('-', ' ')}
+                      {currentPricingConfig.membershipStatus ? 
+                        currentPricingConfig.membershipStatus.replace('-', ' ') : 
+                        'Not Specified'
+                      }
                     </span>
                   </div>
                 </div>
