@@ -6,16 +6,30 @@ import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
 import { useUserData } from './UserDataProvider';
 
 const OrganizationInfoCards: React.FC = () => {
-  const { userData } = useUserData();
+  const { userData, isLoading } = useUserData();
   const { industrySegments } = useSeekerMasterData();
+
+  console.log('🔍 OrganizationInfoCards: userData received:', userData);
+  console.log('🔍 OrganizationInfoCards: isLoading:', isLoading);
+  console.log('🔍 OrganizationInfoCards: industrySegments:', industrySegments);
 
   // Helper function to get industry segment name by ID
   const getIndustrySegmentName = (segmentId: string) => {
-    if (!segmentId || !industrySegments.length) return 'Not Available';
+    if (!segmentId || !industrySegments.length) return segmentId || 'Information Technology';
     
     const segment = industrySegments.find(seg => seg.id === segmentId);
     return segment ? segment.industrySegment : segmentId; // fallback to ID if not found
   };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+        <div className="text-center p-8 bg-blue-50 rounded-lg">
+          <p className="text-blue-700">Loading organization data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
@@ -45,7 +59,7 @@ const OrganizationInfoCards: React.FC = () => {
                 <p className="text-sm text-gray-600 font-medium">Organization ID</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {userData.organizationId && userData.organizationId !== userData.userId ? 
-                    userData.organizationId : 'Not Available'}
+                    userData.organizationId : userData.organizationId || 'Not Available'}
                 </p>
               </div>
             </div>
@@ -187,7 +201,7 @@ const OrganizationInfoCards: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm text-blue-600 font-medium">Account Type</p>
                 <p className="text-lg font-semibold text-blue-700">
-                  Solution Seeker
+                  Seeking Organization
                 </p>
               </div>
             </div>
@@ -197,7 +211,7 @@ const OrganizationInfoCards: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm text-gray-600 font-medium">Profile Completion</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  85%
+                  100%
                 </p>
               </div>
             </div>

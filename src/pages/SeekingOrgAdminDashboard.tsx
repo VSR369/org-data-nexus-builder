@@ -9,6 +9,8 @@ import OrganizationInfoCards from "@/components/dashboard/OrganizationInfoCards"
 import { UserDataProvider } from "@/components/dashboard/UserDataProvider";
 
 const SeekingOrgAdminDashboard = () => {
+  console.log('🔍 SeekingOrgAdminDashboard rendering...');
+  
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex w-full">
@@ -65,6 +67,14 @@ const SeekingOrgAdminDashboard = () => {
                       View and manage your seeking organization's information and settings.
                     </p>
                   </div>
+                  
+                  {/* Debug info */}
+                  <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-700 font-medium">
+                      Debug: Loading organization data for administrator dashboard...
+                    </p>
+                  </div>
+                  
                   <OrganizationInfoCards />
                 </UserDataProvider>
               </div>
