@@ -148,6 +148,24 @@ const SolutionSeekersValidation: React.FC = () => {
     return { membershipData, pricingData };
   };
 
+  // Helper function to safely render values, converting objects to strings
+  const safeRender = (value: any): string => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      return String(value);
+    }
+    if (typeof value === 'object') {
+      // If it's an object, try to get a meaningful string representation
+      if (value.name) return value.name;
+      if (value.title) return value.title;
+      if (value.value) return value.value;
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   const handleRefresh = () => {
     setSeekers([]);
     setError(null);
@@ -248,36 +266,36 @@ const SolutionSeekersValidation: React.FC = () => {
                 <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
                   <CardTitle className="text-lg font-semibold flex items-center gap-2">
                     <Users className="h-5 w-5 text-blue-600" />
-                    {seeker.organizationName}
+                    {safeRender(seeker.organizationName)}
                   </CardTitle>
                   <Badge variant={
                     seeker.membershipStatus === 'active' ? 'default' : 
                     seeker.membershipStatus === 'inactive' ? 'destructive' : 'secondary'
                   }>
-                    {seeker.membershipStatus || membershipData?.status || membershipData?.membershipStatus || 'not-member'}
+                    {safeRender(seeker.membershipStatus || membershipData?.status || membershipData?.membershipStatus || 'not-member')}
                   </Badge>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-sm text-gray-600 space-y-2">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-gray-500" />
-                      <span>{seeker.organizationType} • {seeker.entityType}</span>
+                      <span>{safeRender(seeker.organizationType)} • {safeRender(seeker.entityType)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-gray-500" />
-                      <span>{seeker.country}</span>
+                      <span>{safeRender(seeker.country)}</span>
                     </div>
                     <div>
-                      <span className="font-medium">Email:</span> {seeker.email}
+                      <span className="font-medium">Email:</span> {safeRender(seeker.email)}
                     </div>
                     <div>
-                      <span className="font-medium">Contact:</span> {seeker.contactPersonName}
+                      <span className="font-medium">Contact:</span> {safeRender(seeker.contactPersonName)}
                     </div>
                     <div>
-                      <span className="font-medium">Industry:</span> {seeker.industrySegment}
+                      <span className="font-medium">Industry:</span> {safeRender(seeker.industrySegment)}
                     </div>
                     <div>
-                      <span className="font-medium">User ID:</span> {seeker.userId}
+                      <span className="font-medium">User ID:</span> {safeRender(seeker.userId)}
                     </div>
                   </div>
                   
@@ -286,24 +304,24 @@ const SolutionSeekersValidation: React.FC = () => {
                     <h4 className="font-medium text-blue-900 mb-2">Engagement & Pricing Details</h4>
                     <div className="space-y-1 text-xs text-blue-800">
                       {seeker.selectedPlan && (
-                        <div><span className="font-medium">Plan:</span> {seeker.selectedPlan}</div>
+                        <div><span className="font-medium">Plan:</span> {safeRender(seeker.selectedPlan)}</div>
                       )}
                       {seeker.selectedEngagementModel && (
-                        <div><span className="font-medium">Model:</span> {seeker.selectedEngagementModel}</div>
+                        <div><span className="font-medium">Model:</span> {safeRender(seeker.selectedEngagementModel)}</div>
                       )}
                       {membershipData?.selectedPlan && (
-                        <div><span className="font-medium">Selected Plan:</span> {membershipData.selectedPlan}</div>
+                        <div><span className="font-medium">Selected Plan:</span> {safeRender(membershipData.selectedPlan)}</div>
                       )}
                       {membershipData?.paidAt && (
                         <div><span className="font-medium">Paid At:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
                       )}
                       {pricingData?.engagementModel && (
-                        <div><span className="font-medium">Engagement:</span> {pricingData.engagementModel}</div>
+                        <div><span className="font-medium">Engagement:</span> {safeRender(pricingData.engagementModel)}</div>
                       )}
                       {pricingData?.currency && pricingData?.amount && (
                         <div>
-                          <span className="font-medium">Pricing:</span> {pricingData.currency} {pricingData.amount} 
-                          {pricingData.frequency && ` (${pricingData.frequency})`}
+                          <span className="font-medium">Pricing:</span> {safeRender(pricingData.currency)} {safeRender(pricingData.amount)} 
+                          {pricingData.frequency && ` (${safeRender(pricingData.frequency)})`}
                         </div>
                       )}
                       {!seeker.selectedPlan && !seeker.selectedEngagementModel && !membershipData && !pricingData && (
