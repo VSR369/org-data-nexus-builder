@@ -14,6 +14,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoginWarning from '@/components/dashboard/LoginWarning';
 import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
 import EngagementModelCard from '@/components/dashboard/EngagementModelCard';
+import OrganizationInfoCard from '@/components/dashboard/OrganizationInfoCard';
 import ReadOnlyOrganizationData from '@/components/dashboard/ReadOnlyOrganizationData';
 import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
@@ -235,6 +236,9 @@ const SeekerDashboardContent: React.FC = () => {
       
       <LoginWarning show={showLoginWarning} />
 
+      {/* Organization Information moved to top */}
+      <OrganizationInfoCard />
+
       <MembershipStatusCard membershipStatus={membershipStatus} />
 
       {membershipStatus.status !== 'active' && (
@@ -276,10 +280,7 @@ const SeekerDashboardContent: React.FC = () => {
         />
       </div>
 
-      <ReadOnlyOrganizationData 
-        onJoinAsMember={handleJoinAsMember}
-        onSelectEngagementModel={handleSelectEngagementModel}
-      />
+      {/* Removed ReadOnlyOrganizationData as OrganizationInfoCard is now at the top */}
 
       {showMembershipBenefits && (
         <MembershipBenefitsCard
