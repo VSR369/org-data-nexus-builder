@@ -45,6 +45,22 @@ export const useMembershipData = () => {
   const [membershipData, setMembershipData] = useState<MembershipData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Add a dependency on localStorage changes to trigger re-loading
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Listen for storage changes to refresh data
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'engagement_model_selection' || e.key === 'completed_membership_payment') {
+        console.log('🔄 Storage changed, refreshing membership data:', e.key);
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   useEffect(() => {
     const loadMembershipData = async () => {
       console.log('🔍 Loading membership data for user:', userData.userId);
@@ -85,7 +101,7 @@ export const useMembershipData = () => {
           }
         }
         
-        // Check for confirmed engagement model selection
+        // Check for confirmed engagement model selection - ALWAYS check this
         let engagementModelInfo = null;
         const engagementSelection = localStorage.getItem('engagement_model_selection');
         console.log('🔍 Checking engagement model selection:', engagementSelection);
@@ -97,11 +113,37 @@ export const useMembershipData = () => {
             
             // Check if it's a valid selection for the current user
             if (selectionData.userId === userData.userId && selectionData.engagementModel) {
+              // Calculate pricing based on selected plan
+              let amount = 0;
+              if (selectionData.pricing && selectionData.pricingPlan) {
+                switch (selectionData.pricingPlan) {
+                  case 'quarterly':
+                    amount = selectionData.pricing.quarterlyFee || 0;
+                    break;
+                  case 'halfyearly':
+                    amount = selectionData.pricing.halfYearlyFee || 0;
+                    break;
+                  case 'annual':
+                    amount = selectionData.pricing.annualFee || 0;
+                    break;
+                  default:
+                    amount = 0;
+                }
+
+                // Apply member discount if applicable
+                if (hasActiveMembership && selectionData.pricing.discountPercentage) {
+                  amount = amount * (1 - selectionData.pricing.discountPercentage / 100);
+                }
+              }
+
               engagementModelInfo = {
                 selectedEngagementModel: selectionData.engagementModel.name || selectionData.engagementModel,
+                selectedPlan: selectionData.pricingPlan,
                 pricingDetails: selectionData.pricing ? {
                   currency: selectionData.pricing.currency || 'USD',
-                  amount: (() => {
+                  amount: amount,
+                  paymentFrequency: selectionData.pricingPlan || 'quarterly',
+                  originalAmount: (() => {
                     switch (selectionData.pricingPlan) {
                       case 'quarterly':
                         return selectionData.pricing.quarterlyFee || 0;
@@ -113,10 +155,10 @@ export const useMembershipData = () => {
                         return 0;
                     }
                   })(),
-                  paymentFrequency: selectionData.pricingPlan || 'monthly'
+                  discountPercentage: hasActiveMembership ? selectionData.pricing.discountPercentage : 0
                 } : undefined
               };
-              console.log('✅ Found engagement model selection:', engagementModelInfo);
+              console.log('✅ Found engagement model selection with current pricing:', engagementModelInfo);
             }
           } catch (error) {
             console.log('❌ Error parsing engagement model selection:', error);
@@ -164,7 +206,7 @@ export const useMembershipData = () => {
         // Combine the data with proper flags
         const combinedData: MembershipData = {
           status: hasActiveMembership ? 'active' : 'not-member',
-          selectedPlan: membershipInfo?.selectedPlan,
+          selectedPlan: membershipInfo?.selectedPlan || engagementModelInfo?.selectedPlan,
           selectedEngagementModel: engagementModelInfo?.selectedEngagementModel,
           pricingDetails: membershipInfo?.pricingDetails || engagementModelInfo?.pricingDetails || masterDataPricing,
           activationDate: membershipInfo?.activationDate,
@@ -172,7 +214,7 @@ export const useMembershipData = () => {
           hasActualSelection: !!(hasActiveMembership || engagementModelInfo)
         };
         
-        console.log('📋 Final membership data:', combinedData);
+        console.log('📋 Final membership data with current pricing:', combinedData);
         setMembershipData(combinedData);
         
       } catch (error) {
@@ -189,7 +231,7 @@ export const useMembershipData = () => {
     if (userData.userId) {
       loadMembershipData();
     }
-  }, [userData]);
+  }, [userData, refreshTrigger]);
 
   return { membershipData, loading };
 };

@@ -28,6 +28,13 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
     }
   };
 
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   return (
     <Card className="shadow-xl border-0">
       <CardHeader>
@@ -65,14 +72,24 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
                       </div>
                       <div>
                         <label className="text-xs text-purple-600 uppercase tracking-wide">Amount</label>
-                        <p className="text-sm font-medium text-purple-900">
-                          {membershipData.pricingDetails.amount.toLocaleString()}
-                        </p>
+                        <div className="text-sm font-medium text-purple-900">
+                          {formatCurrency(membershipData.pricingDetails.amount, membershipData.pricingDetails.currency)}
+                          {(membershipData.pricingDetails as any)?.discountPercentage && (membershipData.pricingDetails as any)?.originalAmount ? (
+                            <div>
+                              <span className="text-xs text-gray-500 line-through">
+                                {formatCurrency((membershipData.pricingDetails as any).originalAmount, membershipData.pricingDetails.currency)}
+                              </span>
+                              <span className="text-xs text-green-600 ml-1">
+                                ({(membershipData.pricingDetails as any).discountPercentage}% off)
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                       <div>
-                        <label className="text-xs text-purple-600 uppercase tracking-wide">Frequency</label>
+                        <label className="text-xs text-purple-600 uppercase tracking-wide">Plan</label>
                         <p className="text-sm font-medium text-purple-900 capitalize">
-                          {membershipData.pricingDetails.paymentFrequency}
+                          {membershipData.selectedPlan || membershipData.pricingDetails.paymentFrequency}
                         </p>
                       </div>
                     </div>
