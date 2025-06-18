@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
+import { PricingDataManager } from '@/utils/pricingDataManager';
 import { useToast } from "@/hooks/use-toast";
 
 interface MembershipFeeEntry {
@@ -69,6 +70,9 @@ export const useDashboardData = (userData: any) => {
     }
 
     console.log('🔄 Loading unified dashboard data for user:', userData.userId);
+    console.log('📍 User country:', userData.country);
+    console.log('🏢 User org type:', userData.organizationType);
+    console.log('🏛️ User entity type:', userData.entityType);
     
     try {
       await unifiedUserStorageService.initialize();
@@ -164,29 +168,51 @@ export const useDashboardData = (userData: any) => {
       let masterDataPricing = null;
       if (!engagementModelInfo?.pricingDetails && !hasActiveMembership) {
         try {
-          const membershipFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
+          // First check pricing configurations in master data
+          const pricingConfigs = PricingDataManager.getPricingForCountry(
+            userData.country,
+            userData.organizationType,
+            userData.entityType
+          );
           
-          if (membershipFees && membershipFees.length > 0) {
-            let matchingFee = membershipFees.find(fee => 
-              fee.entityType === userData.entityType && 
-              fee.country === userData.country &&
-              fee.organizationType === userData.organizationType
-            );
+          console.log('💰 Found pricing configs for country:', pricingConfigs.length);
+          
+          if (pricingConfigs.length > 0) {
+            // Use the first matching config (prioritize more specific matches)
+            const bestMatch = pricingConfigs[0];
+            console.log('✅ Using pricing config:', bestMatch);
             
-            if (!matchingFee) {
-              matchingFee = membershipFees.find(fee => 
-                fee.entityType?.toLowerCase() === userData.entityType?.toLowerCase() && 
-                fee.organizationType?.toLowerCase() === userData.organizationType?.toLowerCase()
+            masterDataPricing = {
+              currency: bestMatch.currency || 'USD',
+              amount: bestMatch.quarterlyFee || 0,
+              paymentFrequency: 'quarterly'
+            };
+          } else {
+            // Fallback to membership fees
+            const membershipFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
+            
+            if (membershipFees && membershipFees.length > 0) {
+              let matchingFee = membershipFees.find(fee => 
+                fee.entityType === userData.entityType && 
+                fee.country === userData.country &&
+                fee.organizationType === userData.organizationType
               );
-            }
-            
-            if (matchingFee) {
-              console.log('✅ Found matching membership fee config:', matchingFee);
-              masterDataPricing = {
-                currency: matchingFee.quarterlyCurrency,
-                amount: matchingFee.quarterlyAmount,
-                paymentFrequency: 'quarterly'
-              };
+              
+              if (!matchingFee) {
+                matchingFee = membershipFees.find(fee => 
+                  fee.entityType?.toLowerCase() === userData.entityType?.toLowerCase() && 
+                  fee.organizationType?.toLowerCase() === userData.organizationType?.toLowerCase()
+                );
+              }
+              
+              if (matchingFee) {
+                console.log('✅ Found matching membership fee config:', matchingFee);
+                masterDataPricing = {
+                  currency: matchingFee.quarterlyCurrency,
+                  amount: matchingFee.quarterlyAmount,
+                  paymentFrequency: 'quarterly'
+                };
+              }
             }
           }
         } catch (error) {
