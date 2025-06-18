@@ -105,14 +105,18 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
           }
         }
         
-        // Strategy 4: Look for "testing@testing.co.in" specifically
-        if (!targetUser) {
-          console.log('🎯 Looking for testing@testing.co.in user specifically');
-          targetUser = allUsers.find(user => 
-            user.email === 'testing@testing.co.in' || 
-            user.userId === 'testing@testing.co.in'
-          );
-          console.log('🎯 Testing user found:', targetUser);
+        // Strategy 4: Check if there's a recently logged in user (fallback)
+        if (!targetUser && allUsers.length > 0) {
+          console.log('🎯 Looking for most recently active user');
+          // Sort by lastLoginTimestamp or updatedAt to find most recent user
+          const sortedUsers = allUsers.sort((a, b) => {
+            const aTime = a.lastLoginTimestamp || a.updatedAt || a.createdAt || '';
+            const bTime = b.lastLoginTimestamp || b.updatedAt || b.createdAt || '';
+            return new Date(bTime).getTime() - new Date(aTime).getTime();
+          });
+          
+          targetUser = sortedUsers[0];
+          console.log('🎯 Using most recent user:', targetUser);
         }
         
         if (targetUser) {
@@ -133,8 +137,9 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
           
           console.log('📋 Final mapped user data:', mappedData);
           setUserData(mappedData);
+          setShowLoginWarning(false);
           
-          // Save session
+          // Save session for future use
           if (targetUser.userId || targetUser.id) {
             await unifiedUserStorageService.saveSession({
               userId: targetUser.userId || targetUser.id,
@@ -150,7 +155,7 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
           console.log('❌ No user data found');
           toast({
             title: "No User Data Found",
-            description: "No user data found. Please ensure proper login.",
+            description: "No registered users found. Please register first.",
             variant: "destructive"
           });
           setShowLoginWarning(true);
@@ -163,6 +168,7 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
           description: "Failed to load user data. Please try again.",
           variant: "destructive"
         });
+        setShowLoginWarning(true);
       } finally {
         setIsLoading(false);
         console.log('✅ === DATA LOADING COMPLETED ===');
