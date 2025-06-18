@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -256,18 +255,18 @@ const ReadOnlyOrganizationData: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Actual Membership Status */}
+      {/* Selected Membership & Pricing Details */}
       <Card className="shadow-xl border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <CreditCard className="h-6 w-6 text-blue-600" />
-            Current Membership Status
+            Selected Membership & Pricing Details
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-gray-600">Loading membership information...</p>
+              <p className="text-gray-600">Loading membership selection details...</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -278,25 +277,30 @@ const ReadOnlyOrganizationData: React.FC = () => {
                     <p className="font-medium text-gray-900">{statusDetails.message}</p>
                     {membershipData?.selectedPlan && (
                       <p className="text-sm text-gray-600">
-                        Plan: {membershipData.selectedPlan}
+                        Selected Plan: {membershipData.selectedPlan}
+                      </p>
+                    )}
+                    {membershipData?.selectedEngagementModel && (
+                      <p className="text-sm text-gray-600">
+                        Engagement Model: {membershipData.selectedEngagementModel}
                       </p>
                     )}
                     {membershipData?.activationDate && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Since: {formatDate(membershipData.activationDate)}
+                        Activated: {formatDate(membershipData.activationDate)}
                       </p>
                     )}
                   </div>
                 </div>
                 <Badge variant={statusDetails.badge as any}>
                   {membershipData?.status === 'active' ? 'Active' : 
-                   membershipData?.status === 'inactive' ? 'Inactive' : 'Not Member'}
+                   membershipData?.status === 'inactive' ? 'Inactive' : 'Not Selected'}
                 </Badge>
               </div>
 
               {membershipData?.status === 'active' && membershipData.pricingDetails && (
                 <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h4 className="font-medium text-green-900 mb-3">Selected Pricing Details</h4>
+                  <h4 className="font-medium text-green-900 mb-3">Selected Pricing Configuration</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <label className="text-gray-600">Currency:</label>
@@ -318,7 +322,7 @@ const ReadOnlyOrganizationData: React.FC = () => {
                 </div>
               )}
 
-              {membershipData?.selectedEngagementModel && (
+              {membershipData?.selectedEngagementModel && membershipData?.status !== 'not-member' && (
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <h4 className="font-medium text-blue-900 mb-2">Selected Engagement Model</h4>
                   <p className="text-sm text-blue-800">{membershipData.selectedEngagementModel}</p>
@@ -327,9 +331,9 @@ const ReadOnlyOrganizationData: React.FC = () => {
 
               {membershipData?.status === 'not-member' && (
                 <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h4 className="font-medium text-yellow-900 mb-2">Membership Not Active</h4>
+                  <h4 className="font-medium text-yellow-900 mb-2">No Membership Selected</h4>
                   <p className="text-sm text-yellow-800">
-                    This organization has not yet selected a membership plan or activated their membership.
+                    This organization has not yet selected a membership plan or pricing model after registration.
                   </p>
                 </div>
               )}

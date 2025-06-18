@@ -16,6 +16,12 @@ export interface UserRecord {
   version: number;
   createdAt: string;
   updatedAt: string;
+  // Membership-related properties
+  membershipStatus?: 'active' | 'inactive' | 'not-member';
+  selectedPlan?: string;
+  selectedEngagementModel?: string;
+  membershipActivationDate?: string;
+  paymentStatus?: string;
 }
 
 export interface SessionData {
