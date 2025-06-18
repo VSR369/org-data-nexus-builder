@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, Database, RefreshCw, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import OrganizationInfoCards from "@/components/dashboard/OrganizationInfoCards";
 import MembershipActionCard from "@/components/dashboard/MembershipActionCard";
 import PricingModelCard from "@/components/dashboard/PricingModelCard";
@@ -18,6 +18,7 @@ import { useState } from "react";
 const DashboardContent = () => {
   const { userData, isLoading, showLoginWarning } = useUserData();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showPricingSelector, setShowPricingSelector] = useState(false);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState('');
 
@@ -42,11 +43,26 @@ const DashboardContent = () => {
   };
 
   const handleJoinAsMember = () => {
+    console.log('🔗 Navigating to membership registration with user data:', userData);
+    
     toast({
-      title: "Membership Registration",
-      description: "Redirecting to membership registration process...",
+      title: "Redirecting to Membership Registration",
+      description: "Taking you to complete your membership registration...",
     });
-    // In a real app, this would navigate to membership registration
+
+    // Navigate to membership registration with user data
+    navigate('/membership-registration', {
+      state: {
+        userId: userData.userId,
+        organizationName: userData.organizationName,
+        entityType: userData.entityType,
+        country: userData.country,
+        email: userData.email,
+        contactPersonName: userData.contactPersonName,
+        organizationType: userData.organizationType,
+        fromAdminDashboard: true
+      }
+    });
   };
 
   if (showLoginWarning) {
