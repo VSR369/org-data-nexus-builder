@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -551,10 +552,12 @@ const SolutionSeekersValidation: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex justify-end mt-4">
+                  {/* Action Buttons - Fixed Layout */}
+                  <div className="flex flex-col gap-3 mt-4 pt-3 border-t">
+                    {/* View Details Button */}
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                        <Button variant="outline" size="sm" className="w-full">
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
@@ -562,38 +565,41 @@ const SolutionSeekersValidation: React.FC = () => {
                       <ViewDetailsDialog seeker={seeker} />
                     </Dialog>
                     
-                    <div className="flex gap-1">
-                      {seeker.approvalStatus === 'pending' && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-green-600 border-green-600 hover:bg-green-50 px-2"
-                            onClick={() => handleApproval(seeker.id, 'approved')}
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-red-600 border-red-600 hover:bg-red-50 px-2"
-                            onClick={() => handleApproval(seeker.id, 'rejected')}
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      
-                      {seeker.approvalStatus === 'approved' && (
+                    {/* Approval Buttons */}
+                    {seeker.approvalStatus === 'pending' && (
+                      <div className="flex gap-2">
                         <Button 
                           size="sm" 
-                          className="bg-blue-600 hover:bg-blue-700 px-2"
-                          onClick={() => handleCreateAdministrator(seeker)}
+                          variant="outline" 
+                          className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
+                          onClick={() => handleApproval(seeker.id, 'approved')}
                         >
-                          <UserPlus className="h-4 w-4" />
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve
                         </Button>
-                      )}
-                    </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                          onClick={() => handleApproval(seeker.id, 'rejected')}
+                        >
+                          <UserX className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Create Admin Button */}
+                    {seeker.approvalStatus === 'approved' && (
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleCreateAdministrator(seeker)}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Create Administrator
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
