@@ -1,12 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash2, DollarSign, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { LegacyDataManager } from '@/utils/core/DataManager';
+import { countriesDataManager } from '@/utils/sharedDataManagers';
+import { Country } from '@/types/seekerRegistration';
 
 interface Currency {
   id: string;
@@ -18,7 +22,7 @@ interface Currency {
 
 const defaultCurrencies: Currency[] = [
   { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
-  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States' },
+  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States of America' },
   { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
   { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
 ];
@@ -31,10 +35,18 @@ const dataManager = new LegacyDataManager<Currency[]>({
 
 const CurrencyConfig = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCurrency, setCurrentCurrency] = useState<Partial<Currency>>({});
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load countries from master data
+  useEffect(() => {
+    const loadedCountries = countriesDataManager.loadData();
+    console.log('🌍 CurrencyConfig - Loading countries from master data:', loadedCountries);
+    setCountries(loadedCountries);
+  }, []);
 
   // Load data on component mount
   useEffect(() => {
@@ -143,12 +155,26 @@ const CurrencyConfig = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="country">Country *</Label>
-                <Input
-                  id="country"
+                <Select
                   value={currentCurrency.country || ''}
-                  onChange={(e) => setCurrentCurrency(prev => ({ ...prev, country: e.target.value }))}
-                  placeholder="e.g., United States"
-                />
+                  onValueChange={(value) => setCurrentCurrency(prev => ({ ...prev, country: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country.id} value={country.name}>
+                        {country.name} ({country.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {countries.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    No countries found in master data. Please add countries first.
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="code">Currency Code *</Label>
