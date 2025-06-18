@@ -43,14 +43,14 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {membershipData?.hasActualSelection && membershipData?.selectedEngagementModel ? (
+            {membershipData?.selectedEngagementModel ? (
               <div className="space-y-4">
                 <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-purple-900">Selected Engagement Model</h4>
                     <Badge variant="outline" className="border-purple-300 text-purple-700">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      Confirmed
+                      Selected
                     </Badge>
                   </div>
                   <p className="text-purple-800 font-medium mb-2">{membershipData.selectedEngagementModel}</p>
@@ -77,6 +77,17 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
                       </div>
                     </div>
                   )}
+                  
+                  <div className="mt-3 pt-3 border-t border-purple-200">
+                    <Button 
+                      onClick={onSelectEngagementModel}
+                      variant="outline"
+                      size="sm"
+                      className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                    >
+                      Change Selection
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (

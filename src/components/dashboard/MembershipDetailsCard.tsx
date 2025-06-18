@@ -31,38 +31,21 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
   };
 
   const getMembershipStatusDetails = () => {
-    if (!membershipData || !membershipData.hasActualSelection) {
+    if (membershipData?.status === 'active') {
       return {
-        icon: Clock,
-        color: 'text-gray-500',
-        badge: 'secondary',
-        message: 'No Membership Selected'
+        icon: CheckCircle,
+        color: 'text-green-600',
+        badge: 'default',
+        message: 'Active Member'
       };
     }
     
-    switch (membershipData.status) {
-      case 'active':
-        return {
-          icon: CheckCircle,
-          color: 'text-green-600',
-          badge: 'default',
-          message: 'Active Member'
-        };
-      case 'inactive':
-        return {
-          icon: XCircle,
-          color: 'text-red-600',
-          badge: 'destructive',
-          message: 'Inactive Member'
-        };
-      default:
-        return {
-          icon: Clock,
-          color: 'text-gray-500',
-          badge: 'secondary',
-          message: 'No Membership Selected'
-        };
-    }
+    return {
+      icon: Clock,
+      color: 'text-gray-500',
+      badge: 'secondary',
+      message: 'No Active Membership'
+    };
   };
 
   const statusDetails = getMembershipStatusDetails();
@@ -88,7 +71,7 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
                 <StatusIcon className={`h-6 w-6 ${statusDetails.color}`} />
                 <div>
                   <p className="font-medium text-gray-900">{statusDetails.message}</p>
-                  {membershipData?.hasActualSelection && membershipData?.selectedPlan && (
+                  {membershipData?.status === 'active' && membershipData?.selectedPlan && (
                     <p className="text-sm text-gray-600">
                       Selected Plan: {membershipData.selectedPlan}
                     </p>
@@ -101,12 +84,37 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
                 </div>
               </div>
               <Badge variant={statusDetails.badge as any}>
-                {membershipData?.status === 'active' ? 'Active' : 'Not Selected'}
+                {membershipData?.status === 'active' ? 'Active' : 'Not Active'}
               </Badge>
             </div>
 
-            {/* Show action button if no membership selected */}
-            {(!membershipData?.hasActualSelection || membershipData?.status !== 'active') && (
+            {/* Show membership pricing information */}
+            {membershipData?.pricingDetails && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-3">
+                  {membershipData.status === 'active' ? 'Active Membership Pricing' : 'Available Membership Pricing'}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <label className="text-gray-600">Currency:</label>
+                    <p className="font-medium">{membershipData.pricingDetails.currency}</p>
+                  </div>
+                  <div>
+                    <label className="text-gray-600">
+                      {membershipData.status === 'active' ? 'Amount Paid:' : 'Price:'}
+                    </label>
+                    <p className="font-medium">{membershipData.pricingDetails.amount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <label className="text-gray-600">Plan:</label>
+                    <p className="font-medium capitalize">{membershipData.pricingDetails.paymentFrequency}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Show action button if no active membership */}
+            {membershipData?.status !== 'active' && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -122,27 +130,6 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
                     <Plus className="h-4 w-4 mr-2" />
                     Join Now
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Show pricing details if active membership */}
-            {membershipData?.status === 'active' && membershipData.pricingDetails && (
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-900 mb-3">Active Membership Pricing</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <label className="text-gray-600">Currency:</label>
-                    <p className="font-medium">{membershipData.pricingDetails.currency}</p>
-                  </div>
-                  <div>
-                    <label className="text-gray-600">Amount Paid:</label>
-                    <p className="font-medium">{membershipData.pricingDetails.amount.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <label className="text-gray-600">Plan:</label>
-                    <p className="font-medium capitalize">{membershipData.pricingDetails.paymentFrequency}</p>
-                  </div>
                 </div>
               </div>
             )}

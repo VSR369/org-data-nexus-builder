@@ -2,6 +2,23 @@
 import { useState, useEffect } from 'react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { useUserData } from "@/components/dashboard/UserDataProvider";
+import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
+
+interface MembershipFeeEntry {
+  id: string;
+  country: string;
+  organizationType: string;
+  entityType: string;
+  quarterlyAmount: number;
+  quarterlyCurrency: string;
+  halfYearlyAmount: number;
+  halfYearlyCurrency: string;
+  annualAmount: number;
+  annualCurrency: string;
+  createdAt: string;
+  updatedAt: string;
+  isUserCreated: boolean;
+}
 
 interface MembershipData {
   status: 'active' | 'inactive' | 'not-member';
@@ -17,6 +34,12 @@ interface MembershipData {
   hasActualSelection?: boolean;
 }
 
+const membershipFeeConfig = {
+  key: 'master_data_seeker_membership_fees',
+  version: 2,
+  preserveUserData: true
+};
+
 export const useMembershipData = () => {
   const { userData } = useUserData();
   const [membershipData, setMembershipData] = useState<MembershipData | null>(null);
@@ -24,7 +47,12 @@ export const useMembershipData = () => {
 
   useEffect(() => {
     const loadMembershipData = async () => {
-      console.log('🔍 Loading membership data for organization:', userData.organizationName);
+      console.log('🔍 Loading membership data for user:', userData.userId);
+      console.log('🔍 User details:', { 
+        entityType: userData.entityType, 
+        country: userData.country, 
+        organizationType: userData.organizationType 
+      });
       
       try {
         await unifiedUserStorageService.initialize();
@@ -57,28 +85,79 @@ export const useMembershipData = () => {
           }
         }
         
-        // Check for confirmed engagement model selection (only if properly submitted)
+        // Check for confirmed engagement model selection
         let engagementModelInfo = null;
         const engagementSelection = localStorage.getItem('engagement_model_selection');
+        console.log('🔍 Checking engagement model selection:', engagementSelection);
+        
         if (engagementSelection) {
           try {
             const selectionData = JSON.parse(engagementSelection);
-            // Only consider it a real selection if it has submittedAt and matches current user
-            if (selectionData.submittedAt && 
-                selectionData.userId === userData.userId && 
-                selectionData.engagementModel) {
+            console.log('🔍 Parsed engagement selection data:', selectionData);
+            
+            // Check if it's a valid selection for the current user
+            if (selectionData.userId === userData.userId && selectionData.engagementModel) {
               engagementModelInfo = {
                 selectedEngagementModel: selectionData.engagementModel.name || selectionData.engagementModel,
                 pricingDetails: selectionData.pricing ? {
                   currency: selectionData.pricing.currency || 'USD',
-                  amount: selectionData.pricing.amount || 0,
+                  amount: (() => {
+                    switch (selectionData.pricingPlan) {
+                      case 'quarterly':
+                        return selectionData.pricing.quarterlyFee || 0;
+                      case 'halfyearly':
+                        return selectionData.pricing.halfYearlyFee || 0;
+                      case 'annual':
+                        return selectionData.pricing.annualFee || 0;
+                      default:
+                        return 0;
+                    }
+                  })(),
                   paymentFrequency: selectionData.pricingPlan || 'monthly'
                 } : undefined
               };
-              console.log('✅ Found confirmed engagement model selection:', engagementModelInfo);
+              console.log('✅ Found engagement model selection:', engagementModelInfo);
             }
           } catch (error) {
             console.log('❌ Error parsing engagement model selection:', error);
+          }
+        }
+        
+        // Load membership pricing data from master data if no engagement model pricing found
+        let masterDataPricing = null;
+        if (!engagementModelInfo?.pricingDetails && !hasActiveMembership) {
+          console.log('🔍 Loading membership pricing from master data...');
+          try {
+            const membershipFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
+            console.log('🔍 Master data membership fees:', membershipFees);
+            
+            if (membershipFees && membershipFees.length > 0) {
+              // Find exact match for user data
+              let matchingFee = membershipFees.find(fee => 
+                fee.entityType === userData.entityType && 
+                fee.country === userData.country &&
+                fee.organizationType === userData.organizationType
+              );
+              
+              if (!matchingFee) {
+                // Try fallback matches
+                matchingFee = membershipFees.find(fee => 
+                  fee.entityType?.toLowerCase() === userData.entityType?.toLowerCase() && 
+                  fee.organizationType?.toLowerCase() === userData.organizationType?.toLowerCase()
+                );
+              }
+              
+              if (matchingFee) {
+                console.log('✅ Found matching membership fee config:', matchingFee);
+                masterDataPricing = {
+                  currency: matchingFee.quarterlyCurrency,
+                  amount: matchingFee.quarterlyAmount,
+                  paymentFrequency: 'quarterly'
+                };
+              }
+            }
+          } catch (error) {
+            console.log('❌ Error loading master data pricing:', error);
           }
         }
         
@@ -87,7 +166,7 @@ export const useMembershipData = () => {
           status: hasActiveMembership ? 'active' : 'not-member',
           selectedPlan: membershipInfo?.selectedPlan,
           selectedEngagementModel: engagementModelInfo?.selectedEngagementModel,
-          pricingDetails: membershipInfo?.pricingDetails || engagementModelInfo?.pricingDetails,
+          pricingDetails: membershipInfo?.pricingDetails || engagementModelInfo?.pricingDetails || masterDataPricing,
           activationDate: membershipInfo?.activationDate,
           paymentStatus: membershipInfo?.paymentStatus || 'not-paid',
           hasActualSelection: !!(hasActiveMembership || engagementModelInfo)
