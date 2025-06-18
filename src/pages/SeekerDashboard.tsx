@@ -9,13 +9,11 @@ import { PricingConfig } from '@/types/pricing';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
 import { useDashboardData, triggerDashboardDataRefresh } from '@/hooks/useDashboardData';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoginWarning from '@/components/dashboard/LoginWarning';
 import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
 import EngagementModelCard from '@/components/dashboard/EngagementModelCard';
 import OrganizationInfoCard from '@/components/dashboard/OrganizationInfoCard';
-import ReadOnlyOrganizationData from '@/components/dashboard/ReadOnlyOrganizationData';
 import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
 import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
 import MembershipSelectionModal from '@/components/dashboard/MembershipSelectionModal';
@@ -25,7 +23,6 @@ const SeekerDashboardContent: React.FC = () => {
   const { userData, isLoading, showLoginWarning, handleLogout } = useUserData();
   const { dashboardData, refreshData } = useDashboardData(userData);
   
-  const [activeSection, setActiveSection] = useState('');
   const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
   const [showMembershipSelection, setShowMembershipSelection] = useState(false);
   const [showEngagementModelSelector, setShowEngagementModelSelector] = useState(false);
@@ -231,96 +228,96 @@ const SeekerDashboardContent: React.FC = () => {
   }
 
   return (
-    <DashboardLayout activeSection={activeSection} setActiveSection={setActiveSection}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       <DashboardHeader onLogout={handleLogout} userId={userData.userId} />
       
-      <LoginWarning show={showLoginWarning} />
+      <div className="max-w-7xl mx-auto p-6">
+        <LoginWarning show={showLoginWarning} />
 
-      {/* Organization Information moved to top */}
-      <OrganizationInfoCard />
+        {/* Organization Information at the top */}
+        <OrganizationInfoCard />
 
-      <MembershipStatusCard membershipStatus={membershipStatus} />
+        <MembershipStatusCard membershipStatus={membershipStatus} />
 
-      {membershipStatus.status !== 'active' && (
-        <div className="mt-6 mb-6">
-          <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Ready to unlock premium features?</h3>
-                  <p className="text-blue-100">
-                    Join as a member to access exclusive benefits, priority support, and enhanced marketplace features.
-                  </p>
+        {membershipStatus.status !== 'active' && (
+          <div className="mt-6 mb-6">
+            <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Ready to unlock premium features?</h3>
+                    <p className="text-blue-100">
+                      Join as a member to access exclusive benefits, priority support, and enhanced marketplace features.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleJoinAsMember}
+                    className="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 text-lg font-semibold"
+                    size="lg"
+                  >
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Join as Member
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleJoinAsMember}
-                  className="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 text-lg font-semibold"
-                  size="lg"
-                >
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Join as Member
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className="mt-6 mb-6">
+          <EngagementModelCard
+            selectedEngagementModel={selectedEngagementModel}
+            selectedPricing={selectedPricing}
+            selectedPricingPlan={selectedPricingPlan}
+            onSelectEngagementModel={handleSelectEngagementModel}
+            onSubmitSelection={handleSubmitSelection}
+            onPricingPlanChange={handlePricingPlanChange}
+            showLoginWarning={showLoginWarning}
+            membershipStatus={membershipStatus.status}
+            isSubmitted={isSelectionSubmitted}
+          />
         </div>
-      )}
 
-      <div className="mt-6 mb-6">
-        <EngagementModelCard
-          selectedEngagementModel={selectedEngagementModel}
-          selectedPricing={selectedPricing}
-          selectedPricingPlan={selectedPricingPlan}
-          onSelectEngagementModel={handleSelectEngagementModel}
-          onSubmitSelection={handleSubmitSelection}
-          onPricingPlanChange={handlePricingPlanChange}
-          showLoginWarning={showLoginWarning}
-          membershipStatus={membershipStatus.status}
-          isSubmitted={isSelectionSubmitted}
-        />
+        {showMembershipBenefits && (
+          <MembershipBenefitsCard
+            countryPricing={countryPricing}
+            userData={{
+              userId: userData.userId,
+              organizationName: userData.organizationName,
+              entityType: userData.entityType,
+              country: userData.country
+            }}
+            onClose={() => setShowMembershipBenefits(false)}
+          />
+        )}
+
+        {showMembershipSelection && (
+          <MembershipSelectionModal
+            countryPricing={countryPricing}
+            userData={{
+              userId: userData.userId,
+              organizationName: userData.organizationName,
+              entityType: userData.entityType,
+              country: userData.country
+            }}
+            onClose={() => setShowMembershipSelection(false)}
+            onProceed={handleProceedToMembership}
+          />
+        )}
+
+        {showEngagementModelSelector && (
+          <EngagementModelSelector
+            onClose={() => setShowEngagementModelSelector(false)}
+            onSelect={handleEngagementModelSelected}
+            userCountry={userData.country}
+            userOrgType={userData.organizationType}
+            membershipStatus={membershipStatus.status}
+            currentSelectedModel={selectedEngagementModel}
+            currentSelectedPricingPlan={selectedPricingPlan}
+          />
+        )}
       </div>
-
-      {/* Removed ReadOnlyOrganizationData as OrganizationInfoCard is now at the top */}
-
-      {showMembershipBenefits && (
-        <MembershipBenefitsCard
-          countryPricing={countryPricing}
-          userData={{
-            userId: userData.userId,
-            organizationName: userData.organizationName,
-            entityType: userData.entityType,
-            country: userData.country
-          }}
-          onClose={() => setShowMembershipBenefits(false)}
-        />
-      )}
-
-      {showMembershipSelection && (
-        <MembershipSelectionModal
-          countryPricing={countryPricing}
-          userData={{
-            userId: userData.userId,
-            organizationName: userData.organizationName,
-            entityType: userData.entityType,
-            country: userData.country
-          }}
-          onClose={() => setShowMembershipSelection(false)}
-          onProceed={handleProceedToMembership}
-        />
-      )}
-
-      {showEngagementModelSelector && (
-        <EngagementModelSelector
-          onClose={() => setShowEngagementModelSelector(false)}
-          onSelect={handleEngagementModelSelected}
-          userCountry={userData.country}
-          userOrgType={userData.organizationType}
-          membershipStatus={membershipStatus.status}
-          currentSelectedModel={selectedEngagementModel}
-          currentSelectedPricingPlan={selectedPricingPlan}
-        />
-      )}
-    </DashboardLayout>
+    </div>
   );
 };
 
