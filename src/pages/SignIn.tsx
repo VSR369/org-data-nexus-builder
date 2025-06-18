@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Users, Target, LogIn } from 'lucide-react';
+import { Users, Target, LogIn, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const SignIn = () => {
@@ -20,6 +20,9 @@ const SignIn = () => {
     } else if (selectedRole === 'contributor') {
       console.log('👥 Navigating to contributor login');
       navigate('/contributor-login');
+    } else if (selectedRole === 'seeking-org-admin') {
+      console.log('🔒 Navigating to seeking organization administrator login');
+      navigate('/seeking-org-admin-login');
     } else {
       console.log('❌ No valid role selected');
     }
@@ -87,6 +90,28 @@ const SignIn = () => {
                       </div>
                       <p className="text-sm text-gray-600">
                         Sign in as a contributor. A contributor could be a solution provider or solution assessor who offers expertise and evaluates solutions.
+                      </p>
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seeking Organization Administrator Option */}
+              <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                selectedRole === 'seeking-org-admin' 
+                  ? 'border-green-500 bg-green-50' 
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  <RadioGroupItem value="seeking-org-admin" id="seeking-org-admin" className="mt-1" />
+                  <div className="flex-1">
+                    <Label htmlFor="seeking-org-admin" className="cursor-pointer">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shield className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold text-gray-900">Seeking Organization Administrator</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Sign in as an administrator for your seeking organization to manage organizational settings and users.
                       </p>
                     </Label>
                   </div>

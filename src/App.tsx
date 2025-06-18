@@ -12,6 +12,7 @@ import SignUp from './pages/SignUp';
 import SeekerRegistration from './pages/SeekerRegistration';
 import SeekerLogin from './pages/SeekerLogin';
 import ContributorLogin from './pages/ContributorLogin';
+import SeekingOrgAdminLogin from './pages/SeekingOrgAdminLogin';
 import ContributorEnrollment from './pages/ContributorEnrollment';
 import SeekerDashboard from './pages/SeekerDashboard';
 import MasterDataPortal from './pages/MasterDataPortal';
@@ -33,6 +34,7 @@ function App() {
               <Route path="/seeker-registration" element={<SeekerRegistration />} />
               <Route path="/seeker-login" element={<SeekerLogin />} />
               <Route path="/contributor-login" element={<ContributorLogin />} />
+              <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
               <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
               <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />
