@@ -860,6 +860,7 @@ const SolutionSeekersValidation: React.FC = () => {
                     <TableHead>Admin User ID</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Contact</TableHead>
+                    <TableHead>Password</TableHead>
                     <TableHead>Created</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -876,6 +877,11 @@ const SolutionSeekersValidation: React.FC = () => {
                       <TableCell className="font-mono text-sm">{admin.userId}</TableCell>
                       <TableCell>{admin.email}</TableCell>
                       <TableCell>{admin.contactNumber}</TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {admin.password || 'Not Available'}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-sm">
                         {formatDate(admin.createdAt)}
                       </TableCell>
@@ -1747,8 +1753,8 @@ const SolutionSeekersValidation: React.FC = () => {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Password</label>
-                        <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                          {admin.password ? '••••••••' : 'Not Available'}
+                        <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded break-all">
+                          {admin.password || 'Not Available'}
                         </p>
                       </div>
                       <div>
