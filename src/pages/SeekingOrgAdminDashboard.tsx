@@ -3,7 +3,7 @@ import React from 'react';
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield } from "lucide-react";
+import { ArrowLeft, Shield, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import SolutionSeekersValidation from "@/components/master-data/SolutionSeekersValidation";
 
@@ -38,10 +38,14 @@ const SeekingOrgAdminDashboard = () => {
                         Seeking Organization Administrator Dashboard
                       </h1>
                       <p className="text-sm text-muted-foreground">
-                        Solution Seekers Management Portal
+                        Solution Seekers Management Portal - Read Only View
                       </p>
                     </div>
                   </div>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-lg">
+                  <Eye className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-700">View Only Mode</span>
                 </div>
               </div>
             </div>
@@ -50,7 +54,12 @@ const SeekingOrgAdminDashboard = () => {
           {/* Main Content */}
           <div className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <SolutionSeekersValidation />
+              <div className="pointer-events-none select-none">
+                <div className="opacity-90">
+                  <SolutionSeekersValidation />
+                </div>
+                <div className="absolute inset-0 bg-transparent cursor-not-allowed" />
+              </div>
             </div>
           </div>
         </SidebarInset>
