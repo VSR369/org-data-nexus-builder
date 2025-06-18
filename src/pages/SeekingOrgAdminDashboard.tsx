@@ -13,7 +13,6 @@ import { UserDataProvider, useUserData } from "@/components/dashboard/UserDataPr
 import { useToast } from "@/hooks/use-toast";
 import { useMembershipData } from "@/hooks/useMembershipData";
 import { usePricingData } from "@/hooks/usePricingData";
-import { useState } from 'react';
 
 const DashboardContent = () => {
   const { userData, isLoading, showLoginWarning } = useUserData();
@@ -82,9 +81,10 @@ const DashboardContent = () => {
     } : undefined
   };
 
-  // Get current pricing configurations (read-only display)
-  const currentPricingConfigs = pricingConfigs.filter(config => 
-    config.country === userData.country || config.country === 'Global'
+  // Get specific pricing configuration for this organization
+  const organizationPricingConfig = pricingConfigs.find(config => 
+    config.organizationType === userData.organizationType && 
+    (config.country === userData.country || config.country === 'Global')
   );
 
   return (
@@ -123,58 +123,114 @@ const DashboardContent = () => {
           <p>• Organization: {userData.organizationName || 'Not found'}</p>
           <p>• Entity Type: {userData.entityType}</p>
           <p>• Country: {userData.country}</p>
+          <p>• Organization Type: {userData.organizationType}</p>
           <p>• Membership Data: {membershipData ? 'Available' : 'Not configured'}</p>
-          <p>• Pricing Configs: {pricingConfigs.length} available</p>
+          <p>• Pricing Config: {organizationPricingConfig ? 'Available' : 'Not found'}</p>
         </div>
       </div>
 
       {/* Membership Status - Read Only */}
       <MembershipStatusCard membershipStatus={membershipStatus} />
 
-      {/* Current Pricing Models - Read Only Display */}
+      {/* Organization's Pricing Model - Read Only Display */}
       <Card className="shadow-xl border-0 mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <DollarSign className="h-6 w-6 text-green-600" />
-            Current Pricing Models (Read Only)
+            Selected Pricing Model (Read Only)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {currentPricingConfigs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {currentPricingConfigs.map((config) => (
-                <div key={config.id} className="p-4 bg-gray-50 rounded-lg border">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">{config.engagementModel}</h4>
-                    <Badge variant={config.country === userData.country ? 'default' : 'secondary'}>
-                      {config.country}
-                    </Badge>
+          {organizationPricingConfig ? (
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-green-900">
+                  {organizationPricingConfig.engagementModel || 'Default Pricing Model'}
+                </h4>
+                <Badge variant="default" className="bg-green-600">
+                  Active Configuration
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Organization Type:</span>
+                    <span className="font-medium text-green-900">{organizationPricingConfig.organizationType}</span>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Organization Type:</span>
-                      <span className="font-medium">{config.organizationType}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Currency:</span>
-                      <span className="font-medium">{config.currency}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Engagement Fee:</span>
-                      <span className="font-medium">{config.engagementModelFee}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Annual Fee:</span>
-                      <span className="font-medium">{config.currency} {config.annualFee}</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Country:</span>
+                    <span className="font-medium text-green-900">{organizationPricingConfig.country || 'Global'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Currency:</span>
+                    <span className="font-medium text-green-900">{organizationPricingConfig.currency}</span>
                   </div>
                 </div>
-              ))}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Engagement Fee:</span>
+                    <span className="font-medium text-green-900">{organizationPricingConfig.engagementModelFee || 0}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Annual Fee:</span>
+                    <span className="font-medium text-green-900">
+                      {organizationPricingConfig.currency} {organizationPricingConfig.annualFee || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Membership Status:</span>
+                    <span className="font-medium text-green-900 capitalize">
+                      {organizationPricingConfig.membershipStatus?.replace('-', ' ') || 'Active'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Platform as a Service Pricing if available */}
+              {organizationPricingConfig.internalPaasPricing && organizationPricingConfig.internalPaasPricing.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-green-300">
+                  <h5 className="font-medium text-green-900 mb-3">Platform as a Service Pricing</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    {organizationPricingConfig.internalPaasPricing
+                      .filter(pricing => pricing.country === userData.country || pricing.country === 'Global')
+                      .slice(0, 1)
+                      .map((pricing) => (
+                      <div key={pricing.id} className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Quarterly:</span>
+                          <span className="font-medium text-green-900">
+                            {pricing.currency} {pricing.quarterlyPrice}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Half-Yearly:</span>
+                          <span className="font-medium text-green-900">
+                            {pricing.currency} {pricing.halfYearlyPrice}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Annual:</span>
+                          <span className="font-medium text-green-900">
+                            {pricing.currency} {pricing.annualPrice}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-5 w-5 text-yellow-600" />
+                <h4 className="font-medium text-yellow-900">No Pricing Configuration Found</h4>
+              </div>
               <p className="text-sm text-yellow-800">
-                No pricing configurations found for this organization's country and type.
+                No pricing configuration is available for organization type "{userData.organizationType}" in "{userData.country}".
+              </p>
+              <p className="text-xs text-yellow-700 mt-2">
+                Please contact the administrator to configure pricing for this organization type and country.
               </p>
             </div>
           )}
