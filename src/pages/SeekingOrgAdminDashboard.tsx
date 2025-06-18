@@ -6,12 +6,41 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, Database, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrganizationInfoCards from "@/components/dashboard/OrganizationInfoCards";
+import MembershipStatusCard from "@/components/dashboard/MembershipStatusCard";
+import PricingModelCard from "@/components/dashboard/PricingModelCard";
 import { UserDataProvider, useUserData } from "@/components/dashboard/UserDataProvider";
 import { useToast } from "@/hooks/use-toast";
+import { useMembershipData } from "@/hooks/useMembershipData";
+import { usePricingData } from "@/hooks/usePricingData";
+import { useEngagementModels } from "@/components/master-data/engagement-models/types";
+import { useState } from 'react';
 
 const DashboardContent = () => {
   const { userData, isLoading, showLoginWarning } = useUserData();
   const { toast } = useToast();
+  const [showPricingSelector, setShowPricingSelector] = useState(false);
+  const [selectedEngagementModel, setSelectedEngagementModel] = useState('');
+
+  // Load membership data
+  const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
+    userData.entityType, 
+    userData.country, 
+    userData.organizationType
+  );
+
+  // Load pricing data
+  const { pricingConfigs, getConfigByOrgTypeAndEngagement } = usePricingData(
+    userData.organizationType, 
+    userData.country
+  );
+
+  // Mock engagement models for now
+  const engagementModels = [
+    { id: '1', name: 'Market Place' },
+    { id: '2', name: 'Aggregator' },
+    { id: '3', name: 'Market Place & Aggregator' },
+    { id: '4', name: 'Platform as a Service' }
+  ];
 
   const handleRefreshData = () => {
     window.location.reload();
@@ -48,6 +77,32 @@ const DashboardContent = () => {
     );
   }
 
+  // Determine membership status
+  const membershipStatus = {
+    status: countryPricing ? 'active' : 'inactive',
+    plan: countryPricing ? 'annual' : 'none',
+    message: countryPricing ? 'Active Membership' : 'No Active Membership',
+    badgeVariant: countryPricing ? 'default' : 'secondary',
+    icon: countryPricing ? require('lucide-react').CheckCircle : require('lucide-react').Clock,
+    iconColor: countryPricing ? 'text-green-600' : 'text-gray-600',
+    paymentDate: countryPricing ? new Date().toISOString() : undefined,
+    pricing: countryPricing ? {
+      currency: countryPricing.currency,
+      amount: countryPricing.annualPrice
+    } : undefined
+  };
+
+  // Get current pricing config
+  const currentPricingConfig = selectedEngagementModel ? 
+    getConfigByOrgTypeAndEngagement(userData.organizationType, selectedEngagementModel) : null;
+
+  const handleJoinAsMember = () => {
+    toast({
+      title: "Membership Action",
+      description: "Redirecting to membership management...",
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-6">
@@ -57,7 +112,7 @@ const DashboardContent = () => {
               Seeking Organization Dashboard
             </h2>
             <p className="text-gray-600">
-              View your organization's registration details and administrative information.
+              View your organization's details, membership status, and pricing information.
             </p>
           </div>
           <Button 
@@ -83,10 +138,27 @@ const DashboardContent = () => {
           <p>• Loading Status: {isLoading ? 'Loading...' : 'Completed'}</p>
           <p>• User ID: {userData.userId || 'Not found'}</p>
           <p>• Organization: {userData.organizationName || 'Not found'}</p>
-          <p>• Data Source: Registration & Validation System</p>
+          <p>• Membership Data: {membershipData ? 'Available' : 'Not found'}</p>
+          <p>• Pricing Configs: {pricingConfigs.length} available</p>
         </div>
       </div>
+
+      {/* Membership Status */}
+      <MembershipStatusCard membershipStatus={membershipStatus} />
+
+      {/* Pricing Models */}
+      <PricingModelCard
+        showPricingSelector={showPricingSelector}
+        setShowPricingSelector={setShowPricingSelector}
+        selectedEngagementModel={selectedEngagementModel}
+        setSelectedEngagementModel={setSelectedEngagementModel}
+        engagementModels={engagementModels}
+        currentPricingConfig={currentPricingConfig}
+        membershipStatus={membershipStatus}
+        showLoginWarning={showLoginWarning}
+      />
       
+      {/* Organization Details */}
       <OrganizationInfoCards />
     </div>
   );
