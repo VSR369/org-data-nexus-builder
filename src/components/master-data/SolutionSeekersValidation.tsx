@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Trash2, Eye } from 'lucide-react';
+import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import type { UserRecord } from '@/services/types';
 
@@ -37,50 +38,67 @@ const SolutionSeekersValidation: React.FC = () => {
     loadSeekers();
   }, []);
 
-  const handleApprove = async (seekerId: string) => {
-    try {
-      await unifiedUserStorageService.updateUser(seekerId, { approvalStatus: 'approved' });
-      setSeekers(seekers.map(seeker =>
-        seeker.id === seekerId ? { ...seeker, approvalStatus: 'approved' } : seeker
-      ));
-    } catch (err: any) {
-      console.error('Error approving seeker:', err);
-      alert('Failed to approve seeker.');
-    }
-  };
-
-  const handleReject = async (seekerId: string) => {
-    try {
-      await unifiedUserStorageService.updateUser(seekerId, { approvalStatus: 'rejected' });
-      setSeekers(seekers.map(seeker =>
-        seeker.id === seekerId ? { ...seeker, approvalStatus: 'rejected' } : seeker
-      ));
-    } catch (err: any) {
-      console.error('Error rejecting seeker:', err);
-      alert('Failed to reject seeker.');
-    }
-  };
-
-  const handleDelete = async (seekerId: string) => {
-    if (window.confirm('Are you sure you want to delete this seeker?')) {
-      try {
-        await unifiedUserStorageService.deleteUser(seekerId);
-        setSeekers(seekers.filter(seeker => seeker.id !== seekerId));
-      } catch (err: any) {
-        console.error('Error deleting seeker:', err);
-        alert('Failed to delete seeker.');
-      }
-    }
-  };
-
   const handleDownloadData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(seekers, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", "solution_seekers_data.json");
-    document.body.appendChild(downloadAnchorNode); // required for firefox
+    document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+  };
+
+  const loadEngagementPricingDetails = (seeker: SeekerDetails) => {
+    // Try to get membership/pricing data from localStorage
+    const membershipKeys = [
+      `membership_${seeker.userId}`,
+      `membership_${seeker.organizationId}`,
+      `${seeker.organizationName}_membership`,
+      'selected_membership_plan'
+    ];
+
+    const pricingKeys = [
+      `pricing_${seeker.userId}`,
+      `selected_pricing_${seeker.organizationId}`,
+      'selected_engagement_model'
+    ];
+
+    let membershipData = null;
+    let pricingData = null;
+
+    // Check for membership data
+    for (const key of membershipKeys) {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus)) {
+            membershipData = parsed;
+            break;
+          }
+        } catch (e) {
+          // Continue checking other keys
+        }
+      }
+    }
+
+    // Check for pricing data
+    for (const key of pricingKeys) {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency)) {
+            pricingData = parsed;
+            break;
+          }
+        } catch (e) {
+          // Continue checking other keys
+        }
+      }
+    }
+
+    return { membershipData, pricingData };
   };
 
   if (loading) {
@@ -104,54 +122,71 @@ const SolutionSeekersValidation: React.FC = () => {
         <div className="text-gray-500">No solution seekers found.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {seekers.map(seeker => (
-            <Card key={seeker.id} className="bg-white shadow-md rounded-md overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Users className="h-4 w-4 text-gray-500" />
-                  {seeker.organizationName}
-                </CardTitle>
-                <Badge variant="secondary">{seeker.approvalStatus}</Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>
-                    <Building2 className="h-4 w-4 inline-block mr-1" />
-                    {seeker.organizationType} - {seeker.entityType}
-                  </p>
-                  <p>
-                    <AlertCircle className="h-4 w-4 inline-block mr-1" />
-                    {seeker.country}
-                  </p>
-                  <p>Email: {seeker.email}</p>
-                  <p>Contact: {seeker.contactPersonName}</p>
-                  <p>Membership: {seeker.membershipStatus || 'Not specified'}</p>
-                </div>
-                <div className="flex justify-end mt-4 space-x-2">
-                  <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View
-                  </Button>
-                  {seeker.approvalStatus === 'pending' && (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => handleApprove(seeker.id)}>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleReject(seeker.id)}>
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(seeker.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {seekers.map(seeker => {
+            const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
+            
+            return (
+              <Card key={seeker.id} className="bg-white shadow-md rounded-md overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Users className="h-4 w-4 text-gray-500" />
+                    {seeker.organizationName}
+                  </CardTitle>
+                  <Badge variant={
+                    seeker.membershipStatus === 'active' ? 'default' : 
+                    seeker.membershipStatus === 'inactive' ? 'destructive' : 'secondary'
+                  }>
+                    {seeker.membershipStatus || membershipData?.status || 'not-member'}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-gray-600 space-y-2">
+                    <p>
+                      <Building2 className="h-4 w-4 inline-block mr-1" />
+                      {seeker.organizationType} - {seeker.entityType}
+                    </p>
+                    <p>
+                      <AlertCircle className="h-4 w-4 inline-block mr-1" />
+                      {seeker.country}
+                    </p>
+                    <p>Email: {seeker.email}</p>
+                    <p>Contact: {seeker.contactPersonName}</p>
+                    
+                    {/* Engagement/Pricing Model Details */}
+                    <div className="mt-3 p-2 bg-blue-50 rounded border">
+                      <h4 className="font-medium text-blue-900 mb-1">Engagement & Pricing</h4>
+                      {seeker.selectedPlan && (
+                        <p className="text-xs text-blue-800">Plan: {seeker.selectedPlan}</p>
+                      )}
+                      {seeker.selectedEngagementModel && (
+                        <p className="text-xs text-blue-800">Model: {seeker.selectedEngagementModel}</p>
+                      )}
+                      {membershipData?.selectedPlan && (
+                        <p className="text-xs text-blue-800">Selected Plan: {membershipData.selectedPlan}</p>
+                      )}
+                      {pricingData?.engagementModel && (
+                        <p className="text-xs text-blue-800">Engagement: {pricingData.engagementModel}</p>
+                      )}
+                      {pricingData?.currency && pricingData?.amount && (
+                        <p className="text-xs text-blue-800">
+                          Pricing: {pricingData.currency} {pricingData.amount} ({pricingData.frequency || 'monthly'})
+                        </p>
+                      )}
+                      {!seeker.selectedPlan && !seeker.selectedEngagementModel && !membershipData && !pricingData && (
+                        <p className="text-xs text-gray-500">No engagement/pricing details found</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4 space-x-2">
+                    <Button variant="ghost" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
