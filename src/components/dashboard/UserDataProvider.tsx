@@ -60,103 +60,111 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
 
   useEffect(() => {
     const loadUserData = async () => {
-      console.log('🔍 UserDataProvider: Loading user data for dashboard...');
+      console.log('🔍 === DEBUGGING SEEKING ORG DATA RETRIEVAL ===');
       console.log('🔍 Current location:', location.pathname);
       setIsLoading(true);
       
       try {
-        // Get userId from location state
-        const locationUserId = (location.state as any)?.userId;
-        console.log('🔍 Location userId:', locationUserId);
+        // Initialize the unified storage service
+        await unifiedUserStorageService.initialize();
         
-        // First try to load from session
+        // Check storage health first
+        const healthCheck = await unifiedUserStorageService.checkStorageHealth();
+        console.log('🔧 Storage health check:', healthCheck);
+        
+        // Get all users to see what data we have
+        const allUsers = await unifiedUserStorageService.getAllUsers();
+        console.log('👥 All registered users found:', allUsers);
+        console.log('👥 Total users count:', allUsers.length);
+        
+        // Look for seeking organization data specifically
+        const seekingOrgs = allUsers.filter(user => 
+          user.entityType || user.organizationType || user.organizationName
+        );
+        console.log('🏢 Seeking organizations found:', seekingOrgs);
+        
+        // Try to get session data
         const sessionData = await unifiedUserStorageService.loadSession();
-        console.log('🔍 Session data:', sessionData);
+        console.log('📱 Current session data:', sessionData);
         
-        if (sessionData) {
-          console.log('✅ Found session data:', sessionData);
+        let targetUser = null;
+        
+        // Strategy 1: Use session data to find user
+        if (sessionData && sessionData.userId) {
+          targetUser = await unifiedUserStorageService.findUserById(sessionData.userId);
+          console.log('🎯 User found by session ID:', targetUser);
+        }
+        
+        // Strategy 2: Use location state
+        const locationUserId = (location.state as any)?.userId;
+        if (!targetUser && locationUserId) {
+          targetUser = await unifiedUserStorageService.findUserById(locationUserId);
+          console.log('🎯 User found by location state:', targetUser);
+        }
+        
+        // Strategy 3: Get the most recent seeking organization
+        if (!targetUser && seekingOrgs.length > 0) {
+          targetUser = seekingOrgs[seekingOrgs.length - 1];
+          console.log('🎯 Using most recent seeking org:', targetUser);
+        }
+        
+        // Strategy 4: Get any user with organization data
+        if (!targetUser && allUsers.length > 0) {
+          targetUser = allUsers.find(user => user.organizationName) || allUsers[0];
+          console.log('🎯 Using any user with org data:', targetUser);
+        }
+        
+        if (targetUser) {
+          console.log('✅ Target user selected:', targetUser);
           
-          // Try to get full user data from storage
-          const fullUserData = await unifiedUserStorageService.findUserById(sessionData.userId);
-          console.log('🔍 Full user data found:', fullUserData);
+          const mappedData = {
+            userId: targetUser.userId || targetUser.id || 'N/A',
+            organizationName: targetUser.organizationName || 'Organization Name Not Available',
+            entityType: targetUser.entityType || 'Entity Type Not Available',
+            country: targetUser.country || 'Country Not Available',
+            email: targetUser.email || 'Email Not Available',
+            contactPersonName: targetUser.contactPersonName || 'Contact Person Not Available',
+            organizationType: targetUser.organizationType || targetUser.entityType || 'Organization Type Not Available',
+            industrySegment: targetUser.industrySegment || 'Industry Segment Not Available',
+            organizationId: targetUser.organizationId || targetUser.userId || targetUser.id || 'Organization ID Not Available',
+            registrationTimestamp: targetUser.registrationTimestamp || targetUser.createdAt || targetUser.updatedAt || 'Registration Date Not Available'
+          };
           
-          if (fullUserData) {
-            console.log('✅ Setting full user data:', fullUserData);
-            const mappedData = {
-              userId: fullUserData.userId,
-              organizationName: fullUserData.organizationName || 'Sample Organization',
-              entityType: fullUserData.entityType || 'Corporation',
-              country: fullUserData.country || 'United States',
-              email: fullUserData.email || 'admin@organization.com',
-              contactPersonName: fullUserData.contactPersonName || 'John Smith',
-              organizationType: fullUserData.organizationType || fullUserData.entityType || 'Corporation',
-              industrySegment: fullUserData.industrySegment || 'Technology',
-              organizationId: fullUserData.organizationId || fullUserData.userId || 'ORG001',
-              registrationTimestamp: fullUserData.registrationTimestamp || fullUserData.createdAt || new Date().toISOString()
-            };
-            console.log('✅ Mapped user data:', mappedData);
-            setUserData(mappedData);
-          } else {
-            // Fallback to session data with default values
-            console.log('⚠️ Using session data with defaults');
-            setUserData({
-              userId: sessionData.userId,
-              organizationName: sessionData.organizationName || 'Sample Technology Corp',
-              entityType: sessionData.entityType || 'Corporation',
-              country: sessionData.country || 'United States',
-              email: sessionData.email || 'admin@sampletech.com',
-              contactPersonName: sessionData.contactPersonName || 'Jane Doe',
-              organizationType: sessionData.entityType || 'Corporation',
-              industrySegment: 'Information Technology',
-              organizationId: sessionData.userId || 'STC001',
-              registrationTimestamp: sessionData.loginTimestamp || new Date().toISOString()
+          console.log('📋 Final mapped user data:', mappedData);
+          setUserData(mappedData);
+          
+          // Update session if we found valid data
+          if (targetUser.userId || targetUser.id) {
+            await unifiedUserStorageService.saveSession({
+              userId: targetUser.userId || targetUser.id,
+              organizationName: targetUser.organizationName,
+              entityType: targetUser.entityType,
+              country: targetUser.country,
+              email: targetUser.email,
+              contactPersonName: targetUser.contactPersonName,
+              loginTimestamp: new Date().toISOString()
             });
           }
         } else {
-          // Use demo data for administrator dashboard
-          console.log('⚠️ No session, using demo organization data for admin');
-          setUserData({
-            userId: 'admin001',
-            organizationName: 'Global Solutions Inc',
-            entityType: 'Corporation',
-            country: 'United States',
-            email: 'admin@globalsolutions.com',
-            contactPersonName: 'Michael Johnson',
-            organizationType: 'Corporation',
-            industrySegment: 'Information Technology',
-            organizationId: 'GSI001',
-            registrationTimestamp: new Date().toISOString()
+          console.log('❌ No user data found anywhere');
+          toast({
+            title: "No Data Found",
+            description: "No seeking organization data found. Please complete registration first.",
+            variant: "destructive"
           });
-          
-          // Save demo session
-          await unifiedUserStorageService.saveSession({
-            userId: 'admin001',
-            organizationName: 'Global Solutions Inc',
-            entityType: 'Corporation',
-            country: 'United States',
-            email: 'admin@globalsolutions.com',
-            contactPersonName: 'Michael Johnson',
-            loginTimestamp: new Date().toISOString()
-          });
+          setShowLoginWarning(true);
         }
+        
       } catch (error) {
         console.error('❌ Error loading user data:', error);
-        // Use fallback demo data even on error
-        setUserData({
-          userId: 'demo001',
-          organizationName: 'Demo Organization Ltd',
-          entityType: 'Corporation',
-          country: 'United States',
-          email: 'demo@organization.com',
-          contactPersonName: 'Demo User',
-          organizationType: 'Corporation',
-          industrySegment: 'Technology',
-          organizationId: 'DEMO001',
-          registrationTimestamp: new Date().toISOString()
+        toast({
+          title: "Data Loading Error",
+          description: "Failed to load organization data. Please try again.",
+          variant: "destructive"
         });
       } finally {
         setIsLoading(false);
-        console.log('✅ User data loading completed');
+        console.log('✅ === DATA LOADING COMPLETED ===');
       }
     };
 
@@ -165,12 +173,12 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
 
   const handleLogout = (userId?: string) => {
     console.log('Logging out user:', userId);
-    // Clear session and navigate to login
     unifiedUserStorageService.clearSession();
     navigate('/seeking-org-admin-login');
   };
 
   console.log('🔍 UserDataProvider rendering with userData:', userData);
+  console.log('🔍 UserDataProvider isLoading:', isLoading);
 
   return (
     <UserDataContext.Provider value={{ userData, isLoading, showLoginWarning, handleLogout }}>
