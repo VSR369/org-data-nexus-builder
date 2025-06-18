@@ -1,12 +1,148 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin, Users, FileText, Calendar, Clock, CreditCard, DollarSign } from 'lucide-react';
+import { Building2, MapPin, Users, FileText, Calendar, Clock, CreditCard, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { useUserData } from "@/components/dashboard/UserDataProvider";
+import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
+
+interface MembershipData {
+  status: 'active' | 'inactive' | 'not-member';
+  selectedPlan?: string;
+  selectedEngagementModel?: string;
+  pricingDetails?: {
+    currency: string;
+    amount: number;
+    paymentFrequency: string;
+  };
+  activationDate?: string;
+  paymentStatus?: string;
+}
 
 const ReadOnlyOrganizationData: React.FC = () => {
   const { userData } = useUserData();
+  const [membershipData, setMembershipData] = useState<MembershipData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadMembershipData = async () => {
+      console.log('🔍 Loading actual membership data for organization:', userData.organizationName);
+      
+      try {
+        // Initialize storage service
+        await unifiedUserStorageService.initialize();
+        
+        // Look for membership data associated with this user/organization
+        const userMembershipKey = `membership_${userData.userId}`;
+        const orgMembershipKey = `membership_${userData.organizationId}`;
+        
+        // Try multiple storage keys to find membership data
+        let membershipInfo = null;
+        
+        // Check localStorage for membership selections
+        const possibleKeys = [
+          userMembershipKey,
+          orgMembershipKey,
+          `${userData.organizationName}_membership`,
+          `seeker_membership_${userData.userId}`,
+          'selected_membership_plan',
+          'membership_selection'
+        ];
+        
+        for (const key of possibleKeys) {
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus)) {
+                membershipInfo = parsed;
+                console.log(`✅ Found membership data in key: ${key}`, parsed);
+                break;
+              }
+            } catch (e) {
+              // Continue checking other keys
+            }
+          }
+        }
+        
+        // Check for pricing selection data
+        const pricingKeys = [
+          `pricing_${userData.userId}`,
+          `selected_pricing_${userData.organizationId}`,
+          'selected_engagement_model',
+          'pricing_selection'
+        ];
+        
+        let pricingInfo = null;
+        for (const key of pricingKeys) {
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency)) {
+                pricingInfo = parsed;
+                console.log(`✅ Found pricing data in key: ${key}`, parsed);
+                break;
+              }
+            } catch (e) {
+              // Continue checking other keys
+            }
+          }
+        }
+        
+        // Try to get from unified storage service
+        if (!membershipInfo) {
+          try {
+            const allUsers = await unifiedUserStorageService.getAllUsers();
+            const currentUser = allUsers.find(u => u.userId === userData.userId || u.organizationId === userData.organizationId);
+            
+            if (currentUser && (currentUser.membershipStatus || currentUser.selectedPlan)) {
+              membershipInfo = {
+                status: currentUser.membershipStatus || 'not-member',
+                selectedPlan: currentUser.selectedPlan,
+                selectedEngagementModel: currentUser.selectedEngagementModel,
+                activationDate: currentUser.membershipActivationDate,
+                paymentStatus: currentUser.paymentStatus
+              };
+              console.log('✅ Found membership data in user profile', membershipInfo);
+            }
+          } catch (error) {
+            console.log('⚠️ Error accessing unified storage:', error);
+          }
+        }
+        
+        // Combine membership and pricing data
+        const combinedData: MembershipData = {
+          status: membershipInfo?.status || membershipInfo?.membershipStatus || 'not-member',
+          selectedPlan: membershipInfo?.selectedPlan || membershipInfo?.plan,
+          selectedEngagementModel: pricingInfo?.engagementModel || pricingInfo?.selectedModel || membershipInfo?.selectedEngagementModel,
+          pricingDetails: pricingInfo ? {
+            currency: pricingInfo.currency || 'USD',
+            amount: pricingInfo.amount || pricingInfo.price || 0,
+            paymentFrequency: pricingInfo.frequency || pricingInfo.paymentFrequency || 'monthly'
+          } : undefined,
+          activationDate: membershipInfo?.activationDate || membershipInfo?.membershipDate,
+          paymentStatus: membershipInfo?.paymentStatus || 'pending'
+        };
+        
+        console.log('📋 Final combined membership data:', combinedData);
+        setMembershipData(combinedData);
+        
+      } catch (error) {
+        console.error('❌ Error loading membership data:', error);
+        // Set default state if no data found
+        setMembershipData({
+          status: 'not-member'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userData.userId) {
+      loadMembershipData();
+    }
+  }, [userData]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not available';
@@ -20,6 +156,37 @@ const ReadOnlyOrganizationData: React.FC = () => {
       return dateString;
     }
   };
+
+  const getMembershipStatusDetails = () => {
+    if (!membershipData) return { icon: Clock, color: 'text-gray-500', badge: 'secondary', message: 'Loading...' };
+    
+    switch (membershipData.status) {
+      case 'active':
+        return {
+          icon: CheckCircle,
+          color: 'text-green-600',
+          badge: 'default',
+          message: 'Active Member'
+        };
+      case 'inactive':
+        return {
+          icon: XCircle,
+          color: 'text-red-600',
+          badge: 'destructive',
+          message: 'Inactive Member'
+        };
+      default:
+        return {
+          icon: Clock,
+          color: 'text-gray-500',
+          badge: 'secondary',
+          message: 'Not a Member'
+        };
+    }
+  };
+
+  const statusDetails = getMembershipStatusDetails();
+  const StatusIcon = statusDetails.icon;
 
   return (
     <div className="space-y-6">
@@ -89,49 +256,85 @@ const ReadOnlyOrganizationData: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Membership Details - From Registration Data */}
+      {/* Actual Membership Status */}
       <Card className="shadow-xl border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <CreditCard className="h-6 w-6 text-green-600" />
-            Membership Details
+            <CreditCard className="h-6 w-6 text-blue-600" />
+            Current Membership Status
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-900 mb-3">Registered Organization Details</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <label className="text-gray-600">Organization ID:</label>
-                  <p className="font-medium">{userData.organizationId || 'Not available'}</p>
-                </div>
-                <div>
-                  <label className="text-gray-600">User ID:</label>
-                  <p className="font-medium">{userData.userId || 'Not available'}</p>
-                </div>
-                <div>
-                  <label className="text-gray-600">Entity Type:</label>
-                  <p className="font-medium">{userData.entityType || 'Not available'}</p>
-                </div>
-                <div>
-                  <label className="text-gray-600">Organization Type:</label>
-                  <p className="font-medium">{userData.organizationType || 'Not available'}</p>
-                </div>
-              </div>
+          {loading ? (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Loading membership information...</p>
             </div>
-            
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <h4 className="font-medium text-green-900 mb-2">Registration Status</h4>
-              <p className="text-sm text-green-800">
-                This organization has been successfully registered as a solution seeker with the provided details.
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-green-700">Active Registration</span>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <StatusIcon className={`h-6 w-6 ${statusDetails.color}`} />
+                  <div>
+                    <p className="font-medium text-gray-900">{statusDetails.message}</p>
+                    {membershipData?.selectedPlan && (
+                      <p className="text-sm text-gray-600">
+                        Plan: {membershipData.selectedPlan}
+                      </p>
+                    )}
+                    {membershipData?.activationDate && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Since: {formatDate(membershipData.activationDate)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Badge variant={statusDetails.badge as any}>
+                  {membershipData?.status === 'active' ? 'Active' : 
+                   membershipData?.status === 'inactive' ? 'Inactive' : 'Not Member'}
+                </Badge>
               </div>
+
+              {membershipData?.status === 'active' && membershipData.pricingDetails && (
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-medium text-green-900 mb-3">Selected Pricing Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <label className="text-gray-600">Currency:</label>
+                      <p className="font-medium">{membershipData.pricingDetails.currency}</p>
+                    </div>
+                    <div>
+                      <label className="text-gray-600">Amount:</label>
+                      <p className="font-medium">{membershipData.pricingDetails.amount.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <label className="text-gray-600">Payment Frequency:</label>
+                      <p className="font-medium capitalize">{membershipData.pricingDetails.paymentFrequency}</p>
+                    </div>
+                    <div>
+                      <label className="text-gray-600">Payment Status:</label>
+                      <p className="font-medium capitalize">{membershipData.paymentStatus || 'Pending'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {membershipData?.selectedEngagementModel && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-900 mb-2">Selected Engagement Model</h4>
+                  <p className="text-sm text-blue-800">{membershipData.selectedEngagementModel}</p>
+                </div>
+              )}
+
+              {membershipData?.status === 'not-member' && (
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-medium text-yellow-900 mb-2">Membership Not Active</h4>
+                  <p className="text-sm text-yellow-800">
+                    This organization has not yet selected a membership plan or activated their membership.
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -178,68 +381,41 @@ const ReadOnlyOrganizationData: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Available Services */}
-      <Card className="shadow-xl border-0">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <DollarSign className="h-6 w-6 text-purple-600" />
-            Available Services
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <h4 className="font-medium text-purple-900 mb-3">Solution Seeking Services</h4>
-            <p className="text-sm text-purple-800 mb-3">
-              As a registered {userData.entityType} organization of type {userData.organizationType}, 
-              you have access to the following services:
-            </p>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Browse and search solutions catalog</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Post challenges and requirements</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Connect with solution providers</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Access community resources</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Next Steps Information */}
       <Card className="shadow-xl border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <Clock className="h-6 w-6 text-blue-600" />
-            What's Next
+            Current Status & Next Steps
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-900 mb-2">Ready to Find Solutions</h4>
-              <p className="text-sm text-blue-800">
-                Your organization registration is complete and active. You can now start exploring 
-                the platform to find solutions that match your organization's needs.
-              </p>
-            </div>
+            {membershipData?.status === 'active' ? (
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="font-medium text-green-900 mb-2">Ready to Use Platform</h4>
+                <p className="text-sm text-green-800">
+                  Your membership is active and you have full access to platform features.
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Registration Complete</h4>
+                <p className="text-sm text-blue-800">
+                  Your organization registration is complete. {membershipData?.status === 'not-member' 
+                    ? 'Consider activating a membership plan to access premium features.' 
+                    : 'Your membership status needs attention.'}
+                </p>
+              </div>
+            )}
             
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h4 className="font-medium text-gray-900 mb-2">Getting Started</h4>
+              <h4 className="font-medium text-gray-900 mb-2">Available Actions</h4>
               <ul className="text-sm text-gray-700 space-y-1">
-                <li>• Navigate to the Solutions section to browse available offerings</li>
-                <li>• Post your specific challenges in the Challenges section</li>
-                <li>• Join community discussions and events</li>
-                <li>• Connect directly with solution providers</li>
+                <li>• Browse solutions and services</li>
+                <li>• Post challenges and requirements</li>
+                <li>• Connect with solution providers</li>
+                <li>• Participate in community discussions</li>
               </ul>
             </div>
           </div>
