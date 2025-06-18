@@ -20,15 +20,58 @@ const SolutionSeekersValidation: React.FC = () => {
   useEffect(() => {
     const loadSeekers = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
+        console.log('🔍 Loading solution seekers...');
         await unifiedUserStorageService.initialize();
         const allUsers = await unifiedUserStorageService.getAllUsers();
         
-        // Filter for solution seekers and cast to SeekerDetails
-        const solutionSeekers = allUsers.filter(user => user.entityType === 'solution-seeker') as SeekerDetails[];
+        console.log('👥 All users retrieved:', allUsers.length);
+        console.log('👥 Users data:', allUsers);
         
-        setSeekers(solutionSeekers);
+        // Enhanced filtering for solution seekers
+        const solutionSeekers = allUsers.filter(user => {
+          console.log('🔍 Checking user:', {
+            userId: user.userId,
+            entityType: user.entityType,
+            organizationType: user.organizationType,
+            organizationName: user.organizationName
+          });
+          
+          // Check for solution-seeker entityType (with variations)
+          const isSolutionSeeker = user.entityType?.toLowerCase().includes('solution') ||
+                                 user.entityType?.toLowerCase().includes('seeker') ||
+                                 user.entityType === 'solution-seeker' ||
+                                 user.entityType === 'Solution Seeker';
+          
+          // Also check if organizationType indicates seeker
+          const isOrgSeeker = user.organizationType?.toLowerCase().includes('seeker');
+          
+          console.log('🎯 Is solution seeker?', isSolutionSeeker || isOrgSeeker);
+          
+          return isSolutionSeeker || isOrgSeeker;
+        }) as SeekerDetails[];
+        
+        console.log('✅ Solution seekers found:', solutionSeekers.length);
+        console.log('📋 Solution seekers data:', solutionSeekers);
+        
+        // If no solution seekers found, show all users for debugging
+        if (solutionSeekers.length === 0 && allUsers.length > 0) {
+          console.log('⚠️ No solution seekers found, showing all users for analysis');
+          setSeekers(allUsers.map(user => ({
+            ...user,
+            approvalStatus: 'pending' as const
+          })));
+        } else {
+          setSeekers(solutionSeekers.map(seeker => ({
+            ...seeker,
+            approvalStatus: 'pending' as const
+          })));
+        }
+        
       } catch (err: any) {
+        console.error('❌ Error loading solution seekers:', err);
         setError(err.message || 'Failed to load solution seekers.');
       } finally {
         setLoading(false);
@@ -54,13 +97,15 @@ const SolutionSeekersValidation: React.FC = () => {
       `membership_${seeker.userId}`,
       `membership_${seeker.organizationId}`,
       `${seeker.organizationName}_membership`,
-      'selected_membership_plan'
+      'selected_membership_plan',
+      'completed_membership_payment'
     ];
 
     const pricingKeys = [
       `pricing_${seeker.userId}`,
       `selected_pricing_${seeker.organizationId}`,
-      'selected_engagement_model'
+      'selected_engagement_model',
+      'engagement_model_selection'
     ];
 
     let membershipData = null;
@@ -72,8 +117,9 @@ const SolutionSeekersValidation: React.FC = () => {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus)) {
+          if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus || parsed.selectedPlan)) {
             membershipData = parsed;
+            console.log('🎯 Found membership data for key:', key, parsed);
             break;
           }
         } catch (e) {
@@ -88,8 +134,9 @@ const SolutionSeekersValidation: React.FC = () => {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency)) {
+          if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency || parsed.pricing)) {
             pricingData = parsed;
+            console.log('🎯 Found pricing data for key:', key, parsed);
             break;
           }
         } catch (e) {
@@ -101,84 +148,172 @@ const SolutionSeekersValidation: React.FC = () => {
     return { membershipData, pricingData };
   };
 
+  const handleRefresh = () => {
+    setSeekers([]);
+    setError(null);
+    // Trigger reload
+    const loadSeekers = async () => {
+      setLoading(true);
+      try {
+        await unifiedUserStorageService.initialize();
+        const allUsers = await unifiedUserStorageService.getAllUsers();
+        const solutionSeekers = allUsers.filter(user => 
+          user.entityType?.toLowerCase().includes('solution') ||
+          user.entityType?.toLowerCase().includes('seeker') ||
+          user.organizationType?.toLowerCase().includes('seeker')
+        ) as SeekerDetails[];
+        
+        setSeekers(solutionSeekers.map(seeker => ({
+          ...seeker,
+          approvalStatus: 'pending' as const
+        })));
+      } catch (err: any) {
+        setError(err.message || 'Failed to load solution seekers.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSeekers();
+  };
+
   if (loading) {
-    return <div>Loading solution seekers...</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex items-center justify-center">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+          Loading solution seekers...
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="container mx-auto p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-800">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">Error loading data</span>
+          </div>
+          <p className="text-red-700 mt-1">{error}</p>
+          <Button onClick={handleRefresh} className="mt-3" variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Solution Seekers Validation</h1>
-        <Button onClick={handleDownloadData} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Download Data
-        </Button>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Solution Seekers Validation</h1>
+          <p className="text-gray-600 mt-1">
+            Found {seekers.length} solution seeker{seekers.length !== 1 ? 's' : ''} in the system
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={handleDownloadData} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Download Data
+          </Button>
+        </div>
       </div>
+
       {seekers.length === 0 ? (
-        <div className="text-gray-500">No solution seekers found.</div>
+        <div className="text-center py-12">
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No solution seekers found</h3>
+          <p className="text-gray-500 mb-4">
+            No users with entity type 'solution-seeker' or organization type containing 'seeker' were found in the system.
+          </p>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {seekers.map(seeker => {
             const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
             
             return (
-              <Card key={seeker.id} className="bg-white shadow-md rounded-md overflow-hidden">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-500" />
+              <Card key={seeker.id} className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-600" />
                     {seeker.organizationName}
                   </CardTitle>
                   <Badge variant={
                     seeker.membershipStatus === 'active' ? 'default' : 
                     seeker.membershipStatus === 'inactive' ? 'destructive' : 'secondary'
                   }>
-                    {seeker.membershipStatus || membershipData?.status || 'not-member'}
+                    {seeker.membershipStatus || membershipData?.status || membershipData?.membershipStatus || 'not-member'}
                   </Badge>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <div className="text-sm text-gray-600 space-y-2">
-                    <p>
-                      <Building2 className="h-4 w-4 inline-block mr-1" />
-                      {seeker.organizationType} - {seeker.entityType}
-                    </p>
-                    <p>
-                      <AlertCircle className="h-4 w-4 inline-block mr-1" />
-                      {seeker.country}
-                    </p>
-                    <p>Email: {seeker.email}</p>
-                    <p>Contact: {seeker.contactPersonName}</p>
-                    
-                    {/* Engagement/Pricing Model Details */}
-                    <div className="mt-3 p-2 bg-blue-50 rounded border">
-                      <h4 className="font-medium text-blue-900 mb-1">Engagement & Pricing</h4>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-gray-500" />
+                      <span>{seeker.organizationType} • {seeker.entityType}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-gray-500" />
+                      <span>{seeker.country}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Email:</span> {seeker.email}
+                    </div>
+                    <div>
+                      <span className="font-medium">Contact:</span> {seeker.contactPersonName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Industry:</span> {seeker.industrySegment}
+                    </div>
+                    <div>
+                      <span className="font-medium">User ID:</span> {seeker.userId}
+                    </div>
+                  </div>
+                  
+                  {/* Engagement/Pricing Model Details */}
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
+                    <h4 className="font-medium text-blue-900 mb-2">Engagement & Pricing Details</h4>
+                    <div className="space-y-1 text-xs text-blue-800">
                       {seeker.selectedPlan && (
-                        <p className="text-xs text-blue-800">Plan: {seeker.selectedPlan}</p>
+                        <div><span className="font-medium">Plan:</span> {seeker.selectedPlan}</div>
                       )}
                       {seeker.selectedEngagementModel && (
-                        <p className="text-xs text-blue-800">Model: {seeker.selectedEngagementModel}</p>
+                        <div><span className="font-medium">Model:</span> {seeker.selectedEngagementModel}</div>
                       )}
                       {membershipData?.selectedPlan && (
-                        <p className="text-xs text-blue-800">Selected Plan: {membershipData.selectedPlan}</p>
+                        <div><span className="font-medium">Selected Plan:</span> {membershipData.selectedPlan}</div>
+                      )}
+                      {membershipData?.paidAt && (
+                        <div><span className="font-medium">Paid At:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
                       )}
                       {pricingData?.engagementModel && (
-                        <p className="text-xs text-blue-800">Engagement: {pricingData.engagementModel}</p>
+                        <div><span className="font-medium">Engagement:</span> {pricingData.engagementModel}</div>
                       )}
                       {pricingData?.currency && pricingData?.amount && (
-                        <p className="text-xs text-blue-800">
-                          Pricing: {pricingData.currency} {pricingData.amount} ({pricingData.frequency || 'monthly'})
-                        </p>
+                        <div>
+                          <span className="font-medium">Pricing:</span> {pricingData.currency} {pricingData.amount} 
+                          {pricingData.frequency && ` (${pricingData.frequency})`}
+                        </div>
                       )}
                       {!seeker.selectedPlan && !seeker.selectedEngagementModel && !membershipData && !pricingData && (
-                        <p className="text-xs text-gray-500">No engagement/pricing details found</p>
+                        <div className="text-gray-500 italic">No engagement/pricing details found</div>
                       )}
                     </div>
                   </div>
-                  <div className="flex justify-end mt-4 space-x-2">
-                    <Button variant="ghost" size="sm">
+                  
+                  <div className="flex justify-end mt-4">
+                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
