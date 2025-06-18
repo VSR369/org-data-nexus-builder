@@ -28,6 +28,8 @@ interface MembershipData {
     currency: string;
     amount: number;
     paymentFrequency: string;
+    originalAmount?: number;
+    discountPercentage?: number;
   };
   activationDate?: string;
   paymentStatus?: string;
@@ -45,35 +47,19 @@ export const useMembershipData = () => {
   const [membershipData, setMembershipData] = useState<MembershipData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Add a dependency on localStorage changes to trigger re-loading
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  // Listen for storage changes to refresh data
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'engagement_model_selection' || e.key === 'completed_membership_payment') {
-        console.log('🔄 Storage changed, refreshing membership data:', e.key);
-        setRefreshTrigger(prev => prev + 1);
-      }
-    };
+    if (!userData?.userId) {
+      setLoading(false);
+      return;
+    }
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  useEffect(() => {
     const loadMembershipData = async () => {
       console.log('🔍 Loading membership data for user:', userData.userId);
-      console.log('🔍 User details:', { 
-        entityType: userData.entityType, 
-        country: userData.country, 
-        organizationType: userData.organizationType 
-      });
       
       try {
         await unifiedUserStorageService.initialize();
         
-        // Check for completed membership payment (this indicates actual active membership)
+        // Check for completed membership payment
         const completedPayment = localStorage.getItem('completed_membership_payment');
         let hasActiveMembership = false;
         let membershipInfo = null;
@@ -84,7 +70,7 @@ export const useMembershipData = () => {
             if (paymentData.userId === userData.userId && paymentData.membershipStatus === 'active') {
               hasActiveMembership = true;
               membershipInfo = {
-                status: 'active',
+                status: 'active' as const,
                 selectedPlan: paymentData.selectedPlan,
                 activationDate: paymentData.paidAt,
                 paymentStatus: 'completed',
@@ -101,19 +87,15 @@ export const useMembershipData = () => {
           }
         }
         
-        // Check for confirmed engagement model selection - ALWAYS check this
+        // Check for engagement model selection
         let engagementModelInfo = null;
         const engagementSelection = localStorage.getItem('engagement_model_selection');
-        console.log('🔍 Checking engagement model selection:', engagementSelection);
         
         if (engagementSelection) {
           try {
             const selectionData = JSON.parse(engagementSelection);
-            console.log('🔍 Parsed engagement selection data:', selectionData);
             
-            // Check if it's a valid selection for the current user
             if (selectionData.userId === userData.userId && selectionData.engagementModel) {
-              // Calculate pricing based on selected plan
               let amount = 0;
               if (selectionData.pricing && selectionData.pricingPlan) {
                 switch (selectionData.pricingPlan) {
@@ -130,7 +112,6 @@ export const useMembershipData = () => {
                     amount = 0;
                 }
 
-                // Apply member discount if applicable
                 if (hasActiveMembership && selectionData.pricing.discountPercentage) {
                   amount = amount * (1 - selectionData.pricing.discountPercentage / 100);
                 }
@@ -158,23 +139,20 @@ export const useMembershipData = () => {
                   discountPercentage: hasActiveMembership ? selectionData.pricing.discountPercentage : 0
                 } : undefined
               };
-              console.log('✅ Found engagement model selection with current pricing:', engagementModelInfo);
+              console.log('✅ Found engagement model selection:', engagementModelInfo);
             }
           } catch (error) {
             console.log('❌ Error parsing engagement model selection:', error);
           }
         }
         
-        // Load membership pricing data from master data if no engagement model pricing found
+        // Load membership pricing from master data if needed
         let masterDataPricing = null;
         if (!engagementModelInfo?.pricingDetails && !hasActiveMembership) {
-          console.log('🔍 Loading membership pricing from master data...');
           try {
             const membershipFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
-            console.log('🔍 Master data membership fees:', membershipFees);
             
             if (membershipFees && membershipFees.length > 0) {
-              // Find exact match for user data
               let matchingFee = membershipFees.find(fee => 
                 fee.entityType === userData.entityType && 
                 fee.country === userData.country &&
@@ -182,7 +160,6 @@ export const useMembershipData = () => {
               );
               
               if (!matchingFee) {
-                // Try fallback matches
                 matchingFee = membershipFees.find(fee => 
                   fee.entityType?.toLowerCase() === userData.entityType?.toLowerCase() && 
                   fee.organizationType?.toLowerCase() === userData.organizationType?.toLowerCase()
@@ -203,7 +180,7 @@ export const useMembershipData = () => {
           }
         }
         
-        // Combine the data with proper flags
+        // Combine the data
         const combinedData: MembershipData = {
           status: hasActiveMembership ? 'active' : 'not-member',
           selectedPlan: membershipInfo?.selectedPlan || engagementModelInfo?.selectedPlan,
@@ -214,7 +191,7 @@ export const useMembershipData = () => {
           hasActualSelection: !!(hasActiveMembership || engagementModelInfo)
         };
         
-        console.log('📋 Final membership data with current pricing:', combinedData);
+        console.log('📋 Final membership data:', combinedData);
         setMembershipData(combinedData);
         
       } catch (error) {
@@ -228,10 +205,19 @@ export const useMembershipData = () => {
       }
     };
 
-    if (userData.userId) {
-      loadMembershipData();
-    }
-  }, [userData, refreshTrigger]);
+    loadMembershipData();
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'engagement_model_selection' || e.key === 'completed_membership_payment') {
+        console.log('🔄 Storage changed, refreshing membership data:', e.key);
+        loadMembershipData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [userData?.userId, userData?.entityType, userData?.country, userData?.organizationType]);
 
   return { membershipData, loading };
 };
