@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin, Users, CreditCard, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Building2, MapPin, Users, CreditCard, CheckCircle, XCircle, Clock, Target } from 'lucide-react';
 import { useUserData } from "@/components/dashboard/UserDataProvider";
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
+import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
 
 interface MembershipData {
   status: 'active' | 'inactive' | 'not-member';
@@ -20,6 +22,7 @@ interface MembershipData {
 
 const ReadOnlyOrganizationData: React.FC = () => {
   const { userData } = useUserData();
+  const { industrySegments } = useSeekerMasterData();
   const [membershipData, setMembershipData] = useState<MembershipData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -184,6 +187,29 @@ const ReadOnlyOrganizationData: React.FC = () => {
     }
   };
 
+  const getIndustrySegmentName = (segmentId: string) => {
+    if (!segmentId || !industrySegments || industrySegments.length === 0) {
+      return segmentId || 'Not specified';
+    }
+
+    // Try to find by ID first
+    const segment = industrySegments.find(seg => seg.id === segmentId);
+    if (segment) {
+      return segment.industrySegment;
+    }
+
+    // Try to find by name (in case segmentId is actually the name)
+    const segmentByName = industrySegments.find(seg => 
+      seg.industrySegment.toLowerCase() === segmentId.toLowerCase()
+    );
+    if (segmentByName) {
+      return segmentByName.industrySegment;
+    }
+
+    // Return the original value if no match found
+    return segmentId;
+  };
+
   const statusDetails = getMembershipStatusDetails();
   const StatusIcon = statusDetails.icon;
 
@@ -248,7 +274,7 @@ const ReadOnlyOrganizationData: React.FC = () => {
               
               <div>
                 <label className="text-sm font-medium text-gray-600">Industry Segment</label>
-                <p className="text-gray-900">{userData.industrySegment || 'Not specified'}</p>
+                <p className="text-gray-900">{getIndustrySegmentName(userData.industrySegment) || 'Not specified'}</p>
               </div>
             </div>
           </div>
@@ -334,6 +360,83 @@ const ReadOnlyOrganizationData: React.FC = () => {
                   <h4 className="font-medium text-yellow-900 mb-2">No Membership Selected</h4>
                   <p className="text-sm text-yellow-800">
                     This organization has not yet selected a membership plan or pricing model after registration.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Engagement Model Status & Pricing Section */}
+      <Card className="shadow-xl border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <Target className="h-6 w-6 text-purple-600" />
+            Engagement Model Status & Pricing
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Loading engagement model details...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {membershipData?.selectedEngagementModel ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-purple-900">Current Engagement Model</h4>
+                      <Badge variant="outline" className="border-purple-300 text-purple-700">
+                        {membershipData.status === 'active' ? 'Active' : 'Selected'}
+                      </Badge>
+                    </div>
+                    <p className="text-purple-800 font-medium mb-2">{membershipData.selectedEngagementModel}</p>
+                    
+                    {membershipData.pricingDetails && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-purple-200">
+                        <div>
+                          <label className="text-xs text-purple-600 uppercase tracking-wide">Pricing</label>
+                          <p className="text-sm font-medium text-purple-900">
+                            {membershipData.pricingDetails.currency} {membershipData.pricingDetails.amount.toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-purple-600 uppercase tracking-wide">Frequency</label>
+                          <p className="text-sm font-medium text-purple-900 capitalize">
+                            {membershipData.pricingDetails.paymentFrequency}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-purple-600 uppercase tracking-wide">Status</label>
+                          <p className="text-sm font-medium text-purple-900 capitalize">
+                            {membershipData.paymentStatus || 'Pending Setup'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {membershipData.activationDate && (
+                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-green-800">
+                          Engagement model activated on {formatDate(membershipData.activationDate)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-5 w-5 text-gray-500" />
+                    <h4 className="font-medium text-gray-900">No Engagement Model Selected</h4>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    This organization has not yet selected an engagement model for their membership.
                   </p>
                 </div>
               )}
