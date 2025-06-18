@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
-import { SolutionSeekersValidation } from "@/components/master-data/SolutionSeekersValidation";
+import SolutionSeekersValidation from "@/components/master-data/SolutionSeekersValidation";
 
 const SeekingOrgAdminDashboard = () => {
   return (
