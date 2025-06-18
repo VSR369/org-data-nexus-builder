@@ -60,17 +60,14 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
 
   useEffect(() => {
     const loadUserData = async () => {
-      console.log('🔍 === DEBUGGING SEEKING ORG DATA RETRIEVAL ===');
+      console.log('🔍 === ADMIN DASHBOARD DATA RETRIEVAL ===');
       console.log('🔍 Current location:', location.pathname);
+      console.log('🔍 Location state:', location.state);
       setIsLoading(true);
       
       try {
         // Initialize the unified storage service
         await unifiedUserStorageService.initialize();
-        
-        // Check storage health first
-        const healthCheck = await unifiedUserStorageService.checkStorageHealth();
-        console.log('🔧 Storage health check:', healthCheck);
         
         // Get all users to see what data we have
         const allUsers = await unifiedUserStorageService.getAllUsers();
@@ -83,39 +80,49 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
         );
         console.log('🏢 Seeking organizations found:', seekingOrgs);
         
-        // Try to get session data
-        const sessionData = await unifiedUserStorageService.loadSession();
-        console.log('📱 Current session data:', sessionData);
-        
         let targetUser = null;
         
-        // Strategy 1: Use session data to find user
-        if (sessionData && sessionData.userId) {
-          targetUser = await unifiedUserStorageService.findUserById(sessionData.userId);
-          console.log('🎯 User found by session ID:', targetUser);
+        // Strategy 1: Use location state from admin login (highest priority)
+        const adminLoginUserId = (location.state as any)?.adminUserId || (location.state as any)?.userId;
+        if (adminLoginUserId) {
+          console.log('🎯 Looking for admin user by ID from location state:', adminLoginUserId);
+          targetUser = await unifiedUserStorageService.findUserById(adminLoginUserId);
+          console.log('🎯 Admin user found by location state:', targetUser);
         }
         
-        // Strategy 2: Use location state
-        const locationUserId = (location.state as any)?.userId;
-        if (!targetUser && locationUserId) {
-          targetUser = await unifiedUserStorageService.findUserById(locationUserId);
-          console.log('🎯 User found by location state:', targetUser);
+        // Strategy 2: Look for "Champion" organization specifically
+        if (!targetUser) {
+          targetUser = allUsers.find(user => 
+            user.organizationName && user.organizationName.toLowerCase().includes('champion')
+          );
+          console.log('🎯 Looking for Champion organization:', targetUser);
         }
         
-        // Strategy 3: Get the most recent seeking organization
+        // Strategy 3: Try to get session data as fallback
+        if (!targetUser) {
+          const sessionData = await unifiedUserStorageService.loadSession();
+          console.log('📱 Fallback session data:', sessionData);
+          
+          if (sessionData && sessionData.userId) {
+            targetUser = await unifiedUserStorageService.findUserById(sessionData.userId);
+            console.log('🎯 User found by session ID (fallback):', targetUser);
+          }
+        }
+        
+        // Strategy 4: Get the most recent seeking organization
         if (!targetUser && seekingOrgs.length > 0) {
-          targetUser = seekingOrgs[seekingOrgs.length - 1];
+          // Sort by last login or creation date to get most recent
+          const sortedOrgs = seekingOrgs.sort((a, b) => {
+            const aTime = new Date(a.lastLoginTimestamp || a.updatedAt || a.createdAt || 0).getTime();
+            const bTime = new Date(b.lastLoginTimestamp || b.updatedAt || b.createdAt || 0).getTime();
+            return bTime - aTime;
+          });
+          targetUser = sortedOrgs[0];
           console.log('🎯 Using most recent seeking org:', targetUser);
         }
         
-        // Strategy 4: Get any user with organization data
-        if (!targetUser && allUsers.length > 0) {
-          targetUser = allUsers.find(user => user.organizationName) || allUsers[0];
-          console.log('🎯 Using any user with org data:', targetUser);
-        }
-        
         if (targetUser) {
-          console.log('✅ Target user selected:', targetUser);
+          console.log('✅ Final target user selected:', targetUser);
           
           const mappedData = {
             userId: targetUser.userId || targetUser.id || 'N/A',
@@ -130,10 +137,10 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
             registrationTimestamp: targetUser.registrationTimestamp || targetUser.createdAt || targetUser.updatedAt || 'Registration Date Not Available'
           };
           
-          console.log('📋 Final mapped user data:', mappedData);
+          console.log('📋 Final mapped admin user data:', mappedData);
           setUserData(mappedData);
           
-          // Update session if we found valid data
+          // Save admin session
           if (targetUser.userId || targetUser.id) {
             await unifiedUserStorageService.saveSession({
               userId: targetUser.userId || targetUser.id,
@@ -146,25 +153,25 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
             });
           }
         } else {
-          console.log('❌ No user data found anywhere');
+          console.log('❌ No admin user data found');
           toast({
-            title: "No Data Found",
-            description: "No seeking organization data found. Please complete registration first.",
+            title: "No Admin Data Found",
+            description: "No seeking organization admin data found. Please ensure proper login.",
             variant: "destructive"
           });
           setShowLoginWarning(true);
         }
         
       } catch (error) {
-        console.error('❌ Error loading user data:', error);
+        console.error('❌ Error loading admin user data:', error);
         toast({
-          title: "Data Loading Error",
-          description: "Failed to load organization data. Please try again.",
+          title: "Admin Data Loading Error",
+          description: "Failed to load admin organization data. Please try again.",
           variant: "destructive"
         });
       } finally {
         setIsLoading(false);
-        console.log('✅ === DATA LOADING COMPLETED ===');
+        console.log('✅ === ADMIN DATA LOADING COMPLETED ===');
       }
     };
 
@@ -172,13 +179,13 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
   }, [location.state, navigate, toast]);
 
   const handleLogout = (userId?: string) => {
-    console.log('Logging out user:', userId);
+    console.log('Logging out admin user:', userId);
     unifiedUserStorageService.clearSession();
     navigate('/seeking-org-admin-login');
   };
 
-  console.log('🔍 UserDataProvider rendering with userData:', userData);
-  console.log('🔍 UserDataProvider isLoading:', isLoading);
+  console.log('🔍 Admin UserDataProvider rendering with userData:', userData);
+  console.log('🔍 Admin UserDataProvider isLoading:', isLoading);
 
   return (
     <UserDataContext.Provider value={{ userData, isLoading, showLoginWarning, handleLogout }}>

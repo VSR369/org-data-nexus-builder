@@ -3,11 +3,12 @@ import React from 'react';
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, Database, RefreshCw, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, Shield, Database, RefreshCw, CheckCircle, Clock, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrganizationInfoCards from "@/components/dashboard/OrganizationInfoCards";
 import MembershipStatusCard from "@/components/dashboard/MembershipStatusCard";
-import PricingModelCard from "@/components/dashboard/PricingModelCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { UserDataProvider, useUserData } from "@/components/dashboard/UserDataProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useMembershipData } from "@/hooks/useMembershipData";
@@ -17,8 +18,6 @@ import { useState } from 'react';
 const DashboardContent = () => {
   const { userData, isLoading, showLoginWarning } = useUserData();
   const { toast } = useToast();
-  const [showPricingSelector, setShowPricingSelector] = useState(false);
-  const [selectedEngagementModel, setSelectedEngagementModel] = useState('');
 
   // Load membership data
   const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
@@ -28,46 +27,10 @@ const DashboardContent = () => {
   );
 
   // Load pricing data
-  const { pricingConfigs, getConfigByOrgTypeAndEngagement } = usePricingData(
+  const { pricingConfigs } = usePricingData(
     userData.organizationType, 
     userData.country
   );
-
-  // Mock engagement models for now with proper typing
-  const engagementModels = [
-    { 
-      id: '1', 
-      name: 'Market Place',
-      description: 'Market Place engagement model',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    { 
-      id: '2', 
-      name: 'Aggregator',
-      description: 'Aggregator engagement model',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    { 
-      id: '3', 
-      name: 'Market Place & Aggregator',
-      description: 'Combined Market Place & Aggregator engagement model',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    { 
-      id: '4', 
-      name: 'Platform as a Service',
-      description: 'Platform as a Service engagement model',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  ];
 
   const handleRefreshData = () => {
     window.location.reload();
@@ -119,16 +82,10 @@ const DashboardContent = () => {
     } : undefined
   };
 
-  // Get current pricing config
-  const currentPricingConfig = selectedEngagementModel ? 
-    getConfigByOrgTypeAndEngagement(userData.organizationType, selectedEngagementModel) : null;
-
-  const handleJoinAsMember = () => {
-    toast({
-      title: "Membership Action",
-      description: "Redirecting to membership management...",
-    });
-  };
+  // Get current pricing configurations (read-only display)
+  const currentPricingConfigs = pricingConfigs.filter(config => 
+    config.country === userData.country || config.country === 'Global'
+  );
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -136,10 +93,10 @@ const DashboardContent = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Seeking Organization Dashboard
+              Seeking Organization Administrator Dashboard
             </h2>
             <p className="text-gray-600">
-              View your organization's details, membership status, and pricing information.
+              Read-only view of organization details, membership status, and pricing information.
             </p>
           </div>
           <Button 
@@ -153,37 +110,76 @@ const DashboardContent = () => {
         </div>
       </div>
       
-      {/* Debug info */}
+      {/* Admin Debug info */}
       <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div className="flex items-center gap-2 mb-2">
           <Database className="h-4 w-4 text-blue-600" />
           <p className="text-sm text-blue-700 font-medium">
-            Data Debug Information
+            Administrator View - Data Status
           </p>
         </div>
         <div className="text-xs text-blue-600 space-y-1">
-          <p>• Loading Status: {isLoading ? 'Loading...' : 'Completed'}</p>
-          <p>• User ID: {userData.userId || 'Not found'}</p>
+          <p>• Admin User ID: {userData.userId || 'Not found'}</p>
           <p>• Organization: {userData.organizationName || 'Not found'}</p>
-          <p>• Membership Data: {membershipData ? 'Available' : 'Not found'}</p>
+          <p>• Entity Type: {userData.entityType}</p>
+          <p>• Country: {userData.country}</p>
+          <p>• Membership Data: {membershipData ? 'Available' : 'Not configured'}</p>
           <p>• Pricing Configs: {pricingConfigs.length} available</p>
         </div>
       </div>
 
-      {/* Membership Status */}
+      {/* Membership Status - Read Only */}
       <MembershipStatusCard membershipStatus={membershipStatus} />
 
-      {/* Pricing Models */}
-      <PricingModelCard
-        showPricingSelector={showPricingSelector}
-        setShowPricingSelector={setShowPricingSelector}
-        selectedEngagementModel={selectedEngagementModel}
-        setSelectedEngagementModel={setSelectedEngagementModel}
-        engagementModels={engagementModels}
-        currentPricingConfig={currentPricingConfig}
-        membershipStatus={membershipStatus}
-        showLoginWarning={showLoginWarning}
-      />
+      {/* Current Pricing Models - Read Only Display */}
+      <Card className="shadow-xl border-0 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <DollarSign className="h-6 w-6 text-green-600" />
+            Current Pricing Models (Read Only)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {currentPricingConfigs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {currentPricingConfigs.map((config) => (
+                <div key={config.id} className="p-4 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">{config.engagementModel}</h4>
+                    <Badge variant={config.country === userData.country ? 'default' : 'secondary'}>
+                      {config.country}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Organization Type:</span>
+                      <span className="font-medium">{config.organizationType}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Currency:</span>
+                      <span className="font-medium">{config.currency}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Engagement Fee:</span>
+                      <span className="font-medium">{config.engagementModelFee}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Annual Fee:</span>
+                      <span className="font-medium">{config.currency} {config.annualFee}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                No pricing configurations found for this organization's country and type.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
       {/* Organization Details */}
       <OrganizationInfoCards />
@@ -208,7 +204,7 @@ const SeekingOrgAdminDashboard = () => {
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center space-x-4">
                   <SidebarTrigger />
-                  <Link to="/signin">
+                  <Link to="/seeking-org-admin-login">
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <ArrowLeft className="h-4 w-4" />
                       Sign Out
@@ -224,14 +220,14 @@ const SeekingOrgAdminDashboard = () => {
                         Seeking Organization Administrator
                       </h1>
                       <p className="text-sm text-muted-foreground">
-                        Organization Management Portal - Administrative View
+                        Organization Management Portal - Read Only Administrative View
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-lg border border-green-200">
                   <Shield className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">Administrator Access</span>
+                  <span className="text-sm font-medium text-green-700">Administrator Access (Read Only)</span>
                 </div>
               </div>
             </div>
