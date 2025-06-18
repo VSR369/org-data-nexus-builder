@@ -52,9 +52,11 @@ const SolutionSeekersValidation: React.FC = () => {
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [showReApprovalDialog, setShowReApprovalDialog] = useState(false);
   const [showAdminDetailsDialog, setShowAdminDetailsDialog] = useState(false);
+  const [showCreateAdminDialog, setShowCreateAdminDialog] = useState(false);
   const [seekerToApprove, setSeekerToApprove] = useState<SeekerDetails | null>(null);
   const [seekerToDecline, setSeekerToDecline] = useState<SeekerDetails | null>(null);
   const [seekerToReApprove, setSeekerToReApprove] = useState<SeekerDetails | null>(null);
+  const [seekerToCreateAdmin, setSeekerToCreateAdmin] = useState<SeekerDetails | null>(null);
   const [declineReason, setDeclineReason] = useState('');
   const [reApprovalReason, setReApprovalReason] = useState('');
   const [reApprovalDocuments, setReApprovalDocuments] = useState<File[]>([]);
@@ -272,6 +274,31 @@ const SolutionSeekersValidation: React.FC = () => {
       toast({
         title: "Error",
         description: "Failed to open details view. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // New function to handle creating admin details for already approved seekers
+  const handleCreateAdminForSeeker = (seeker: SeekerDetails) => {
+    console.log('🔄 Initiating admin creation for approved seeker:', seeker.userId);
+    try {
+      setSeekerToCreateAdmin(seeker);
+      setAdminDetails({
+        name: '',
+        contactNumber: '',
+        email: '',
+        userId: `${seeker.userId}_admin`,
+        password: '',
+        createdAt: ''
+      });
+      setShowCreateAdminDialog(true);
+      console.log('✅ Create admin dialog opened successfully');
+    } catch (error) {
+      console.error('❌ Error opening create admin dialog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open create admin dialog. Please try again.",
         variant: "destructive",
       });
     }
@@ -513,6 +540,100 @@ const SolutionSeekersValidation: React.FC = () => {
       toast({
         title: "Error",
         description: "Failed to save admin details. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // New function to handle creating admin details for already approved seekers
+  const handleCreateAdminSubmit = async () => {
+    if (!seekerToCreateAdmin) return;
+
+    // Validate required fields
+    if (!adminDetails.name || !adminDetails.contactNumber || !adminDetails.email || !adminDetails.userId || !adminDetails.password) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('💾 Creating admin details for approved seeker:', seekerToCreateAdmin.userId);
+      
+      // Create admin details with timestamp
+      const completeAdminDetails: SeekerAdminDetails = {
+        ...adminDetails,
+        createdAt: new Date().toISOString()
+      };
+
+      // Update existing approval record with admin details
+      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      const updatedApprovals = existingApprovals.map((approval: any) => {
+        if (approval.seekerUserId === seekerToCreateAdmin.userId) {
+          return {
+            ...approval,
+            adminDetails: completeAdminDetails,
+            adminCreatedAt: new Date().toISOString()
+          };
+        }
+        return approval;
+      });
+      
+      localStorage.setItem('seeker_approvals', JSON.stringify(updatedApprovals));
+
+      // Update individual approval record
+      const approvalKey = `seeker_approval_${seekerToCreateAdmin.userId}`;
+      const existingApproval = localStorage.getItem(approvalKey);
+      if (existingApproval) {
+        const parsedApproval = JSON.parse(existingApproval);
+        parsedApproval.adminDetails = completeAdminDetails;
+        parsedApproval.adminCreatedAt = new Date().toISOString();
+        localStorage.setItem(approvalKey, JSON.stringify(parsedApproval));
+      }
+
+      // Update the seeker's admin details in our local state
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.userId === seekerToCreateAdmin.userId 
+            ? { ...s, adminDetails: completeAdminDetails }
+            : s
+        )
+      );
+
+      // Update selected seeker if it's the same one
+      if (selectedSeeker && selectedSeeker.userId === seekerToCreateAdmin.userId) {
+        setSelectedSeeker(prev => prev ? { ...prev, adminDetails: completeAdminDetails } : prev);
+      }
+
+      // Reload admin details
+      loadStoredAdminDetails();
+
+      console.log('✅ Admin details created successfully');
+      
+      toast({
+        title: "Admin Details Created",
+        description: `Administrator credentials have been created for ${seekerToCreateAdmin.organizationName}.`,
+      });
+
+      // Close the dialog and reset state
+      setShowCreateAdminDialog(false);
+      setSeekerToCreateAdmin(null);
+      setAdminDetails({
+        name: '',
+        contactNumber: '',
+        email: '',
+        userId: '',
+        password: '',
+        createdAt: ''
+      });
+
+    } catch (error) {
+      console.error('❌ Error creating admin details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create admin details. Please try again.",
         variant: "destructive",
       });
     }
@@ -1138,6 +1259,31 @@ const SolutionSeekersValidation: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Show "Create Admin Details" button for approved seekers without admin details */}
+                    {selectedSeeker.approvalStatus === 'approved' && !selectedSeeker.adminDetails && (
+                      <div className="border-2 border-dashed border-blue-200 bg-blue-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-blue-800 mb-2">Administrator Credentials Missing</h4>
+                            <p className="text-sm text-blue-700">
+                              This seeker has been approved but administrator credentials have not been created yet.
+                            </p>
+                          </div>
+                          <Button
+                            variant="default"
+                            onClick={() => {
+                              handleCreateAdminForSeeker(selectedSeeker);
+                              setShowDetails(false);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                            Create Admin Details
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     {selectedSeeker.approvalStatus === 'rejected' && selectedSeeker.declineReason && (
                       <div className="border rounded-lg p-4 bg-red-50">
                         <h4 className="font-medium text-red-800 mb-3">Decline Details</h4>
@@ -1347,6 +1493,84 @@ const SolutionSeekersValidation: React.FC = () => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleAdminDetailsSubmit}>
               Submit & Approve
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* New Create Admin Dialog for already approved seekers */}
+      <AlertDialog open={showCreateAdminDialog} onOpenChange={setShowCreateAdminDialog}>
+        <AlertDialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Create Administrator Credentials
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Create administrator credentials for {seekerToCreateAdmin?.organizationName}. Please fill in all the required details.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label htmlFor="createAdminName">Name *</Label>
+              <Input
+                id="createAdminName"
+                value={adminDetails.name}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter admin name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createAdminContact">Contact Number *</Label>
+              <Input
+                id="createAdminContact"
+                value={adminDetails.contactNumber}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, contactNumber: e.target.value }))}
+                placeholder="Enter contact number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createAdminEmail">Email ID *</Label>
+              <Input
+                id="createAdminEmail"
+                type="email"
+                value={adminDetails.email}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createAdminUserId">User ID *</Label>
+              <Input
+                id="createAdminUserId"
+                value={adminDetails.userId}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, userId: e.target.value }))}
+                placeholder="Enter user ID"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createAdminPassword">Password *</Label>
+              <Input
+                id="createAdminPassword"
+                type="password"
+                value={adminDetails.password}
+                onChange={(e) => setAdminDetails(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Enter password"
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter className="flex-shrink-0">
+            <AlertDialogCancel onClick={() => setShowCreateAdminDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreateAdminSubmit}>
+              Create Admin Credentials
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
