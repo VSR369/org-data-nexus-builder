@@ -3,7 +3,7 @@ import React from 'react';
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, Database, RefreshCw } from "lucide-react";
+import { ArrowLeft, Shield, Database, RefreshCw, CheckCircle, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrganizationInfoCards from "@/components/dashboard/OrganizationInfoCards";
 import MembershipStatusCard from "@/components/dashboard/MembershipStatusCard";
@@ -12,7 +12,6 @@ import { UserDataProvider, useUserData } from "@/components/dashboard/UserDataPr
 import { useToast } from "@/hooks/use-toast";
 import { useMembershipData } from "@/hooks/useMembershipData";
 import { usePricingData } from "@/hooks/usePricingData";
-import { useEngagementModels } from "@/components/master-data/engagement-models/types";
 import { useState } from 'react';
 
 const DashboardContent = () => {
@@ -34,12 +33,40 @@ const DashboardContent = () => {
     userData.country
   );
 
-  // Mock engagement models for now
+  // Mock engagement models for now with proper typing
   const engagementModels = [
-    { id: '1', name: 'Market Place' },
-    { id: '2', name: 'Aggregator' },
-    { id: '3', name: 'Market Place & Aggregator' },
-    { id: '4', name: 'Platform as a Service' }
+    { 
+      id: '1', 
+      name: 'Market Place',
+      description: 'Market Place engagement model',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    { 
+      id: '2', 
+      name: 'Aggregator',
+      description: 'Aggregator engagement model',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    { 
+      id: '3', 
+      name: 'Market Place & Aggregator',
+      description: 'Combined Market Place & Aggregator engagement model',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    { 
+      id: '4', 
+      name: 'Platform as a Service',
+      description: 'Platform as a Service engagement model',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
   ];
 
   const handleRefreshData = () => {
@@ -77,13 +104,13 @@ const DashboardContent = () => {
     );
   }
 
-  // Determine membership status
+  // Determine membership status with proper typing
   const membershipStatus = {
-    status: countryPricing ? 'active' : 'inactive',
+    status: (countryPricing ? 'active' : 'inactive') as 'active' | 'inactive',
     plan: countryPricing ? 'annual' : 'none',
     message: countryPricing ? 'Active Membership' : 'No Active Membership',
-    badgeVariant: countryPricing ? 'default' : 'secondary',
-    icon: countryPricing ? require('lucide-react').CheckCircle : require('lucide-react').Clock,
+    badgeVariant: (countryPricing ? 'default' : 'secondary') as 'default' | 'secondary',
+    icon: countryPricing ? CheckCircle : Clock,
     iconColor: countryPricing ? 'text-green-600' : 'text-gray-600',
     paymentDate: countryPricing ? new Date().toISOString() : undefined,
     pricing: countryPricing ? {
