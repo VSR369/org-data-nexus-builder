@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreditCard, CheckCircle, XCircle, Clock, Plus } from 'lucide-react';
-import { useMembershipData } from "./hooks/useMembershipData";
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useUserData } from './UserDataProvider';
 
 interface MembershipDetailsCardProps {
   onJoinAsMember?: () => void;
@@ -15,7 +16,8 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
   onJoinAsMember,
   onSelectMembershipPlan
 }) => {
-  const { membershipData, loading } = useMembershipData();
+  const { userData } = useUserData();
+  const { dashboardData } = useDashboardData(userData);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not available';
@@ -31,7 +33,7 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
   };
 
   const getMembershipStatusDetails = () => {
-    if (membershipData?.status === 'active') {
+    if (dashboardData.membershipData.status === 'active') {
       return {
         icon: CheckCircle,
         color: 'text-green-600',
@@ -50,6 +52,7 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
 
   const statusDetails = getMembershipStatusDetails();
   const StatusIcon = statusDetails.icon;
+  const membershipData = dashboardData.membershipData;
 
   return (
     <Card className="shadow-xl border-0">
@@ -60,7 +63,7 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {dashboardData.isLoading ? (
           <div className="p-4 bg-gray-50 rounded-lg">
             <p className="text-gray-600">Loading membership details...</p>
           </div>
@@ -71,12 +74,12 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
                 <StatusIcon className={`h-6 w-6 ${statusDetails.color}`} />
                 <div>
                   <p className="font-medium text-gray-900">{statusDetails.message}</p>
-                  {membershipData?.status === 'active' && membershipData?.selectedPlan && (
+                  {membershipData.status === 'active' && membershipData.selectedPlan && (
                     <p className="text-sm text-gray-600">
                       Selected Plan: {membershipData.selectedPlan}
                     </p>
                   )}
-                  {membershipData?.activationDate && (
+                  {membershipData.activationDate && (
                     <p className="text-xs text-gray-500 mt-1">
                       Activated: {formatDate(membershipData.activationDate)}
                     </p>
@@ -84,12 +87,11 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
                 </div>
               </div>
               <Badge variant={statusDetails.badge as any}>
-                {membershipData?.status === 'active' ? 'Active' : 'Not Active'}
+                {membershipData.status === 'active' ? 'Active' : 'Not Active'}
               </Badge>
             </div>
 
-            {/* Show membership pricing information */}
-            {membershipData?.pricingDetails && (
+            {(membershipData.pricingDetails || dashboardData.masterDataPricing) && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <h4 className="font-medium text-blue-900 mb-3">
                   {membershipData.status === 'active' ? 'Active Membership Pricing' : 'Available Membership Pricing'}
@@ -97,24 +99,29 @@ const MembershipDetailsCard: React.FC<MembershipDetailsCardProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <label className="text-gray-600">Currency:</label>
-                    <p className="font-medium">{membershipData.pricingDetails.currency}</p>
+                    <p className="font-medium">
+                      {membershipData.pricingDetails?.currency || dashboardData.masterDataPricing?.currency || 'USD'}
+                    </p>
                   </div>
                   <div>
                     <label className="text-gray-600">
                       {membershipData.status === 'active' ? 'Amount Paid:' : 'Price:'}
                     </label>
-                    <p className="font-medium">{membershipData.pricingDetails.amount.toLocaleString()}</p>
+                    <p className="font-medium">
+                      {(membershipData.pricingDetails?.amount || dashboardData.masterDataPricing?.amount || 0).toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <label className="text-gray-600">Plan:</label>
-                    <p className="font-medium capitalize">{membershipData.pricingDetails.paymentFrequency}</p>
+                    <p className="font-medium capitalize">
+                      {membershipData.pricingDetails?.paymentFrequency || dashboardData.masterDataPricing?.paymentFrequency || 'quarterly'}
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Show action button if no active membership */}
-            {membershipData?.status !== 'active' && (
+            {membershipData.status !== 'active' && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>

@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Target, CheckCircle, Clock, Plus } from 'lucide-react';
-import { useMembershipData } from "./hooks/useMembershipData";
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useUserData } from './UserDataProvider';
 
 interface EngagementModelStatusCardProps {
   onSelectEngagementModel?: () => void;
@@ -13,7 +14,8 @@ interface EngagementModelStatusCardProps {
 const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
   onSelectEngagementModel
 }) => {
-  const { membershipData, loading } = useMembershipData();
+  const { userData } = useUserData();
+  const { dashboardData } = useDashboardData(userData);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not available';
@@ -35,6 +37,8 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
     }).format(amount);
   };
 
+  const membershipData = dashboardData.membershipData;
+
   return (
     <Card className="shadow-xl border-0">
       <CardHeader>
@@ -44,13 +48,13 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {dashboardData.isLoading ? (
           <div className="p-4 bg-gray-50 rounded-lg">
             <p className="text-gray-600">Loading engagement model details...</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {membershipData?.selectedEngagementModel ? (
+            {membershipData.selectedEngagementModel ? (
               <div className="space-y-4">
                 <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                   <div className="flex items-center justify-between mb-3">
@@ -74,13 +78,13 @@ const EngagementModelStatusCard: React.FC<EngagementModelStatusCardProps> = ({
                         <label className="text-xs text-purple-600 uppercase tracking-wide">Amount</label>
                         <div className="text-sm font-medium text-purple-900">
                           {formatCurrency(membershipData.pricingDetails.amount, membershipData.pricingDetails.currency)}
-                          {(membershipData.pricingDetails as any)?.discountPercentage && (membershipData.pricingDetails as any)?.originalAmount ? (
+                          {membershipData.pricingDetails.discountPercentage && membershipData.pricingDetails.originalAmount ? (
                             <div>
                               <span className="text-xs text-gray-500 line-through">
-                                {formatCurrency((membershipData.pricingDetails as any).originalAmount, membershipData.pricingDetails.currency)}
+                                {formatCurrency(membershipData.pricingDetails.originalAmount, membershipData.pricingDetails.currency)}
                               </span>
                               <span className="text-xs text-green-600 ml-1">
-                                ({(membershipData.pricingDetails as any).discountPercentage}% off)
+                                ({membershipData.pricingDetails.discountPercentage}% off)
                               </span>
                             </div>
                           ) : null}

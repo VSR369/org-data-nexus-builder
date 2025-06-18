@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, CreditCard, X, Check } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { triggerDashboardDataRefresh } from '@/hooks/useDashboardData';
 
 interface PricingData {
   id: string;
@@ -72,15 +73,16 @@ const MembershipSelectionModal: React.FC<MembershipSelectionModalProps> = ({
     
     console.log('Membership payment completed:', membershipData);
     
+    // Trigger dashboard data refresh
+    triggerDashboardDataRefresh();
+    
     toast({
       title: "Membership Payment Successful",
       description: `Your ${selectedPlan} membership has been activated successfully!`,
     });
     
-    // Close modal and navigate back to dashboard
     onClose();
     
-    // Navigate back to dashboard after a short delay to show the toast
     setTimeout(() => {
       navigate('/seeker-dashboard', { state: { userId: userData.userId } });
     }, 1500);

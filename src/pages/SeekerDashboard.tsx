@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { EngagementModel } from '@/components/master-data/engagement-models/type
 import { PricingConfig } from '@/types/pricing';
 import { useMembershipData } from '@/hooks/useMembershipData';
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
+import { useDashboardData, triggerDashboardDataRefresh } from '@/hooks/useDashboardData';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoginWarning from '@/components/dashboard/LoginWarning';
@@ -20,6 +22,7 @@ import MembershipSelectionModal from '@/components/dashboard/MembershipSelection
 const SeekerDashboardContent: React.FC = () => {
   const navigate = useNavigate();
   const { userData, isLoading, showLoginWarning, handleLogout } = useUserData();
+  const { dashboardData, refreshData } = useDashboardData(userData);
   
   const [activeSection, setActiveSection] = useState('');
   const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
@@ -28,46 +31,14 @@ const SeekerDashboardContent: React.FC = () => {
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<EngagementModel | null>(null);
   const [selectedPricing, setSelectedPricing] = useState<PricingConfig | null>(null);
   const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
-  const [membershipPaymentData, setMembershipPaymentData] = useState<any>(null);
   const [isSelectionSubmitted, setIsSelectionSubmitted] = useState(false);
-  const [previousMembershipStatus, setPreviousMembershipStatus] = useState<'active' | 'inactive'>('inactive');
 
-  // Load membership data for the current user
+  // Load membership data for the current user (for backward compatibility)
   const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
     userData.entityType, 
     userData.country, 
     userData.organizationType
   );
-
-  useEffect(() => {
-    // Load membership payment data
-    const loadMembershipPaymentData = () => {
-      try {
-        const paymentData = localStorage.getItem('completed_membership_payment');
-        if (paymentData) {
-          const parsedData = JSON.parse(paymentData);
-          // Only set payment data if it's actually for the current user and has active status
-          if (parsedData.userId === userData.userId && parsedData.membershipStatus === 'active') {
-            setMembershipPaymentData(parsedData);
-            console.log('✅ Loaded membership payment data for user:', parsedData);
-          } else {
-            console.log('❌ No valid membership payment data found for current user');
-            setMembershipPaymentData(null);
-          }
-        } else {
-          console.log('❌ No membership payment data found in localStorage');
-          setMembershipPaymentData(null);
-        }
-      } catch (error) {
-        console.error('Error loading membership payment data:', error);
-        setMembershipPaymentData(null);
-      }
-    };
-    
-    if (userData.userId) {
-      loadMembershipPaymentData();
-    }
-  }, [userData.userId]);
 
   // Load saved engagement model selection on component mount
   useEffect(() => {
@@ -78,7 +49,6 @@ const SeekerDashboardContent: React.FC = () => {
           const selectionData = JSON.parse(savedSelection);
           console.log('✅ Loading saved engagement model selection:', selectionData);
           
-          // Only load if it's for the current user
           if (selectionData.userId === userData.userId) {
             setSelectedEngagementModel(selectionData.engagementModel);
             setSelectedPricing(selectionData.pricing);
@@ -92,47 +62,10 @@ const SeekerDashboardContent: React.FC = () => {
       }
     };
 
-    // Only load if we have user data and no current selection
     if (userData.userId && !selectedEngagementModel) {
       loadSavedSelection();
     }
   }, [userData.userId, selectedEngagementModel]);
-
-  // Track membership status changes and auto-update pricing when user becomes a member
-  useEffect(() => {
-    const currentMembershipStatus = getMembershipStatus().status;
-    
-    // Check if membership status changed from inactive to active
-    if (previousMembershipStatus === 'inactive' && currentMembershipStatus === 'active') {
-      console.log('🎉 Membership activated! Auto-updating engagement model pricing with discounts');
-      
-      // If user has an existing engagement model selection, automatically update it with discounted pricing
-      if (selectedEngagementModel && selectedPricing && selectedPricingPlan) {
-        const updatedSelectionData = {
-          engagementModel: selectedEngagementModel,
-          pricing: selectedPricing,
-          pricingPlan: selectedPricingPlan,
-          membershipStatus: currentMembershipStatus,
-          submittedAt: new Date().toISOString(),
-          userId: userData.userId,
-          organizationName: userData.organizationName
-        };
-
-        try {
-          localStorage.setItem('engagement_model_selection', JSON.stringify(updatedSelectionData));
-          console.log('✅ Auto-updated engagement model selection with member pricing:', updatedSelectionData);
-          
-          // Force re-render to show discounted pricing
-          setIsSelectionSubmitted(true);
-        } catch (error) {
-          console.error('❌ Error auto-updating engagement model selection:', error);
-        }
-      }
-    }
-    
-    // Update previous membership status
-    setPreviousMembershipStatus(currentMembershipStatus);
-  }, [membershipPaymentData, selectedEngagementModel, selectedPricing, selectedPricingPlan, userData.userId, userData.organizationName]);
 
   const handleJoinAsMember = () => {
     console.log('Join as Member clicked - showing membership selection');
@@ -150,18 +83,16 @@ const SeekerDashboardContent: React.FC = () => {
     console.log('Pricing configuration:', pricing);
     console.log('Selected pricing plan:', pricingPlan);
     
-    // Update state with new selection
     setSelectedEngagementModel(model);
     setSelectedPricing(pricing || null);
     setSelectedPricingPlan(pricingPlan || '');
     setShowEngagementModelSelector(false);
     
-    // Save the selection to localStorage immediately
     const selectionData = {
       engagementModel: model,
       pricing: pricing,
       pricingPlan: pricingPlan,
-      membershipStatus: getMembershipStatus().status,
+      membershipStatus: dashboardData.membershipData.status,
       submittedAt: new Date().toISOString(),
       userId: userData.userId,
       organizationName: userData.organizationName
@@ -170,12 +101,10 @@ const SeekerDashboardContent: React.FC = () => {
     try {
       localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
       console.log('✅ Engagement model selection saved to localStorage:', selectionData);
-      
-      // Mark as submitted to show final result
       setIsSelectionSubmitted(true);
       
-      // Show success message
-      console.log('✅ Selection completed and saved successfully');
+      // Trigger data refresh
+      triggerDashboardDataRefresh();
     } catch (error) {
       console.error('❌ Error saving engagement model selection:', error);
     }
@@ -186,13 +115,12 @@ const SeekerDashboardContent: React.FC = () => {
     setSelectedPricingPlan(plan);
     setIsSelectionSubmitted(false);
     
-    // Update saved selection if we have an engagement model
     if (selectedEngagementModel) {
       const selectionData = {
         engagementModel: selectedEngagementModel,
         pricing: selectedPricing,
         pricingPlan: plan,
-        membershipStatus: getMembershipStatus().status,
+        membershipStatus: dashboardData.membershipData.status,
         submittedAt: new Date().toISOString(),
         userId: userData.userId,
         organizationName: userData.organizationName
@@ -201,6 +129,7 @@ const SeekerDashboardContent: React.FC = () => {
       try {
         localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
         console.log('✅ Updated pricing plan saved:', plan);
+        triggerDashboardDataRefresh();
       } catch (error) {
         console.error('❌ Error updating pricing plan:', error);
       }
@@ -217,19 +146,17 @@ const SeekerDashboardContent: React.FC = () => {
       engagementModel: selectedEngagementModel,
       pricing: selectedPricing,
       pricingPlan: selectedPricingPlan,
-      membershipStatus: getMembershipStatus().status,
+      membershipStatus: dashboardData.membershipData.status,
       submittedAt: new Date().toISOString(),
       userId: userData.userId,
       organizationName: userData.organizationName
     };
 
     try {
-      // Store the selection
       localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
       console.log('✅ Engagement model selection submitted and saved:', selectionData);
-      
-      // Mark as submitted to show final pricing
       setIsSelectionSubmitted(true);
+      triggerDashboardDataRefresh();
     } catch (error) {
       console.error('❌ Error submitting engagement model selection:', error);
     }
@@ -250,47 +177,31 @@ const SeekerDashboardContent: React.FC = () => {
     });
   };
 
-  // Determine membership status - FIXED: Now properly checks for actual payment data
+  // Get membership status from unified dashboard data
   const getMembershipStatus = () => {
-    // Only return active if we have valid membership payment data for the current user
-    if (membershipPaymentData && 
-        membershipPaymentData.membershipStatus === 'active' && 
-        membershipPaymentData.userId === userData.userId) {
-      
-      // Get the correct amount based on the selected plan
+    const membershipData = dashboardData.membershipData;
+    
+    if (membershipData.status === 'active') {
       let paidAmount = 0;
-      if (membershipPaymentData.pricing) {
-        switch (membershipPaymentData.selectedPlan) {
-          case 'quarterly':
-            paidAmount = membershipPaymentData.pricing.quarterlyPrice;
-            break;
-          case 'halfyearly':
-            paidAmount = membershipPaymentData.pricing.halfYearlyPrice;
-            break;
-          case 'annual':
-            paidAmount = membershipPaymentData.pricing.annualPrice;
-            break;
-          default:
-            paidAmount = 0;
-        }
+      if (membershipData.pricingDetails) {
+        paidAmount = membershipData.pricingDetails.amount;
       }
 
       return {
         status: 'active' as const,
-        plan: membershipPaymentData.selectedPlan,
+        plan: membershipData.selectedPlan || '',
         message: 'Your membership is active',
         badgeVariant: 'default' as const,
         icon: CheckCircle,
         iconColor: 'text-green-600',
-        paymentDate: membershipPaymentData.paidAt,
-        pricing: {
-          currency: membershipPaymentData.pricing?.currency || 'USD',
+        paymentDate: membershipData.activationDate,
+        pricing: membershipData.pricingDetails ? {
+          currency: membershipData.pricingDetails.currency,
           amount: paidAmount
-        }
+        } : undefined
       };
     }
     
-    // Default to inactive status - user needs to join as member
     return {
       status: 'inactive' as const,
       plan: '',
@@ -303,7 +214,7 @@ const SeekerDashboardContent: React.FC = () => {
 
   const membershipStatus = getMembershipStatus();
 
-  if (isLoading) {
+  if (isLoading || dashboardData.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 flex items-center justify-center">
         <Card className="shadow-xl border-0">
@@ -324,10 +235,8 @@ const SeekerDashboardContent: React.FC = () => {
       
       <LoginWarning show={showLoginWarning} />
 
-      {/* Membership Status Card */}
       <MembershipStatusCard membershipStatus={membershipStatus} />
 
-      {/* Join as Member Button - Show when membership is not active */}
       {membershipStatus.status !== 'active' && (
         <div className="mt-6 mb-6">
           <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
@@ -353,7 +262,6 @@ const SeekerDashboardContent: React.FC = () => {
         </div>
       )}
 
-      {/* Engagement Model Selection */}
       <div className="mt-6 mb-6">
         <EngagementModelCard
           selectedEngagementModel={selectedEngagementModel}
@@ -368,13 +276,11 @@ const SeekerDashboardContent: React.FC = () => {
         />
       </div>
 
-      {/* Organization Information Cards - Replace OrganizationInfoCards with ReadOnlyOrganizationData */}
       <ReadOnlyOrganizationData 
         onJoinAsMember={handleJoinAsMember}
         onSelectEngagementModel={handleSelectEngagementModel}
       />
 
-      {/* Modals */}
       {showMembershipBenefits && (
         <MembershipBenefitsCard
           countryPricing={countryPricing}
