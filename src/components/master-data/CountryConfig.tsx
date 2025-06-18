@@ -29,7 +29,7 @@ const CountryConfig = () => {
       if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
         setCountries(sharedCountries);
       } else {
-        // Initialize with the three required countries
+        // Initialize with the three required countries - ensuring UAE is shown as full name
         const defaultCountries = [
           { id: '1', name: 'India', code: 'IN', region: 'Asia' },
           { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
@@ -141,7 +141,7 @@ const CountryConfig = () => {
     setCountries(defaultCountries);
     setCurrentCountry({});
     setIsEditing(false);
-    toast.success("Countries reset to default values (India, USA, UAE).");
+    toast.success("Countries reset to default values (India, USA, United Arab Emirates).");
   };
 
   return (

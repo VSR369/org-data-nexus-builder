@@ -70,14 +70,17 @@ export class CurrencyService {
       return currency;
     }
     
-    // Common mappings
+    // Enhanced mappings for UAE and other countries
     const mappings: { [key: string]: string } = {
       'United States of America': 'United States of America',
       'USA': 'United States of America',
       'US': 'United States of America',
       'UK': 'United Kingdom',
       'Britain': 'United Kingdom',
-      'Great Britain': 'United Kingdom'
+      'Great Britain': 'United Kingdom',
+      'UAE': 'United Arab Emirates',
+      'United Arab Emirates': 'United Arab Emirates',
+      'AE': 'United Arab Emirates'
     };
     
     const mappedCountry = mappings[country];
