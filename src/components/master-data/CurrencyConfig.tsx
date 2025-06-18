@@ -8,30 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash2, DollarSign, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { LegacyDataManager } from '@/utils/core/DataManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
+import { CurrencyService } from '@/utils/masterData/currencyService';
+import { Currency } from '@/utils/masterData/interfaces';
 import { Country } from '@/types/seekerRegistration';
-
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string;
-  country: string;
-}
-
-const defaultCurrencies: Currency[] = [
-  { id: '1', code: 'INR', name: 'Indian Rupee', symbol: '₹', country: 'India' },
-  { id: '2', code: 'USD', name: 'US Dollar', symbol: '$', country: 'United States of America' },
-  { id: '3', code: 'EUR', name: 'Euro', symbol: '€', country: 'European Union' },
-  { id: '4', code: 'GBP', name: 'British Pound', symbol: '£', country: 'United Kingdom' },
-];
-
-const dataManager = new LegacyDataManager<Currency[]>({
-  key: 'master_data_currencies',
-  defaultData: defaultCurrencies,
-  version: 1
-});
 
 const CurrencyConfig = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -48,23 +28,21 @@ const CurrencyConfig = () => {
     setCountries(loadedCountries);
   }, []);
 
-  // Load data on component mount
+  // Load currencies from master data service
   useEffect(() => {
-    const loadedCurrencies = dataManager.loadData();
-    // Ensure we always have an array
-    const safeCurrencies = Array.isArray(loadedCurrencies) ? loadedCurrencies : defaultCurrencies;
-    console.log('🔍 CurrencyConfig - Loaded currencies:', safeCurrencies);
-    setCurrencies(safeCurrencies);
+    const loadedCurrencies = CurrencyService.getCurrencies();
+    console.log('🔍 CurrencyConfig - Loaded currencies from master data service:', loadedCurrencies);
+    setCurrencies(loadedCurrencies);
     setIsInitialized(true);
   }, []);
 
-  // Save data whenever currencies change
+  // Save currencies whenever they change
   useEffect(() => {
     if (!isInitialized) {
       return;
     }
-    console.log('💾 CurrencyConfig - Saving currencies:', currencies.length);
-    dataManager.saveData(currencies);
+    console.log('💾 CurrencyConfig - Saving currencies to master data service:', currencies.length);
+    CurrencyService.saveCurrencies(currencies);
   }, [currencies, isInitialized]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,19 +57,28 @@ const CurrencyConfig = () => {
       return;
     }
 
+    const now = new Date().toISOString();
+
     if (isEditing && currentCurrency.id) {
       setCurrencies(prev => prev.map(item => 
-        item.id === currentCurrency.id ? { ...currentCurrency as Currency } : item
+        item.id === currentCurrency.id ? { 
+          ...currentCurrency as Currency,
+          updatedAt: now,
+          isUserCreated: true
+        } : item
       ));
       toast({
         title: "Success",
         description: "Currency updated successfully.",
       });
     } else {
-      const newCurrency = {
-        ...currentCurrency,
+      const newCurrency: Currency = {
+        ...currentCurrency as Omit<Currency, 'id' | 'createdAt' | 'updatedAt' | 'isUserCreated'>,
         id: Date.now().toString(),
-      } as Currency;
+        createdAt: now,
+        updatedAt: now,
+        isUserCreated: true
+      };
       setCurrencies(prev => [...prev, newCurrency]);
       toast({
         title: "Success",
@@ -122,10 +109,11 @@ const CurrencyConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    const defaultData = dataManager.resetToDefault();
-    setCurrencies(defaultData);
+    // Reset to emergency fallback currencies through the service
+    const emergencyFallback = CurrencyService.getCurrencies();
+    setCurrencies(emergencyFallback);
     toast({
-      title: "Success",
+      title: "Success", 
       description: "Currencies reset to default values.",
     });
   };
@@ -236,6 +224,9 @@ const CurrencyConfig = () => {
                     <p className="text-sm text-muted-foreground">
                       Symbol: {currency.symbol} • Country: {currency.country}
                     </p>
+                    {currency.isUserCreated && (
+                      <p className="text-xs text-blue-600 mt-1">User Created</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
