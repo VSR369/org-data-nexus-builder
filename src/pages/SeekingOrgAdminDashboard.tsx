@@ -5,7 +5,8 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
-import SolutionSeekersValidation from "@/components/master-data/SolutionSeekersValidation";
+import OrganizationInfoCards from "@/components/dashboard/OrganizationInfoCards";
+import { UserDataProvider } from "@/components/dashboard/UserDataProvider";
 
 const SeekingOrgAdminDashboard = () => {
   return (
@@ -38,14 +39,14 @@ const SeekingOrgAdminDashboard = () => {
                         Seeking Organization Administrator Dashboard
                       </h1>
                       <p className="text-sm text-muted-foreground">
-                        Solution Seekers Management Portal - Read Only View
+                        Organization Management Portal - Administrative View
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-lg">
-                  <Eye className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-700">View Only Mode</span>
+                <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-lg border border-green-200">
+                  <Shield className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">Administrator Access</span>
                 </div>
               </div>
             </div>
@@ -54,11 +55,18 @@ const SeekingOrgAdminDashboard = () => {
           {/* Main Content */}
           <div className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <div className="pointer-events-none select-none">
-                <div className="opacity-90">
-                  <SolutionSeekersValidation />
-                </div>
-                <div className="absolute inset-0 bg-transparent cursor-not-allowed" />
+              <div className="max-w-7xl mx-auto p-6">
+                <UserDataProvider>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      Organization Overview
+                    </h2>
+                    <p className="text-gray-600">
+                      View and manage your seeking organization's information and settings.
+                    </p>
+                  </div>
+                  <OrganizationInfoCards />
+                </UserDataProvider>
               </div>
             </div>
           </div>
