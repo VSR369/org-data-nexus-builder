@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus, XCircle, Edit, Upload, DollarSign } from 'lucide-react';
+import { Inbox, Users, Calendar, Building, MapPin, Phone, Mail, Globe, FileText, X, Eye, Download, CheckCircle, UserPlus, XCircle, Edit, Upload, DollarSign, Shield, UserCheck } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { UserRecord } from '@/services/types';
 import { useToast } from "@/hooks/use-toast";
@@ -51,12 +51,14 @@ const SolutionSeekersValidation: React.FC = () => {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [showReApprovalDialog, setShowReApprovalDialog] = useState(false);
+  const [showAdminDetailsDialog, setShowAdminDetailsDialog] = useState(false);
   const [seekerToApprove, setSeekerToApprove] = useState<SeekerDetails | null>(null);
   const [seekerToDecline, setSeekerToDecline] = useState<SeekerDetails | null>(null);
   const [seekerToReApprove, setSeekerToReApprove] = useState<SeekerDetails | null>(null);
   const [declineReason, setDeclineReason] = useState('');
   const [reApprovalReason, setReApprovalReason] = useState('');
   const [reApprovalDocuments, setReApprovalDocuments] = useState<File[]>([]);
+  const [storedAdminDetails, setStoredAdminDetails] = useState<any[]>([]);
   const [adminDetails, setAdminDetails] = useState<SeekerAdminDetails>({
     name: '',
     contactNumber: '',
@@ -97,7 +99,28 @@ const SolutionSeekersValidation: React.FC = () => {
 
   useEffect(() => {
     loadSeekers();
+    loadStoredAdminDetails();
   }, []);
+
+  const loadStoredAdminDetails = () => {
+    try {
+      console.log('📋 Loading stored administrator details...');
+      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      const adminDetails = existingApprovals
+        .filter((approval: any) => approval.approvalStatus === 'approved' && approval.adminDetails)
+        .map((approval: any) => ({
+          ...approval.adminDetails,
+          organizationName: approval.organizationName,
+          seekerUserId: approval.seekerUserId,
+          approvedAt: approval.approvedAt
+        }));
+      
+      setStoredAdminDetails(adminDetails);
+      console.log('✅ Loaded administrator details:', adminDetails.length);
+    } catch (error) {
+      console.error('❌ Error loading administrator details:', error);
+    }
+  };
 
   const loadSeekers = async () => {
     try {
@@ -463,6 +486,9 @@ const SolutionSeekersValidation: React.FC = () => {
         )
       );
 
+      // Reload admin details
+      loadStoredAdminDetails();
+
       console.log('✅ Admin details saved successfully');
       
       toast({
@@ -663,17 +689,83 @@ const SolutionSeekersValidation: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <XCircle className="h-8 w-8 text-red-600" />
+              <Shield className="h-8 w-8 text-indigo-600" />
               <div>
-                <p className="text-2xl font-bold">
-                  {seekers.filter(s => s.approvalStatus === 'rejected').length}
-                </p>
-                <p className="text-sm text-muted-foreground">Declined</p>
+                <p className="text-2xl font-bold">{storedAdminDetails.length}</p>
+                <p className="text-sm text-muted-foreground">Admin Accounts</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Administrator Details Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Administrator Details
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdminDetailsDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              View All Details
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Administrator accounts created for approved solution seekers
+          </p>
+        </CardHeader>
+        
+        <CardContent>
+          {storedAdminDetails.length === 0 ? (
+            <div className="text-center py-8">
+              <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Administrator Accounts</h3>
+              <p className="text-gray-600">No administrator accounts have been created yet.</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Admin Name</TableHead>
+                    <TableHead>Admin User ID</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {storedAdminDetails.map((admin, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <p className="font-semibold">{admin.organizationName}</p>
+                          <p className="text-sm text-muted-foreground font-mono">{admin.seekerUserId}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{admin.name}</TableCell>
+                      <TableCell className="font-mono text-sm">{admin.userId}</TableCell>
+                      <TableCell>{admin.email}</TableCell>
+                      <TableCell>{admin.contactNumber}</TableCell>
+                      <TableCell className="text-sm">
+                        {formatDate(admin.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Seekers List */}
       <Card>
@@ -1373,6 +1465,80 @@ const SolutionSeekersValidation: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Administrator Details Dialog */}
+      <Dialog open={showAdminDetailsDialog} onOpenChange={setShowAdminDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Shield className="h-6 w-6" />
+              All Administrator Details
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowAdminDetailsDialog(false)}
+                className="ml-auto"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[70vh] pr-4">
+            <div className="space-y-4">
+              {storedAdminDetails.length === 0 ? (
+                <div className="text-center py-8">
+                  <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Administrator Accounts</h3>
+                  <p className="text-gray-600">No administrator accounts have been created yet.</p>
+                </div>
+              ) : (
+                storedAdminDetails.map((admin, index) => (
+                  <Card key={index} className="border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Building className="h-5 w-5" />
+                        {admin.organizationName}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Seeker ID: {admin.seekerUserId} • Created: {formatDate(admin.createdAt)}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Admin Name</label>
+                        <p className="font-semibold">{admin.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Admin User ID</label>
+                        <p className="font-mono">{admin.userId}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Email Address</label>
+                        <p>{admin.email}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Contact Number</label>
+                        <p>{admin.contactNumber}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Password</label>
+                        <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {admin.password ? '••••••••' : 'Not Available'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Status</label>
+                        <Badge variant="default">Active Admin</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
