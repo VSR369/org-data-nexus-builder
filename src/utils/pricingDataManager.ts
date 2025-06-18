@@ -76,49 +76,41 @@ const defaultPricingConfigs: PricingConfig[] = [
 
 const pricingDataManager = new LegacyDataManager<PricingConfig[]>({
   key: 'master_data_pricing_configs',
-  defaultData: defaultPricingConfigs,
-  version: 3 // Increment version to force refresh with updated percentage data
+  defaultData: [],
+  version: 4 // Increment version to respect user deletions
+});
+
+// Track deleted configurations to prevent auto-recreation
+const deletedConfigsManager = new LegacyDataManager<string[]>({
+  key: 'master_data_pricing_deleted_configs',
+  defaultData: [],
+  version: 1
 });
 
 export const getPricingConfigs = (): PricingConfig[] => {
   try {
     const configs = pricingDataManager.loadData();
+    const deletedConfigIds = deletedConfigsManager.loadData();
+    
     console.log('🔄 Loading pricing configurations:', configs?.length || 0);
+    console.log('🗑️ Deleted config IDs:', deletedConfigIds);
     
-    // Ensure we have valid array
+    // If no configs exist and no defaults have been explicitly deleted, initialize with defaults
     if (!Array.isArray(configs) || configs.length === 0) {
-      console.log('📝 No pricing configs found, initializing with defaults');
-      pricingDataManager.saveData(defaultPricingConfigs);
-      return defaultPricingConfigs;
-    }
-    
-    // Ensure we have pricing for all engagement models
-    const engagementModels = ['Market Place', 'Market Place & Aggregator', 'Aggregator', 'Platform as a Service'];
-    const missingModels = engagementModels.filter(model => 
-      !configs.some(config => config.engagementModel === model)
-    );
-    
-    if (missingModels.length > 0) {
-      console.log('📝 Missing pricing configs for models:', missingModels);
-      const updatedConfigs = [...configs];
-      
-      // Add default configs for missing models
-      missingModels.forEach(model => {
-        const defaultConfig = defaultPricingConfigs.find(config => config.engagementModel === model);
-        if (defaultConfig) {
-          updatedConfigs.push(defaultConfig);
-        }
-      });
-      
-      pricingDataManager.saveData(updatedConfigs);
-      return updatedConfigs;
+      if (!deletedConfigIds || deletedConfigIds.length === 0) {
+        console.log('📝 No pricing configs found and none deleted, initializing with defaults');
+        pricingDataManager.saveData(defaultPricingConfigs);
+        return defaultPricingConfigs;
+      } else {
+        console.log('📝 No pricing configs found but some were deleted, returning empty array');
+        return [];
+      }
     }
     
     return configs;
   } catch (error) {
     console.error('❌ Error loading pricing configs:', error);
-    pricingDataManager.saveData(defaultPricingConfigs);
-    return defaultPricingConfigs;
+    return [];
   }
 };
 
@@ -138,6 +130,15 @@ export const savePricingConfig = (config: PricingConfig): void => {
 export const deletePricingConfig = (id: string): void => {
   const configs = getPricingConfigs();
   const filteredConfigs = configs.filter(c => c.id !== id);
+  
+  // Track deleted configuration ID to prevent auto-recreation
+  const deletedConfigIds = deletedConfigsManager.loadData();
+  if (!deletedConfigIds.includes(id)) {
+    deletedConfigIds.push(id);
+    deletedConfigsManager.saveData(deletedConfigIds);
+    console.log('🗑️ Marked config as deleted:', id);
+  }
+  
   pricingDataManager.saveData(filteredConfigs);
 };
 
@@ -176,6 +177,12 @@ export class PricingDataManager {
     
     console.log(`💰 Looking for pricing config for "${engagementModel}":`, foundConfig ? 'Found' : 'Not found');
     return foundConfig || null;
+  }
+
+  // Method to reset deleted configurations tracking (for admin use)
+  static resetDeletedConfigsTracking(): void {
+    deletedConfigsManager.saveData([]);
+    console.log('🔄 Reset deleted configurations tracking');
   }
 }
 
