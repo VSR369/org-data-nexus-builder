@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye, UserPlus, UserCheck, UserX } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
+import { useToast } from "@/hooks/use-toast";
 import type { UserRecord } from '@/services/types';
 
 interface SeekerDetails extends UserRecord {
@@ -16,6 +17,8 @@ const SolutionSeekersValidation: React.FC = () => {
   const [seekers, setSeekers] = useState<SeekerDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadSeekers = async () => {
@@ -80,6 +83,100 @@ const SolutionSeekersValidation: React.FC = () => {
 
     loadSeekers();
   }, []);
+
+  const handleApproval = async (seekerId: string, status: 'approved' | 'rejected') => {
+    try {
+      const updatedSeekers = seekers.map(seeker => 
+        seeker.id === seekerId 
+          ? { ...seeker, approvalStatus: status }
+          : seeker
+      );
+      setSeekers(updatedSeekers);
+      
+      // Save approval status to localStorage for persistence
+      const approvalData = {
+        seekerId,
+        status,
+        approvedAt: new Date().toISOString(),
+        approvedBy: 'admin' // Could be dynamic based on current user
+      };
+      
+      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      const updatedApprovals = existingApprovals.filter((a: any) => a.seekerId !== seekerId);
+      updatedApprovals.push(approvalData);
+      localStorage.setItem('seeker_approvals', JSON.stringify(updatedApprovals));
+      
+      toast({
+        title: status === 'approved' ? "Seeker Approved" : "Seeker Rejected",
+        description: `${seekers.find(s => s.id === seekerId)?.organizationName} has been ${status}.`,
+        variant: status === 'approved' ? "default" : "destructive"
+      });
+      
+    } catch (error) {
+      console.error('Error updating approval status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update approval status.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateAdministrator = async (seeker: SeekerDetails) => {
+    try {
+      const adminData = {
+        ...seeker,
+        role: 'administrator',
+        createdAsAdmin: true,
+        adminCreatedAt: new Date().toISOString(),
+        adminCreatedBy: 'system'
+      };
+      
+      // Save admin data to localStorage
+      const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
+      const updatedAdmins = [...existingAdmins, adminData];
+      localStorage.setItem('created_administrators', JSON.stringify(updatedAdmins));
+      
+      // Update seeker status
+      await handleApproval(seeker.id, 'approved');
+      
+      toast({
+        title: "Administrator Created",
+        description: `Administrator access created for ${seeker.organizationName}.`,
+      });
+      
+    } catch (error) {
+      console.error('Error creating administrator:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create administrator access.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load approval statuses from localStorage
+  useEffect(() => {
+    const loadApprovalStatuses = () => {
+      try {
+        const approvals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+        setSeekers(prevSeekers => 
+          prevSeekers.map(seeker => {
+            const approval = approvals.find((a: any) => a.seekerId === seeker.id);
+            return approval 
+              ? { ...seeker, approvalStatus: approval.status }
+              : seeker;
+          })
+        );
+      } catch (error) {
+        console.error('Error loading approval statuses:', error);
+      }
+    };
+
+    if (seekers.length > 0) {
+      loadApprovalStatuses();
+    }
+  }, [seekers.length]);
 
   const handleDownloadData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(seekers, null, 2));
@@ -194,6 +291,130 @@ const SolutionSeekersValidation: React.FC = () => {
     loadSeekers();
   };
 
+  const ViewDetailsDialog = ({ seeker }: { seeker: SeekerDetails }) => {
+    const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
+    
+    return (
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            {seeker.organizationName} - Detailed View
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Organization Details</h4>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium">Name:</span> {safeRender(seeker.organizationName)}</div>
+                <div><span className="font-medium">Type:</span> {safeRender(seeker.organizationType)}</div>
+                <div><span className="font-medium">Entity:</span> {safeRender(seeker.entityType)}</div>
+                <div><span className="font-medium">Country:</span> {safeRender(seeker.country)}</div>
+                <div><span className="font-medium">Industry:</span> {safeRender(seeker.industrySegment)}</div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Contact Information</h4>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium">Contact Person:</span> {safeRender(seeker.contactPersonName)}</div>
+                <div><span className="font-medium">Email:</span> {safeRender(seeker.email)}</div>
+                <div><span className="font-medium">User ID:</span> {safeRender(seeker.userId)}</div>
+                <div><span className="font-medium">Org ID:</span> {safeRender(seeker.organizationId)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Registration Information */}
+          <div>
+            <h4 className="font-semibold text-sm text-gray-700 mb-2">Registration Details</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm space-y-1">
+              <div><span className="font-medium">Registered:</span> {new Date(seeker.registrationTimestamp).toLocaleString()}</div>
+              <div><span className="font-medium">Last Login:</span> {seeker.lastLoginTimestamp ? new Date(seeker.lastLoginTimestamp).toLocaleString() : 'Never'}</div>
+              <div><span className="font-medium">Version:</span> {seeker.version}</div>
+            </div>
+          </div>
+
+          {/* Membership & Pricing Details */}
+          {(membershipData || pricingData) && (
+            <div>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Engagement & Pricing</h4>
+              <div className="bg-blue-50 p-3 rounded text-sm space-y-2">
+                {membershipData && (
+                  <div className="space-y-1">
+                    <div><span className="font-medium">Membership Status:</span> {safeRender(membershipData.status)}</div>
+                    {membershipData.selectedPlan && <div><span className="font-medium">Plan:</span> {safeRender(membershipData.selectedPlan)}</div>}
+                    {membershipData.paidAt && <div><span className="font-medium">Paid At:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>}
+                  </div>
+                )}
+                {pricingData && (
+                  <div className="space-y-1">
+                    {pricingData.engagementModel && <div><span className="font-medium">Engagement Model:</span> {safeRender(pricingData.engagementModel)}</div>}
+                    {pricingData.currency && pricingData.amount && (
+                      <div><span className="font-medium">Pricing:</span> {safeRender(pricingData.currency)} {safeRender(pricingData.amount)}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Approval Actions */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Approval Status:</span>
+              <Badge variant={
+                seeker.approvalStatus === 'approved' ? 'default' : 
+                seeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'
+              }>
+                {seeker.approvalStatus}
+              </Badge>
+            </div>
+            
+            <div className="flex gap-2">
+              {seeker.approvalStatus === 'pending' && (
+                <>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-green-600 border-green-600 hover:bg-green-50"
+                    onClick={() => handleApproval(seeker.id, 'approved')}
+                  >
+                    <UserCheck className="h-4 w-4 mr-1" />
+                    Approve
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-red-600 border-red-600 hover:bg-red-50"
+                    onClick={() => handleApproval(seeker.id, 'rejected')}
+                  >
+                    <UserX className="h-4 w-4 mr-1" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              
+              {seeker.approvalStatus === 'approved' && (
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => handleCreateAdministrator(seeker)}
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Create Admin
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    );
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-4">
@@ -269,10 +490,10 @@ const SolutionSeekersValidation: React.FC = () => {
                     {safeRender(seeker.organizationName)}
                   </CardTitle>
                   <Badge variant={
-                    seeker.membershipStatus === 'active' ? 'default' : 
-                    seeker.membershipStatus === 'inactive' ? 'destructive' : 'secondary'
+                    seeker.approvalStatus === 'approved' ? 'default' : 
+                    seeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'
                   }>
-                    {safeRender(seeker.membershipStatus || membershipData?.status || membershipData?.membershipStatus || 'not-member')}
+                    {seeker.approvalStatus}
                   </Badge>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -331,10 +552,48 @@ const SolutionSeekersValidation: React.FC = () => {
                   </div>
                   
                   <div className="flex justify-end mt-4">
-                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </DialogTrigger>
+                      <ViewDetailsDialog seeker={seeker} />
+                    </Dialog>
+                    
+                    <div className="flex gap-1">
+                      {seeker.approvalStatus === 'pending' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-green-600 border-green-600 hover:bg-green-50 px-2"
+                            onClick={() => handleApproval(seeker.id, 'approved')}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600 border-red-600 hover:bg-red-50 px-2"
+                            onClick={() => handleApproval(seeker.id, 'rejected')}
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      
+                      {seeker.approvalStatus === 'approved' && (
+                        <Button 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700 px-2"
+                          onClick={() => handleCreateAdministrator(seeker)}
+                        >
+                          <UserPlus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
