@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
@@ -205,7 +204,9 @@ const DashboardContent = () => {
             id: engagementSelection.model.toLowerCase().replace(/\s+/g, '-'),
             name: engagementSelection.model,
             description: `Selected ${engagementSelection.model}`,
-            isActive: true
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           } : null}
           currentSelectedPricingPlan={engagementSelection?.duration === '3 months' ? 'quarterly' : 
                                       engagementSelection?.duration === '6 months' ? 'halfyearly' : 'annual'}
