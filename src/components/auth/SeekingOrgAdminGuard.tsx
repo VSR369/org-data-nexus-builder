@@ -17,7 +17,7 @@ const SeekingOrgAdminGuard: React.FC<SeekingOrgAdminGuardProps> = ({ children })
   useEffect(() => {
     const isLoggedIn = checkAuthStatus();
     if (!isLoggedIn) {
-      navigate('/seeking-org-admin-login');
+      navigate('/signin');
     }
   }, [checkAuthStatus, navigate]);
 
@@ -34,11 +34,11 @@ const SeekingOrgAdminGuard: React.FC<SeekingOrgAdminGuardProps> = ({ children })
               You need to be signed in as a Seeking Organization Administrator to access this area.
             </p>
             <Button 
-              onClick={() => navigate('/seeking-org-admin-login')}
+              onClick={() => navigate('/signin')}
               className="bg-green-600 hover:bg-green-700"
             >
               <Shield className="h-4 w-4 mr-2" />
-              Go to Admin Login
+              Go to Sign In
             </Button>
           </CardContent>
         </Card>

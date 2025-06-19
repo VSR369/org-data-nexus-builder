@@ -21,7 +21,10 @@ export const useSessionManager = () => {
     localStorage.removeItem('seekerUserId');
     localStorage.removeItem('seekerOrganizationType');
     
-    // Navigate to signin page
+    // Clear admin session data as well
+    localStorage.removeItem('seeking_org_admin_session');
+    
+    // Navigate to main signin page where users can select their role
     navigate('/signin');
     
     toast({

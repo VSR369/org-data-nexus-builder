@@ -60,7 +60,7 @@ export const useSeekingOrgAdminAuth = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('seeking_org_admin_session');
     toast.success('Successfully logged out');
-    navigate('/seeking-org-admin-login');
+    navigate('/signin');
   };
 
   const checkAuthStatus = () => {
