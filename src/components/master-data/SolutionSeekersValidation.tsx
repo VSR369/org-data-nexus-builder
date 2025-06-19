@@ -8,6 +8,7 @@ import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService'
 import { useToast } from "@/hooks/use-toast";
 import type { UserRecord } from '@/services/types';
 import AdminCreationDialog from './AdminCreationDialog';
+import RejectionDialog from './RejectionDialog';
 
 interface SeekerDetails extends UserRecord {
   approvalStatus: 'pending' | 'approved' | 'rejected';
@@ -22,7 +23,9 @@ const SolutionSeekersValidation: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [currentSeekerForAdmin, setCurrentSeekerForAdmin] = useState<SeekerDetails | null>(null);
+  const [currentSeekerForRejection, setCurrentSeekerForRejection] = useState<SeekerDetails | null>(null);
   const [existingAdmin, setExistingAdmin] = useState<any>(null);
   const { toast } = useToast();
 
@@ -101,7 +104,7 @@ const SolutionSeekersValidation: React.FC = () => {
     loadSeekers();
   }, []);
 
-  const handleApproval = async (seekerId: string, status: 'approved' | 'rejected') => {
+  const handleApproval = async (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => {
     try {
       const updatedSeekers = seekers.map(seeker => 
         seeker.id === seekerId 
@@ -110,24 +113,47 @@ const SolutionSeekersValidation: React.FC = () => {
       );
       setSeekers(updatedSeekers);
       
-      // Save approval status to localStorage for persistence
-      const approvalData = {
+      // Save approval/rejection status to localStorage for persistence
+      const statusData = {
         seekerId,
         status,
-        approvedAt: new Date().toISOString(),
-        approvedBy: 'admin' // Could be dynamic based on current user
+        reason: reason || '',
+        processedAt: new Date().toISOString(),
+        processedBy: 'admin', // Could be dynamic based on current user
+        documents: documents ? documents.map(file => ({ name: file.name, size: file.size, type: file.type })) : []
       };
       
-      const existingApprovals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
-      const updatedApprovals = existingApprovals.filter((a: any) => a.seekerId !== seekerId);
-      updatedApprovals.push(approvalData);
-      localStorage.setItem('seeker_approvals', JSON.stringify(updatedApprovals));
+      const existingStatuses = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      const updatedStatuses = existingStatuses.filter((s: any) => s.seekerId !== seekerId);
+      updatedStatuses.push(statusData);
+      localStorage.setItem('seeker_approvals', JSON.stringify(updatedStatuses));
       
-      toast({
-        title: status === 'approved' ? "Seeker Approved" : "Seeker Rejected",
-        description: `${seekers.find(s => s.id === seekerId)?.organizationName} has been ${status}.`,
-        variant: status === 'approved' ? "default" : "destructive"
-      });
+      // Store documents separately if provided
+      if (documents && documents.length > 0) {
+        const documentData = {
+          seekerId,
+          documents: await Promise.all(documents.map(async (file) => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: await file.arrayBuffer(),
+            uploadedAt: new Date().toISOString()
+          })))
+        };
+        
+        const existingDocs = JSON.parse(localStorage.getItem('seeker_documents') || '[]');
+        const updatedDocs = existingDocs.filter((doc: any) => doc.seekerId !== seekerId);
+        updatedDocs.push(documentData);
+        localStorage.setItem('seeker_documents', JSON.stringify(updatedDocs));
+      }
+      
+      if (!reason) {
+        toast({
+          title: status === 'approved' ? "Seeker Approved" : "Seeker Rejected",
+          description: `${seekers.find(s => s.id === seekerId)?.organizationName} has been ${status}.`,
+          variant: status === 'approved' ? "default" : "destructive"
+        });
+      }
       
     } catch (error) {
       console.error('Error updating approval status:', error);
@@ -137,6 +163,11 @@ const SolutionSeekersValidation: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleRejectClick = (seeker: SeekerDetails) => {
+    setCurrentSeekerForRejection(seeker);
+    setRejectionDialogOpen(true);
   };
 
   const handleCreateAdministrator = async (seeker: SeekerDetails) => {
@@ -411,7 +442,7 @@ const SolutionSeekersValidation: React.FC = () => {
                     size="sm" 
                     variant="outline" 
                     className="text-red-600 border-red-600 hover:bg-red-50"
-                    onClick={() => handleApproval(seeker.id, 'rejected')}
+                    onClick={() => handleRejectClick(seeker)}
                   >
                     <UserX className="h-4 w-4 mr-1" />
                     Reject
@@ -601,7 +632,7 @@ const SolutionSeekersValidation: React.FC = () => {
                           size="sm" 
                           variant="outline" 
                           className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
-                          onClick={() => handleApproval(seeker.id, 'rejected')}
+                          onClick={() => handleRejectClick(seeker)}
                         >
                           <UserX className="h-4 w-4 mr-1" />
                           Reject
@@ -636,6 +667,16 @@ const SolutionSeekersValidation: React.FC = () => {
           seeker={currentSeekerForAdmin}
           onAdminCreated={handleAdminCreated}
           existingAdmin={existingAdmin}
+        />
+      )}
+
+      {/* Rejection Dialog */}
+      {currentSeekerForRejection && (
+        <RejectionDialog
+          open={rejectionDialogOpen}
+          onOpenChange={setRejectionDialogOpen}
+          seeker={currentSeekerForRejection}
+          onStatusChange={handleApproval}
         />
       )}
     </div>
