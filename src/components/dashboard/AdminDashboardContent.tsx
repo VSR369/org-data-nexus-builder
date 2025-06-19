@@ -13,7 +13,7 @@ import AdminDebugInfo from './AdminDebugInfo';
 import AdminLoginWarning from './AdminLoginWarning';
 import DataCleanupButton from '@/components/admin/DataCleanupButton';
 
-// Import the comprehensive engagement model selector
+// Import the correct comprehensive engagement model selector from dashboard
 import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
 
 const AdminDashboardContent: React.FC = () => {
@@ -136,10 +136,10 @@ const AdminDashboardContent: React.FC = () => {
       {/* Admin Debug info */}
       <AdminDebugInfo userData={userData} />
 
-      {/* Read-only Organization Data - without engagement model status */}
+      {/* Read-only Organization Data */}
       <ReadOnlyOrganizationData />
 
-      {/* Membership Section */}
+      {/* Membership Section - Using the correct MembershipJoinCard */}
       <div className="mt-6 mb-6">
         <MembershipJoinCard
           userId={userData.userId}
@@ -148,7 +148,7 @@ const AdminDashboardContent: React.FC = () => {
         />
       </div>
 
-      {/* Engagement Model Section */}
+      {/* Engagement Model Section - Using the correct EngagementModelView */}
       <div className="mt-6 mb-6">
         <EngagementModelView
           selection={engagementSelection}
@@ -157,7 +157,7 @@ const AdminDashboardContent: React.FC = () => {
         />
       </div>
 
-      {/* Engagement Model Selector Modal */}
+      {/* Engagement Model Selector Modal - Using the correct comprehensive selector */}
       {showEngagementSelector && (
         <EngagementModelSelector
           onClose={handleCloseSelector}
