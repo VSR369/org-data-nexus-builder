@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from 'react-router-dom';
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
 import { MembershipService } from '@/services/MembershipService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -12,14 +11,11 @@ import EngagementModelView from '@/components/engagement/EngagementModelView';
 import EngagementModelSelector from '@/components/engagement/EngagementModelSelector';
 
 const SeekerDashboardContent: React.FC = () => {
-  const navigate = useNavigate();
   const { userData, isLoading, showLoginWarning, handleLogout } = useUserData();
-  
   const [membershipStatus, setMembershipStatus] = useState<'active' | 'inactive'>('inactive');
   const [engagementSelection, setEngagementSelection] = useState<any>(null);
   const [showEngagementSelector, setShowEngagementSelector] = useState(false);
 
-  // Load membership and engagement data
   useEffect(() => {
     if (userData.userId) {
       const membership = MembershipService.getMembershipData(userData.userId);
@@ -34,9 +30,8 @@ const SeekerDashboardContent: React.FC = () => {
 
   const handleMembershipChange = (status: 'active' | 'inactive') => {
     setMembershipStatus(status);
-    
-    // Auto-adjust existing engagement selection if user became a member
-    if (status === 'active' && engagementSelection) {
+    // Refresh engagement selection to reflect any pricing adjustments
+    if (status === 'active') {
       const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
       setEngagementSelection(updatedSelection);
     }
@@ -45,14 +40,6 @@ const SeekerDashboardContent: React.FC = () => {
   const handleSelectionSaved = () => {
     const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
     setEngagementSelection(updatedSelection);
-  };
-
-  const handleSelectEngagementModel = () => {
-    setShowEngagementSelector(true);
-  };
-
-  const handleModifySelection = () => {
-    setShowEngagementSelector(true);
   };
 
   if (isLoading) {
@@ -76,11 +63,8 @@ const SeekerDashboardContent: React.FC = () => {
       
       <div className="max-w-7xl mx-auto p-6">
         <LoginWarning show={showLoginWarning} />
-
-        {/* Organization Information Header */}
         <OrganizationInfoCard />
 
-        {/* Membership Section */}
         <div className="mt-6 mb-6">
           <MembershipJoinCard
             userId={userData.userId}
@@ -89,16 +73,14 @@ const SeekerDashboardContent: React.FC = () => {
           />
         </div>
 
-        {/* Engagement Model Section */}
         <div className="mt-6 mb-6">
           <EngagementModelView
             selection={engagementSelection}
-            onSelectModel={handleSelectEngagementModel}
-            onModifySelection={handleModifySelection}
+            onSelectModel={() => setShowEngagementSelector(true)}
+            onModifySelection={() => setShowEngagementSelector(true)}
           />
         </div>
 
-        {/* Engagement Model Selector Modal */}
         {showEngagementSelector && (
           <EngagementModelSelector
             userId={userData.userId}

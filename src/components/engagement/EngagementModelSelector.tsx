@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,7 @@ interface EngagementModel {
   id: string;
   name: string;
   description: string;
-  pricing: {
-    currency: string;
-    originalAmount: number;
-    discountedAmount?: number;
-    frequency: string;
-  };
+  basePrice: number;
 }
 
 interface EngagementModelSelectorProps {
@@ -26,6 +21,35 @@ interface EngagementModelSelectorProps {
   onClose: () => void;
   onSelectionSaved: () => void;
 }
+
+const ENGAGEMENT_MODELS: EngagementModel[] = [
+  {
+    id: 'marketplace',
+    name: 'Market Place',
+    description: 'Direct marketplace transactions',
+    basePrice: 500
+  },
+  {
+    id: 'aggregator',
+    name: 'Aggregator',
+    description: 'Aggregation services from multiple sources',
+    basePrice: 600
+  },
+  {
+    id: 'marketplace-aggregator',
+    name: 'Market Place & Aggregator',
+    description: 'Combined marketplace and aggregation services',
+    basePrice: 750
+  },
+  {
+    id: 'platform-service',
+    name: 'Platform as a Service',
+    description: 'Complete platform infrastructure and services',
+    basePrice: 1000
+  }
+];
+
+const DURATIONS = ['3 months', '6 months', '12 months'];
 
 const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   userId,
@@ -36,38 +60,13 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const { toast } = useToast();
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<string>('');
-  const [engagementModels] = useState<EngagementModel[]>([
-    {
-      id: 'marketplace',
-      name: 'Market Place',
-      description: 'Direct marketplace transactions',
-      pricing: { currency: 'USD', originalAmount: 500, discountedAmount: isMember ? 400 : undefined, frequency: 'quarterly' }
-    },
-    {
-      id: 'aggregator',
-      name: 'Aggregator',
-      description: 'Aggregation services from multiple sources',
-      pricing: { currency: 'USD', originalAmount: 600, discountedAmount: isMember ? 480 : undefined, frequency: 'quarterly' }
-    },
-    {
-      id: 'marketplace-aggregator',
-      name: 'Market Place & Aggregator',
-      description: 'Combined marketplace and aggregation services',
-      pricing: { currency: 'USD', originalAmount: 750, discountedAmount: isMember ? 600 : undefined, frequency: 'quarterly' }
-    },
-    {
-      id: 'platform-service',
-      name: 'Platform as a Service',
-      description: 'Complete platform infrastructure and services',
-      pricing: { currency: 'USD', originalAmount: 1000, discountedAmount: isMember ? 800 : undefined, frequency: 'quarterly' }
-    }
-  ]);
 
-  const durations = ['3 months', '6 months', '12 months'];
+  const getSelectedModelData = () => ENGAGEMENT_MODELS.find(model => model.id === selectedModel);
 
-  const getSelectedModelData = () => {
-    return engagementModels.find(model => model.id === selectedModel);
-  };
+  const calculatePrice = (basePrice: number) => ({
+    originalAmount: basePrice,
+    discountedAmount: isMember ? Math.round(basePrice * 0.8) : undefined
+  });
 
   const handleSubmit = () => {
     if (!selectedModel || !selectedDuration) {
@@ -82,10 +81,16 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
     const modelData = getSelectedModelData();
     if (!modelData) return;
 
+    const pricing = calculatePrice(modelData.basePrice);
     const selection = {
       model: modelData.name,
       duration: selectedDuration,
-      pricing: modelData.pricing,
+      pricing: {
+        currency: 'USD',
+        originalAmount: pricing.originalAmount,
+        discountedAmount: pricing.discountedAmount,
+        frequency: 'quarterly'
+      },
       selectedAt: new Date().toISOString()
     };
 
@@ -124,105 +129,103 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {engagementModels.map((model) => (
-              <Card 
-                key={model.id}
-                className={`cursor-pointer transition-colors ${
-                  selectedModel === model.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
-                }`}
-                onClick={() => setSelectedModel(model.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-lg">{model.name}</h3>
-                    <input
-                      type="radio"
-                      checked={selectedModel === model.id}
-                      onChange={() => setSelectedModel(model.id)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <p className="text-gray-600 text-sm mb-4">{model.description}</p>
-                  <div className="flex items-center gap-2">
-                    {model.pricing.discountedAmount ? (
-                      <>
-                        <span className="text-lg font-bold text-green-600">
-                          ${model.pricing.discountedAmount}
-                        </span>
-                        <span className="text-sm text-gray-500 line-through">
-                          ${model.pricing.originalAmount}
-                        </span>
-                        <Badge variant="secondary" className="text-xs">20% OFF</Badge>
-                      </>
-                    ) : (
-                      <span className="text-lg font-bold">
-                        ${model.pricing.originalAmount}
-                      </span>
-                    )}
-                    <span className="text-sm text-gray-500">/{model.pricing.frequency}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Duration</label>
-              <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select duration" />
-                </SelectTrigger>
-                <SelectContent>
-                  {durations.map((duration) => (
-                    <SelectItem key={duration} value={duration}>
-                      {duration}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedModel && selectedDuration && (
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Selection Summary</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Model:</strong> {getSelectedModelData()?.name}</div>
-                    <div><strong>Duration:</strong> {selectedDuration}</div>
+            {ENGAGEMENT_MODELS.map((model) => {
+              const pricing = calculatePrice(model.basePrice);
+              return (
+                <Card 
+                  key={model.id}
+                  className={`cursor-pointer transition-colors ${
+                    selectedModel === model.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSelectedModel(model.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-semibold text-lg">{model.name}</h3>
+                      <input
+                        type="radio"
+                        checked={selectedModel === model.id}
+                        onChange={() => setSelectedModel(model.id)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4">{model.description}</p>
                     <div className="flex items-center gap-2">
-                      <strong>Price:</strong>
-                      {getSelectedModelData()?.pricing.discountedAmount ? (
+                      {pricing.discountedAmount ? (
                         <>
-                          <span className="text-green-600 font-bold">
-                            ${getSelectedModelData()?.pricing.discountedAmount}
+                          <span className="text-lg font-bold text-green-600">
+                            ${pricing.discountedAmount}
                           </span>
-                          <span className="text-gray-500 line-through text-xs">
-                            ${getSelectedModelData()?.pricing.originalAmount}
+                          <span className="text-sm text-gray-500 line-through">
+                            ${pricing.originalAmount}
                           </span>
+                          <Badge variant="secondary" className="text-xs">20% OFF</Badge>
                         </>
                       ) : (
-                        <span>${getSelectedModelData()?.pricing.originalAmount}</span>
+                        <span className="text-lg font-bold">${pricing.originalAmount}</span>
                       )}
-                      <span>/{getSelectedModelData()?.pricing.frequency}</span>
+                      <span className="text-sm text-gray-500">/quarterly</span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={onClose} className="flex-1">
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmit} 
-                disabled={!selectedModel || !selectedDuration}
-                className="flex-1"
-              >
-                Save Selection
-              </Button>
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Duration</label>
+            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select duration" />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATIONS.map((duration) => (
+                  <SelectItem key={duration} value={duration}>
+                    {duration}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedModel && selectedDuration && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Selection Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Model:</strong> {getSelectedModelData()?.name}</div>
+                  <div><strong>Duration:</strong> {selectedDuration}</div>
+                  <div className="flex items-center gap-2">
+                    <strong>Price:</strong>
+                    {(() => {
+                      const pricing = calculatePrice(getSelectedModelData()?.basePrice || 0);
+                      return pricing.discountedAmount ? (
+                        <>
+                          <span className="text-green-600 font-bold">${pricing.discountedAmount}</span>
+                          <span className="text-gray-500 line-through text-xs">${pricing.originalAmount}</span>
+                        </>
+                      ) : (
+                        <span>${pricing.originalAmount}</span>
+                      );
+                    })()}
+                    <span>/quarterly</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={!selectedModel || !selectedDuration}
+              className="flex-1"
+            >
+              Save Selection
+            </Button>
           </div>
         </CardContent>
       </Card>
