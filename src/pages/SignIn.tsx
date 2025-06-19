@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Users, Target, LogIn, Building2 } from 'lucide-react';
+import { Users, LogIn, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const SignIn = () => {
@@ -14,10 +14,7 @@ const SignIn = () => {
   const handleContinue = () => {
     console.log('🔄 SignIn handleContinue called with selectedRole:', selectedRole);
     
-    if (selectedRole === 'seeker') {
-      console.log('🎯 Navigating to seeker login');
-      navigate('/seeker-login');
-    } else if (selectedRole === 'contributor') {
+    if (selectedRole === 'contributor') {
       console.log('👥 Navigating to contributor login');
       navigate('/contributor-login');
     } else if (selectedRole === 'seeking-organization') {
@@ -52,28 +49,6 @@ const SignIn = () => {
               onValueChange={setSelectedRole}
               className="space-y-4"
             >
-              {/* Solution Seeker Option */}
-              <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                selectedRole === 'seeker' 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}>
-                <div className="flex items-start space-x-3">
-                  <RadioGroupItem value="seeker" id="seeker" className="mt-1" />
-                  <div className="flex-1">
-                    <Label htmlFor="seeker" className="cursor-pointer">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Target className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-gray-900">Solution Seeker</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Sign in to access solutions and manage your challenges
-                      </p>
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
               {/* Contributor Option */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedRole === 'contributor' 
