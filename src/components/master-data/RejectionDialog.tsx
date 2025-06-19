@@ -30,7 +30,7 @@ const rejectionSchema = z.object({
 });
 
 const approvalSchema = z.object({
-  approvalReason: z.string().min(10, "Approval reason must be at least 10 characters"),
+  approvalReason: z.string().min(5, "Approval reason must be at least 5 characters"),
 });
 
 type RejectionFormData = z.infer<typeof rejectionSchema>;
@@ -43,7 +43,7 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
   onStatusChange
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showApprovalOption, setShowApprovalOption] = useState(false);
+  const [showApprovalOption, setShowApprovalOption] = useState(seeker.approvalStatus === 'rejected');
   const [uploadedDocuments, setUploadedDocuments] = useState<File[]>([]);
   const { toast } = useToast();
 
@@ -118,7 +118,7 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
   const resetForms = () => {
     rejectionForm.reset();
     approvalForm.reset();
-    setShowApprovalOption(false);
+    setShowApprovalOption(seeker.approvalStatus === 'rejected');
     setUploadedDocuments([]);
   };
 
@@ -126,6 +126,16 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
     onOpenChange(false);
     resetForms();
   };
+
+  // Reset forms when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      rejectionForm.reset({ reason: '' });
+      approvalForm.reset({ approvalReason: '' });
+      setShowApprovalOption(seeker.approvalStatus === 'rejected');
+      setUploadedDocuments([]);
+    }
+  }, [open, seeker.approvalStatus, rejectionForm, approvalForm]);
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -135,7 +145,7 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
             {showApprovalOption ? (
               <>
                 <UserCheck className="h-5 w-5 text-green-600" />
-                Approve Seeker - {seeker.organizationName}
+                {seeker.approvalStatus === 'rejected' ? 'Reapprove' : 'Approve'} Seeker - {seeker.organizationName}
               </>
             ) : (
               <>
@@ -159,7 +169,7 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
                     <FormControl>
                       <Textarea 
                         placeholder="Please provide a detailed reason for rejecting this seeker..."
-                        className="min-h-[100px]"
+                        className="min-h-[100px] resize-none"
                         {...field} 
                       />
                     </FormControl>
@@ -209,11 +219,13 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
                 name="approvalReason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reason for Approval</FormLabel>
+                    <FormLabel>
+                      {seeker.approvalStatus === 'rejected' ? 'Reason for Reapproval' : 'Reason for Approval'}
+                    </FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Please provide a detailed reason for approving this seeker..."
-                        className="min-h-[100px]"
+                        placeholder={`Please provide a detailed reason for ${seeker.approvalStatus === 'rejected' ? 'reapproving' : 'approving'} this seeker...`}
+                        className="min-h-[100px] resize-none"
                         {...field} 
                       />
                     </FormControl>
@@ -276,17 +288,22 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
                   className="w-full bg-green-600 hover:bg-green-700"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Approving...' : 'Confirm Approval'}
+                  {isSubmitting ? 
+                    (seeker.approvalStatus === 'rejected' ? 'Reapproving...' : 'Approving...') : 
+                    (seeker.approvalStatus === 'rejected' ? 'Confirm Reapproval' : 'Confirm Approval')
+                  }
                 </Button>
                 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowApprovalOption(false)}
-                  disabled={isSubmitting}
-                >
-                  Back to Rejection
-                </Button>
+                {seeker.approvalStatus !== 'rejected' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowApprovalOption(false)}
+                    disabled={isSubmitting}
+                  >
+                    Back to Rejection
+                  </Button>
+                )}
                 
                 <Button
                   type="button"
