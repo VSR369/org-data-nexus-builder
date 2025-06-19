@@ -81,12 +81,47 @@ export class DataCleanupService {
         }
       });
 
+      // Clear browser form cache and autofill data
+      this.clearBrowserFormCache();
+
       console.log('✅ === ALL SOLUTION SEEKING ORGANIZATION DATA CLEARED ===');
       
     } catch (error) {
       console.error('❌ Error during data cleanup:', error);
       throw error;
     }
+  }
+
+  private clearBrowserFormCache(): void {
+    console.log('🗑️ Clearing browser form cache...');
+    
+    // Clear organization login form inputs
+    const orgEmailInput = document.getElementById('org-email') as HTMLInputElement;
+    const orgPasswordInput = document.getElementById('org-password') as HTMLInputElement;
+    
+    if (orgEmailInput) {
+      orgEmailInput.value = '';
+      orgEmailInput.autocomplete = 'off';
+    }
+    if (orgPasswordInput) {
+      orgPasswordInput.value = '';
+      orgPasswordInput.autocomplete = 'off';
+    }
+
+    // Clear general login form inputs
+    const emailInput = document.getElementById('userId') as HTMLInputElement;
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
+    
+    if (emailInput) {
+      emailInput.value = '';
+      emailInput.autocomplete = 'off';
+    }
+    if (passwordInput) {
+      passwordInput.value = '';
+      passwordInput.autocomplete = 'off';
+    }
+
+    console.log('✅ Browser form cache cleared');
   }
 
   async verifyDataCleanup(): Promise<{

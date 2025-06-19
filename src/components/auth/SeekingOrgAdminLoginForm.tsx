@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,36 @@ const SeekingOrgAdminLoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useSeekingOrgAdminAuth();
 
+  // Clear form data on component mount to ensure fresh state
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    setShowPassword(false);
+    
+    // Clear any browser autofill data
+    const emailInput = document.getElementById('org-email') as HTMLInputElement;
+    const passwordInput = document.getElementById('org-password') as HTMLInputElement;
+    
+    if (emailInput) {
+      emailInput.value = '';
+      emailInput.autocomplete = 'off';
+    }
+    if (passwordInput) {
+      passwordInput.value = '';
+      passwordInput.autocomplete = 'off';
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    const success = await login(email, password);
+    
+    // Clear form after submission attempt
+    if (success) {
+      setEmail('');
+      setPassword('');
+      setShowPassword(false);
+    }
   };
 
   return (
@@ -35,6 +62,7 @@ const SeekingOrgAdminLoginForm = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
               placeholder="Enter organization email"
+              autoComplete="off"
               required
             />
           </div>
@@ -53,6 +81,7 @@ const SeekingOrgAdminLoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10"
               placeholder="Enter your password"
+              autoComplete="off"
               required
             />
             <button
@@ -72,9 +101,10 @@ const SeekingOrgAdminLoginForm = () => {
               name="remember-org"
               type="checkbox"
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              disabled
             />
-            <Label htmlFor="remember-org" className="ml-2 block text-sm text-gray-700">
-              Remember me
+            <Label htmlFor="remember-org" className="ml-2 block text-sm text-gray-400">
+              Remember me (disabled)
             </Label>
           </div>
           <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">

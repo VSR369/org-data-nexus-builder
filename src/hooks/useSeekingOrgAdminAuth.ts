@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -16,10 +16,32 @@ export const useSeekingOrgAdminAuth = () => {
   const [currentOrganization, setCurrentOrganization] = useState<SeekingOrganization | null>(null);
   const navigate = useNavigate();
 
+  // Clear any cached session data on hook initialization
+  useEffect(() => {
+    const session = localStorage.getItem('seeking_org_admin_session');
+    if (session) {
+      try {
+        const organizationData = JSON.parse(session);
+        setCurrentOrganization(organizationData);
+        setIsAuthenticated(true);
+      } catch (error) {
+        // Clear corrupted session data
+        localStorage.removeItem('seeking_org_admin_session');
+        setCurrentOrganization(null);
+        setIsAuthenticated(false);
+      }
+    }
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
+      // Clear any existing session first
+      localStorage.removeItem('seeking_org_admin_session');
+      setCurrentOrganization(null);
+      setIsAuthenticated(false);
+      
       // Simulate organization authentication - in real app this would be API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -56,9 +78,18 @@ export const useSeekingOrgAdminAuth = () => {
   };
 
   const logout = () => {
+    // Clear all organization session data
     setCurrentOrganization(null);
     setIsAuthenticated(false);
     localStorage.removeItem('seeking_org_admin_session');
+    
+    // Clear any cached form data
+    const emailInput = document.getElementById('org-email') as HTMLInputElement;
+    const passwordInput = document.getElementById('org-password') as HTMLInputElement;
+    
+    if (emailInput) emailInput.value = '';
+    if (passwordInput) passwordInput.value = '';
+    
     toast.success('Successfully logged out');
     navigate('/signin');
   };
@@ -72,10 +103,31 @@ export const useSeekingOrgAdminAuth = () => {
         setIsAuthenticated(true);
         return true;
       } catch (error) {
+        // Clear corrupted data
         localStorage.removeItem('seeking_org_admin_session');
+        setCurrentOrganization(null);
+        setIsAuthenticated(false);
       }
     }
     return false;
+  };
+
+  const clearAllCachedData = () => {
+    // Clear session storage
+    localStorage.removeItem('seeking_org_admin_session');
+    
+    // Clear component state
+    setCurrentOrganization(null);
+    setIsAuthenticated(false);
+    
+    // Clear form inputs if they exist
+    const emailInput = document.getElementById('org-email') as HTMLInputElement;
+    const passwordInput = document.getElementById('org-password') as HTMLInputElement;
+    
+    if (emailInput) emailInput.value = '';
+    if (passwordInput) passwordInput.value = '';
+    
+    console.log('✅ All Solution Seeking Organization cached data cleared');
   };
 
   return {
@@ -85,6 +137,7 @@ export const useSeekingOrgAdminAuth = () => {
     currentOrganization,
     login,
     logout,
-    checkAuthStatus
+    checkAuthStatus,
+    clearAllCachedData
   };
 };
