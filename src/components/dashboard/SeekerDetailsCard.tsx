@@ -23,7 +23,7 @@ const SeekerDetailsCard: React.FC<SeekerDetailsCardProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
           <Building className="h-6 w-6 text-blue-600" />
-          Seeker Details
+          Solution Seeking Organization Details
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

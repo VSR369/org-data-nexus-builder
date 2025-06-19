@@ -19,10 +19,10 @@ const LoginHeader = () => {
         </div>
       </div>
       <CardTitle className="text-2xl font-bold text-gray-900">
-        Solution Seeker Login
+        Solution Seeking Organization Login
       </CardTitle>
       <p className="text-gray-600 mt-2">
-        Sign in to your seeker account
+        Sign in to your organization account
       </p>
     </CardHeader>
   );

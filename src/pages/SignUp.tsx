@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ const SignUp = () => {
     
     if (selectedRole === 'seeker') {
       console.log('🎯 Navigating to seeker registration');
-      // Navigate to Solution Seeker organization registration
+      // Navigate to Solution Seeking Organization registration
       navigate('/seeker-registration');
     } else if (selectedRole === 'contributor') {
       console.log('👥 Navigating to contributor enrollment/registration');
@@ -50,7 +51,7 @@ const SignUp = () => {
               onValueChange={setSelectedRole}
               className="space-y-4"
             >
-              {/* Solution Seeker Option */}
+              {/* Solution Seeking Organization Option */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedRole === 'seeker' 
                   ? 'border-blue-500 bg-blue-50' 
@@ -62,7 +63,7 @@ const SignUp = () => {
                     <Label htmlFor="seeker" className="cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-gray-900">Solution Seeker</span>
+                        <span className="font-semibold text-gray-900">Solution Seeking Organization</span>
                       </div>
                       <p className="text-sm text-gray-600">
                         I'm looking for solutions to challenges and problems. I want to find experts and providers who can help solve my organization's needs.
