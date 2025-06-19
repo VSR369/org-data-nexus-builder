@@ -16,30 +16,58 @@ const SeekerDashboardContent: React.FC = () => {
   const [engagementSelection, setEngagementSelection] = useState<any>(null);
   const [showEngagementSelector, setShowEngagementSelector] = useState(false);
 
+  // Load data when user changes
   useEffect(() => {
     if (userData.userId) {
+      console.log('🔄 Loading dashboard data for user:', userData.userId);
+      
       const membership = MembershipService.getMembershipData(userData.userId);
       setMembershipStatus(membership.status);
       
       const selection = MembershipService.getEngagementSelection(userData.userId);
       setEngagementSelection(selection);
       
-      console.log('📊 Dashboard data loaded:', { membership, selection });
+      console.log('📊 Dashboard data loaded:', { 
+        membership: membership.status, 
+        hasSelection: !!selection,
+        selection: selection 
+      });
     }
   }, [userData.userId]);
 
   const handleMembershipChange = (status: 'active' | 'inactive') => {
+    console.log('🔄 Membership status changed to:', status);
     setMembershipStatus(status);
-    // Refresh engagement selection to reflect any pricing adjustments
+    
+    // Refresh engagement selection to reflect pricing adjustments
     if (status === 'active') {
       const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
       setEngagementSelection(updatedSelection);
+      console.log('🎯 Updated selection after membership change:', updatedSelection);
     }
   };
 
   const handleSelectionSaved = () => {
+    console.log('🔄 Refreshing engagement selection after save');
     const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
     setEngagementSelection(updatedSelection);
+    setShowEngagementSelector(false);
+    console.log('✅ Selection refreshed:', updatedSelection);
+  };
+
+  const handleSelectModel = () => {
+    console.log('🔄 Opening engagement model selector');
+    setShowEngagementSelector(true);
+  };
+
+  const handleModifySelection = () => {
+    console.log('🔄 Opening engagement model selector for modification');
+    setShowEngagementSelector(true);
+  };
+
+  const handleCloseSelector = () => {
+    console.log('🔄 Closing engagement model selector');
+    setShowEngagementSelector(false);
   };
 
   if (isLoading) {
@@ -76,8 +104,8 @@ const SeekerDashboardContent: React.FC = () => {
         <div className="mt-6 mb-6">
           <EngagementModelView
             selection={engagementSelection}
-            onSelectModel={() => setShowEngagementSelector(true)}
-            onModifySelection={() => setShowEngagementSelector(true)}
+            onSelectModel={handleSelectModel}
+            onModifySelection={handleModifySelection}
           />
         </div>
 
@@ -85,7 +113,7 @@ const SeekerDashboardContent: React.FC = () => {
           <EngagementModelSelector
             userId={userData.userId}
             isMember={membershipStatus === 'active'}
-            onClose={() => setShowEngagementSelector(false)}
+            onClose={handleCloseSelector}
             onSelectionSaved={handleSelectionSaved}
           />
         )}

@@ -51,7 +51,9 @@ export class MembershipService {
 
   static getEngagementSelection(userId: string): EngagementSelection | null {
     const data = localStorage.getItem(`${this.ENGAGEMENT_KEY}_${userId}`);
-    return data ? JSON.parse(data) : null;
+    const selection = data ? JSON.parse(data) : null;
+    console.log('📊 Retrieved engagement selection for user', userId, ':', selection);
+    return selection;
   }
 
   static saveEngagementSelection(userId: string, selection: EngagementSelection): boolean {
@@ -62,7 +64,7 @@ export class MembershipService {
     }
     
     localStorage.setItem(`${this.ENGAGEMENT_KEY}_${userId}`, JSON.stringify(selection));
-    console.log('✅ Engagement selection saved:', selection);
+    console.log('✅ Engagement selection saved for user', userId, ':', selection);
     return true;
   }
 
@@ -71,7 +73,7 @@ export class MembershipService {
     if (selection && !selection.pricing.discountedAmount) {
       selection.pricing.discountedAmount = Math.round(selection.pricing.originalAmount * (1 - this.MEMBER_DISCOUNT));
       localStorage.setItem(`${this.ENGAGEMENT_KEY}_${userId}`, JSON.stringify(selection));
-      console.log('🎯 Auto-adjusted pricing for new member');
+      console.log('🎯 Auto-adjusted pricing for new member:', selection);
     }
   }
 }

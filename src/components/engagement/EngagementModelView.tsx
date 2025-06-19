@@ -28,6 +28,8 @@ const EngagementModelView: React.FC<EngagementModelViewProps> = ({
   onSelectModel,
   onModifySelection
 }) => {
+  console.log('🔍 EngagementModelView received selection:', selection);
+
   if (!selection) {
     return (
       <Card className="shadow-lg">
