@@ -11,6 +11,7 @@ import { EngagementModel } from '@/components/master-data/engagement-models/type
 import { PricingConfig } from '@/types/pricing';
 import AdminDebugInfo from './AdminDebugInfo';
 import AdminLoginWarning from './AdminLoginWarning';
+import DataCleanupButton from '@/components/admin/DataCleanupButton';
 
 // Import the comprehensive engagement model selector
 import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
@@ -118,14 +119,17 @@ const AdminDashboardContent: React.FC = () => {
               View your organization registration details and current status.
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleRefreshData}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh Data
-          </Button>
+          <div className="flex items-center gap-3">
+            <DataCleanupButton />
+            <Button 
+              variant="outline" 
+              onClick={handleRefreshData}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh Data
+            </Button>
+          </div>
         </div>
       </div>
       
