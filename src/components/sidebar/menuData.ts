@@ -64,7 +64,7 @@ export const organizationMenuItems = [
     description: 'Manage domain hierarchies'
   },
   {
-    id: 'competency-capability',
+    id: 'competency-capabilities',
     title: 'Competency & Capability',
     icon: Award,
     description: 'Define skills and capabilities'
@@ -73,14 +73,14 @@ export const organizationMenuItems = [
 
 export const challengeMenuItems = [
   {
-    id: 'challenge-status',
-    title: 'Challenge Status',
+    id: 'challenge-statuses',
+    title: 'Challenge Statuses',
     icon: Target,
     description: 'Configure challenge states'
   },
   {
-    id: 'solution-status',
-    title: 'Solution Status',
+    id: 'solution-statuses',
+    title: 'Solution Statuses',
     icon: Lightbulb,
     description: 'Define solution states'
   },
@@ -106,7 +106,7 @@ export const systemMenuItems = [
     description: 'Configure engagement frameworks'
   },
   {
-    id: 'pricing-config',
+    id: 'pricing',
     title: 'Pricing Configuration',
     icon: DollarSign,
     description: 'Set up pricing models'
