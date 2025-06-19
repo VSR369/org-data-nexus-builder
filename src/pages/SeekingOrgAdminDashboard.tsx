@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,73 @@ import { ArrowLeft, Shield, Database, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { UserDataProvider, useUserData } from "@/components/dashboard/UserDataProvider";
 import ReadOnlyOrganizationData from "@/components/dashboard/ReadOnlyOrganizationData";
+import { MembershipService } from '@/services/MembershipService';
+import MembershipJoinCard from '@/components/membership/MembershipJoinCard';
+import EngagementModelView from '@/components/engagement/EngagementModelView';
+import EngagementModelSelector from '@/components/engagement/EngagementModelSelector';
 
 const DashboardContent = () => {
   const { userData, isLoading, showLoginWarning } = useUserData();
+  const [membershipStatus, setMembershipStatus] = useState<'active' | 'inactive'>('inactive');
+  const [engagementSelection, setEngagementSelection] = useState<any>(null);
+  const [showEngagementSelector, setShowEngagementSelector] = useState(false);
+
+  // Load data when user changes
+  useEffect(() => {
+    if (userData.userId) {
+      console.log('🔄 Loading admin dashboard data for user:', userData.userId);
+      
+      const membership = MembershipService.getMembershipData(userData.userId);
+      setMembershipStatus(membership.status);
+      
+      const selection = MembershipService.getEngagementSelection(userData.userId);
+      setEngagementSelection(selection);
+      
+      console.log('📊 Admin dashboard data loaded:', { 
+        membership: membership.status, 
+        hasSelection: !!selection,
+        selection: selection 
+      });
+    }
+  }, [userData.userId]);
+
+  const handleMembershipChange = (status: 'active' | 'inactive') => {
+    console.log('🔄 Membership status changed to:', status);
+    setMembershipStatus(status);
+    
+    // Refresh engagement selection to reflect pricing adjustments
+    if (status === 'active') {
+      const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
+      setEngagementSelection(updatedSelection);
+      console.log('🎯 Updated selection after membership change:', updatedSelection);
+    }
+  };
+
+  const handleSelectionSaved = () => {
+    console.log('🔄 Refreshing engagement selection after save');
+    const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
+    setEngagementSelection(updatedSelection);
+    setShowEngagementSelector(false);
+    console.log('✅ Selection refreshed:', updatedSelection);
+  };
+
+  const handleSelectModel = () => {
+    console.log('🔄 Opening engagement model selector for new selection');
+    setShowEngagementSelector(true);
+  };
+
+  const handleModifySelection = () => {
+    console.log('🔄 MODIFY SELECTION CALLED - opening engagement model selector from admin dashboard');
+    console.log('🔍 Current engagement selection:', engagementSelection);
+    console.log('🔍 Current membership status:', membershipStatus);
+    console.log('🔍 Setting showEngagementSelector to true');
+    setShowEngagementSelector(true);
+  };
+
+  const handleCloseSelector = () => {
+    console.log('🔄 Closing engagement model selector');
+    setShowEngagementSelector(false);
+  };
 
   const handleRefreshData = () => {
     window.location.reload();
@@ -88,12 +152,42 @@ const DashboardContent = () => {
 
       {/* Read-only Organization Data */}
       <ReadOnlyOrganizationData />
+
+      {/* Membership Section */}
+      <div className="mt-6 mb-6">
+        <MembershipJoinCard
+          userId={userData.userId}
+          membershipStatus={membershipStatus}
+          onMembershipChange={handleMembershipChange}
+        />
+      </div>
+
+      {/* Engagement Model Section */}
+      <div className="mt-6 mb-6">
+        <EngagementModelView
+          selection={engagementSelection}
+          onSelectModel={handleSelectModel}
+          onModifySelection={handleModifySelection}
+        />
+      </div>
+
+      {/* Engagement Model Selector Modal */}
+      {showEngagementSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <EngagementModelSelector
+            userId={userData.userId}
+            isMember={membershipStatus === 'active'}
+            onClose={handleCloseSelector}
+            onSelectionSaved={handleSelectionSaved}
+          />
+        </div>
+      )}
     </div>
   );
 };
 
 const SeekingOrgAdminDashboard = () => {
-  console.log('🔍 SeekingOrgAdminDashboard rendering in read-only mode...');
+  console.log('🔍 SeekingOrgAdminDashboard rendering with engagement model functionality...');
   
   return (
     <SidebarProvider defaultOpen={true}>
