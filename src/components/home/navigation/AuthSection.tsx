@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Database, Shield, Building2 } from "lucide-react";
+import { User, Settings, LogOut, Database, Building2, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface AuthSectionProps {
@@ -61,13 +61,13 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/seeking-org-admin-login" className="flex items-center">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Seeking Org Admin
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Solution Seeking Organization
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/seeker-login" className="flex items-center">
-                  <Building2 className="mr-2 h-4 w-4" />
+                  <Target className="mr-2 h-4 w-4" />
                   Solution Seeker
                 </Link>
               </DropdownMenuItem>

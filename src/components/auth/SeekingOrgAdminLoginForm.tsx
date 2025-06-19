@@ -23,31 +23,31 @@ const SeekingOrgAdminLoginForm = () => {
     <CardContent className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="admin-email" className="text-sm font-medium text-gray-700">
-            Administrator Email
+          <Label htmlFor="org-email" className="text-sm font-medium text-gray-700">
+            Organization Email
           </Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="admin-email"
+              id="org-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
-              placeholder="Enter administrator email"
+              placeholder="Enter organization email"
               required
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="admin-password" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="org-password" className="text-sm font-medium text-gray-700">
             Password
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="admin-password"
+              id="org-password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -68,12 +68,12 @@ const SeekingOrgAdminLoginForm = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <input
-              id="remember-admin"
-              name="remember-admin"
+              id="remember-org"
+              name="remember-org"
               type="checkbox"
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <Label htmlFor="remember-admin" className="ml-2 block text-sm text-gray-700">
+            <Label htmlFor="remember-org" className="ml-2 block text-sm text-gray-700">
               Remember me
             </Label>
           </div>
@@ -88,7 +88,7 @@ const SeekingOrgAdminLoginForm = () => {
           size="lg"
           disabled={isLoading}
         >
-          {isLoading ? 'Signing in...' : 'Sign In as Administrator'}
+          {isLoading ? 'Signing in...' : 'Sign In to Organization'}
         </Button>
       </form>
 

@@ -2,7 +2,7 @@
 import React from 'react';
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield } from 'lucide-react';
+import { ArrowLeft, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const SeekingOrgAdminLoginHeader = () => {
@@ -15,14 +15,14 @@ const SeekingOrgAdminLoginHeader = () => {
           </Button>
         </Link>
         <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center">
-          <Shield className="h-6 w-6 text-white" />
+          <Building2 className="h-6 w-6 text-white" />
         </div>
       </div>
       <CardTitle className="text-2xl font-bold text-gray-900">
-        Seeking Organization Administrator
+        Solution Seeking Organization
       </CardTitle>
       <p className="text-gray-600 mt-2">
-        Sign in to your administrator account
+        Sign in to your organization account
       </p>
     </CardHeader>
   );

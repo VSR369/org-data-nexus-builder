@@ -3,44 +3,44 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-interface SeekingOrgAdmin {
-  adminId: string;
+interface SeekingOrganization {
+  organizationId: string;
   organizationName: string;
-  role: 'seeking_org_admin';
+  role: 'seeking_organization';
   permissions: string[];
 }
 
 export const useSeekingOrgAdminAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentAdmin, setCurrentAdmin] = useState<SeekingOrgAdmin | null>(null);
+  const [currentOrganization, setCurrentOrganization] = useState<SeekingOrganization | null>(null);
   const navigate = useNavigate();
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Simulate admin authentication - in real app this would be API call
+      // Simulate organization authentication - in real app this would be API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (email && password) {
-        const adminData: SeekingOrgAdmin = {
-          adminId: email,
+        const organizationData: SeekingOrganization = {
+          organizationId: email,
           organizationName: 'Solution Seeking Organization',
-          role: 'seeking_org_admin',
-          permissions: ['manage_solutions', 'view_analytics', 'manage_seekers']
+          role: 'seeking_organization',
+          permissions: ['manage_membership', 'select_engagement_models', 'view_dashboard']
         };
         
-        setCurrentAdmin(adminData);
+        setCurrentOrganization(organizationData);
         setIsAuthenticated(true);
         
-        // Store admin session
+        // Store organization session
         localStorage.setItem('seeking_org_admin_session', JSON.stringify({
-          ...adminData,
+          ...organizationData,
           loginTime: new Date().toISOString()
         }));
         
-        toast.success('Successfully signed in as Seeking Organization Administrator!');
+        toast.success('Successfully signed in to your organization account!');
         navigate('/seeking-org-admin-dashboard');
         return true;
       } else {
@@ -56,7 +56,7 @@ export const useSeekingOrgAdminAuth = () => {
   };
 
   const logout = () => {
-    setCurrentAdmin(null);
+    setCurrentOrganization(null);
     setIsAuthenticated(false);
     localStorage.removeItem('seeking_org_admin_session');
     toast.success('Successfully logged out');
@@ -67,8 +67,8 @@ export const useSeekingOrgAdminAuth = () => {
     const session = localStorage.getItem('seeking_org_admin_session');
     if (session) {
       try {
-        const adminData = JSON.parse(session);
-        setCurrentAdmin(adminData);
+        const organizationData = JSON.parse(session);
+        setCurrentOrganization(organizationData);
         setIsAuthenticated(true);
         return true;
       } catch (error) {
@@ -81,7 +81,8 @@ export const useSeekingOrgAdminAuth = () => {
   return {
     isLoading,
     isAuthenticated,
-    currentAdmin,
+    currentAdmin: currentOrganization, // Keep this name for backward compatibility
+    currentOrganization,
     login,
     logout,
     checkAuthStatus

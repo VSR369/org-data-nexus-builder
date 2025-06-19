@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Users, Target, LogIn, Shield } from 'lucide-react';
+import { Users, Target, LogIn, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const SignIn = () => {
@@ -20,8 +20,8 @@ const SignIn = () => {
     } else if (selectedRole === 'contributor') {
       console.log('👥 Navigating to contributor login');
       navigate('/contributor-login');
-    } else if (selectedRole === 'seeking-org-admin') {
-      console.log('🔒 Navigating to seeking organization administrator login');
+    } else if (selectedRole === 'seeking-organization') {
+      console.log('🏢 Navigating to solution seeking organization login');
       navigate('/seeking-org-admin-login');
     } else {
       console.log('❌ No valid role selected');
@@ -96,22 +96,22 @@ const SignIn = () => {
                 </div>
               </div>
 
-              {/* Seeking Organization Administrator Option */}
+              {/* Solution Seeking Organization Option */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                selectedRole === 'seeking-org-admin' 
+                selectedRole === 'seeking-organization' 
                   ? 'border-green-500 bg-green-50' 
                   : 'border-gray-200 hover:border-gray-300'
               }`}>
                 <div className="flex items-start space-x-3">
-                  <RadioGroupItem value="seeking-org-admin" id="seeking-org-admin" className="mt-1" />
+                  <RadioGroupItem value="seeking-organization" id="seeking-organization" className="mt-1" />
                   <div className="flex-1">
-                    <Label htmlFor="seeking-org-admin" className="cursor-pointer">
+                    <Label htmlFor="seeking-organization" className="cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
-                        <Shield className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold text-gray-900">Seeking Organization Administrator</span>
+                        <Building2 className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold text-gray-900">Solution Seeking Organization</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Sign in as an administrator for your seeking organization to manage organizational settings and users.
+                        Sign in as a solution seeking organization to manage your membership, engagement models, and organizational settings.
                       </p>
                     </Label>
                   </div>
