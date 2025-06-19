@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
@@ -60,9 +61,10 @@ const SeekerDashboardContent: React.FC = () => {
   };
 
   const handleModifySelection = () => {
-    console.log('🔄 Modify Selection clicked - opening engagement model selector');
+    console.log('🔄 MODIFY SELECTION CALLED - opening engagement model selector');
     console.log('🔍 Current engagement selection:', engagementSelection);
     console.log('🔍 Current membership status:', membershipStatus);
+    console.log('🔍 Setting showEngagementSelector to true');
     setShowEngagementSelector(true);
   };
 
@@ -70,6 +72,13 @@ const SeekerDashboardContent: React.FC = () => {
     console.log('🔄 Closing engagement model selector');
     setShowEngagementSelector(false);
   };
+
+  // Debug logging for render
+  console.log('🔍 SeekerDashboard render state:', {
+    showEngagementSelector,
+    hasEngagementSelection: !!engagementSelection,
+    membershipStatus
+  });
 
   if (isLoading) {
     return (
@@ -111,12 +120,14 @@ const SeekerDashboardContent: React.FC = () => {
         </div>
 
         {showEngagementSelector && (
-          <EngagementModelSelector
-            userId={userData.userId}
-            isMember={membershipStatus === 'active'}
-            onClose={handleCloseSelector}
-            onSelectionSaved={handleSelectionSaved}
-          />
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <EngagementModelSelector
+              userId={userData.userId}
+              isMember={membershipStatus === 'active'}
+              onClose={handleCloseSelector}
+              onSelectionSaved={handleSelectionSaved}
+            />
+          </div>
         )}
       </div>
     </div>

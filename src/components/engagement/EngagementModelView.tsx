@@ -30,9 +30,18 @@ const EngagementModelView: React.FC<EngagementModelViewProps> = ({
 }) => {
   console.log('🔍 EngagementModelView received selection:', selection);
 
-  const handleModifyClick = () => {
-    console.log('🔄 Modify Selection button clicked');
-    onModifySelection();
+  const handleModifyClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔄 Change Selection button clicked - calling onModifySelection');
+    console.log('🔍 onModifySelection function:', typeof onModifySelection);
+    
+    if (typeof onModifySelection === 'function') {
+      onModifySelection();
+      console.log('✅ onModifySelection called successfully');
+    } else {
+      console.error('❌ onModifySelection is not a function:', onModifySelection);
+    }
   };
 
   if (!selection) {
@@ -74,10 +83,11 @@ const EngagementModelView: React.FC<EngagementModelViewProps> = ({
             variant="outline" 
             size="sm" 
             onClick={handleModifyClick}
-            className="hover:bg-blue-50 hover:border-blue-300"
+            className="hover:bg-blue-50 hover:border-blue-300 active:bg-blue-100"
+            type="button"
           >
             <Settings className="h-4 w-4 mr-2" />
-            Modify Selection
+            Change Selection
           </Button>
         </CardTitle>
       </CardHeader>
