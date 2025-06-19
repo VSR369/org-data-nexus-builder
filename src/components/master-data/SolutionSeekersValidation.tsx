@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye, UserPlus, UserCheck, UserX } from 'lucide-react';
+import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye, UserPlus, UserCheck, UserX, RotateCcw } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { useToast } from "@/hooks/use-toast";
 import type { UserRecord } from '@/services/types';
@@ -166,6 +166,11 @@ const SolutionSeekersValidation: React.FC = () => {
   };
 
   const handleRejectClick = (seeker: SeekerDetails) => {
+    setCurrentSeekerForRejection(seeker);
+    setRejectionDialogOpen(true);
+  };
+
+  const handleReapproveClick = (seeker: SeekerDetails) => {
     setCurrentSeekerForRejection(seeker);
     setRejectionDialogOpen(true);
   };
@@ -448,6 +453,18 @@ const SolutionSeekersValidation: React.FC = () => {
                     Reject
                   </Button>
                 </>
+              )}
+              
+              {seeker.approvalStatus === 'rejected' && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                  onClick={() => handleReapproveClick(seeker)}
+                >
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Reapprove
+                </Button>
               )}
               
               {seeker.approvalStatus === 'approved' && (
