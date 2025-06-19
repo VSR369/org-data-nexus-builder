@@ -61,6 +61,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<string>('');
 
+  console.log('🔍 EngagementModelSelector opened for user:', userId, 'isMember:', isMember);
+
   const getSelectedModelData = () => ENGAGEMENT_MODELS.find(model => model.id === selectedModel);
 
   const calculatePrice = (basePrice: number) => ({
@@ -69,6 +71,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   });
 
   const handleSubmit = () => {
+    console.log('💾 Attempting to save selection:', { selectedModel, selectedDuration });
+    
     if (!selectedModel || !selectedDuration) {
       toast({
         title: "Selection Required",
@@ -79,7 +83,10 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
     }
 
     const modelData = getSelectedModelData();
-    if (!modelData) return;
+    if (!modelData) {
+      console.error('❌ Model data not found for ID:', selectedModel);
+      return;
+    }
 
     const pricing = calculatePrice(modelData.basePrice);
     const selection = {
@@ -94,21 +101,23 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       selectedAt: new Date().toISOString()
     };
 
+    console.log('💾 Saving engagement selection:', selection);
     const success = MembershipService.saveEngagementSelection(userId, selection);
     
     if (success) {
       toast({
         title: "Selection Saved",
-        description: `${modelData.name} engagement model has been selected.`,
+        description: `${modelData.name} engagement model has been selected successfully.`,
       });
+      console.log('✅ Selection saved successfully');
       onSelectionSaved();
-      onClose();
     } else {
       toast({
         title: "Error",
         description: "Failed to save selection. Please try again.",
         variant: "destructive"
       });
+      console.error('❌ Failed to save selection');
     }
   };
 
@@ -122,22 +131,35 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
             </Button>
             <CardTitle className="flex items-center gap-3">
               <DollarSign className="h-6 w-6 text-blue-600" />
-              Select Engagement Model
-              {isMember && <Badge variant="default" className="bg-green-600">Member Pricing</Badge>}
+              Select Engagement Model & Pricing
+              {isMember && <Badge variant="default" className="bg-green-600">Member Pricing Active</Badge>}
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">Choose Your Engagement Model</h4>
+            <p className="text-sm text-blue-700">
+              {isMember ? 
+                "✅ You're eligible for 20% member discount on all pricing options!" : 
+                "💡 Join as a member to get 20% discount on all engagement models"
+              }
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {ENGAGEMENT_MODELS.map((model) => {
               const pricing = calculatePrice(model.basePrice);
               return (
                 <Card 
                   key={model.id}
-                  className={`cursor-pointer transition-colors ${
-                    selectedModel === model.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  className={`cursor-pointer transition-all duration-200 ${
+                    selectedModel === model.id ? 'border-blue-500 bg-blue-50 shadow-md' : 'hover:bg-gray-50 hover:shadow-sm'
                   }`}
-                  onClick={() => setSelectedModel(model.id)}
+                  onClick={() => {
+                    console.log('🔄 Selected model:', model.name);
+                    setSelectedModel(model.id);
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
@@ -146,23 +168,23 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                         type="radio"
                         checked={selectedModel === model.id}
                         onChange={() => setSelectedModel(model.id)}
-                        className="mt-1"
+                        className="mt-1 h-4 w-4"
                       />
                     </div>
                     <p className="text-gray-600 text-sm mb-4">{model.description}</p>
                     <div className="flex items-center gap-2">
                       {pricing.discountedAmount ? (
                         <>
-                          <span className="text-lg font-bold text-green-600">
+                          <span className="text-xl font-bold text-green-600">
                             ${pricing.discountedAmount}
                           </span>
                           <span className="text-sm text-gray-500 line-through">
                             ${pricing.originalAmount}
                           </span>
-                          <Badge variant="secondary" className="text-xs">20% OFF</Badge>
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">20% OFF</Badge>
                         </>
                       ) : (
-                        <span className="text-lg font-bold">${pricing.originalAmount}</span>
+                        <span className="text-xl font-bold text-gray-900">${pricing.originalAmount}</span>
                       )}
                       <span className="text-sm text-gray-500">/quarterly</span>
                     </div>
@@ -173,10 +195,13 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Duration</label>
-            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select duration" />
+            <label className="block text-sm font-medium mb-2 text-gray-700">Duration</label>
+            <Select value={selectedDuration} onValueChange={(value) => {
+              console.log('🔄 Selected duration:', value);
+              setSelectedDuration(value);
+            }}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select engagement duration" />
               </SelectTrigger>
               <SelectContent>
                 {DURATIONS.map((duration) => (
@@ -189,9 +214,9 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           </div>
 
           {selectedModel && selectedDuration && (
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4">
-                <h4 className="font-medium text-blue-900 mb-2">Selection Summary</h4>
+                <h4 className="font-medium text-green-900 mb-2">Selection Summary</h4>
                 <div className="space-y-2 text-sm">
                   <div><strong>Model:</strong> {getSelectedModelData()?.name}</div>
                   <div><strong>Duration:</strong> {selectedDuration}</div>
@@ -203,9 +228,10 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                         <>
                           <span className="text-green-600 font-bold">${pricing.discountedAmount}</span>
                           <span className="text-gray-500 line-through text-xs">${pricing.originalAmount}</span>
+                          <span className="text-xs text-green-600">(Member Price)</span>
                         </>
                       ) : (
-                        <span>${pricing.originalAmount}</span>
+                        <span className="font-bold">${pricing.originalAmount}</span>
                       );
                     })()}
                     <span>/quarterly</span>
@@ -222,7 +248,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
             <Button 
               onClick={handleSubmit} 
               disabled={!selectedModel || !selectedDuration}
-              className="flex-1"
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
               Save Selection
             </Button>
