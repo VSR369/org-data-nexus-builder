@@ -306,6 +306,37 @@ const SolutionSeekersValidation: React.FC = () => {
     return { membershipData, pricingData };
   };
 
+  // Helper function to get industry segment name from ID
+  const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
+    if (!industrySegmentValue) return '';
+    
+    // If it's already a string name, return it
+    if (typeof industrySegmentValue === 'string' && !industrySegmentValue.startsWith('is_')) {
+      return industrySegmentValue;
+    }
+    
+    // Try to load industry segments from master data
+    try {
+      const savedData = localStorage.getItem('master_data_industry_segments');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        if (data && data.industrySegments && Array.isArray(data.industrySegments)) {
+          const segment = data.industrySegments.find((seg: any) => 
+            seg.id === industrySegmentValue || seg.industrySegment === industrySegmentValue
+          );
+          if (segment) {
+            return segment.industrySegment;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading industry segments for display:', error);
+    }
+    
+    // Fallback: return the original value
+    return String(industrySegmentValue);
+  };
+
   // Helper function to safely render values, converting objects to strings
   const safeRender = (value: any): string => {
     if (value === null || value === undefined) {
@@ -376,7 +407,7 @@ const SolutionSeekersValidation: React.FC = () => {
                 <div><span className="font-medium">Type:</span> {safeRender(seeker.organizationType)}</div>
                 <div><span className="font-medium">Entity:</span> {safeRender(seeker.entityType)}</div>
                 <div><span className="font-medium">Country:</span> {safeRender(seeker.country)}</div>
-                <div><span className="font-medium">Industry:</span> {safeRender(seeker.industrySegment)}</div>
+                <div><span className="font-medium">Industry:</span> {getIndustrySegmentDisplayName(seeker.industrySegment)}</div>
               </div>
             </div>
             
@@ -590,7 +621,7 @@ const SolutionSeekersValidation: React.FC = () => {
                       <span className="font-medium">Contact:</span> {safeRender(seeker.contactPersonName)}
                     </div>
                     <div>
-                      <span className="font-medium">Industry:</span> {safeRender(seeker.industrySegment)}
+                      <span className="font-medium">Industry:</span> {getIndustrySegmentDisplayName(seeker.industrySegment)}
                     </div>
                     <div>
                       <span className="font-medium">User ID:</span> {safeRender(seeker.userId)}
