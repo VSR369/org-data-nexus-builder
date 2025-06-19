@@ -29,6 +29,50 @@ const SolutionSeekersValidation: React.FC = () => {
   const [existingAdmin, setExistingAdmin] = useState<any>(null);
   const { toast } = useToast();
 
+  // Helper function to load approval statuses from localStorage
+  const loadApprovalStatuses = (seekers: SeekerDetails[]): SeekerDetails[] => {
+    try {
+      const approvals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
+      console.log('📋 Loading approval statuses:', approvals);
+      
+      return seekers.map(seeker => {
+        const approval = approvals.find((a: any) => a.seekerId === seeker.id);
+        const updatedStatus = approval ? approval.status : 'pending';
+        console.log(`🔍 Seeker ${seeker.organizationName}: ${seeker.approvalStatus} -> ${updatedStatus}`);
+        
+        return {
+          ...seeker,
+          approvalStatus: updatedStatus
+        };
+      });
+    } catch (error) {
+      console.error('Error loading approval statuses:', error);
+      return seekers;
+    }
+  };
+
+  // Helper function to load administrator statuses
+  const loadAdministratorStatuses = (seekers: SeekerDetails[]): SeekerDetails[] => {
+    try {
+      const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
+      console.log('👥 Loading administrator statuses:', existingAdmins);
+      
+      return seekers.map(seeker => {
+        const hasAdmin = existingAdmins.some((admin: any) => admin.sourceSeekerId === seeker.id);
+        const adminRecord = existingAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
+        
+        return {
+          ...seeker,
+          hasAdministrator: hasAdmin,
+          administratorId: adminRecord?.id
+        };
+      });
+    } catch (error) {
+      console.error('Error loading administrator statuses:', error);
+      return seekers;
+    }
+  };
+
   useEffect(() => {
     const loadSeekers = async () => {
       setLoading(true);
@@ -40,49 +84,42 @@ const SolutionSeekersValidation: React.FC = () => {
         const allUsers = await unifiedUserStorageService.getAllUsers();
         
         console.log('👥 All users retrieved:', allUsers.length);
-        console.log('👥 Users data:', allUsers);
         
         // Enhanced filtering for solution seekers
-        const solutionSeekers = allUsers.filter(user => {
-          console.log('🔍 Checking user:', {
-            userId: user.userId,
-            entityType: user.entityType,
-            organizationType: user.organizationType,
-            organizationName: user.organizationName
-          });
-          
-          // Check for solution-seeker entityType (with variations)
+        let solutionSeekers = allUsers.filter(user => {
           const isSolutionSeeker = user.entityType?.toLowerCase().includes('solution') ||
                                  user.entityType?.toLowerCase().includes('seeker') ||
                                  user.entityType === 'solution-seeker' ||
                                  user.entityType === 'Solution Seeker';
           
-          // Also check if organizationType indicates seeker
           const isOrgSeeker = user.organizationType?.toLowerCase().includes('seeker');
-          
-          console.log('🎯 Is solution seeker?', isSolutionSeeker || isOrgSeeker);
           
           return isSolutionSeeker || isOrgSeeker;
         }) as SeekerDetails[];
         
         console.log('✅ Solution seekers found:', solutionSeekers.length);
-        console.log('📋 Solution seekers data:', solutionSeekers);
         
-        // Check for existing administrators and update seeker records
-        const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
-        const seekersWithAdminStatus = solutionSeekers.map(seeker => {
-          const hasAdmin = existingAdmins.some((admin: any) => admin.sourceSeekerId === seeker.id);
-          const adminRecord = existingAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
-          return {
-            ...seeker,
-            approvalStatus: 'pending' as const,
-            hasAdministrator: hasAdmin,
-            administratorId: adminRecord?.id
-          };
-        });
+        // Initialize with pending status first
+        solutionSeekers = solutionSeekers.map(seeker => ({
+          ...seeker,
+          approvalStatus: 'pending' as const,
+          hasAdministrator: false
+        }));
+        
+        // Load approval statuses from localStorage
+        solutionSeekers = loadApprovalStatuses(solutionSeekers);
+        
+        // Load administrator statuses
+        solutionSeekers = loadAdministratorStatuses(solutionSeekers);
+        
+        console.log('📊 Final seekers with statuses:', solutionSeekers.map(s => ({
+          name: s.organizationName,
+          approval: s.approvalStatus,
+          hasAdmin: s.hasAdministrator
+        })));
         
         // If no solution seekers found, show all users for debugging
-        if (seekersWithAdminStatus.length === 0 && allUsers.length > 0) {
+        if (solutionSeekers.length === 0 && allUsers.length > 0) {
           console.log('⚠️ No solution seekers found, showing all users for analysis');
           setSeekers(allUsers.map(user => ({
             ...user,
@@ -90,7 +127,7 @@ const SolutionSeekersValidation: React.FC = () => {
             hasAdministrator: false
           })));
         } else {
-          setSeekers(seekersWithAdminStatus);
+          setSeekers(solutionSeekers);
         }
         
       } catch (err: any) {
@@ -108,6 +145,7 @@ const SolutionSeekersValidation: React.FC = () => {
     try {
       console.log('🔄 Updating seeker approval status:', { seekerId, status, reason });
       
+      // Update local state immediately
       const updatedSeekers = seekers.map(seeker => 
         seeker.id === seekerId 
           ? { ...seeker, approvalStatus: status }
@@ -121,7 +159,7 @@ const SolutionSeekersValidation: React.FC = () => {
         status,
         reason: reason || '',
         processedAt: new Date().toISOString(),
-        processedBy: 'admin', // Could be dynamic based on current user
+        processedBy: 'admin',
         documents: documents ? documents.map(file => ({ name: file.name, size: file.size, type: file.type })) : []
       };
       
@@ -129,6 +167,8 @@ const SolutionSeekersValidation: React.FC = () => {
       const updatedStatuses = existingStatuses.filter((s: any) => s.seekerId !== seekerId);
       updatedStatuses.push(statusData);
       localStorage.setItem('seeker_approvals', JSON.stringify(updatedStatuses));
+      
+      console.log('💾 Saved approval status to localStorage:', statusData);
       
       // Store documents separately if provided
       if (documents && documents.length > 0) {
@@ -215,29 +255,6 @@ const SolutionSeekersValidation: React.FC = () => {
       console.error('Error updating seeker after admin creation:', error);
     }
   };
-
-  // Load approval statuses from localStorage
-  useEffect(() => {
-    const loadApprovalStatuses = () => {
-      try {
-        const approvals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
-        setSeekers(prevSeekers => 
-          prevSeekers.map(seeker => {
-            const approval = approvals.find((a: any) => a.seekerId === seeker.id);
-            return approval 
-              ? { ...seeker, approvalStatus: approval.status }
-              : seeker;
-          })
-        );
-      } catch (error) {
-        console.error('Error loading approval statuses:', error);
-      }
-    };
-
-    if (seekers.length > 0) {
-      loadApprovalStatuses();
-    }
-  }, [seekers.length]);
 
   const handleDownloadData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(seekers, null, 2));
@@ -358,29 +375,8 @@ const SolutionSeekersValidation: React.FC = () => {
   const handleRefresh = () => {
     setSeekers([]);
     setError(null);
-    // Trigger reload
-    const loadSeekers = async () => {
-      setLoading(true);
-      try {
-        await unifiedUserStorageService.initialize();
-        const allUsers = await unifiedUserStorageService.getAllUsers();
-        const solutionSeekers = allUsers.filter(user => 
-          user.entityType?.toLowerCase().includes('solution') ||
-          user.entityType?.toLowerCase().includes('seeker') ||
-          user.organizationType?.toLowerCase().includes('seeker')
-        ) as SeekerDetails[];
-        
-        setSeekers(solutionSeekers.map(seeker => ({
-          ...seeker,
-          approvalStatus: 'pending' as const
-        })));
-      } catch (err: any) {
-        setError(err.message || 'Failed to load solution seekers.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadSeekers();
+    // Trigger reload by re-running the effect
+    window.location.reload();
   };
 
   const ViewDetailsDialog = ({ seeker }: { seeker: SeekerDetails }) => {
@@ -511,7 +507,7 @@ const SolutionSeekersValidation: React.FC = () => {
                   onClick={() => handleCreateAdministrator(seeker)}
                 >
                   <UserPlus className="h-4 w-4 mr-1" />
-                  Create Admin
+                  {seeker.hasAdministrator ? 'Edit Administrator' : 'Create Administrator'}
                 </Button>
               )}
             </div>
@@ -672,7 +668,7 @@ const SolutionSeekersValidation: React.FC = () => {
                       <ViewDetailsDialog seeker={seeker} />
                     </Dialog>
                     
-                    {/* Approval Buttons */}
+                    {/* Approval Buttons - Only show for pending seekers */}
                     {seeker.approvalStatus === 'pending' && (
                       <div className="flex gap-2">
                         <Button 
@@ -709,7 +705,7 @@ const SolutionSeekersValidation: React.FC = () => {
                       </Button>
                     )}
                     
-                    {/* Create Admin Button */}
+                    {/* Create/Edit Admin Button - Only show for approved seekers */}
                     {seeker.approvalStatus === 'approved' && (
                       <Button 
                         size="sm" 
