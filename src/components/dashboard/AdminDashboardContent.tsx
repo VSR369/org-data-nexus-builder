@@ -132,7 +132,7 @@ const AdminDashboardContent: React.FC = () => {
       {/* Admin Debug info */}
       <AdminDebugInfo userData={userData} />
 
-      {/* Read-only Organization Data */}
+      {/* Read-only Organization Data - without engagement model status */}
       <ReadOnlyOrganizationData />
 
       {/* Membership Section */}
