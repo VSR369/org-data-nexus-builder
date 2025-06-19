@@ -10,7 +10,9 @@ import ReadOnlyOrganizationData from "@/components/dashboard/ReadOnlyOrganizatio
 import { MembershipService } from '@/services/MembershipService';
 import MembershipJoinCard from '@/components/membership/MembershipJoinCard';
 import EngagementModelView from '@/components/engagement/EngagementModelView';
-import EngagementModelSelector from '@/components/engagement/EngagementModelSelector';
+import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
+import { EngagementModel } from '@/components/master-data/engagement-models/types';
+import { PricingConfig } from '@/types/pricing';
 
 const DashboardContent = () => {
   const { userData, isLoading, showLoginWarning } = useUserData();
@@ -49,12 +51,32 @@ const DashboardContent = () => {
     }
   };
 
-  const handleSelectionSaved = () => {
-    console.log('🔄 Refreshing engagement selection after save');
-    const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
-    setEngagementSelection(updatedSelection);
+  const handleEngagementModelSelect = (model: EngagementModel, pricing?: PricingConfig | null, selectedPlan?: string) => {
+    console.log('🔄 Engagement model selected from dashboard selector:', { model, pricing, selectedPlan });
+    
+    // Create selection object compatible with MembershipService
+    const selection = {
+      model: model.name,
+      duration: selectedPlan || '6 months',
+      pricing: {
+        currency: pricing?.currency || 'USD',
+        originalAmount: pricing?.quarterlyFee || 0,
+        discountedAmount: membershipStatus === 'active' && pricing?.discountPercentage 
+          ? Math.round((pricing.quarterlyFee || 0) * (1 - pricing.discountPercentage / 100))
+          : undefined,
+        frequency: 'quarterly'
+      },
+      selectedAt: new Date().toISOString()
+    };
+    
+    // Save using MembershipService
+    MembershipService.saveEngagementSelection(userData.userId, selection);
+    
+    // Update local state
+    setEngagementSelection(selection);
     setShowEngagementSelector(false);
-    console.log('✅ Selection refreshed:', updatedSelection);
+    
+    console.log('✅ Engagement selection saved and updated:', selection);
   };
 
   const handleSelectModel = () => {
@@ -173,14 +195,21 @@ const DashboardContent = () => {
 
       {/* Engagement Model Selector Modal */}
       {showEngagementSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <EngagementModelSelector
-            userId={userData.userId}
-            isMember={membershipStatus === 'active'}
-            onClose={handleCloseSelector}
-            onSelectionSaved={handleSelectionSaved}
-          />
-        </div>
+        <EngagementModelSelector
+          onClose={handleCloseSelector}
+          onSelect={handleEngagementModelSelect}
+          userCountry={userData.country}
+          userOrgType={userData.organizationType}
+          membershipStatus={membershipStatus}
+          currentSelectedModel={engagementSelection ? { 
+            id: engagementSelection.model.toLowerCase().replace(/\s+/g, '-'),
+            name: engagementSelection.model,
+            description: `Selected ${engagementSelection.model}`,
+            isActive: true
+          } : null}
+          currentSelectedPricingPlan={engagementSelection?.duration === '3 months' ? 'quarterly' : 
+                                      engagementSelection?.duration === '6 months' ? 'halfyearly' : 'annual'}
+        />
       )}
     </div>
   );
