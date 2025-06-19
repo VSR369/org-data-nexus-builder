@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     }
   });
 
-  // Update form when dialog opens with existing admin data or seeker data
+  // Update form when dialog opens - only pre-fill when editing existing admin
   useEffect(() => {
     if (open) {
       if (existingAdmin) {
@@ -74,14 +73,15 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           email: existingAdmin.email || '',
           contactNumber: existingAdmin.contactNumber || '',
           userId: existingAdmin.userId || '',
-          password: existingAdmin.password || '', // In edit mode, show existing password
+          password: existingAdmin.password || '',
           confirmPassword: existingAdmin.password || ''
         });
       } else {
         setIsEditMode(false);
+        // Reset to completely blank form for new administrator
         form.reset({
-          adminName: seeker.contactPersonName || '',
-          email: seeker.email || '',
+          adminName: '',
+          email: '',
           contactNumber: '',
           userId: '',
           password: '',
@@ -89,7 +89,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         });
       }
     }
-  }, [open, existingAdmin, seeker, form]);
+  }, [open, existingAdmin, form]);
 
   const onSubmit = async (data: AdminFormData) => {
     setIsSubmitting(true);
