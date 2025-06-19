@@ -61,42 +61,58 @@ const MembershipJoinCard: React.FC<MembershipJoinCardProps> = ({
     // Simulate payment processing
     setTimeout(() => {
       let amount = 0;
+      let planDuration = '';
+      
       switch (selectedPlan) {
         case 'quarterly':
           amount = countryPricing.quarterlyPrice;
+          planDuration = '3 months';
           break;
         case 'halfyearly':
           amount = countryPricing.halfYearlyPrice;
+          planDuration = '6 months';
           break;
         case 'annual':
           amount = countryPricing.annualPrice;
+          planDuration = '12 months';
           break;
       }
 
       const membershipPricing = {
         currency: countryPricing.currency,
         amount: amount,
-        frequency: selectedPlan
+        frequency: selectedPlan,
+        duration: planDuration
       };
       
       const success = MembershipService.activateMembership(userId, 'Premium', membershipPricing);
       
       if (success) {
-        // Save the selected plan details
+        // Save the complete selected plan details
         const membershipDetails = {
           userId,
           selectedPlan,
-          pricing: countryPricing,
+          planDuration,
+          pricing: {
+            ...countryPricing,
+            selectedAmount: amount,
+            selectedFrequency: selectedPlan
+          },
           activatedAt: new Date().toISOString(),
-          membershipStatus: 'active'
+          membershipStatus: 'active',
+          country: userData.country,
+          organizationType: userData.organizationType,
+          entityType: userData.entityType
         };
         
         localStorage.setItem('completed_membership_payment', JSON.stringify(membershipDetails));
         
+        console.log('💾 Saved membership details:', membershipDetails);
+        
         onMembershipChange('active');
         toast({
           title: "Membership Activated!",
-          description: `Welcome to our premium membership. Your ${selectedPlan} plan is now active.`,
+          description: `Welcome to our premium membership. Your ${planDuration} plan is now active.`,
         });
       } else {
         toast({
@@ -169,27 +185,32 @@ const MembershipJoinCard: React.FC<MembershipJoinCardProps> = ({
   const pricingPlans = [
     {
       id: 'quarterly',
-      name: 'Quarterly',
+      name: 'Quarterly Plan',
       duration: '3 months',
       price: countryPricing.quarterlyPrice,
       badge: null,
-      popular: false
+      popular: false,
+      savings: null
     },
     {
       id: 'halfyearly',
-      name: 'Half-Yearly',
+      name: 'Half-Yearly Plan',
       duration: '6 months',
       price: countryPricing.halfYearlyPrice,
       badge: 'Most Popular',
-      popular: true
+      popular: true,
+      savings: countryPricing.quarterlyPrice ? 
+        Math.round(((countryPricing.quarterlyPrice * 2) - countryPricing.halfYearlyPrice) / (countryPricing.quarterlyPrice * 2) * 100) : null
     },
     {
       id: 'annual',
-      name: 'Annual',
+      name: 'Annual Plan',
       duration: '12 months',
       price: countryPricing.annualPrice,
       badge: 'Best Value',
-      popular: false
+      popular: false,
+      savings: countryPricing.quarterlyPrice ? 
+        Math.round(((countryPricing.quarterlyPrice * 4) - countryPricing.annualPrice) / (countryPricing.quarterlyPrice * 4) * 100) : null
     }
   ];
 
@@ -207,83 +228,110 @@ const MembershipJoinCard: React.FC<MembershipJoinCardProps> = ({
             Become a premium member to unlock discounted pricing and exclusive benefits.
           </p>
           
-          <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="p-4 bg-blue-50 rounded-lg">
             <h4 className="font-medium text-blue-900 mb-2">Membership Benefits:</h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• 20% discount on all engagement models</li>
               <li>• Priority support</li>
               <li>• Exclusive member features</li>
+              <li>• Access to premium resources</li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+            <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
-              Select Membership Plan
+              Select Your Membership Plan
             </h4>
-            <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan}>
-              <div className="grid grid-cols-1 gap-3">
-                {pricingPlans.map((plan) => (
-                  <div key={plan.id} className="relative">
-                    <Label htmlFor={plan.id} className="cursor-pointer">
-                      <Card className={`border-2 transition-all hover:shadow-md ${
-                        selectedPlan === plan.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : plan.popular 
-                          ? 'border-green-200 bg-green-50' 
-                          : 'border-gray-200'
-                      }`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <RadioGroupItem value={plan.id} id={plan.id} />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{plan.name}</span>
-                                  {plan.badge && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {plan.badge}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-600">{plan.duration}</p>
+            
+            <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan} className="space-y-4">
+              {pricingPlans.map((plan) => (
+                <div key={plan.id} className="relative">
+                  <Label htmlFor={plan.id} className="cursor-pointer">
+                    <Card className={`border-2 transition-all hover:shadow-md ${
+                      selectedPlan === plan.id 
+                        ? 'border-blue-500 bg-blue-50 shadow-md' 
+                        : plan.popular 
+                        ? 'border-green-200 bg-green-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <CardContent className="p-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <RadioGroupItem value={plan.id} id={plan.id} className="mt-1" />
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-lg">{plan.name}</span>
+                                {plan.badge && (
+                                  <Badge variant={plan.popular ? "default" : "outline"} className="text-xs">
+                                    {plan.badge}
+                                  </Badge>
+                                )}
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-bold">
-                                {formatCurrency(plan.price, countryPricing.currency)}
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                per {plan.id === 'quarterly' ? 'quarter' : plan.id === 'halfyearly' ? '6 months' : 'year'}
-                              </p>
+                              <p className="text-sm text-gray-600 mb-1">{plan.duration}</p>
+                              {plan.savings && (
+                                <p className="text-xs text-green-600 font-medium">
+                                  Save {plan.savings}% compared to quarterly
+                                </p>
+                              )}
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Label>
-                  </div>
-                ))}
-              </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-900">
+                              {formatCurrency(plan.price, countryPricing.currency)}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              for {plan.duration}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatCurrency(plan.price / (plan.id === 'quarterly' ? 3 : plan.id === 'halfyearly' ? 6 : 12), countryPricing.currency)}/month
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Label>
+                </div>
+              ))}
             </RadioGroup>
           </div>
+
+          {selectedPlan && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h5 className="font-medium text-gray-900 mb-2">Selected Plan Summary:</h5>
+              <div className="text-sm text-gray-700">
+                <p>Plan: <span className="font-medium">{pricingPlans.find(p => p.id === selectedPlan)?.name}</span></p>
+                <p>Duration: <span className="font-medium">{pricingPlans.find(p => p.id === selectedPlan)?.duration}</span></p>
+                <p>Total: <span className="font-medium text-lg">{formatCurrency(pricingPlans.find(p => p.id === selectedPlan)?.price || 0, countryPricing.currency)}</span></p>
+              </div>
+            </div>
+          )}
 
           <Button 
             onClick={handleJoinMembership}
             disabled={isProcessing || !selectedPlan}
-            className="w-full"
+            className="w-full py-3 text-lg"
+            size="lg"
           >
             {isProcessing ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 Processing Payment...
               </>
             ) : (
               <>
-                <CreditCard className="h-4 w-4 mr-2" />
+                <CreditCard className="h-5 w-5 mr-2" />
                 Join as Member
+                {selectedPlan && ` - ${formatCurrency(pricingPlans.find(p => p.id === selectedPlan)?.price || 0, countryPricing.currency)}`}
               </>
             )}
           </Button>
+
+          {!selectedPlan && (
+            <p className="text-sm text-gray-500 text-center">
+              Please select a membership plan to continue
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
