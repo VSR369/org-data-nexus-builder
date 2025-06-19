@@ -106,6 +106,8 @@ const SolutionSeekersValidation: React.FC = () => {
 
   const handleApproval = async (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => {
     try {
+      console.log('🔄 Updating seeker approval status:', { seekerId, status, reason });
+      
       const updatedSeekers = seekers.map(seeker => 
         seeker.id === seekerId 
           ? { ...seeker, approvalStatus: status }
@@ -166,11 +168,13 @@ const SolutionSeekersValidation: React.FC = () => {
   };
 
   const handleRejectClick = (seeker: SeekerDetails) => {
+    console.log('🚫 Opening rejection dialog for seeker:', seeker.organizationName, 'Status:', seeker.approvalStatus);
     setCurrentSeekerForRejection(seeker);
     setRejectionDialogOpen(true);
   };
 
   const handleReapproveClick = (seeker: SeekerDetails) => {
+    console.log('🔄 Opening reapproval dialog for seeker:', seeker.organizationName, 'Status:', seeker.approvalStatus);
     setCurrentSeekerForRejection(seeker);
     setRejectionDialogOpen(true);
   };
@@ -350,6 +354,8 @@ const SolutionSeekersValidation: React.FC = () => {
 
   const ViewDetailsDialog = ({ seeker }: { seeker: SeekerDetails }) => {
     const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
+    
+    console.log('👁️ ViewDetailsDialog rendering for seeker:', seeker.organizationName, 'Approval Status:', seeker.approvalStatus);
     
     return (
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -551,6 +557,8 @@ const SolutionSeekersValidation: React.FC = () => {
           {seekers.map(seeker => {
             const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
             
+            console.log('🎯 Rendering seeker card:', seeker.organizationName, 'Status:', seeker.approvalStatus);
+            
             return (
               <Card key={seeker.id} className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
@@ -655,6 +663,19 @@ const SolutionSeekersValidation: React.FC = () => {
                           Reject
                         </Button>
                       </div>
+                    )}
+                    
+                    {/* Rejected Status Actions */}
+                    {seeker.approvalStatus === 'rejected' && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="w-full text-orange-600 border-orange-600 hover:bg-orange-50"
+                        onClick={() => handleReapproveClick(seeker)}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reapprove
+                      </Button>
                     )}
                     
                     {/* Create Admin Button */}
