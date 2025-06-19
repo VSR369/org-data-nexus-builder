@@ -1,218 +1,61 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, CheckCircle, Clock } from 'lucide-react';
-import { EngagementModel } from '@/components/master-data/engagement-models/types';
-import { PricingConfig } from '@/types/pricing';
-import { useMembershipData } from '@/hooks/useMembershipData';
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
-import { useDashboardData, triggerDashboardDataRefresh } from '@/hooks/useDashboardData';
+import { MembershipService } from '@/services/MembershipService';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoginWarning from '@/components/dashboard/LoginWarning';
-import MembershipStatusCard from '@/components/dashboard/MembershipStatusCard';
-import EngagementModelCard from '@/components/dashboard/EngagementModelCard';
 import OrganizationInfoCard from '@/components/dashboard/OrganizationInfoCard';
-import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
-import MembershipBenefitsCard from '@/components/dashboard/MembershipBenefitsCard';
-import MembershipSelectionModal from '@/components/dashboard/MembershipSelectionModal';
+import MembershipJoinCard from '@/components/membership/MembershipJoinCard';
+import EngagementModelView from '@/components/engagement/EngagementModelView';
+import EngagementModelSelector from '@/components/engagement/EngagementModelSelector';
 
 const SeekerDashboardContent: React.FC = () => {
   const navigate = useNavigate();
   const { userData, isLoading, showLoginWarning, handleLogout } = useUserData();
-  const { dashboardData, refreshData } = useDashboardData(userData);
   
-  const [showMembershipBenefits, setShowMembershipBenefits] = useState(false);
-  const [showMembershipSelection, setShowMembershipSelection] = useState(false);
-  const [showEngagementModelSelector, setShowEngagementModelSelector] = useState(false);
-  const [selectedEngagementModel, setSelectedEngagementModel] = useState<EngagementModel | null>(null);
-  const [selectedPricing, setSelectedPricing] = useState<PricingConfig | null>(null);
-  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
-  const [isSelectionSubmitted, setIsSelectionSubmitted] = useState(false);
+  const [membershipStatus, setMembershipStatus] = useState<'active' | 'inactive'>('inactive');
+  const [engagementSelection, setEngagementSelection] = useState<any>(null);
+  const [showEngagementSelector, setShowEngagementSelector] = useState(false);
 
-  // Load membership data for the current user (for backward compatibility)
-  const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(
-    userData.entityType, 
-    userData.country, 
-    userData.organizationType
-  );
-
-  // Load saved engagement model selection on component mount
+  // Load membership and engagement data
   useEffect(() => {
-    const loadSavedSelection = () => {
-      try {
-        const savedSelection = localStorage.getItem('engagement_model_selection');
-        if (savedSelection) {
-          const selectionData = JSON.parse(savedSelection);
-          console.log('✅ Loading saved engagement model selection:', selectionData);
-          
-          if (selectionData.userId === userData.userId) {
-            setSelectedEngagementModel(selectionData.engagementModel);
-            setSelectedPricing(selectionData.pricing);
-            setSelectedPricingPlan(selectionData.pricingPlan);
-            setIsSelectionSubmitted(true);
-            console.log('✅ Restored engagement model selection for user:', userData.userId);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading saved engagement model selection:', error);
-      }
-    };
-
-    if (userData.userId && !selectedEngagementModel) {
-      loadSavedSelection();
+    if (userData.userId) {
+      const membership = MembershipService.getMembershipData(userData.userId);
+      setMembershipStatus(membership.status);
+      
+      const selection = MembershipService.getEngagementSelection(userData.userId);
+      setEngagementSelection(selection);
+      
+      console.log('📊 Dashboard data loaded:', { membership, selection });
     }
-  }, [userData.userId, selectedEngagementModel]);
+  }, [userData.userId]);
 
-  const handleJoinAsMember = () => {
-    console.log('Join as Member clicked - showing membership selection');
-    setShowMembershipSelection(true);
+  const handleMembershipChange = (status: 'active' | 'inactive') => {
+    setMembershipStatus(status);
+    
+    // Auto-adjust existing engagement selection if user became a member
+    if (status === 'active' && engagementSelection) {
+      const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
+      setEngagementSelection(updatedSelection);
+    }
+  };
+
+  const handleSelectionSaved = () => {
+    const updatedSelection = MembershipService.getEngagementSelection(userData.userId);
+    setEngagementSelection(updatedSelection);
   };
 
   const handleSelectEngagementModel = () => {
-    console.log('Select Engagement Model clicked');
-    setIsSelectionSubmitted(false);
-    setShowEngagementModelSelector(true);
+    setShowEngagementSelector(true);
   };
 
-  const handleEngagementModelSelected = (model: EngagementModel, pricing?: PricingConfig | null, pricingPlan?: string) => {
-    console.log('Engagement model selected:', model);
-    console.log('Pricing configuration:', pricing);
-    console.log('Selected pricing plan:', pricingPlan);
-    
-    setSelectedEngagementModel(model);
-    setSelectedPricing(pricing || null);
-    setSelectedPricingPlan(pricingPlan || '');
-    setShowEngagementModelSelector(false);
-    
-    const selectionData = {
-      engagementModel: model,
-      pricing: pricing,
-      pricingPlan: pricingPlan,
-      membershipStatus: dashboardData.membershipData.status,
-      submittedAt: new Date().toISOString(),
-      userId: userData.userId,
-      organizationName: userData.organizationName
-    };
-
-    try {
-      localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
-      console.log('✅ Engagement model selection saved to localStorage:', selectionData);
-      setIsSelectionSubmitted(true);
-      
-      // Trigger data refresh
-      triggerDashboardDataRefresh();
-    } catch (error) {
-      console.error('❌ Error saving engagement model selection:', error);
-    }
+  const handleModifySelection = () => {
+    setShowEngagementSelector(true);
   };
 
-  const handlePricingPlanChange = (plan: string) => {
-    console.log('Pricing plan changed to:', plan);
-    setSelectedPricingPlan(plan);
-    setIsSelectionSubmitted(false);
-    
-    if (selectedEngagementModel) {
-      const selectionData = {
-        engagementModel: selectedEngagementModel,
-        pricing: selectedPricing,
-        pricingPlan: plan,
-        membershipStatus: dashboardData.membershipData.status,
-        submittedAt: new Date().toISOString(),
-        userId: userData.userId,
-        organizationName: userData.organizationName
-      };
-      
-      try {
-        localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
-        console.log('✅ Updated pricing plan saved:', plan);
-        triggerDashboardDataRefresh();
-      } catch (error) {
-        console.error('❌ Error updating pricing plan:', error);
-      }
-    }
-  };
-
-  const handleSubmitSelection = () => {
-    if (!selectedEngagementModel || !selectedPricingPlan) {
-      console.error('Missing engagement model or pricing plan');
-      return;
-    }
-
-    const selectionData = {
-      engagementModel: selectedEngagementModel,
-      pricing: selectedPricing,
-      pricingPlan: selectedPricingPlan,
-      membershipStatus: dashboardData.membershipData.status,
-      submittedAt: new Date().toISOString(),
-      userId: userData.userId,
-      organizationName: userData.organizationName
-    };
-
-    try {
-      localStorage.setItem('engagement_model_selection', JSON.stringify(selectionData));
-      console.log('✅ Engagement model selection submitted and saved:', selectionData);
-      setIsSelectionSubmitted(true);
-      triggerDashboardDataRefresh();
-    } catch (error) {
-      console.error('❌ Error submitting engagement model selection:', error);
-    }
-  };
-
-  const handleProceedToMembership = (membershipData: any) => {
-    console.log('Proceeding with membership data:', membershipData);
-    setShowMembershipSelection(false);
-    
-    navigate('/membership-registration', {
-      state: {
-        userId: userData.userId,
-        organizationName: userData.organizationName,
-        entityType: userData.entityType,
-        country: userData.country,
-        membershipData
-      }
-    });
-  };
-
-  // Get membership status from unified dashboard data
-  const getMembershipStatus = () => {
-    const membershipData = dashboardData.membershipData;
-    
-    if (membershipData.status === 'active') {
-      let paidAmount = 0;
-      if (membershipData.pricingDetails) {
-        paidAmount = membershipData.pricingDetails.amount;
-      }
-
-      return {
-        status: 'active' as const,
-        plan: membershipData.selectedPlan || '',
-        message: 'Your membership is active',
-        badgeVariant: 'default' as const,
-        icon: CheckCircle,
-        iconColor: 'text-green-600',
-        paymentDate: membershipData.activationDate,
-        pricing: membershipData.pricingDetails ? {
-          currency: membershipData.pricingDetails.currency,
-          amount: paidAmount
-        } : undefined
-      };
-    }
-    
-    return {
-      status: 'inactive' as const,
-      plan: '',
-      message: 'No active membership - Join as member to unlock premium features',
-      badgeVariant: 'secondary' as const,
-      icon: Clock,
-      iconColor: 'text-gray-400'
-    };
-  };
-
-  const membershipStatus = getMembershipStatus();
-
-  if (isLoading || dashboardData.isLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 flex items-center justify-center">
         <Card className="shadow-xl border-0">
@@ -234,86 +77,34 @@ const SeekerDashboardContent: React.FC = () => {
       <div className="max-w-7xl mx-auto p-6">
         <LoginWarning show={showLoginWarning} />
 
-        {/* Organization Information at the top */}
+        {/* Organization Information Header */}
         <OrganizationInfoCard />
 
-        <MembershipStatusCard membershipStatus={membershipStatus} />
-
-        {membershipStatus.status !== 'active' && (
-          <div className="mt-6 mb-6">
-            <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Ready to unlock premium features?</h3>
-                    <p className="text-blue-100">
-                      Join as a member to access exclusive benefits, priority support, and enhanced marketplace features.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={handleJoinAsMember}
-                    className="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 text-lg font-semibold"
-                    size="lg"
-                  >
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Join as Member
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
+        {/* Membership Section */}
         <div className="mt-6 mb-6">
-          <EngagementModelCard
-            selectedEngagementModel={selectedEngagementModel}
-            selectedPricing={selectedPricing}
-            selectedPricingPlan={selectedPricingPlan}
-            onSelectEngagementModel={handleSelectEngagementModel}
-            onSubmitSelection={handleSubmitSelection}
-            onPricingPlanChange={handlePricingPlanChange}
-            showLoginWarning={showLoginWarning}
-            membershipStatus={membershipStatus.status}
-            isSubmitted={isSelectionSubmitted}
+          <MembershipJoinCard
+            userId={userData.userId}
+            membershipStatus={membershipStatus}
+            onMembershipChange={handleMembershipChange}
           />
         </div>
 
-        {showMembershipBenefits && (
-          <MembershipBenefitsCard
-            countryPricing={countryPricing}
-            userData={{
-              userId: userData.userId,
-              organizationName: userData.organizationName,
-              entityType: userData.entityType,
-              country: userData.country
-            }}
-            onClose={() => setShowMembershipBenefits(false)}
+        {/* Engagement Model Section */}
+        <div className="mt-6 mb-6">
+          <EngagementModelView
+            selection={engagementSelection}
+            onSelectModel={handleSelectEngagementModel}
+            onModifySelection={handleModifySelection}
           />
-        )}
+        </div>
 
-        {showMembershipSelection && (
-          <MembershipSelectionModal
-            countryPricing={countryPricing}
-            userData={{
-              userId: userData.userId,
-              organizationName: userData.organizationName,
-              entityType: userData.entityType,
-              country: userData.country
-            }}
-            onClose={() => setShowMembershipSelection(false)}
-            onProceed={handleProceedToMembership}
-          />
-        )}
-
-        {showEngagementModelSelector && (
+        {/* Engagement Model Selector Modal */}
+        {showEngagementSelector && (
           <EngagementModelSelector
-            onClose={() => setShowEngagementModelSelector(false)}
-            onSelect={handleEngagementModelSelected}
-            userCountry={userData.country}
-            userOrgType={userData.organizationType}
-            membershipStatus={membershipStatus.status}
-            currentSelectedModel={selectedEngagementModel}
-            currentSelectedPricingPlan={selectedPricingPlan}
+            userId={userData.userId}
+            isMember={membershipStatus === 'active'}
+            onClose={() => setShowEngagementSelector(false)}
+            onSelectionSaved={handleSelectionSaved}
           />
         )}
       </div>
