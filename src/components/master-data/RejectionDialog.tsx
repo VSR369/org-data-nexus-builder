@@ -47,18 +47,27 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
   const [uploadedDocuments, setUploadedDocuments] = useState<File[]>([]);
   const { toast } = useToast();
 
+  console.log('🔍 RejectionDialog state:', {
+    open,
+    seekerName: seeker.organizationName,
+    seekerStatus: seeker.approvalStatus,
+    showApprovalOption
+  });
+
   const rejectionForm = useForm<RejectionFormData>({
     resolver: zodResolver(rejectionSchema),
     defaultValues: {
       reason: ''
-    }
+    },
+    mode: 'onChange'
   });
 
   const approvalForm = useForm<ApprovalFormData>({
     resolver: zodResolver(approvalSchema),
     defaultValues: {
       approvalReason: ''
-    }
+    },
+    mode: 'onChange'
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +80,7 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
   };
 
   const onReject = async (data: RejectionFormData) => {
+    console.log('🚫 Submitting rejection:', data);
     setIsSubmitting(true);
     try {
       onStatusChange(seeker.id, 'rejected', data.reason);
@@ -94,6 +104,7 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
   };
 
   const onApprove = async (data: ApprovalFormData) => {
+    console.log('✅ Submitting approval:', data);
     setIsSubmitting(true);
     try {
       onStatusChange(seeker.id, 'approved', data.approvalReason, uploadedDocuments);
@@ -116,24 +127,32 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
   };
 
   const resetForms = () => {
-    rejectionForm.reset();
-    approvalForm.reset();
+    rejectionForm.reset({ reason: '' });
+    approvalForm.reset({ approvalReason: '' });
     setShowApprovalOption(seeker.approvalStatus === 'rejected');
     setUploadedDocuments([]);
   };
 
   const handleDialogClose = () => {
+    console.log('🔒 Closing dialog');
     onOpenChange(false);
     resetForms();
   };
 
-  // Reset forms when dialog opens
+  // Reset forms when dialog opens with proper state
   React.useEffect(() => {
+    console.log('🔄 Dialog effect triggered:', { open, seekerStatus: seeker.approvalStatus });
     if (open) {
+      // Clear forms first
       rejectionForm.reset({ reason: '' });
       approvalForm.reset({ approvalReason: '' });
-      setShowApprovalOption(seeker.approvalStatus === 'rejected');
+      
+      // Set approval option based on seeker status
+      const shouldShowApproval = seeker.approvalStatus === 'rejected';
+      setShowApprovalOption(shouldShowApproval);
       setUploadedDocuments([]);
+      
+      console.log('🎯 Dialog initialized with showApprovalOption:', shouldShowApproval);
     }
   }, [open, seeker.approvalStatus, rejectionForm, approvalForm]);
 
@@ -170,7 +189,11 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
                       <Textarea 
                         placeholder="Please provide a detailed reason for rejecting this seeker..."
                         className="min-h-[100px] resize-none"
-                        {...field} 
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -226,7 +249,11 @@ const RejectionDialog: React.FC<RejectionDialogProps> = ({
                       <Textarea 
                         placeholder={`Please provide a detailed reason for ${seeker.approvalStatus === 'rejected' ? 'reapproving' : 'approving'} this seeker...`}
                         className="min-h-[100px] resize-none"
-                        {...field} 
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
