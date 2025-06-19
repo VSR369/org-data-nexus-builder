@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserPlus, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Edit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import type { UserRecord } from '@/services/types';
 
@@ -22,6 +22,7 @@ interface AdminCreationDialogProps {
   onOpenChange: (open: boolean) => void;
   seeker: SeekerDetails;
   onAdminCreated: (adminData: any) => void;
+  existingAdmin?: any;
 }
 
 const adminSchema = z.object({
@@ -42,18 +43,20 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
   open,
   onOpenChange,
   seeker,
-  onAdminCreated
+  onAdminCreated,
+  existingAdmin
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<AdminFormData>({
     resolver: zodResolver(adminSchema),
     defaultValues: {
-      adminName: seeker.contactPersonName || '',
-      email: seeker.email || '',
+      adminName: '',
+      email: '',
       contactNumber: '',
       userId: '',
       password: '',
@@ -61,60 +64,127 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     }
   });
 
+  // Update form when dialog opens with existing admin data or seeker data
+  useEffect(() => {
+    if (open) {
+      if (existingAdmin) {
+        setIsEditMode(true);
+        form.reset({
+          adminName: existingAdmin.adminName || '',
+          email: existingAdmin.email || '',
+          contactNumber: existingAdmin.contactNumber || '',
+          userId: existingAdmin.userId || '',
+          password: existingAdmin.password || '', // In edit mode, show existing password
+          confirmPassword: existingAdmin.password || ''
+        });
+      } else {
+        setIsEditMode(false);
+        form.reset({
+          adminName: seeker.contactPersonName || '',
+          email: seeker.email || '',
+          contactNumber: '',
+          userId: '',
+          password: '',
+          confirmPassword: ''
+        });
+      }
+    }
+  }, [open, existingAdmin, seeker, form]);
+
   const onSubmit = async (data: AdminFormData) => {
     setIsSubmitting(true);
     
     try {
-      // Check if user ID already exists
+      // Get existing administrators
       const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
-      const userIdExists = existingAdmins.some((admin: any) => admin.userId === data.userId);
       
-      if (userIdExists) {
-        form.setError('userId', { message: 'User ID already exists' });
-        setIsSubmitting(false);
-        return;
+      if (!isEditMode) {
+        // Check if user ID already exists when creating new admin
+        const userIdExists = existingAdmins.some((admin: any) => admin.userId === data.userId);
+        
+        if (userIdExists) {
+          form.setError('userId', { message: 'User ID already exists' });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        // In edit mode, check if user ID exists for other admins (not current one)
+        const userIdExists = existingAdmins.some((admin: any) => 
+          admin.userId === data.userId && admin.id !== existingAdmin.id
+        );
+        
+        if (userIdExists) {
+          form.setError('userId', { message: 'User ID already exists' });
+          setIsSubmitting(false);
+          return;
+        }
       }
 
-      // Create administrator data
-      const adminData = {
-        id: `admin_${Date.now()}`,
-        adminName: data.adminName,
-        email: data.email,
-        contactNumber: data.contactNumber,
-        userId: data.userId,
-        password: data.password, // In production, this should be hashed
-        role: 'administrator',
-        organizationId: seeker.organizationId,
-        organizationName: seeker.organizationName,
-        sourceSeekerId: seeker.id,
-        createdAsAdmin: true,
-        adminCreatedAt: new Date().toISOString(),
-        adminCreatedBy: 'system',
-        status: 'active'
-      };
+      let adminData;
+      let updatedAdmins;
+
+      if (isEditMode) {
+        // Update existing administrator
+        adminData = {
+          ...existingAdmin,
+          adminName: data.adminName,
+          email: data.email,
+          contactNumber: data.contactNumber,
+          userId: data.userId,
+          password: data.password, // In production, this should be hashed
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'system'
+        };
+
+        // Update the administrator in the array
+        updatedAdmins = existingAdmins.map((admin: any) => 
+          admin.id === existingAdmin.id ? adminData : admin
+        );
+      } else {
+        // Create new administrator
+        adminData = {
+          id: `admin_${Date.now()}`,
+          adminName: data.adminName,
+          email: data.email,
+          contactNumber: data.contactNumber,
+          userId: data.userId,
+          password: data.password, // In production, this should be hashed
+          role: 'administrator',
+          organizationId: seeker.organizationId,
+          organizationName: seeker.organizationName,
+          sourceSeekerId: seeker.id,
+          createdAsAdmin: true,
+          adminCreatedAt: new Date().toISOString(),
+          adminCreatedBy: 'system',
+          status: 'active'
+        };
+
+        updatedAdmins = [...existingAdmins, adminData];
+      }
 
       // Save to localStorage
-      const updatedAdmins = [...existingAdmins, adminData];
       localStorage.setItem('created_administrators', JSON.stringify(updatedAdmins));
 
-      // Also create a simplified version for the seeker record
-      const seekerAdminLink = {
-        seekerId: seeker.id,
-        adminId: adminData.id,
-        adminUserId: data.userId,
-        createdAt: new Date().toISOString()
-      };
-      
-      const existingLinks = JSON.parse(localStorage.getItem('seeker_admin_links') || '[]');
-      existingLinks.push(seekerAdminLink);
-      localStorage.setItem('seeker_admin_links', JSON.stringify(existingLinks));
+      if (!isEditMode) {
+        // Create seeker-admin link for new administrators
+        const seekerAdminLink = {
+          seekerId: seeker.id,
+          adminId: adminData.id,
+          adminUserId: data.userId,
+          createdAt: new Date().toISOString()
+        };
+        
+        const existingLinks = JSON.parse(localStorage.getItem('seeker_admin_links') || '[]');
+        existingLinks.push(seekerAdminLink);
+        localStorage.setItem('seeker_admin_links', JSON.stringify(existingLinks));
+      }
 
       // Call the callback to update the parent component
       onAdminCreated(adminData);
 
       toast({
-        title: "Administrator Created Successfully",
-        description: `Administrator ${data.adminName} has been created for ${seeker.organizationName}.`,
+        title: isEditMode ? "Administrator Updated Successfully" : "Administrator Created Successfully",
+        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}.`,
       });
 
       // Reset form and close dialog
@@ -122,10 +192,10 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
       onOpenChange(false);
 
     } catch (error) {
-      console.error('Error creating administrator:', error);
+      console.error('Error saving administrator:', error);
       toast({
         title: "Error",
-        description: "Failed to create administrator. Please try again.",
+        description: `Failed to ${isEditMode ? 'update' : 'create'} administrator. Please try again.`,
         variant: "destructive"
       });
     } finally {
@@ -138,10 +208,27 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Create Administrator for {seeker.organizationName}
+            {isEditMode ? <Edit className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+            {isEditMode ? 'Edit Administrator' : 'Create Administrator'} for {seeker.organizationName}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Show existing admin details when in edit mode */}
+        {isEditMode && existingAdmin && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border">
+            <h4 className="font-medium text-blue-900 mb-2">Current Administrator Details</h4>
+            <div className="space-y-1 text-sm text-blue-800">
+              <div><span className="font-medium">Name:</span> {existingAdmin.adminName}</div>
+              <div><span className="font-medium">Email:</span> {existingAdmin.email}</div>
+              <div><span className="font-medium">Contact:</span> {existingAdmin.contactNumber}</div>
+              <div><span className="font-medium">User ID:</span> {existingAdmin.userId}</div>
+              <div><span className="font-medium">Created:</span> {new Date(existingAdmin.adminCreatedAt).toLocaleDateString()}</div>
+              {existingAdmin.lastUpdated && (
+                <div><span className="font-medium">Last Updated:</span> {new Date(existingAdmin.lastUpdated).toLocaleDateString()}</div>
+              )}
+            </div>
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -274,7 +361,10 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Creating...' : 'Create Administrator'}
+                {isSubmitting 
+                  ? (isEditMode ? 'Updating...' : 'Creating...') 
+                  : (isEditMode ? 'Update Administrator' : 'Create Administrator')
+                }
               </Button>
             </div>
           </form>

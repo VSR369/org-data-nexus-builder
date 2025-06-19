@@ -12,6 +12,8 @@ import AdminCreationDialog from './AdminCreationDialog';
 interface SeekerDetails extends UserRecord {
   approvalStatus: 'pending' | 'approved' | 'rejected';
   membershipStatus?: 'active' | 'inactive' | 'not-member';
+  hasAdministrator?: boolean;
+  administratorId?: string;
 }
 
 const SolutionSeekersValidation: React.FC = () => {
@@ -21,6 +23,7 @@ const SolutionSeekersValidation: React.FC = () => {
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [currentSeekerForAdmin, setCurrentSeekerForAdmin] = useState<SeekerDetails | null>(null);
+  const [existingAdmin, setExistingAdmin] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,18 +65,29 @@ const SolutionSeekersValidation: React.FC = () => {
         console.log('✅ Solution seekers found:', solutionSeekers.length);
         console.log('📋 Solution seekers data:', solutionSeekers);
         
+        // Check for existing administrators and update seeker records
+        const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
+        const seekersWithAdminStatus = solutionSeekers.map(seeker => {
+          const hasAdmin = existingAdmins.some((admin: any) => admin.sourceSeekerId === seeker.id);
+          const adminRecord = existingAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
+          return {
+            ...seeker,
+            approvalStatus: 'pending' as const,
+            hasAdministrator: hasAdmin,
+            administratorId: adminRecord?.id
+          };
+        });
+        
         // If no solution seekers found, show all users for debugging
-        if (solutionSeekers.length === 0 && allUsers.length > 0) {
+        if (seekersWithAdminStatus.length === 0 && allUsers.length > 0) {
           console.log('⚠️ No solution seekers found, showing all users for analysis');
           setSeekers(allUsers.map(user => ({
             ...user,
-            approvalStatus: 'pending' as const
+            approvalStatus: 'pending' as const,
+            hasAdministrator: false
           })));
         } else {
-          setSeekers(solutionSeekers.map(seeker => ({
-            ...seeker,
-            approvalStatus: 'pending' as const
-          })));
+          setSeekers(seekersWithAdminStatus);
         }
         
       } catch (err: any) {
@@ -127,6 +141,18 @@ const SolutionSeekersValidation: React.FC = () => {
 
   const handleCreateAdministrator = async (seeker: SeekerDetails) => {
     setCurrentSeekerForAdmin(seeker);
+    
+    // Check if administrator already exists for this seeker
+    const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
+    const existingAdmin = existingAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
+    
+    if (existingAdmin) {
+      console.log('Found existing administrator:', existingAdmin);
+      setExistingAdmin(existingAdmin);
+    } else {
+      setExistingAdmin(null);
+    }
+    
     setAdminDialogOpen(true);
   };
 
@@ -141,8 +167,8 @@ const SolutionSeekersValidation: React.FC = () => {
       setSeekers(updatedSeekers);
       
       toast({
-        title: "Administrator Created",
-        description: `Administrator ${adminData.adminName} has been successfully created.`,
+        title: existingAdmin ? "Administrator Updated" : "Administrator Created",
+        description: `Administrator ${adminData.adminName} has been successfully ${existingAdmin ? 'updated' : 'created'}.`,
       });
       
     } catch (error) {
@@ -591,7 +617,7 @@ const SolutionSeekersValidation: React.FC = () => {
                         onClick={() => handleCreateAdministrator(seeker)}
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
-                        {seeker.hasAdministrator ? 'View Administrator' : 'Create Administrator'}
+                        {seeker.hasAdministrator ? 'Edit Administrator' : 'Create Administrator'}
                       </Button>
                     )}
                   </div>
@@ -609,6 +635,7 @@ const SolutionSeekersValidation: React.FC = () => {
           onOpenChange={setAdminDialogOpen}
           seeker={currentSeekerForAdmin}
           onAdminCreated={handleAdminCreated}
+          existingAdmin={existingAdmin}
         />
       )}
     </div>
