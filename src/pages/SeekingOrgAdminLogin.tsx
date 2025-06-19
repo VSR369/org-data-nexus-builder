@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import SeekingOrgAdminLoginHeader from '@/components/auth/SeekingOrgAdminLoginHeader';
-import LoginForm from '@/components/auth/LoginForm';
+import SeekingOrgAdminLoginForm from '@/components/auth/SeekingOrgAdminLoginForm';
 
 const SeekingOrgAdminLogin = () => {
   return (
@@ -10,7 +10,7 @@ const SeekingOrgAdminLogin = () => {
       <div className="w-full max-w-md">
         <Card className="shadow-xl border-0">
           <SeekingOrgAdminLoginHeader />
-          <LoginForm />
+          <SeekingOrgAdminLoginForm />
         </Card>
       </div>
     </div>

@@ -5,72 +5,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { useSeekingOrgAdminAuth } from '@/hooks/useSeekingOrgAdminAuth';
 
-const LoginForm = () => {
+const SeekingOrgAdminLoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { login, isLoading } = useSeekingOrgAdminAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate login process
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (email && password) {
-      // Route based on current path, but exclude seeking-org-admin-login
-      if (location.pathname === '/seeker-login') {
-        toast.success('Successfully signed in as Solution Seeker!');
-        navigate('/seeker-dashboard');
-      } else if (location.pathname === '/contributor-login') {
-        toast.success('Successfully signed in as Contributor!');
-        navigate('/contributor-enrollment');
-      } else {
-        toast.success('Successfully signed in!');
-        navigate('/');
-      }
-    } else {
-      toast.error('Please enter both email and password');
-    }
-
-    setIsLoading(false);
+    await login(email, password);
   };
 
   return (
     <CardContent className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-            Email Address
+          <Label htmlFor="admin-email" className="text-sm font-medium text-gray-700">
+            Administrator Email
           </Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="email"
+              id="admin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
-              placeholder="Enter your email"
+              placeholder="Enter administrator email"
               required
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="admin-password" className="text-sm font-medium text-gray-700">
             Password
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="password"
+              id="admin-password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -91,12 +68,12 @@ const LoginForm = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <input
-              id="remember-me"
-              name="remember-me"
+              id="remember-admin"
+              name="remember-admin"
               type="checkbox"
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+            <Label htmlFor="remember-admin" className="ml-2 block text-sm text-gray-700">
               Remember me
             </Label>
           </div>
@@ -107,19 +84,19 @@ const LoginForm = () => {
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full bg-green-600 hover:bg-green-700"
           size="lg"
           disabled={isLoading}
         >
-          {isLoading ? 'Signing in...' : 'Sign In'}
+          {isLoading ? 'Signing in...' : 'Sign In as Administrator'}
         </Button>
       </form>
 
       <div className="text-center pt-4 border-t">
         <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 hover:underline font-medium">
-            Sign Up
+          Need to access a different area?{' '}
+          <Link to="/signin" className="text-blue-600 hover:underline font-medium">
+            General Sign In
           </Link>
         </p>
       </div>
@@ -127,4 +104,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default SeekingOrgAdminLoginForm;

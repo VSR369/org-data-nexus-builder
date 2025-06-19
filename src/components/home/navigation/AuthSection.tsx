@@ -5,9 +5,10 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Database } from "lucide-react";
+import { User, Settings, LogOut, Database, Shield, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface AuthSectionProps {
@@ -44,11 +45,34 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
         </DropdownMenu>
       ) : (
         <div className="hidden sm:flex items-center space-x-3">
-          <Link to="/signin">
-            <Button variant="outline">
-              Sign In
-            </Button>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Sign In
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-white" align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/signin" className="flex items-center">
+                  <User className="mr-2 h-4 w-4" />
+                  General Sign In
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/seeking-org-admin-login" className="flex items-center">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Seeking Org Admin
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/seeker-login" className="flex items-center">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Solution Seeker
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Link to="/signup">
             <Button>
               Sign Up
@@ -57,7 +81,7 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
         </div>
       )}
 
-      {/* Master Data Portal Link - Only for master data management */}
+      {/* Master Data Portal Link - Separate from authentication */}
       <Link to="/master-data" className="hidden sm:block">
         <Button 
           className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
