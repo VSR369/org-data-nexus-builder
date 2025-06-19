@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,20 +8,28 @@ import { PricingConfig } from '@/types/pricing';
 
 interface ExistingConfigsListProps {
   configs: PricingConfig[];
-  onEdit: (config: PricingConfig) => void;
-  onDelete: (id: string) => void;
+  setConfigs: React.Dispatch<React.SetStateAction<PricingConfig[]>>;
+  setCurrentConfig: React.Dispatch<React.SetStateAction<Partial<PricingConfig>>>;
 }
 
 const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
   configs,
-  onEdit,
-  onDelete
+  setConfigs,
+  setCurrentConfig
 }) => {
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
     }).format(amount);
+  };
+
+  const handleEdit = (config: PricingConfig) => {
+    setCurrentConfig(config);
+  };
+
+  const handleDelete = (id: string) => {
+    setConfigs(prev => prev.filter(config => config.id !== id));
   };
 
   return (
@@ -40,10 +49,10 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => onEdit(config)}>
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(config)}>
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => onDelete(config.id)}>
+                  <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
