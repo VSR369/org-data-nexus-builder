@@ -104,7 +104,7 @@ export const GlobalNavigation = () => {
               </div>
             )}
 
-            {/* Master Data Portal Link */}
+            {/* Master Data Portal Link - Only for master data management */}
             <Link to="/master-data" className="hidden sm:block">
               <Button 
                 className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
@@ -180,7 +180,7 @@ export const GlobalNavigation = () => {
               </div>
             )}
             
-            {/* Master Data Portal link in mobile */}
+            {/* Master Data Portal link in mobile - Only for master data management */}
             <Link
               to="/master-data"
               className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium border-t pt-4 mt-4"
