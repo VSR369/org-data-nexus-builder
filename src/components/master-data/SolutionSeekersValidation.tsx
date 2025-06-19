@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,7 @@ import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye, U
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { useToast } from "@/hooks/use-toast";
 import type { UserRecord } from '@/services/types';
+import AdminCreationDialog from './AdminCreationDialog';
 
 interface SeekerDetails extends UserRecord {
   approvalStatus: 'pending' | 'approved' | 'rejected';
@@ -19,6 +19,8 @@ const SolutionSeekersValidation: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [currentSeekerForAdmin, setCurrentSeekerForAdmin] = useState<SeekerDetails | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,35 +126,27 @@ const SolutionSeekersValidation: React.FC = () => {
   };
 
   const handleCreateAdministrator = async (seeker: SeekerDetails) => {
+    setCurrentSeekerForAdmin(seeker);
+    setAdminDialogOpen(true);
+  };
+
+  const handleAdminCreated = async (adminData: any) => {
     try {
-      const adminData = {
-        ...seeker,
-        role: 'administrator',
-        createdAsAdmin: true,
-        adminCreatedAt: new Date().toISOString(),
-        adminCreatedBy: 'system'
-      };
-      
-      // Save admin data to localStorage
-      const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
-      const updatedAdmins = [...existingAdmins, adminData];
-      localStorage.setItem('created_administrators', JSON.stringify(updatedAdmins));
-      
-      // Update seeker status
-      await handleApproval(seeker.id, 'approved');
+      // Update the seeker's status to show admin was created
+      const updatedSeekers = seekers.map(seeker => 
+        seeker.id === currentSeekerForAdmin?.id 
+          ? { ...seeker, hasAdministrator: true, administratorId: adminData.id }
+          : seeker
+      );
+      setSeekers(updatedSeekers);
       
       toast({
         title: "Administrator Created",
-        description: `Administrator access created for ${seeker.organizationName}.`,
+        description: `Administrator ${adminData.adminName} has been successfully created.`,
       });
       
     } catch (error) {
-      console.error('Error creating administrator:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create administrator access.",
-        variant: "destructive"
-      });
+      console.error('Error updating seeker after admin creation:', error);
     }
   };
 
@@ -597,7 +591,7 @@ const SolutionSeekersValidation: React.FC = () => {
                         onClick={() => handleCreateAdministrator(seeker)}
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Create Administrator
+                        {seeker.hasAdministrator ? 'View Administrator' : 'Create Administrator'}
                       </Button>
                     )}
                   </div>
@@ -606,6 +600,16 @@ const SolutionSeekersValidation: React.FC = () => {
             );
           })}
         </div>
+      )}
+      
+      {/* Administrator Creation Dialog */}
+      {currentSeekerForAdmin && (
+        <AdminCreationDialog
+          open={adminDialogOpen}
+          onOpenChange={setAdminDialogOpen}
+          seeker={currentSeekerForAdmin}
+          onAdminCreated={handleAdminCreated}
+        />
       )}
     </div>
   );
