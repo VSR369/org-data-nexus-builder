@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserDataProvider, useUserData } from '@/components/dashboard/UserDataProvider';
@@ -56,12 +55,14 @@ const SeekerDashboardContent: React.FC = () => {
   };
 
   const handleSelectModel = () => {
-    console.log('🔄 Opening engagement model selector');
+    console.log('🔄 Opening engagement model selector for new selection');
     setShowEngagementSelector(true);
   };
 
   const handleModifySelection = () => {
-    console.log('🔄 Opening engagement model selector for modification');
+    console.log('🔄 Modify Selection clicked - opening engagement model selector');
+    console.log('🔍 Current engagement selection:', engagementSelection);
+    console.log('🔍 Current membership status:', membershipStatus);
     setShowEngagementSelector(true);
   };
 

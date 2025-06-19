@@ -30,6 +30,11 @@ const EngagementModelView: React.FC<EngagementModelViewProps> = ({
 }) => {
   console.log('🔍 EngagementModelView received selection:', selection);
 
+  const handleModifyClick = () => {
+    console.log('🔄 Modify Selection button clicked');
+    onModifySelection();
+  };
+
   if (!selection) {
     return (
       <Card className="shadow-lg">
@@ -65,7 +70,12 @@ const EngagementModelView: React.FC<EngagementModelViewProps> = ({
             <Settings className="h-6 w-6 text-blue-600" />
             Selected Engagement Model
           </div>
-          <Button variant="outline" size="sm" onClick={onModifySelection}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleModifyClick}
+            className="hover:bg-blue-50 hover:border-blue-300"
+          >
             <Settings className="h-4 w-4 mr-2" />
             Modify Selection
           </Button>
