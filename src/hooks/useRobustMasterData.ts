@@ -101,6 +101,10 @@ export const useRobustMasterData = (): MasterDataState => {
     console.log('🔄 === INITIALIZING ROBUST MASTER DATA ===');
     
     try {
+      // Emergency fix for currencies issue
+      const { default: fixCurrenciesNow } = await import('@/utils/fixCurrenciesIssue');
+      fixCurrenciesNow();
+      
       // First run the initialization service to fix any issues
       const { MasterDataInitializationService } = await import('@/services/MasterDataInitializationService');
       const fixResults = await MasterDataInitializationService.initializeAllMasterData();

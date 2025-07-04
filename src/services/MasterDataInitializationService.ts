@@ -271,17 +271,29 @@ export class MasterDataInitializationService {
         const parsed = JSON.parse(existing);
         
         // Check if it's in the wrong format (wrapped in data manager structure)
-        if (parsed && typeof parsed === 'object' && parsed.data && parsed.version) {
+        if (parsed && typeof parsed === 'object' && (parsed.data || parsed.version || !Array.isArray(parsed))) {
           // Fix the structure - store raw array instead of wrapped data
           localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
           results.fixed.push('Currencies: Fixed data structure (unwrapped from data manager format)');
           console.log('✅ Currencies structure fixed');
-        } else if (!Array.isArray(parsed)) {
-          // If it's not an array, replace with fallback
-          localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
-          results.fixed.push('Currencies: Fixed data structure (replaced with proper array)');
-          console.log('✅ Currencies structure fixed');
+        } else if (Array.isArray(parsed)) {
+          // Validate the array structure
+          const validCurrencies = parsed.every(currency => 
+            currency && typeof currency === 'object' && 
+            currency.id && currency.code && currency.name && currency.symbol
+          );
+          
+          if (!validCurrencies) {
+            localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
+            results.fixed.push('Currencies: Fixed invalid currency objects');
+            console.log('✅ Currencies validation fixed');
+          }
         }
+      } else {
+        // Create if missing
+        localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
+        results.fixed.push('Currencies: Created missing key with fallback data');
+        console.log('✅ Currencies created');
       }
     } catch (error) {
       results.errors.push(`Currencies fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
