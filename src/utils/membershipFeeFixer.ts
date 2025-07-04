@@ -257,7 +257,10 @@ export class MembershipFeeFixer {
   }
 }
 
-// Auto-fix on import
-MembershipFeeFixer.fixMembershipFeeStructure();
+// Auto-fix on import (but only once)
+if (typeof window !== 'undefined' && !(window as any).membershipFeeFixerRan) {
+  (window as any).membershipFeeFixerRan = true;
+  MembershipFeeFixer.fixMembershipFeeStructure();
+}
 
 export default MembershipFeeFixer;

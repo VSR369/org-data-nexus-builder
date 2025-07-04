@@ -215,9 +215,10 @@ export const MasterDataDiagnostics: React.FC = () => {
   const analyzeMasterDataKey = (key: string, config: any): MasterDataKeyInfo => {
     console.log(`🔍 Analyzing ${key}...`);
     
-    // Special handling for membership fees - run fixer first
-    if (key === 'master_data_seeker_membership_fees') {
+    // Special handling for membership fees - run fixer first (but only once)
+    if (key === 'master_data_seeker_membership_fees' && !(window as any).diagnosticFixerRan) {
       console.log('🔧 Running membership fee structure fix...');
+      (window as any).diagnosticFixerRan = true;
       MembershipFeeFixer.fixMembershipFeeStructure();
     }
     
