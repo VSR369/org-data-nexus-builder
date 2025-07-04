@@ -4,7 +4,7 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, Search } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
@@ -14,6 +14,8 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailLookup, setShowEmailLookup] = useState(false);
+  const [emailForLookup, setEmailForLookup] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -116,6 +118,34 @@ const LoginForm = () => {
     }
   };
 
+  const findUserIdByEmail = async () => {
+    if (!emailForLookup.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    try {
+      await unifiedUserStorageService.initialize();
+      const allUsers = await unifiedUserStorageService.getAllUsers();
+      
+      const userByEmail = allUsers.find(user => 
+        user.email.toLowerCase() === emailForLookup.toLowerCase().trim()
+      );
+      
+      if (userByEmail) {
+        setUserId(userByEmail.userId);
+        setShowEmailLookup(false);
+        setEmailForLookup('');
+        toast.success(`Found User ID: ${userByEmail.userId}`);
+      } else {
+        toast.error('No user found with that email address. Please check the email or register first.');
+      }
+    } catch (error) {
+      console.error('Error looking up user by email:', error);
+      toast.error('Error looking up user. Please try again.');
+    }
+  };
+
   return (
     <CardContent className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -123,6 +153,9 @@ const LoginForm = () => {
           <Label htmlFor="userId" className="text-sm font-medium text-gray-700">
             User ID
           </Label>
+          <p className="text-xs text-gray-500 mb-2">
+            Enter your User ID (not email). If you registered with an email, your User ID might be different.
+          </p>
           <div className="relative">
             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -169,7 +202,56 @@ const LoginForm = () => {
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
-          </div>
+           </div>
+           
+           {/* Email to User ID Lookup */}
+           {showEmailLookup && (
+             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+               <Label className="text-sm font-medium text-blue-700 mb-2 block">
+                 Find Your User ID by Email
+               </Label>
+               <div className="flex gap-2">
+                 <Input
+                   type="email"
+                   placeholder="Enter your email address"
+                   value={emailForLookup}
+                   onChange={(e) => setEmailForLookup(e.target.value)}
+                   className="flex-1"
+                 />
+                 <Button
+                   type="button"
+                   variant="outline"
+                   size="sm"
+                   onClick={findUserIdByEmail}
+                   className="px-3"
+                 >
+                   <Search className="h-4 w-4" />
+                 </Button>
+               </div>
+               <Button
+                 type="button"
+                 variant="ghost"
+                 size="sm"
+                 onClick={() => setShowEmailLookup(false)}
+                 className="mt-2 text-xs text-blue-600"
+               >
+                 Cancel
+               </Button>
+             </div>
+           )}
+           
+           {!showEmailLookup && (
+             <Button
+               type="button"
+               variant="ghost"
+               size="sm"
+               onClick={() => setShowEmailLookup(true)}
+               className="mt-2 text-xs text-blue-600 flex items-center gap-1"
+             >
+               <Search className="h-3 w-3" />
+               Find User ID by Email
+             </Button>
+           )}
         </div>
 
         <div className="flex items-center justify-between">
