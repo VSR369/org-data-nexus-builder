@@ -101,6 +101,10 @@ export const useRobustMasterData = (): MasterDataState => {
     console.log('🔄 === INITIALIZING ROBUST MASTER DATA ===');
     
     try {
+      // CRITICAL: Force membership fees fix first
+      const { default: forceMembershipFeesRawFormat } = await import('@/utils/forceMembershipFeesFix');
+      forceMembershipFeesRawFormat();
+      
       // Use the new unified structure fixer for comprehensive fixes
       const { MasterDataStructureFixer } = await import('@/utils/masterDataStructureFixer');
       const fixResult = MasterDataStructureFixer.fixAllMasterDataStructures();

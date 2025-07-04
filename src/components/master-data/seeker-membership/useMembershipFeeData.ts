@@ -38,7 +38,7 @@ export const useMembershipFeeData = () => {
     };
   };
 
-  // Enhanced data loading with proper error handling and validation
+  // FIXED: Enhanced data loading - force raw format only
   const loadDataSafely = () => {
     console.log('🔄 Starting safe data load...');
     setIsLoading(true);
@@ -48,34 +48,46 @@ export const useMembershipFeeData = () => {
       const loadedCountries = countriesDataManager.loadData();
       const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
       
-      // Load membership fees with validation (handle both formats)
+      // CRITICAL FIX: Load membership fees with immediate unwrapping
       let loadedFees: MembershipFeeEntry[] = [];
       
-      // Try raw format first
       const rawData = localStorage.getItem('master_data_seeker_membership_fees');
       if (rawData) {
         try {
           const parsed = JSON.parse(rawData);
           
-          // Handle wrapped format
+          // Handle wrapped format (convert to raw immediately)
           if (parsed && typeof parsed === 'object' && parsed.data && Array.isArray(parsed.data)) {
-            console.log('⚠️ Found wrapped membership fee data, unwrapping...');
+            console.log('🔧 FIXING: Found wrapped membership fee data, converting to raw...');
             loadedFees = parsed.data;
-            // Store in raw format for future use
+            // IMMEDIATELY fix the structure in localStorage
             localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(loadedFees));
-            console.log('✅ Unwrapped and stored membership fees in raw format');
+            // Clean up wrapped format artifacts
+            localStorage.removeItem('user_created_master_data_seeker_membership_fees');
+            localStorage.removeItem('backup_master_data_seeker_membership_fees');
+            console.log('✅ FIXED: Converted wrapped to raw format permanently');
           } else if (Array.isArray(parsed)) {
-            // Already in raw format
+            // Already in raw format - good!
             loadedFees = parsed;
+            console.log('✅ Found raw format membership fees:', loadedFees.length);
+          } else {
+            console.log('⚠️ Invalid data structure, will use empty array');
           }
         } catch (error) {
           console.error('❌ Failed to parse membership fee data:', error);
         }
       }
       
-      // Fallback to persistence manager if raw format failed
+      // If still no data, try persistence manager as last resort but convert immediately
       if (loadedFees.length === 0) {
-        loadedFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
+        const legacyData = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
+        if (legacyData && legacyData.length > 0) {
+          console.log('🔧 Converting legacy data to raw format...');
+          loadedFees = legacyData;
+          // IMMEDIATELY save as raw format
+          localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(loadedFees));
+          console.log('✅ Legacy data converted to raw format');
+        }
       }
       
       console.log('🔍 Safe Load Results:');
@@ -180,7 +192,7 @@ export const useMembershipFeeData = () => {
     console.log('🌟 [state change] membershipFees now:', membershipFees.length, membershipFees);
   }, [membershipFees]);
 
-  // Enhanced save with validation and error handling
+  // FIXED: Save ONLY in raw format to prevent diagnostic issues
   useEffect(() => {
     if (!isInitialized || isLoading) {
       console.log('📥 Skipping save - not initialized or loading...');
@@ -193,15 +205,17 @@ export const useMembershipFeeData = () => {
       return;
     }
     
-    console.log(`💾 Saving ${membershipFees.length} membership fees. Initialized: ${isInitialized}`);
+    console.log(`💾 Saving ${membershipFees.length} membership fees in RAW FORMAT ONLY`);
     
     try {
-      // Save in raw format (new approach)
+      // CRITICAL: Save in raw format only - no wrapped format
       localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(membershipFees));
       console.log("✅ Successfully saved membership fees in raw format");
       
-      // Also save via persistence manager for backward compatibility (during transition)
-      MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
+      // Remove any wrapped format data to prevent conflicts
+      localStorage.removeItem('user_created_master_data_seeker_membership_fees');
+      localStorage.removeItem('backup_master_data_seeker_membership_fees');
+      
       setDataHealth(checkDataHealth());
     } catch (error) {
       console.error('❌ Error saving membership fees:', error);
