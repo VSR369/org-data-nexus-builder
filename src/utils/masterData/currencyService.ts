@@ -53,13 +53,20 @@ export class CurrencyService {
     console.log('🔍 getCurrencyByCountry - Looking for:', country);
     console.log('🔍 getCurrencyByCountry - Available currencies:', currencies?.length || 0);
     
+    // Add null/undefined checks
+    if (!country || typeof country !== 'string') {
+      console.log('❌ Invalid country parameter:', country);
+      return null;
+    }
+    
     if (!currencies || currencies.length === 0) {
       console.log('❌ No currencies available for lookup');
       return null;
     }
     
-    // Direct match
+    // Direct match - with null checks
     let currency = currencies.find(c => 
+      c && c.country && typeof c.country === 'string' && 
       c.country.toLowerCase() === country.toLowerCase()
     );
     
@@ -84,6 +91,7 @@ export class CurrencyService {
     const mappedCountry = mappings[country];
     if (mappedCountry) {
       currency = currencies.find(c => 
+        c && c.country && typeof c.country === 'string' && 
         c.country.toLowerCase() === mappedCountry.toLowerCase()
       );
       if (currency) {
@@ -92,10 +100,11 @@ export class CurrencyService {
       }
     }
     
-    // Partial match
+    // Partial match - with null checks
     currency = currencies.find(c => 
-      c.country.toLowerCase().includes(country.toLowerCase()) ||
-      country.toLowerCase().includes(c.country.toLowerCase())
+      c && c.country && typeof c.country === 'string' && 
+      (c.country.toLowerCase().includes(country.toLowerCase()) ||
+       country.toLowerCase().includes(c.country.toLowerCase()))
     );
     
     if (currency) {

@@ -13,6 +13,18 @@ export const countriesDataManager = new LegacyDataManager<Country[]>({
   version: 1
 });
 
+// Force initialization with default data if empty
+const initializeCountriesData = () => {
+  const existingData = countriesDataManager.loadData();
+  if (!existingData || !Array.isArray(existingData) || existingData.length === 0) {
+    console.log('🔧 Force initializing countries data with defaults');
+    countriesDataManager.resetToDefault();
+  }
+};
+
+// Initialize on module load
+initializeCountriesData();
+
 export const organizationTypesDataManager = new LegacyDataManager<string[]>({
   key: 'master_data_organization_types',
   defaultData: process.env.NODE_ENV === 'development' ? [

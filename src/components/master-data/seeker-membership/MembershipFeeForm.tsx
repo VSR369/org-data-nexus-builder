@@ -198,18 +198,12 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
-        <SelectContent>
-          {countries.length > 0 ? (
-            countries.map((country) => (
-              <SelectItem key={country.id} value={country.name}>
-                {country.name} ({country.code})
-              </SelectItem>
-            ))
-          ) : (
-            <SelectItem value="no-countries" disabled>
-              No countries available ({countries.length} loaded)
+        <SelectContent className="bg-popover text-popover-foreground">
+          {countries.map((country) => (
+            <SelectItem key={country.id} value={country.name}>
+              {country.name} ({country.code})
             </SelectItem>
-          )}
+          ))}
         </SelectContent>
               </Select>
             </div>

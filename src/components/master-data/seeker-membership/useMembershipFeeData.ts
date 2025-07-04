@@ -42,7 +42,14 @@ export const useMembershipFeeData = () => {
     
     try {
       const loadedCurrencies = MasterDataSeeder.getCurrencies();
-      const loadedCountries = countriesDataManager.loadData();
+      
+      // Force countries data initialization if empty
+      let loadedCountries = countriesDataManager.loadData();
+      if (!loadedCountries || !Array.isArray(loadedCountries) || loadedCountries.length === 0) {
+        console.log('🔧 Countries data empty, forcing reset to defaults');
+        loadedCountries = countriesDataManager.resetToDefault();
+      }
+      
       const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
       
       // Use MembershipFeeFixer to get guaranteed raw format
