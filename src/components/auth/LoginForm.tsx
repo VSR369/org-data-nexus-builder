@@ -4,12 +4,13 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
+import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 
 const LoginForm = () => {
-  const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,14 +21,69 @@ const LoginForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login process
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('🔐 === LOGIN ATTEMPT START ===');
+    console.log('🔐 Login attempt for userId:', userId);
 
-    if (email && password) {
-      // Route based on current path, but exclude seeking-org-admin-login
+    try {
+      if (!userId.trim() || !password) {
+        throw new Error('Please enter both User ID and password');
+      }
+
+      // Initialize unified storage service
+      await unifiedUserStorageService.initialize();
+
+      // Authenticate user
+      const authResult = await unifiedUserStorageService.authenticateUser(
+        userId.trim(), 
+        password
+      );
+      
+      console.log('🔐 Authentication result:', authResult);
+      
+      if (!authResult.success || !authResult.user) {
+        throw new Error(authResult.error || 'Authentication failed');
+      }
+
+      const user = authResult.user;
+      console.log('✅ Login successful for user:', user.userId);
+      console.log('📋 User data:', {
+        organizationName: user.organizationName,
+        organizationType: user.organizationType,
+        entityType: user.entityType,
+        country: user.country,
+        contactPersonName: user.contactPersonName
+      });
+      
+      // Save complete session data with all organization details
+      await unifiedUserStorageService.saveSession({
+        userId: user.userId,
+        organizationName: user.organizationName,
+        organizationType: user.organizationType || user.entityType,
+        entityType: user.entityType,
+        country: user.country,
+        email: user.email,
+        contactPersonName: user.contactPersonName,
+        industrySegment: user.industrySegment || 'Not Specified',
+        organizationId: user.organizationId || user.userId,
+        loginTimestamp: new Date().toISOString()
+      });
+      
+      // Route based on current path
       if (location.pathname === '/seeker-login') {
-        toast.success('Successfully signed in as Solution Seeker!');
-        navigate('/seeker-dashboard');
+        toast.success(`Successfully signed in as Solution Seeker!`);
+        navigate('/seeker-dashboard', { 
+          state: { 
+            userId: user.userId,
+            organizationName: user.organizationName,
+            organizationType: user.organizationType,
+            entityType: user.entityType,
+            country: user.country,
+            email: user.email,
+            contactPersonName: user.contactPersonName,
+            industrySegment: user.industrySegment,
+            organizationId: user.organizationId
+          }
+        });
       } else if (location.pathname === '/contributor-login') {
         toast.success('Successfully signed in as Contributor!');
         navigate('/contributor-enrollment');
@@ -35,30 +91,48 @@ const LoginForm = () => {
         toast.success('Successfully signed in!');
         navigate('/');
       }
-    } else {
-      toast.error('Please enter both email and password');
+      
+      console.log('🔐 === LOGIN ATTEMPT SUCCESS ===');
+      
+    } catch (error: any) {
+      console.log('❌ Login error:', error.message);
+      
+      let errorMessage = "Login failed. Please try again.";
+      
+      if (error.message.includes('password')) {
+        errorMessage = "Incorrect password. Please check your password and try again.";
+      } else if (error.message.includes('not found')) {
+        errorMessage = "User ID not found. Please check your User ID or register first.";
+      } else if (error.message.includes('No registered users')) {
+        errorMessage = "No registered users found. Please register first.";
+      } else if (error.message.includes('User ID') || error.message.includes('password')) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      console.log('🔐 === LOGIN ATTEMPT FAILED ===');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
     <CardContent className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-            Email Address
+          <Label htmlFor="userId" className="text-sm font-medium text-gray-700">
+            User ID
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="userId"
+              type="text"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
               className="pl-10"
-              placeholder="Enter your email"
-              autoComplete="new-password"
+              placeholder="Enter your User ID"
+              autoComplete="username"
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck="false"
@@ -81,7 +155,7 @@ const LoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10"
               placeholder="Enter your password"
-              autoComplete="new-password"
+              autoComplete="current-password"
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck="false"
@@ -128,8 +202,8 @@ const LoginForm = () => {
       <div className="text-center pt-4 border-t">
         <p className="text-sm text-gray-600">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 hover:underline font-medium">
-            Sign Up
+          <Link to="/seeker-registration" className="text-blue-600 hover:underline font-medium">
+            Register here
           </Link>
         </p>
       </div>

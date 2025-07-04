@@ -76,10 +76,13 @@ const MembershipRegistration = () => {
             await unifiedUserStorageService.saveSession({
               userId: user.userId,
               organizationName: user.organizationName,
+              organizationType: user.organizationType || user.entityType,
               entityType: user.entityType,
               country: user.country,
               email: user.email,
               contactPersonName: user.contactPersonName,
+              industrySegment: user.industrySegment || 'Not Specified',
+              organizationId: user.organizationId || user.userId,
               loginTimestamp: new Date().toISOString()
             });
           } else {

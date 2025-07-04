@@ -27,10 +27,13 @@ export interface UserRecord {
 export interface SessionData {
   userId: string;
   organizationName: string;
+  organizationType: string;
   entityType: string;
   country: string;
   email: string;
   contactPersonName: string;
+  industrySegment: string;
+  organizationId: string;
   loginTimestamp: string;
 }
 

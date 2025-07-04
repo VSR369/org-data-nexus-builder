@@ -70,10 +70,13 @@ export const useLoginForm = () => {
       await unifiedUserStorageService.saveSession({
         userId: authResult.user.userId,
         organizationName: authResult.user.organizationName,
+        organizationType: authResult.user.organizationType || authResult.user.entityType,
         entityType: authResult.user.entityType,
         country: authResult.user.country,
         email: authResult.user.email,
         contactPersonName: authResult.user.contactPersonName,
+        industrySegment: authResult.user.industrySegment || 'Not Specified',
+        organizationId: authResult.user.organizationId || authResult.user.userId,
         loginTimestamp: new Date().toISOString()
       });
       

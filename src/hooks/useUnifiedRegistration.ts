@@ -51,7 +51,7 @@ export const useUnifiedRegistration = () => {
       return;
     }
 
-    // Prepare registration data
+    // Prepare registration data with enhanced validation
     const registrationData: RegistrationData = {
       userId: formData.userId.trim(),
       password: formData.password,
@@ -61,9 +61,12 @@ export const useUnifiedRegistration = () => {
       country: formData.country,
       email: formData.email.trim().toLowerCase(),
       contactPersonName: formData.contactPersonName.trim(),
-      industrySegment: formData.industrySegment,
+      industrySegment: formData.industrySegment || 'Not Specified',
       organizationId: formData.organizationId
     };
+
+    // Log registration data for debugging
+    console.log('📋 Complete registration data being saved:', registrationData);
 
     console.log('💾 Attempting unified registration...');
 

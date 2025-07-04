@@ -69,87 +69,72 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
         // Initialize the unified storage service
         await unifiedUserStorageService.initialize();
         
-        // Get all users to see what data we have
-        const allUsers = await unifiedUserStorageService.getAllUsers();
-        console.log('👥 All registered users found:', allUsers);
-        console.log('👥 Total users count:', allUsers.length);
-        
         let targetUser = null;
         
-        // Strategy 1: Use location state from login (highest priority)
-        const loginUserId = (location.state as any)?.userId;
-        if (loginUserId) {
-          console.log('🎯 Looking for user by ID from location state:', loginUserId);
-          targetUser = await unifiedUserStorageService.findUserById(loginUserId);
-          console.log('🎯 User found by location state:', targetUser);
-        }
-        
-        // Strategy 2: Use session data
-        if (!targetUser) {
-          const sessionData = await unifiedUserStorageService.loadSession();
-          console.log('📱 Session data:', sessionData);
+        // Priority 1: Use complete location state from login (HIGHEST PRIORITY)
+        const locationState = location.state as any;
+        if (locationState && locationState.userId && locationState.organizationName) {
+          console.log('🎯 PRIORITY 1: Using complete location state from login:', locationState);
           
-          if (sessionData && sessionData.userId) {
-            targetUser = await unifiedUserStorageService.findUserById(sessionData.userId);
-            console.log('🎯 User found by session ID:', targetUser);
+          // Verify user exists in storage
+          const storedUser = await unifiedUserStorageService.findUserById(locationState.userId);
+          if (storedUser) {
+            console.log('✅ Verified user exists in storage:', storedUser.userId);
+            // Use location state data as it's most current
+            targetUser = {
+              ...storedUser,
+              // Overlay login session data which is most current
+              userId: locationState.userId,
+              organizationName: locationState.organizationName,
+              organizationType: locationState.organizationType || storedUser.organizationType,
+              entityType: locationState.entityType || storedUser.entityType,
+              country: locationState.country || storedUser.country,
+              email: locationState.email || storedUser.email,
+              contactPersonName: locationState.contactPersonName || storedUser.contactPersonName,
+              industrySegment: locationState.industrySegment || storedUser.industrySegment,
+              organizationId: locationState.organizationId || storedUser.organizationId
+            };
           }
         }
         
-        // Strategy 2b: Check organization admin session
+        // Priority 2: Use session data if no location state
         if (!targetUser) {
-          const orgSession = localStorage.getItem('seeking_org_admin_session');
-          if (orgSession) {
-            try {
-              const orgData = JSON.parse(orgSession);
-              console.log('🏢 Organization session found:', orgData);
-              
-              // Try to find user by email from org session
-              if (orgData.organizationId) {
-                targetUser = allUsers.find(user => user.email === orgData.organizationId);
-                console.log('🎯 User found by org session email:', targetUser);
-                
-                // If not found, create a new user entry for this organization
-                if (!targetUser && orgData.organizationId) {
-                  console.log('🆕 Creating new user entry for org session');
-                  targetUser = {
-                    userId: orgData.organizationId,
-                    email: orgData.organizationId,
-                    organizationName: orgData.organizationName || 'Solution Seeking Organization',
-                    organizationType: 'Organization',
-                    entityType: 'Organization',
-                    country: 'Not Specified',
-                    contactPersonName: 'Organization Admin',
-                    industrySegment: 'Not Specified',
-                    organizationId: orgData.organizationId,
-                    createdAt: new Date().toISOString()
-                  };
-                }
-              }
-            } catch (error) {
-              console.log('❌ Error parsing organization session:', error);
+          const sessionData = await unifiedUserStorageService.loadSession();
+          console.log('🎯 PRIORITY 2: Using session data:', sessionData);
+          
+          if (sessionData && sessionData.userId) {
+            // Get full user record from storage
+            const storedUser = await unifiedUserStorageService.findUserById(sessionData.userId);
+            if (storedUser) {
+              console.log('✅ Found user from session:', storedUser.userId);
+              // Combine session data with stored user data
+              targetUser = {
+                ...storedUser,
+                // Use session data where available as it's more current
+                organizationName: sessionData.organizationName || storedUser.organizationName,
+                organizationType: sessionData.organizationType || storedUser.organizationType,
+                entityType: sessionData.entityType || storedUser.entityType,
+                country: sessionData.country || storedUser.country,
+                contactPersonName: sessionData.contactPersonName || storedUser.contactPersonName,
+                industrySegment: sessionData.industrySegment || storedUser.industrySegment,
+                organizationId: sessionData.organizationId || storedUser.organizationId
+              };
             }
           }
         }
         
-        // Strategy 3: Look for user by email if available
-        if (!targetUser) {
-          const loginEmail = (location.state as any)?.email;
-          if (loginEmail) {
-            console.log('🎯 Looking for user by email:', loginEmail);
-            targetUser = allUsers.find(user => user.email === loginEmail);
-            console.log('🎯 User found by email:', targetUser);
-          }
+        // Priority 3: Look for user by userId from location state only
+        if (!targetUser && locationState?.userId) {
+          console.log('🎯 PRIORITY 3: Looking for user by userId only:', locationState.userId);
+          targetUser = await unifiedUserStorageService.findUserById(locationState.userId);
+          console.log('🎯 User found by userId:', targetUser);
         }
         
-        // Strategy 4: Check if there's a recently logged in user (fallback) - REMOVED
-        // This fallback was causing issues where new users would see data from other users
-        // Now we only load data for specifically identified users
-        
         if (targetUser) {
-          console.log('✅ Final target user selected:', targetUser);
+          console.log('✅ FINAL TARGET USER SELECTED:', targetUser);
           
           const mappedData = {
-            userId: targetUser.userId || targetUser.id || 'N/A',
+            userId: targetUser.userId || 'N/A',
             organizationName: targetUser.organizationName || 'Organization Name Not Available',
             entityType: targetUser.entityType || 'Entity Type Not Available',
             country: targetUser.country || 'Country Not Available',
@@ -157,31 +142,32 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
             contactPersonName: targetUser.contactPersonName || 'Contact Person Not Available',
             organizationType: targetUser.organizationType || targetUser.entityType || 'Organization Type Not Available',
             industrySegment: targetUser.industrySegment || 'Industry Segment Not Available',
-            organizationId: targetUser.organizationId || targetUser.userId || targetUser.id || 'Organization ID Not Available',
-            registrationTimestamp: targetUser.registrationTimestamp || targetUser.createdAt || targetUser.updatedAt || 'Registration Date Not Available'
+            organizationId: targetUser.organizationId || targetUser.userId || 'Organization ID Not Available',
+            registrationTimestamp: targetUser.registrationTimestamp || targetUser.createdAt || 'Registration Date Not Available'
           };
           
-          console.log('📋 Final mapped user data:', mappedData);
+          console.log('📋 FINAL MAPPED USER DATA:', mappedData);
           setUserData(mappedData);
           setShowLoginWarning(false);
           
-          // Save session for future use
-          if (targetUser.userId || targetUser.id) {
-            await unifiedUserStorageService.saveSession({
-              userId: targetUser.userId || targetUser.id,
-              organizationName: targetUser.organizationName,
-              entityType: targetUser.entityType,
-              country: targetUser.country,
-              email: targetUser.email,
-              contactPersonName: targetUser.contactPersonName,
-              loginTimestamp: new Date().toISOString()
-            });
-          }
+          // Update session with current data
+          await unifiedUserStorageService.saveSession({
+            userId: targetUser.userId,
+            organizationName: targetUser.organizationName,
+            organizationType: targetUser.organizationType || targetUser.entityType,
+            entityType: targetUser.entityType,
+            country: targetUser.country,
+            email: targetUser.email,
+            contactPersonName: targetUser.contactPersonName,
+            industrySegment: targetUser.industrySegment || 'Not Specified',
+            organizationId: targetUser.organizationId || targetUser.userId,
+            loginTimestamp: new Date().toISOString()
+          });
         } else {
-          console.log('❌ No user data found');
+          console.log('❌ NO USER DATA FOUND - Showing login warning');
           toast({
             title: "No User Data Found",
-            description: "No registered users found. Please register first.",
+            description: "Please log in to access the dashboard.",
             variant: "destructive"
           });
           setShowLoginWarning(true);
