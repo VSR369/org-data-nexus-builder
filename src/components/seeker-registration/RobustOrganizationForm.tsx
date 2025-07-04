@@ -115,7 +115,7 @@ const RobustOrganizationForm: React.FC<RobustOrganizationFormProps> = ({
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-segments" disabled>
                   No industry segments available
                 </SelectItem>
               )}
@@ -177,7 +177,7 @@ const RobustOrganizationForm: React.FC<RobustOrganizationFormProps> = ({
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-org-types" disabled>
                   No organization types available
                 </SelectItem>
               )}
@@ -209,7 +209,7 @@ const RobustOrganizationForm: React.FC<RobustOrganizationFormProps> = ({
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-entity-types" disabled>
                   No entity types available
                 </SelectItem>
               )}

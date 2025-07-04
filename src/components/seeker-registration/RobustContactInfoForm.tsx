@@ -76,7 +76,7 @@ const RobustContactInfoForm: React.FC<RobustContactInfoFormProps> = ({
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-countries" disabled>
                   No countries available
                 </SelectItem>
               )}
