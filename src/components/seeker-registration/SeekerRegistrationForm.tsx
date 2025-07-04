@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUnifiedRegistration } from '@/hooks/useUnifiedRegistration';
-import OrganizationInfoSection from './OrganizationInfoSection';
+import RobustOrganizationForm from './RobustOrganizationForm';
+import RobustContactInfoForm from './RobustContactInfoForm';
 import DocumentUploadSection from './DocumentUploadSection';
-import ContactInfoSection from './ContactInfoSection';
 import ContactPersonSection from './ContactPersonSection';
 
 const SeekerRegistrationForm = () => {
@@ -48,25 +48,14 @@ const SeekerRegistrationForm = () => {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
-              <OrganizationInfoSection
+              <RobustOrganizationForm
                 formData={formData}
-                industrySegments={industrySegments}
-                organizationTypes={organizationTypes}
-                entityTypes={entityTypes}
                 errors={errors}
                 onInputChange={handleInputChange}
               />
 
-              <DocumentUploadSection
+              <RobustContactInfoForm
                 formData={formData}
-                requiresRegistrationDocuments={requiresRegistrationDocuments}
-                onFileUpload={handleFileUpload}
-                onFileRemove={handleFileRemove}
-              />
-
-              <ContactInfoSection
-                formData={formData}
-                countries={countries}
                 errors={errors}
                 onInputChange={handleInputChange}
               />
@@ -76,6 +65,13 @@ const SeekerRegistrationForm = () => {
                 countries={countries}
                 errors={errors}
                 onInputChange={handleInputChange}
+              />
+
+              <DocumentUploadSection
+                formData={formData}
+                requiresRegistrationDocuments={requiresRegistrationDocuments}
+                onFileUpload={handleFileUpload}
+                onFileRemove={handleFileRemove}
               />
 
               <div className="flex gap-4 pt-6">
