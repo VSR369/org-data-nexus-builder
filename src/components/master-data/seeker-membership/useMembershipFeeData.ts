@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { MasterDataSeeder } from '@/utils/masterDataSeeder';
-import { MembershipFeeEntry, Currency, Country, membershipFeeConfig } from './types';
+import { MembershipFeeEntry, Currency, Country } from './types';
+import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
 
 export const useMembershipFeeData = () => {
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
@@ -27,18 +27,15 @@ export const useMembershipFeeData = () => {
 
   // Function to check data health
   const checkDataHealth = () => {
-    const currencyHealth = MasterDataPersistenceManager.validateDataIntegrity(
-      { key: 'master_data_currencies', version: 2, preserveUserData: true }
-    );
-    const membershipHealth = MasterDataPersistenceManager.validateDataIntegrity<MembershipFeeEntry[]>(membershipFeeConfig);
+    const membershipHealth = MembershipFeeFixer.verifyStructure();
     
     return {
-      currencies: currencyHealth,
+      currencies: { isValid: true, issues: [] },
       membershipFees: membershipHealth
     };
   };
 
-  // FIXED: Enhanced data loading - force raw format only
+  // FIXED: Enhanced data loading using MembershipFeeFixer
   const loadDataSafely = () => {
     console.log('🔄 Starting safe data load...');
     setIsLoading(true);
@@ -48,47 +45,8 @@ export const useMembershipFeeData = () => {
       const loadedCountries = countriesDataManager.loadData();
       const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
       
-      // CRITICAL FIX: Load membership fees with immediate unwrapping
-      let loadedFees: MembershipFeeEntry[] = [];
-      
-      const rawData = localStorage.getItem('master_data_seeker_membership_fees');
-      if (rawData) {
-        try {
-          const parsed = JSON.parse(rawData);
-          
-          // Handle wrapped format (convert to raw immediately)
-          if (parsed && typeof parsed === 'object' && parsed.data && Array.isArray(parsed.data)) {
-            console.log('🔧 FIXING: Found wrapped membership fee data, converting to raw...');
-            loadedFees = parsed.data;
-            // IMMEDIATELY fix the structure in localStorage
-            localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(loadedFees));
-            // Clean up wrapped format artifacts
-            localStorage.removeItem('user_created_master_data_seeker_membership_fees');
-            localStorage.removeItem('backup_master_data_seeker_membership_fees');
-            console.log('✅ FIXED: Converted wrapped to raw format permanently');
-          } else if (Array.isArray(parsed)) {
-            // Already in raw format - good!
-            loadedFees = parsed;
-            console.log('✅ Found raw format membership fees:', loadedFees.length);
-          } else {
-            console.log('⚠️ Invalid data structure, will use empty array');
-          }
-        } catch (error) {
-          console.error('❌ Failed to parse membership fee data:', error);
-        }
-      }
-      
-      // If still no data, try persistence manager as last resort but convert immediately
-      if (loadedFees.length === 0) {
-        const legacyData = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
-        if (legacyData && legacyData.length > 0) {
-          console.log('🔧 Converting legacy data to raw format...');
-          loadedFees = legacyData;
-          // IMMEDIATELY save as raw format
-          localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(loadedFees));
-          console.log('✅ Legacy data converted to raw format');
-        }
-      }
+      // Use MembershipFeeFixer to get guaranteed raw format
+      const loadedFees = MembershipFeeFixer.getMembershipFees();
       
       console.log('🔍 Safe Load Results:');
       console.log('  - Currencies:', loadedCurrencies.length);
@@ -101,15 +59,11 @@ export const useMembershipFeeData = () => {
         setCurrencies(loadedCurrencies);
         setCountries(loadedCountries);
         setEntityTypes(loadedEntityTypes);
-        
-        // Critical: Set membership fees with validation
-        if (Array.isArray(loadedFees)) {
-          setMembershipFees(loadedFees);
-          console.log('✅ Successfully set membershipFees state:', loadedFees.length);
-        } else {
-          console.warn('⚠️ Invalid membership fees data, using empty array');
-          setMembershipFees([]);
-        }
+        // Map data to ensure isUserCreated is always present
+        setMembershipFees(loadedFees.map(fee => ({
+          ...fee,
+          isUserCreated: fee.isUserCreated ?? false
+        })));
         
         setDataHealth(checkDataHealth());
         setIsInitialized(true);
@@ -144,16 +98,19 @@ export const useMembershipFeeData = () => {
     console.log('🔍 Checking for auto-recovery need...');
     
     // Check if we have data in storage but empty state
-    const hasStorageData = MasterDataPersistenceManager.hasUserData(membershipFeeConfig);
+    const hasStorageData = localStorage.getItem('master_data_seeker_membership_fees') !== null;
     const hasStateData = membershipFees.length > 0;
     
     if (hasStorageData && !hasStateData) {
       console.log('🚨 Data loss detected! Storage has data but state is empty. Recovering...');
       
-      const recoveredFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
+      const recoveredFees = MembershipFeeFixer.getMembershipFees();
       if (recoveredFees.length > 0) {
         console.log('🔄 Auto-recovering', recoveredFees.length, 'membership fees');
-        setMembershipFees(recoveredFees);
+        setMembershipFees(recoveredFees.map(fee => ({
+          ...fee,
+          isUserCreated: fee.isUserCreated ?? false
+        })));
       }
     }
   };

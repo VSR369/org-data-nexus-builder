@@ -15,6 +15,7 @@ import {
   Building,
   Globe
 } from 'lucide-react';
+import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
 
 interface MasterDataKeyInfo {
   key: string;
@@ -213,6 +214,12 @@ export const MasterDataDiagnostics: React.FC = () => {
 
   const analyzeMasterDataKey = (key: string, config: any): MasterDataKeyInfo => {
     console.log(`🔍 Analyzing ${key}...`);
+    
+    // Special handling for membership fees - run fixer first
+    if (key === 'master_data_seeker_membership_fees') {
+      console.log('🔧 Running membership fee structure fix...');
+      MembershipFeeFixer.fixMembershipFeeStructure();
+    }
     
     const rawValue = localStorage.getItem(key);
     const keyInfo: MasterDataKeyInfo = {
