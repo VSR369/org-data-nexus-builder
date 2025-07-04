@@ -30,13 +30,18 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   console.log('AppSidebar render:', { activeSection, isOnMasterDataPortal, pathname: location.pathname });
 
   const handleMasterDataClick = (sectionId: string) => {
-    console.log('AppSidebar - handleMasterDataClick:', sectionId);
+    console.log('🖱️ AppSidebar - handleMasterDataClick called:', sectionId);
+    console.log('🖱️ Current state - isOnRegistrationPage:', isOnRegistrationPage);
+    console.log('🖱️ Current state - isOnMasterDataPortal:', isOnMasterDataPortal);
     
     if (isOnRegistrationPage) {
+      console.log('🔄 Navigating to:', `/?section=${sectionId}`);
       navigate(`/?section=${sectionId}`);
     } else if (isOnMasterDataPortal) {
+      console.log('🔄 Setting active section to:', sectionId);
       setActiveSection(sectionId);
     } else {
+      console.log('🔄 Default: Setting active section to:', sectionId);
       setActiveSection(sectionId);
     }
   };
