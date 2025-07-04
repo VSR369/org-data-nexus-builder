@@ -42,13 +42,18 @@ export const useSeekingOrgAdminAuth = () => {
       setCurrentOrganization(null);
       setIsAuthenticated(false);
       
-      // Simulate organization authentication - in real app this would be API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Import the unified user storage service to check for actual user
+      const { unifiedUserStorageService } = await import('@/services/UnifiedUserStorageService');
+      await unifiedUserStorageService.initialize();
       
-      if (email && password) {
+      // Try to find the actual user data
+      const allUsers = await unifiedUserStorageService.getAllUsers();
+      const foundUser = allUsers.find(user => user.email === email);
+      
+      if (foundUser && email && password) {
         const organizationData: SeekingOrganization = {
           organizationId: email,
-          organizationName: 'Solution Seeking Organization',
+          organizationName: foundUser.organizationName || 'Organization Name Not Available',
           role: 'seeking_organization',
           permissions: ['manage_membership', 'select_engagement_models', 'view_dashboard']
         };
@@ -65,6 +70,9 @@ export const useSeekingOrgAdminAuth = () => {
         toast.success('Successfully signed in to your organization account!');
         navigate('/seeking-org-admin-dashboard');
         return true;
+      } else if (!foundUser) {
+        toast.error('User not found. Please check your email or register first.');
+        return false;
       } else {
         toast.error('Please enter both email and password');
         return false;
