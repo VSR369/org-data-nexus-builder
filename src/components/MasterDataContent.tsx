@@ -20,6 +20,7 @@ import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import SolutionSeekersValidation from "./master-data/SolutionSeekersValidation";
 import { CompleteDataResetButton } from "./admin/CompleteDataResetButton";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
+import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -71,6 +72,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <CompleteDataResetButton />;
       case 'localstorage-debug':
         return <LocalStorageDebugPanel />;
+      case 'master-data-diagnostics':
+        return <MasterDataDiagnostics />;
       default:
         return <DomainGroupsConfig />;
     }

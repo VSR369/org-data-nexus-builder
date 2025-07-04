@@ -136,6 +136,12 @@ export const validationMenuItems = [
 
 export const administrationMenuItems = [
   {
+    id: 'master-data-diagnostics',
+    title: 'Master Data Diagnostics',
+    icon: Database,
+    description: 'Comprehensive health check for all master data'
+  },
+  {
     id: 'global-cache-manager',
     title: 'Global Cache Manager',
     icon: Database,
