@@ -69,10 +69,35 @@ export const useDashboardData = (userData: any) => {
       return;
     }
 
-    console.log('🔄 Loading unified dashboard data for user:', userData.userId);
-    console.log('📍 User country:', userData.country);
-    console.log('🏢 User org type:', userData.organizationType);
-    console.log('🏛️ User entity type:', userData.entityType);
+      console.log('🔄 Loading unified dashboard data for user:', userData.userId);
+      console.log('📍 User country:', userData.country);
+      console.log('🏢 User org type:', userData.organizationType);
+      console.log('🏛️ User entity type:', userData.entityType);
+      
+      // Check if this is a new user with no stored data
+      const completedPayment = localStorage.getItem('completed_membership_payment');
+      const engagementSelection = localStorage.getItem('engagement_model_selection');
+      
+      console.log('💳 Completed payment data exists:', !!completedPayment);
+      console.log('🎯 Engagement selection data exists:', !!engagementSelection);
+      
+      if (completedPayment) {
+        try {
+          const paymentData = JSON.parse(completedPayment);
+          console.log('💳 Payment data user ID:', paymentData.userId, 'vs current user:', userData.userId);
+        } catch (e) {
+          console.log('💳 Error parsing payment data');
+        }
+      }
+      
+      if (engagementSelection) {
+        try {
+          const selectionData = JSON.parse(engagementSelection);
+          console.log('🎯 Selection data user ID:', selectionData.userId, 'vs current user:', userData.userId);
+        } catch (e) {
+          console.log('🎯 Error parsing selection data');
+        }
+      }
     
     try {
       await unifiedUserStorageService.initialize();

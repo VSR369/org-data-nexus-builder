@@ -95,6 +95,42 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
           }
         }
         
+        // Strategy 2b: Check organization admin session
+        if (!targetUser) {
+          const orgSession = localStorage.getItem('seeking_org_admin_session');
+          if (orgSession) {
+            try {
+              const orgData = JSON.parse(orgSession);
+              console.log('🏢 Organization session found:', orgData);
+              
+              // Try to find user by email from org session
+              if (orgData.organizationId) {
+                targetUser = allUsers.find(user => user.email === orgData.organizationId);
+                console.log('🎯 User found by org session email:', targetUser);
+                
+                // If not found, create a new user entry for this organization
+                if (!targetUser && orgData.organizationId) {
+                  console.log('🆕 Creating new user entry for org session');
+                  targetUser = {
+                    userId: orgData.organizationId,
+                    email: orgData.organizationId,
+                    organizationName: orgData.organizationName || 'Solution Seeking Organization',
+                    organizationType: 'Organization',
+                    entityType: 'Organization',
+                    country: 'Not Specified',
+                    contactPersonName: 'Organization Admin',
+                    industrySegment: 'Not Specified',
+                    organizationId: orgData.organizationId,
+                    createdAt: new Date().toISOString()
+                  };
+                }
+              }
+            } catch (error) {
+              console.log('❌ Error parsing organization session:', error);
+            }
+          }
+        }
+        
         // Strategy 3: Look for user by email if available
         if (!targetUser) {
           const loginEmail = (location.state as any)?.email;
@@ -105,19 +141,9 @@ export const UserDataProvider: React.FC<UserDataProviderProps> = ({ children }) 
           }
         }
         
-        // Strategy 4: Check if there's a recently logged in user (fallback)
-        if (!targetUser && allUsers.length > 0) {
-          console.log('🎯 Looking for most recently active user');
-          // Sort by lastLoginTimestamp or updatedAt to find most recent user
-          const sortedUsers = allUsers.sort((a, b) => {
-            const aTime = a.lastLoginTimestamp || a.updatedAt || a.createdAt || '';
-            const bTime = b.lastLoginTimestamp || b.updatedAt || b.createdAt || '';
-            return new Date(bTime).getTime() - new Date(aTime).getTime();
-          });
-          
-          targetUser = sortedUsers[0];
-          console.log('🎯 Using most recent user:', targetUser);
-        }
+        // Strategy 4: Check if there's a recently logged in user (fallback) - REMOVED
+        // This fallback was causing issues where new users would see data from other users
+        // Now we only load data for specifically identified users
         
         if (targetUser) {
           console.log('✅ Final target user selected:', targetUser);
