@@ -62,7 +62,11 @@ const SeekingOrgAdminLoginForm = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
               placeholder="Enter organization email"
-              autoComplete="off"
+              autoComplete="new-password"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck="false"
+              data-form-type="other"
               required
             />
           </div>
@@ -81,7 +85,11 @@ const SeekingOrgAdminLoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10"
               placeholder="Enter your password"
-              autoComplete="off"
+              autoComplete="new-password"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck="false"
+              data-form-type="other"
               required
             />
             <button

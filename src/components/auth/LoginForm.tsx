@@ -58,6 +58,11 @@ const LoginForm = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
               placeholder="Enter your email"
+              autoComplete="new-password"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck="false"
+              data-form-type="other"
               required
             />
           </div>
@@ -76,6 +81,11 @@ const LoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10"
               placeholder="Enter your password"
+              autoComplete="new-password"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck="false"
+              data-form-type="other"
               required
             />
             <button
