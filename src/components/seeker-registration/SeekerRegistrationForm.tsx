@@ -2,6 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MasterDataHealthIndicator } from "@/components/providers/MasterDataHealthProvider";
 import { ArrowLeft, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUnifiedRegistration } from '@/hooks/useUnifiedRegistration';
@@ -43,6 +45,11 @@ const SeekerRegistrationForm = () => {
                   <p className="text-muted-foreground">Register your organization to start seeking solutions</p>
                 </div>
               </div>
+            </div>
+            
+            {/* Master Data Health Status */}
+            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+              <MasterDataHealthIndicator />
             </div>
           </CardHeader>
 

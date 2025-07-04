@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MasterDataHealthProvider } from "@/components/providers/MasterDataHealthProvider";
 
 // Import pages
 import Index from './pages/Index';
@@ -25,28 +26,30 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <Router>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/seeker-registration" element={<SeekerRegistration />} />
-              <Route path="/seeker-login" element={<SeekerLogin />} />
-              <Route path="/contributor-login" element={<ContributorLogin />} />
-              <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
-              <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
-              <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
-              <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
-              <Route path="/master-data-portal" element={<MasterDataPortal />} />
-              <Route path="/master-data" element={<MasterDataPortal />} />
-              <Route path="/membership-registration" element={<MembershipRegistration />} />
-            </Routes>
-          </Router>
-        </div>
-      </SidebarProvider>
-      <Toaster />
+      <MasterDataHealthProvider enableAutoFix={true} showToastNotifications={true}>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full">
+            <Router>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/seeker-registration" element={<SeekerRegistration />} />
+                <Route path="/seeker-login" element={<SeekerLogin />} />
+                <Route path="/contributor-login" element={<ContributorLogin />} />
+                <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
+                <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
+                <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
+                <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
+                <Route path="/master-data-portal" element={<MasterDataPortal />} />
+                <Route path="/master-data" element={<MasterDataPortal />} />
+                <Route path="/membership-registration" element={<MembershipRegistration />} />
+              </Routes>
+            </Router>
+          </div>
+        </SidebarProvider>
+        <Toaster />
+      </MasterDataHealthProvider>
     </QueryClientProvider>
   );
 }
