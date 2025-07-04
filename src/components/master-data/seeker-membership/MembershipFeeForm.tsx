@@ -37,6 +37,14 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
   const userCurrencies = currencies.filter(c => c.isUserCreated !== false);
   const isEditing = !!editingEntry;
 
+  console.log('📊 MembershipFeeForm received props:', {
+    countries: countries.length,
+    currencies: currencies.length,
+    entityTypes: entityTypes.length,
+    organizationTypes: organizationTypes.length,
+    countriesData: countries
+  });
+
   // Check if currency is auto-populated (same currency for all three periods)
   const isCurrencyAutoSelected = currentEntry.country && 
     currentEntry.quarterlyCurrency && 
@@ -190,13 +198,19 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
-                <SelectContent>
-                  {countries.map((country) => (
-                    <SelectItem key={country.id} value={country.name}>
-                      {country.name} ({country.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+        <SelectContent>
+          {countries.length > 0 ? (
+            countries.map((country) => (
+              <SelectItem key={country.id} value={country.name}>
+                {country.name} ({country.code})
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="no-countries" disabled>
+              No countries available ({countries.length} loaded)
+            </SelectItem>
+          )}
+        </SelectContent>
               </Select>
             </div>
 

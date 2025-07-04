@@ -50,7 +50,7 @@ export const useMembershipFeeData = () => {
       
       console.log('🔍 Safe Load Results:');
       console.log('  - Currencies:', loadedCurrencies.length);
-      console.log('  - Countries:', loadedCountries.length);
+      console.log('  - Countries:', loadedCountries.length, loadedCountries);
       console.log('  - Entity types:', loadedEntityTypes.length);
       console.log('  - Membership fees:', loadedFees.length, loadedFees);
       
