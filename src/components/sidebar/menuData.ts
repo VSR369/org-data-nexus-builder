@@ -131,18 +131,6 @@ export const validationMenuItems = [
     title: 'Solution Seekers Validation',
     icon: CheckCircle,
     description: 'Validate seeker registrations'
-  },
-  {
-    id: 'solution-voting-assessment',
-    title: 'Solution Voting Assessment',
-    icon: CheckCircle,
-    description: 'Configure voting mechanisms'
-  },
-  {
-    id: 'membership-fee-validator',
-    title: 'Membership Fee Validator',
-    icon: DollarSign,
-    description: 'Validate membership fees'
   }
 ];
 
