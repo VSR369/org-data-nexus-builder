@@ -158,5 +158,11 @@ export const administrationMenuItems = [
     title: 'Complete Data Reset',
     icon: Settings,
     description: 'Reset all organization data'
+  },
+  {
+    id: 'localstorage-debug',
+    title: 'localStorage Debug Panel',
+    icon: Database,
+    description: 'Analyze and verify localStorage data'
   }
 ];
