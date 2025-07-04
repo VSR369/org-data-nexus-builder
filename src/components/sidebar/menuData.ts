@@ -152,5 +152,11 @@ export const administrationMenuItems = [
     title: 'Admin Creation',
     icon: Key,
     description: 'Create administrator accounts'
+  },
+  {
+    id: 'complete-data-reset',
+    title: 'Complete Data Reset',
+    icon: Settings,
+    description: 'Reset all organization data'
   }
 ];

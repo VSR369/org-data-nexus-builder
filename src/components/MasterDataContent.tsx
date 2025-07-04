@@ -18,6 +18,7 @@ import PricingConfig from "./master-data/PricingConfig";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import SolutionSeekersValidation from "./master-data/SolutionSeekersValidation";
+import { CompleteDataResetButton } from "./admin/CompleteDataResetButton";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -65,6 +66,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <SolutionSeekersValidation />;
       case 'global-cache-manager':
         return <GlobalCacheManager />;
+      case 'complete-data-reset':
+        return <CompleteDataResetButton />;
       default:
         return <DomainGroupsConfig />;
     }
