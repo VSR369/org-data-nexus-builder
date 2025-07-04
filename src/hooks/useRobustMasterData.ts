@@ -101,23 +101,27 @@ export const useRobustMasterData = (): MasterDataState => {
     console.log('🔄 === INITIALIZING ROBUST MASTER DATA ===');
     
     try {
-      // Emergency fix for currencies issue
-      const { default: fixCurrenciesNow } = await import('@/utils/fixCurrenciesIssue');
-      fixCurrenciesNow();
+      // Use the new unified structure fixer for comprehensive fixes
+      const { MasterDataStructureFixer } = await import('@/utils/masterDataStructureFixer');
+      const fixResult = MasterDataStructureFixer.fixAllMasterDataStructures();
       
-      // First run the initialization service to fix any issues
+      // Also run the initialization service for any additional fixes
       const { MasterDataInitializationService } = await import('@/services/MasterDataInitializationService');
-      const fixResults = await MasterDataInitializationService.initializeAllMasterData();
+      const initResult = await MasterDataInitializationService.initializeAllMasterData();
       
-      if (fixResults.fixed.length > 0) {
-        console.log('🔧 Fixed issues:', fixResults.fixed);
+      // Combine all fix results
+      const allFixed = [...fixResult.results.filter(r => r.wasFixed).map(r => r.key), ...initResult.fixed];
+      const allErrors = [...fixResult.errors, ...initResult.errors];
+      
+      if (allFixed.length > 0) {
+        console.log('🔧 Fixed issues:', allFixed);
       }
       
-      if (fixResults.errors.length > 0) {
-        console.error('❌ Fix errors:', fixResults.errors);
+      if (allErrors.length > 0) {
+        console.error('❌ Fix errors:', allErrors);
       }
 
-      const errors: string[] = [...fixResults.errors];
+      const errors: string[] = [...allErrors];
       
       // Load countries with fallback
       let countries: Country[] = [];

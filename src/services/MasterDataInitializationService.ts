@@ -153,17 +153,25 @@ export class MasterDataInitializationService {
     };
 
     try {
-      // Initialize missing keys
+      // Use the new unified structure fixer
+      const { MasterDataStructureFixer } = await import('@/utils/masterDataStructureFixer');
+      const fixResult = MasterDataStructureFixer.fixAllMasterDataStructures();
+      
+      // Convert the detailed results to our format
+      fixResult.results.forEach(result => {
+        if (result.wasFixed) {
+          results.fixed.push(`${result.key}: ${result.issues.join(', ')}`);
+        }
+      });
+      
+      results.errors.push(...fixResult.errors);
+
+      // Initialize missing keys that might not be covered by the structure fixer
       await this.initializeDepartments(results);
       await this.initializeCompetencyCapabilities(results);
       await this.initializeChallengeStatuses(results);
       await this.initializeCommunicationTypes(results);
       await this.initializeIndustrySegments(results);
-
-      // Fix broken structures
-      await this.fixCurrencies(results);
-      await this.fixSeekerMembershipFees(results);
-      await this.fixRewardTypes(results);
 
       console.log('✅ Master data initialization complete', results);
       return results;

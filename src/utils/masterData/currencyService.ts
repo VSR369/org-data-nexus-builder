@@ -8,45 +8,43 @@ export class CurrencyService {
   static getCurrencies(): Currency[] {
     console.log('🔍 Getting currencies...');
     
-    // First, try to load user data
-    const userData = MasterDataPersistenceManager.loadUserData<Currency[]>(currencyConfig);
-    if (userData && userData.length > 0) {
-      console.log('✅ Using user-created currencies:', userData.length);
-      return userData;
-    }
-
-    // Check if we have any legacy data in old format
-    const legacyData = localStorage.getItem('master_data_currencies');
-    if (legacyData) {
+    // NEW APPROACH: Always use raw localStorage storage
+    const rawData = localStorage.getItem('master_data_currencies');
+    if (rawData) {
       try {
-        const parsed = JSON.parse(legacyData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          console.log('⚠️ Found legacy currency data, migrating to new format');
-          const migratedData = parsed.map((item: any, index: number) => ({
-            ...item,
-            id: item.id || `migrated_${index}`,
-            createdAt: item.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isUserCreated: true // Assume legacy data is user data
-          }));
-          
-          // Save as user data
-          MasterDataPersistenceManager.saveUserData(currencyConfig, migratedData);
-          return migratedData;
+        const parsed = JSON.parse(rawData);
+        
+        // Handle wrapped format (legacy from MasterDataPersistenceManager)
+        if (parsed && typeof parsed === 'object' && parsed.data && Array.isArray(parsed.data)) {
+          console.log('⚠️ Found wrapped currency data, unwrapping...');
+          const unwrapped = parsed.data;
+          // Store in raw format for future use
+          localStorage.setItem('master_data_currencies', JSON.stringify(unwrapped));
+          console.log('✅ Unwrapped and stored currencies in raw format');
+          return unwrapped;
         }
+        
+        // Handle raw array format (preferred)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log('✅ Using raw currency data:', parsed.length);
+          return parsed;
+        }
+        
+        console.log('⚠️ Invalid currency data structure, using fallback');
       } catch (error) {
-        console.error('❌ Failed to migrate legacy currency data:', error);
+        console.error('❌ Failed to parse currency data:', error);
       }
     }
 
-    // Only use emergency fallback if absolutely no data exists
-    console.log('📦 No user data found, using emergency fallback currencies (NOT saved)');
+    // Use emergency fallback and store it
+    console.log('📦 No valid data found, using emergency fallback currencies');
+    localStorage.setItem('master_data_currencies', JSON.stringify(emergencyFallbackCurrencies));
     return emergencyFallbackCurrencies;
   }
   
   static saveCurrencies(currencies: Currency[]): void {
-    console.log('💾 Saving currencies as user data:', currencies.length);
-    MasterDataPersistenceManager.saveUserData(currencyConfig, currencies);
+    console.log('💾 Saving currencies in raw format:', currencies.length);
+    localStorage.setItem('master_data_currencies', JSON.stringify(currencies));
   }
   
   static getCurrencyByCountry(country: string): Currency | null {

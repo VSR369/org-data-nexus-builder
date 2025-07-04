@@ -48,8 +48,35 @@ export const useMembershipFeeData = () => {
       const loadedCountries = countriesDataManager.loadData();
       const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
       
-      // Load membership fees with validation
-      const loadedFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
+      // Load membership fees with validation (handle both formats)
+      let loadedFees: MembershipFeeEntry[] = [];
+      
+      // Try raw format first
+      const rawData = localStorage.getItem('master_data_seeker_membership_fees');
+      if (rawData) {
+        try {
+          const parsed = JSON.parse(rawData);
+          
+          // Handle wrapped format
+          if (parsed && typeof parsed === 'object' && parsed.data && Array.isArray(parsed.data)) {
+            console.log('⚠️ Found wrapped membership fee data, unwrapping...');
+            loadedFees = parsed.data;
+            // Store in raw format for future use
+            localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(loadedFees));
+            console.log('✅ Unwrapped and stored membership fees in raw format');
+          } else if (Array.isArray(parsed)) {
+            // Already in raw format
+            loadedFees = parsed;
+          }
+        } catch (error) {
+          console.error('❌ Failed to parse membership fee data:', error);
+        }
+      }
+      
+      // Fallback to persistence manager if raw format failed
+      if (loadedFees.length === 0) {
+        loadedFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
+      }
       
       console.log('🔍 Safe Load Results:');
       console.log('  - Currencies:', loadedCurrencies.length);
@@ -169,9 +196,13 @@ export const useMembershipFeeData = () => {
     console.log(`💾 Saving ${membershipFees.length} membership fees. Initialized: ${isInitialized}`);
     
     try {
+      // Save in raw format (new approach)
+      localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(membershipFees));
+      console.log("✅ Successfully saved membership fees in raw format");
+      
+      // Also save via persistence manager for backward compatibility (during transition)
       MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
       setDataHealth(checkDataHealth());
-      console.log("✅ Successfully saved membership fees to storage");
     } catch (error) {
       console.error('❌ Error saving membership fees:', error);
     }
