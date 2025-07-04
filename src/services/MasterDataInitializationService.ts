@@ -272,6 +272,7 @@ export class MasterDataInitializationService {
         
         // Check if it's in the wrong format (wrapped in data manager structure)
         if (parsed && typeof parsed === 'object' && (parsed.data || parsed.version || !Array.isArray(parsed))) {
+          console.log('🔧 Fixing currencies data structure - detected wrapped format');
           // Fix the structure - store raw array instead of wrapped data
           localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
           results.fixed.push('Currencies: Fixed data structure (unwrapped from data manager format)');
@@ -284,6 +285,7 @@ export class MasterDataInitializationService {
           );
           
           if (!validCurrencies) {
+            console.log('🔧 Fixing currencies data structure - invalid objects');
             localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
             results.fixed.push('Currencies: Fixed invalid currency objects');
             console.log('✅ Currencies validation fixed');
@@ -295,8 +297,26 @@ export class MasterDataInitializationService {
         results.fixed.push('Currencies: Created missing key with fallback data');
         console.log('✅ Currencies created');
       }
+      
+      // Additional verification - force fix if still not correct
+      const verification = localStorage.getItem('master_data_currencies');
+      if (verification) {
+        const verifyParsed = JSON.parse(verification);
+        if (!Array.isArray(verifyParsed) || verifyParsed.length === 0) {
+          console.log('🔧 Force-fixing currencies - verification failed');
+          localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
+          results.fixed.push('Currencies: Force-fixed after verification failure');
+        }
+      }
     } catch (error) {
-      results.errors.push(`Currencies fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error fixing currencies:', error);
+      // Emergency fallback
+      try {
+        localStorage.setItem('master_data_currencies', JSON.stringify(FALLBACK_CURRENCIES));
+        results.fixed.push('Currencies: Emergency fallback applied');
+      } catch (fallbackError) {
+        results.errors.push(`Currencies fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
