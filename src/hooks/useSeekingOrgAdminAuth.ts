@@ -18,18 +18,26 @@ export const useSeekingOrgAdminAuth = () => {
 
   // Clear any cached session data on hook initialization
   useEffect(() => {
+    console.log('📊 SESSION - Calling localStorage.getItem("seeking_org_admin_session")');
     const session = localStorage.getItem('seeking_org_admin_session');
+    console.log('📊 SESSION - Raw session data from localStorage:', session);
+    
     if (session) {
       try {
         const organizationData = JSON.parse(session);
+        console.log('📊 SESSION - Parsed session data:', JSON.stringify(organizationData, null, 2));
         setCurrentOrganization(organizationData);
         setIsAuthenticated(true);
+        console.log('✅ SESSION - Session restored successfully');
       } catch (error) {
+        console.error('❌ SESSION - Error parsing session data:', error);
         // Clear corrupted session data
         localStorage.removeItem('seeking_org_admin_session');
         setCurrentOrganization(null);
         setIsAuthenticated(false);
       }
+    } else {
+      console.log('📊 SESSION - No session data found in localStorage');
     }
   }, []);
 
@@ -62,10 +70,17 @@ export const useSeekingOrgAdminAuth = () => {
         setIsAuthenticated(true);
         
         // Store organization session
-        localStorage.setItem('seeking_org_admin_session', JSON.stringify({
+        const sessionDataToStore = {
           ...organizationData,
           loginTime: new Date().toISOString()
-        }));
+        };
+        console.log('📊 LOGIN - Saving session data to localStorage with key "seeking_org_admin_session"');
+        console.log('📊 LOGIN - Session data being saved:', JSON.stringify(sessionDataToStore, null, 2));
+        localStorage.setItem('seeking_org_admin_session', JSON.stringify(sessionDataToStore));
+        
+        // Verify the save
+        const verification = localStorage.getItem('seeking_org_admin_session');
+        console.log('📊 LOGIN - Session verification read:', verification);
         
         toast.success('Successfully signed in to your organization account!');
         navigate('/seeking-org-admin-dashboard');
@@ -103,19 +118,27 @@ export const useSeekingOrgAdminAuth = () => {
   };
 
   const checkAuthStatus = () => {
+    console.log('📊 AUTH CHECK - Calling localStorage.getItem("seeking_org_admin_session")');
     const session = localStorage.getItem('seeking_org_admin_session');
+    console.log('📊 AUTH CHECK - Session data retrieved:', session);
+    
     if (session) {
       try {
         const organizationData = JSON.parse(session);
+        console.log('📊 AUTH CHECK - Parsed organization data:', JSON.stringify(organizationData, null, 2));
         setCurrentOrganization(organizationData);
         setIsAuthenticated(true);
+        console.log('✅ AUTH CHECK - Authentication status set to true');
         return true;
       } catch (error) {
+        console.error('❌ AUTH CHECK - Error parsing session data:', error);
         // Clear corrupted data
         localStorage.removeItem('seeking_org_admin_session');
         setCurrentOrganization(null);
         setIsAuthenticated(false);
       }
+    } else {
+      console.log('📊 AUTH CHECK - No session found, user not authenticated');
     }
     return false;
   };
