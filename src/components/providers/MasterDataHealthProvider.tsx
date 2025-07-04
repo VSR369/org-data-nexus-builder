@@ -41,21 +41,35 @@ export const MasterDataHealthProvider: React.FC<MasterDataHealthProviderProps> =
     setIsChecking(true);
 
     try {
+      // First run the initialization service to fix any issues
+      const { MasterDataInitializationService } = await import('@/services/MasterDataInitializationService');
+      const fixResults = await MasterDataInitializationService.initializeAllMasterData();
+      
+      // Then run the standard health check
       const result = await masterDataHealthService.runHealthCheck();
-      setLastCheckResult(result);
-      setIsHealthy(result.isHealthy);
+      
+      // Combine results
+      const combinedResult = {
+        ...result,
+        fixedIssues: [...result.fixedIssues, ...fixResults.fixed],
+        errors: [...result.errors, ...fixResults.errors]
+      };
+      
+      setLastCheckResult(combinedResult);
+      setIsHealthy(combinedResult.isHealthy && fixResults.errors.length === 0);
 
       // Show notifications if enabled
       if (showToastNotifications) {
-        if (result.fixedIssues.length > 0) {
+        const totalFixed = combinedResult.fixedIssues.length;
+        if (totalFixed > 0) {
           toast.success('Master Data Auto-Fixed', {
-            description: `Fixed ${result.fixedIssues.length} issue(s): ${result.fixedIssues.slice(0, 2).join(', ')}${result.fixedIssues.length > 2 ? '...' : ''}`
+            description: `Fixed ${totalFixed} issue(s): ${combinedResult.fixedIssues.slice(0, 2).join(', ')}${totalFixed > 2 ? '...' : ''}`
           });
-        } else if (result.isHealthy) {
+        } else if (combinedResult.isHealthy) {
           console.log('✅ Master data is healthy');
-        } else if (result.errors.length > 0) {
+        } else if (combinedResult.errors.length > 0) {
           toast.error('Master Data Issues', {
-            description: `${result.errors.length} issue(s) detected. Check console for details.`
+            description: `${combinedResult.errors.length} issue(s) detected. Check console for details.`
           });
         }
       }

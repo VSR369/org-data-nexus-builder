@@ -97,11 +97,23 @@ export const useRobustMasterData = (): MasterDataState => {
     errors: []
   });
 
-  const initializeMasterData = () => {
+  const initializeMasterData = async () => {
     console.log('🔄 === INITIALIZING ROBUST MASTER DATA ===');
     
     try {
-      const errors: string[] = [];
+      // First run the initialization service to fix any issues
+      const { MasterDataInitializationService } = await import('@/services/MasterDataInitializationService');
+      const fixResults = await MasterDataInitializationService.initializeAllMasterData();
+      
+      if (fixResults.fixed.length > 0) {
+        console.log('🔧 Fixed issues:', fixResults.fixed);
+      }
+      
+      if (fixResults.errors.length > 0) {
+        console.error('❌ Fix errors:', fixResults.errors);
+      }
+
+      const errors: string[] = [...fixResults.errors];
       
       // Load countries with fallback
       let countries: Country[] = [];
@@ -117,7 +129,6 @@ export const useRobustMasterData = (): MasterDataState => {
         console.error('❌ Error loading countries:', error);
         countries = FALLBACK_COUNTRIES;
         errors.push('Countries data was corrupted, using fallback');
-        // Try to fix the corrupted data
         try {
           countriesDataManager.saveData(FALLBACK_COUNTRIES);
         } catch (saveError) {
@@ -154,7 +165,6 @@ export const useRobustMasterData = (): MasterDataState => {
         if (industrySegments.length === 0) {
           console.log('⚠️ No industry segments found, using fallback data');
           industrySegments = FALLBACK_INDUSTRY_SEGMENTS;
-          // Save fallback data in the expected format
           industrySegmentDataManager.saveData({ industrySegments: FALLBACK_INDUSTRY_SEGMENTS });
         }
         console.log('🏭 Industry segments loaded:', industrySegments.length);
@@ -221,10 +231,10 @@ export const useRobustMasterData = (): MasterDataState => {
     }
   };
 
-  const refreshMasterData = () => {
+  const refreshMasterData = async () => {
     console.log('🔄 Refreshing master data...');
     setState(prev => ({ ...prev, isLoading: true }));
-    initializeMasterData();
+    await initializeMasterData();
   };
 
   useEffect(() => {
