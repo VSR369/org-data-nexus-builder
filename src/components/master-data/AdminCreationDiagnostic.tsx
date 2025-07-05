@@ -306,30 +306,44 @@ const AdminCreationDiagnostic: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Admin Troubleshooting */}
+      {/* Recovery Solution */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5" />
-            Edit Administrator Troubleshooting
+            Data Recovery & Troubleshooting
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <h4 className="font-medium text-green-800 mb-2">✅ Unified Storage Solution:</h4>
-            <ul className="space-y-1 text-sm text-green-700">
-              <li>• Single administrator storage for all operations</li>
-              <li>• Consistent data format across all components</li>
-              <li>• Direct form field mapping from storage</li>
-              <li>• Eliminated dual storage complexity</li>
+          {issues.length > 0 && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="font-medium text-red-800 mb-2">🚨 Critical Issues Detected:</h4>
+              <p className="text-sm text-red-700 mb-3">
+                Administrator data is corrupted or incomplete. This is why the Edit Administrator dialog shows blank fields.
+              </p>
+              <div className="text-sm text-red-700 space-y-1">
+                <p><strong>Root Cause:</strong> Password encryption process corrupted the data structure</p>
+                <p><strong>Impact:</strong> Edit forms show blank fields because essential data is missing</p>
+                <p><strong>Solution:</strong> Use the Data Recovery Tool to reconstruct complete administrator records</p>
+              </div>
+            </div>
+          )}
+          
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2">🔧 Recovery Options:</h4>
+            <ul className="space-y-1 text-sm text-blue-700">
+              <li>• <strong>Automatic Recovery:</strong> Reconstruct missing data from seeker records</li>
+              <li>• <strong>Legacy Migration:</strong> Recover data from backup storage locations</li>
+              <li>• <strong>Data Validation:</strong> Verify and fix corrupted administrator records</li>
+              <li>• <strong>Prevention:</strong> Implement data integrity checks for future operations</li>
             </ul>
           </div>
           
           {storageHealth?.legacyExists && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-2">Migration Required:</h4>
-              <p className="text-sm text-blue-700 mb-3">
-                Legacy administrator data detected. Migrate to unified storage for full functionality.
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-medium text-amber-800 mb-2">Legacy Data Found:</h4>
+              <p className="text-sm text-amber-700 mb-3">
+                Legacy administrator data detected. This can be used for recovery.
               </p>
               <Button onClick={handleMigration} variant="outline" size="sm">
                 Migrate Legacy Data

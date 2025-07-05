@@ -160,6 +160,12 @@ export const administrationMenuItems = [
     description: 'Create administrator accounts'
   },
   {
+    id: 'admin-recovery',
+    title: 'Admin Data Recovery',
+    icon: Shield,
+    description: 'Recover corrupted administrator data'
+  },
+  {
     id: 'complete-data-reset',
     title: 'Complete Data Reset',
     icon: Settings,
