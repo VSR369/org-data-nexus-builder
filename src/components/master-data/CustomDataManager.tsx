@@ -66,18 +66,91 @@ const CustomDataManager: React.FC = () => {
   const handleDebugDataStatus = () => {
     console.log('🔍 === COMPREHENSIVE DATA STATUS DEBUG ===');
     
-    // Check each service individually
+    // 1. Scan ALL localStorage for any data that looks custom
+    const allKeys = Object.keys(localStorage);
+    const masterDataKeys = allKeys.filter(key => 
+      key.startsWith('master_data_') || 
+      key.startsWith('custom_') || 
+      key.includes('currencies') ||
+      key.includes('countries') ||
+      key.includes('industry') ||
+      key.includes('organization') ||
+      key.includes('entity') ||
+      key.includes('department') ||
+      key.includes('domain') ||
+      key.includes('challenge') ||
+      key.includes('solution') ||
+      key.includes('competency') ||
+      key.includes('communication') ||
+      key.includes('reward') ||
+      key.includes('membership') ||
+      key.includes('engagement') ||
+      key.includes('pricing') ||
+      key.includes('events')
+    );
+    
+    console.log('🔍 ALL localStorage keys related to master data:', masterDataKeys);
+    
+    // 2. Analyze each key for custom data
+    const customDataAnalysis: Record<string, any> = {};
+    masterDataKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          const isCustom = analyzeIfCustomData(parsed, key);
+          customDataAnalysis[key] = {
+            isCustom,
+            dataType: Array.isArray(parsed) ? 'array' : typeof parsed,
+            itemCount: Array.isArray(parsed) ? parsed.length : (typeof parsed === 'object' ? Object.keys(parsed).length : 1),
+            hasCustomIndicators: JSON.stringify(parsed).includes('custom') || JSON.stringify(parsed).includes('user'),
+            sample: Array.isArray(parsed) ? parsed[0] : (typeof parsed === 'object' ? Object.keys(parsed)[0] : parsed)
+          };
+        } catch (error) {
+          customDataAnalysis[key] = { error: 'Failed to parse JSON' };
+        }
+      }
+    });
+    
+    console.log('📊 Custom Data Analysis:', customDataAnalysis);
+    
+    // 3. Check each service individually
     const serviceStatus = {
       currencies: checkServiceStatus('currencies', 'CurrencyService'),
       industrySegments: checkServiceStatus('industrySegments', 'IndustrySegmentService'), 
       countries: checkServiceStatus('countries', 'CountriesDataManager'),
       organizationTypes: checkServiceStatus('organizationTypes', 'OrganizationTypeService'),
-      entityTypes: checkServiceStatus('entityTypes', 'EntityTypeService')
+      entityTypes: checkServiceStatus('entityTypes', 'EntityTypeService'),
+      departments: checkServiceStatus('departments', 'DepartmentsService'),
+      domainGroups: checkServiceStatus('domainGroups', 'DomainGroupsService'),
+      challengeStatuses: checkServiceStatus('challengeStatuses', 'ChallengeStatusService'),
+      solutionStatuses: checkServiceStatus('solutionStatuses', 'SolutionStatusService'),
+      competencyCapabilities: checkServiceStatus('competencyCapabilities', 'CompetencyService'),
+      communicationTypes: checkServiceStatus('communicationTypes', 'CommunicationTypeService'),
+      rewardTypes: checkServiceStatus('rewardTypes', 'RewardTypeService'),
+      seekerMembershipFees: checkServiceStatus('seekerMembershipFees', 'MembershipFeeService'),
+      engagementModels: checkServiceStatus('engagementModels', 'EngagementModelsService'),
+      pricing: checkServiceStatus('pricing', 'PricingService'),  
+      events: checkServiceStatus('events', 'EventsService')
     };
     
     console.log('📊 Service Status Report:', serviceStatus);
     
-    // Check extraction report details
+    // 4. Identify issues
+    const issues: string[] = [];
+    Object.entries(serviceStatus).forEach(([key, status]) => {
+      if (customDataAnalysis[`master_data_${key}`]?.isCustom && status.status === 'DEFAULT/MOCK') {
+        issues.push(`${key} has custom data but service is using default/mock`);
+      }
+    });
+    
+    if (issues.length > 0) {
+      console.error('🚨 ISSUES FOUND:', issues);
+    } else {
+      console.log('✅ No issues found - all services using appropriate data sources');
+    }
+    
+    // 5. Check extraction report details
     const extractionReport = CustomDataExtractor.getExtractionReport();
     if (extractionReport) {
       console.log('📋 Extraction Report:', {
@@ -86,18 +159,44 @@ const CustomDataManager: React.FC = () => {
         removedDefaultKeys: extractionReport.removedDefaultKeys,
         preservedCustomKeys: extractionReport.preservedCustomKeys
       });
-      
-      console.log('🔍 "Removed Default Keys" Analysis:');
-      console.log('These keys were identified as default/mock data and removed:', extractionReport.removedDefaultKeys);
-      console.log('These keys contain your custom configurations:', extractionReport.preservedCustomKeys);
     }
     
     CustomDataExtractor.debugDataStatus();
     
     toast({
-      title: "Debug Analysis Complete ✅",
-      description: `Analyzed ${Object.keys(serviceStatus).length} services. Check console for detailed status report including "removed default keys" explanation.`,
+      title: "Comprehensive Debug Complete ✅",
+      description: `Analyzed ${masterDataKeys.length} storage keys and ${Object.keys(serviceStatus).length} services. ${issues.length > 0 ? `Found ${issues.length} issues.` : 'No issues found.'} Check console for details.`,
     });
+  };
+
+  // Helper function to analyze if data is custom
+  const analyzeIfCustomData = (data: any, key: string): boolean => {
+    if (!data) return false;
+    
+    // Check for custom indicators
+    const dataString = JSON.stringify(data);
+    const hasCustomMarkers = dataString.includes('custom') || 
+                            dataString.includes('user') || 
+                            dataString.includes('modified') ||
+                            dataString.includes('created');
+    
+    // Check data size vs expected defaults
+    const category = key.replace('master_data_', '').replace('custom_', '');
+    const defaultSizes: Record<string, number> = {
+      'countries': 3,
+      'currencies': 2,  
+      'industry_segments': 3,
+      'organization_types': 5,
+      'entity_types': 2,
+      'departments': 6
+    };
+    
+    const expectedSize = defaultSizes[category] || 0;
+    const actualSize = Array.isArray(data) ? data.length : 
+                      (data.industrySegments ? data.industrySegments.length : 
+                       (typeof data === 'object' ? Object.keys(data).length : 1));
+    
+    return hasCustomMarkers || actualSize > expectedSize;
   };
 
   const handleExtractCustomData = async () => {
@@ -166,6 +265,95 @@ const CustomDataManager: React.FC = () => {
     setTimeout(() => {
       window.location.reload();
     }, 1500);
+  };
+
+  const handleAutoFixDataIssues = async () => {
+    setIsLoading(true);
+    console.log('🔧 Auto-fixing custom data loading issues...');
+    
+    try {
+      // 1. Identify all custom data in localStorage
+      const customData: Record<string, any> = {};
+      const allKeys = Object.keys(localStorage);
+      
+      const masterDataCategories = [
+        'countries', 'currencies', 'industry_segments', 'organization_types', 
+        'entity_types', 'departments', 'domain_groups', 'challenge_statuses',
+        'solution_statuses', 'competency_capabilities', 'communication_types',
+        'reward_types', 'seeker_membership_fees', 'engagement_models', 
+        'pricing', 'events'
+      ];
+      
+      // 2. Find and preserve custom data
+      let customDataFound = 0;
+      masterDataCategories.forEach(category => {
+        const possibleKeys = [
+          `master_data_${category}`,
+          `custom_${category}`,
+          category,
+          category.replace('_', '')
+        ];
+        
+        for (const key of possibleKeys) {
+          const data = localStorage.getItem(key);
+          if (data) {
+            try {
+              const parsed = JSON.parse(data);
+              if (analyzeIfCustomData(parsed, key)) {
+                console.log(`✅ Found custom data for ${category} in key: ${key}`);
+                customData[category] = parsed;
+                customDataFound++;
+                
+                // Store in custom format
+                localStorage.setItem(`custom_${category}`, JSON.stringify(parsed));
+                break;
+              }
+            } catch (error) {
+              console.warn(`⚠️ Error parsing ${key}:`, error);
+            }
+          }
+        }
+      });
+      
+      // 3. Set custom-only mode
+      localStorage.setItem('master_data_mode', 'custom_only');
+      localStorage.setItem('custom_data_fix_timestamp', new Date().toISOString());
+      
+      // 4. Create fix report  
+      const fixReport: CustomDataReport = {
+        totalCustomConfigurations: customDataFound,
+        customDataCategories: Object.keys(customData),
+        extractedData: customData,
+        removedDefaultKeys: [], // Auto-fix doesn't remove keys, just preserves custom data
+        preservedCustomKeys: Object.keys(customData).map(cat => `custom_${cat}`)
+      };
+      
+      localStorage.setItem('custom_data_report', JSON.stringify(fixReport));
+      setReport(fixReport);
+      setIsCustomMode(true);
+      
+      console.log('✅ Auto-fix completed:', fixReport);
+      
+      toast({
+        title: "Custom Data Issues Fixed! ✅",
+        description: `Found and fixed ${customDataFound} custom data categories. System now in custom-only mode. Refreshing...`,
+      });
+      
+      // 5. Force refresh to reload all services
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('❌ Error auto-fixing custom data:', error);
+      toast({
+        title: "Auto-Fix Failed",
+        description: "Failed to auto-fix custom data issues. Please check console for details.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResetToMixed = () => {
@@ -312,7 +500,16 @@ const CustomDataManager: React.FC = () => {
               className="flex items-center gap-2"
             >
               <Settings className="h-4 w-4" />
-              Debug Status & Analysis
+              Debug & Fix All Data Issues
+            </Button>
+            
+            <Button 
+              onClick={handleAutoFixDataIssues}
+              variant="default"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Auto-Fix Custom Data Loading
             </Button>
             
             {isCustomMode && (
