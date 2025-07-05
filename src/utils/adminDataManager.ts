@@ -274,7 +274,6 @@ export class AdminDataManager {
     
     const health = {
       storage: { exists: false, count: 0, valid: true, error: null as string | null },
-      legacyExists: false,
       totalCount: 0
     };
 
@@ -291,14 +290,6 @@ export class AdminDataManager {
     } catch (error) {
       health.storage.error = `Parse error: ${error}`;
       health.storage.valid = false;
-    }
-
-    // Check if legacy storage exists (for migration purposes)
-    try {
-      const legacyData = localStorage.getItem('created_administrators');
-      health.legacyExists = !!legacyData;
-    } catch (error) {
-      console.warn('Error checking legacy storage:', error);
     }
 
     console.log('🏥 Storage health check complete:', health);

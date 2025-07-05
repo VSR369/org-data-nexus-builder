@@ -19,7 +19,6 @@ import { AdminDataManager } from '@/utils/adminDataManager';
 
 interface StorageHealth {
   storage: { exists: boolean; count: number; valid: boolean; error: string | null };
-  legacyExists: boolean;
   totalCount: number;
 }
 
@@ -92,10 +91,6 @@ const AdminCreationDiagnostic: React.FC = () => {
     // Analyze data quality issues
     if (health.storage.exists && !health.storage.valid) {
       foundIssues.push('Administrator storage contains invalid data format');
-    }
-
-    if (health.legacyExists) {
-      foundIssues.push('Legacy administrator storage detected - migration recommended');
     }
 
     // Check for missing required fields in administrators
@@ -257,16 +252,6 @@ const AdminCreationDiagnostic: React.FC = () => {
             <>
               {renderStorageStatus()}
               
-              {storageHealth.legacyExists && (
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    <span className="font-medium">Legacy Storage Detected</span>
-                  </div>
-                  <Badge variant="destructive">Migration needed</Badge>
-                </div>
-              )}
-              
               <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -333,23 +318,10 @@ const AdminCreationDiagnostic: React.FC = () => {
             <h4 className="font-medium text-blue-800 mb-2">🔧 Recovery Options:</h4>
             <ul className="space-y-1 text-sm text-blue-700">
               <li>• <strong>Automatic Recovery:</strong> Reconstruct missing data from seeker records</li>
-              <li>• <strong>Legacy Migration:</strong> Recover data from backup storage locations</li>
               <li>• <strong>Data Validation:</strong> Verify and fix corrupted administrator records</li>
               <li>• <strong>Prevention:</strong> Implement data integrity checks for future operations</li>
             </ul>
           </div>
-          
-          {storageHealth?.legacyExists && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <h4 className="font-medium text-amber-800 mb-2">Legacy Data Found:</h4>
-              <p className="text-sm text-amber-700 mb-3">
-                Legacy administrator data detected. This can be used for recovery.
-              </p>
-              <Button onClick={handleMigration} variant="outline" size="sm">
-                Migrate Legacy Data
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 

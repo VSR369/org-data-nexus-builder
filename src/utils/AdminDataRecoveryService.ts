@@ -21,12 +21,6 @@ interface IncompleteAdmin {
 
 export class AdminDataRecoveryService {
   private static readonly STORAGE_KEY = 'administrators';
-  private static readonly LEGACY_KEYS = [
-    'created_administrators',
-    'seeker_admin_links',
-    'admin_storage',
-    'administrator_records'
-  ];
 
   /**
    * Main recovery function - orchestrates the complete recovery process
@@ -92,33 +86,28 @@ export class AdminDataRecoveryService {
         }
       }
 
-      // Step 5: Recover from legacy storage
-      const legacyRecovered = await this.recoverFromLegacySources(allSeekers);
-      recoveredCount = legacyRecovered.length;
-      
-      // Step 6: Merge all valid administrator records
+      // Step 5: Merge all valid administrator records
       const validCurrentAdmins = currentAdmins.filter(admin => 
         this.isCompleteAdminRecord(admin)
       );
 
       const finalAdmins = [
         ...validCurrentAdmins,
-        ...reconstructedAdmins,
-        ...legacyRecovered
+        ...reconstructedAdmins
       ];
 
-      // Step 7: Remove duplicates
+      // Step 6: Remove duplicates
       const deduplicatedAdmins = this.removeDuplicates(finalAdmins);
       console.log('📊 Final administrators after deduplication:', deduplicatedAdmins.length);
 
-      // Step 8: Save recovered data
+      // Step 7: Save recovered data
       const saveResult = await this.saveRecoveredData(deduplicatedAdmins);
       
       if (!saveResult) {
         throw new Error('Failed to save recovered administrator data');
       }
 
-      // Step 9: Verify the recovery
+      // Step 8: Verify the recovery
       const verification = this.getCurrentAdmins();
       const completeCount = verification.filter(admin => this.isCompleteAdminRecord(admin)).length;
       
@@ -129,7 +118,7 @@ export class AdminDataRecoveryService {
         recoveredCount,
         repairedCount,
         errors,
-        summary: `Recovery completed successfully. ${completeCount} complete administrator records available. ${repairedCount} records repaired, ${recoveredCount} recovered from legacy storage.`
+        summary: `Recovery completed successfully. ${completeCount} complete administrator records available. ${repairedCount} records repaired.`
       };
 
     } catch (error) {
@@ -272,78 +261,6 @@ export class AdminDataRecoveryService {
     }
   }
 
-  /**
-   * Recover administrators from legacy storage sources
-   */
-  private static async recoverFromLegacySources(seekers: any[]): Promise<UnifiedAdminData[]> {
-    const recovered: UnifiedAdminData[] = [];
-
-    for (const legacyKey of this.LEGACY_KEYS) {
-      try {
-        const legacyData = localStorage.getItem(legacyKey);
-        if (!legacyData) continue;
-
-        const parsed = JSON.parse(legacyData);
-        console.log(`🔍 Checking legacy storage: ${legacyKey}`, parsed.length || 'N/A', 'records');
-
-        if (Array.isArray(parsed)) {
-          for (const record of parsed) {
-            const converted = await this.convertLegacyRecord(record, seekers);
-            if (converted) {
-              recovered.push(converted);
-              console.log('✅ Recovered from', legacyKey, ':', converted.name);
-            }
-          }
-        }
-      } catch (error) {
-        console.error(`❌ Error processing legacy storage ${legacyKey}:`, error);
-      }
-    }
-
-    return recovered;
-  }
-
-  /**
-   * Convert legacy record to unified format
-   */
-  private static async convertLegacyRecord(record: any, seekers: any[]): Promise<UnifiedAdminData | null> {
-    try {
-      // Skip if this record doesn't look like an admin
-      if (!record.id || (!record.adminName && !record.name)) {
-        return null;
-      }
-
-      // Find associated seeker if sourceSeekerId is available
-      let seeker = null;
-      if (record.sourceSeekerId) {
-        seeker = seekers.find(s => s.id === record.sourceSeekerId);
-      }
-
-      const converted: UnifiedAdminData = {
-        id: record.id,
-        name: record.name || record.adminName || 'Legacy Admin',
-        email: record.email || record.adminEmail || 'legacy@admin.com',
-        contactNumber: record.contactNumber || '',
-        userId: record.userId || record.adminId || `legacy_${record.id}`,
-        password: record.password || 'NEEDS_RESET',
-        organizationId: record.organizationId || (seeker ? `org_${seeker.id}` : `org_${record.id}`),
-        organizationName: record.organizationName || seeker?.organizationName || 'Legacy Organization',
-        sourceSeekerId: record.sourceSeekerId || '',
-        createdAt: record.createdAt || record.adminCreatedAt || new Date().toISOString(),
-        isActive: true,
-        role: record.role || 'administrator',
-        adminCreatedBy: record.adminCreatedBy || 'legacy_migration',
-        lastUpdated: new Date().toISOString(),
-        updatedBy: 'recovery_service'
-      };
-
-      return converted;
-
-    } catch (error) {
-      console.error('❌ Error converting legacy record:', error);
-      return null;
-    }
-  }
 
   /**
    * Remove duplicate administrator records
