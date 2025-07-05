@@ -11,16 +11,10 @@ import Index from './pages/Index';
 import SignIn from './pages/SignIn';
 import GeneralSignIn from './pages/GeneralSignIn';
 import SignUp from './pages/SignUp';
-import SeekerRegistration from './pages/SeekerRegistration';
-import SeekerLogin from './pages/SeekerLogin';
 import ContributorLogin from './pages/ContributorLogin';
-import SeekingOrgAdminLogin from './pages/SeekingOrgAdminLogin';
 import SeekingOrgAdministratorLogin from './pages/SeekingOrgAdministratorLogin';
 import ContributorEnrollment from './pages/ContributorEnrollment';
-import SeekerDashboard from './pages/SeekerDashboard';
 import MasterDataPortal from './pages/MasterDataPortal';
-import MembershipRegistration from './pages/MembershipRegistration';
-import SeekingOrgAdminDashboard from './pages/SeekingOrgAdminDashboard';
 import AdminRegistration from './pages/AdminRegistration';
 import TestPage from './pages/TestPage';
 
@@ -40,22 +34,12 @@ function App() {
                 <Route path="/general-signin" element={<GeneralSignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/test" element={<TestPage />} />
-                <Route path="/seeker-registration" element={<SeekerRegistration />} />
-                <Route path="/seeker-login" element={<SeekerLogin />} />
                 <Route path="/contributor-login" element={<ContributorLogin />} />
-                
-                {/* Unified Solution Seeking Organization Routes */}
-                <Route path="/solution-seeking-org/login" element={<SeekingOrgAdminLogin />} />
-                <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
-                
                 <Route path="/seeking-org-administrator-login" element={<SeekingOrgAdministratorLogin />} />
                 <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
-                <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
-                <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
                 <Route path="/admin-registration" element={<AdminRegistration />} />
                 <Route path="/master-data-portal" element={<MasterDataPortal />} />
                 <Route path="/master-data" element={<MasterDataPortal />} />
-                <Route path="/membership-registration" element={<MembershipRegistration />} />
               </Routes>
             </Router>
           </div>

@@ -17,9 +17,7 @@ import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
 import PricingConfig from "./master-data/PricingConfig";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
-import SolutionSeekersValidation from "./master-data/SolutionSeekersValidation";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
-import AdminRecoveryTool from "./master-data/AdminRecoveryTool";
 import { CompleteDataResetButton } from "./admin/CompleteDataResetButton";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
 import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
@@ -66,12 +64,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <PricingConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
-      case 'solution-seekers-validation':
-        return <SolutionSeekersValidation />;
       case 'global-cache-manager':
         return <GlobalCacheManager />;
-      case 'complete-data-reset':
-        return <CompleteDataResetButton />;
       case 'localstorage-debug':
         return <LocalStorageDebugPanel />;
       case 'master-data-diagnostics':
