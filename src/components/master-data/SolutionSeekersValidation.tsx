@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye, UserPlus, UserCheck, UserX, RotateCcw, Activity } from 'lucide-react';
+import { Users, Building2, AlertCircle, CheckCircle, RefreshCw, Download, Eye, UserPlus, UserCheck, UserX, RotateCcw, Activity, Database } from 'lucide-react';
 import { unifiedUserStorageService } from '@/services/UnifiedUserStorageService';
 import { useToast } from "@/hooks/use-toast";
 import type { UserRecord } from '@/services/types';
 import AdminCreationDialog from './AdminCreationDialog';
 import RejectionDialog from './RejectionDialog';
+import { approvalStatusService, type ApprovalRecord, type AdminRecord } from '@/services/ApprovalStatusService';
 
 interface SeekerDetails extends UserRecord {
   approvalStatus: 'pending' | 'approved' | 'rejected';
@@ -29,14 +30,13 @@ const SolutionSeekersValidation: React.FC = () => {
   const [existingAdmin, setExistingAdmin] = useState<any>(null);
   const { toast } = useToast();
 
-  // Helper function to load approval statuses from localStorage
+  // Helper function to load approval statuses using the robust service
   const loadApprovalStatuses = (seekers: SeekerDetails[]): SeekerDetails[] => {
+    console.log('📋 Loading approval statuses for', seekers.length, 'seekers');
+    
     try {
-      const approvals = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
-      console.log('📋 Loading approval statuses:', approvals);
-      
       return seekers.map(seeker => {
-        const approval = approvals.find((a: any) => a.seekerId === seeker.id);
+        const approval = approvalStatusService.getApprovalStatus(seeker.id);
         const updatedStatus = approval ? approval.status : 'pending';
         console.log(`🔍 Seeker ${seeker.organizationName}: ${seeker.approvalStatus} -> ${updatedStatus}`);
         
@@ -46,20 +46,21 @@ const SolutionSeekersValidation: React.FC = () => {
         };
       });
     } catch (error) {
-      console.error('Error loading approval statuses:', error);
+      console.error('❌ Error loading approval statuses:', error);
       return seekers;
     }
   };
 
-  // Helper function to load administrator statuses
+  // Helper function to load administrator statuses using the robust service
   const loadAdministratorStatuses = (seekers: SeekerDetails[]): SeekerDetails[] => {
+    console.log('👥 Loading administrator statuses for', seekers.length, 'seekers');
+    
     try {
-      const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
-      console.log('👥 Loading administrator statuses:', existingAdmins);
-      
       return seekers.map(seeker => {
-        const hasAdmin = existingAdmins.some((admin: any) => admin.sourceSeekerId === seeker.id);
-        const adminRecord = existingAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
+        const adminRecord = approvalStatusService.getAdministrator(seeker.id);
+        const hasAdmin = !!adminRecord;
+        
+        console.log(`🔍 Administrator for ${seeker.organizationName}: ${hasAdmin ? 'exists' : 'not found'}`);
         
         return {
           ...seeker,
@@ -68,7 +69,7 @@ const SolutionSeekersValidation: React.FC = () => {
         };
       });
     } catch (error) {
-      console.error('Error loading administrator statuses:', error);
+      console.error('❌ Error loading administrator statuses:', error);
       return seekers;
     }
   };
@@ -142,10 +143,10 @@ const SolutionSeekersValidation: React.FC = () => {
   }, []);
 
   const handleApproval = async (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => {
+    console.log('🔄 Processing approval/rejection:', { seekerId, status, reason, documentsCount: documents?.length || 0 });
+    
     try {
-      console.log('🔄 Updating seeker approval status:', { seekerId, status, reason });
-      
-      // Update local state immediately
+      // Update local state immediately for responsive UI
       const updatedSeekers = seekers.map(seeker => 
         seeker.id === seekerId 
           ? { ...seeker, approvalStatus: status }
@@ -153,63 +154,61 @@ const SolutionSeekersValidation: React.FC = () => {
       );
       setSeekers(updatedSeekers);
       
-      // Save approval/rejection status to localStorage for persistence
-      const statusData = {
+      // Use the robust service to save approval status
+      const approvalData = {
         seekerId,
         status,
         reason: reason || '',
-        processedAt: new Date().toISOString(),
-        processedBy: 'admin',
         documents: documents ? documents.map(file => ({ name: file.name, size: file.size, type: file.type })) : []
       };
       
-      const existingStatuses = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
-      const updatedStatuses = existingStatuses.filter((s: any) => s.seekerId !== seekerId);
-      updatedStatuses.push(statusData);
-      localStorage.setItem('seeker_approvals', JSON.stringify(updatedStatuses));
+      const saveSuccess = await approvalStatusService.saveApprovalStatus(approvalData);
       
-      console.log('💾 Saved approval status to localStorage:', statusData);
-      
-      // Force persistence verification
-      const verifyStorage = JSON.parse(localStorage.getItem('seeker_approvals') || '[]');
-      const verifyRecord = verifyStorage.find((s: any) => s.seekerId === seekerId);
-      console.log('✅ Verification - Status properly saved:', verifyRecord);
-      
-      // Store documents separately if provided
-      if (documents && documents.length > 0) {
-        const documentData = {
-          seekerId,
-          documents: await Promise.all(documents.map(async (file) => ({
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            data: await file.arrayBuffer(),
-            uploadedAt: new Date().toISOString()
-          })))
-        };
+      if (!saveSuccess) {
+        console.error('❌ Failed to save approval status to localStorage');
+        toast({
+          title: "Storage Error",
+          description: "Failed to save approval status. Please try again or check if localStorage is available.",
+          variant: "destructive"
+        });
         
-        const existingDocs = JSON.parse(localStorage.getItem('seeker_documents') || '[]');
-        const updatedDocs = existingDocs.filter((doc: any) => doc.seekerId !== seekerId);
-        updatedDocs.push(documentData);
-        localStorage.setItem('seeker_documents', JSON.stringify(updatedDocs));
+        // Revert local state on failure
+        setSeekers(seekers);
+        return;
+      }
+      
+      // Save documents if provided
+      if (documents && documents.length > 0) {
+        const docSaveSuccess = await approvalStatusService.saveDocuments(seekerId, documents);
+        if (!docSaveSuccess) {
+          console.warn('⚠️ Documents failed to save but approval status was saved');
+        }
       }
       
       // Show success message
       if (!reason) {
+        const seekerName = seekers.find(s => s.id === seekerId)?.organizationName;
         toast({
           title: status === 'approved' ? "Seeker Approved" : "Seeker Rejected",
-          description: `${seekers.find(s => s.id === seekerId)?.organizationName} has been ${status}. ${status === 'approved' ? 'You can now create an administrator.' : ''}`,
+          description: `${seekerName} has been ${status}. Status will persist across sessions. ${status === 'approved' ? 'You can now create an administrator.' : ''}`,
           variant: status === 'approved' ? "default" : "destructive"
         });
       }
       
+      // Log storage health for debugging
+      const health = approvalStatusService.getStorageHealth();
+      console.log('💾 Storage health after save:', health);
+      
     } catch (error) {
-      console.error('Error updating approval status:', error);
+      console.error('❌ Exception during approval processing:', error);
       toast({
         title: "Error",
-        description: "Failed to update approval status.",
+        description: `Failed to update approval status: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
+      
+      // Revert local state on error
+      setSeekers(seekers);
     }
   };
 
@@ -226,16 +225,17 @@ const SolutionSeekersValidation: React.FC = () => {
   };
 
   const handleCreateAdministrator = async (seeker: SeekerDetails) => {
+    console.log('👥 Opening administrator creation for seeker:', seeker.organizationName);
     setCurrentSeekerForAdmin(seeker);
     
-    // Check if administrator already exists for this seeker
-    const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
-    const existingAdmin = existingAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
+    // Check if administrator already exists using the robust service
+    const existingAdmin = approvalStatusService.getAdministrator(seeker.id);
     
     if (existingAdmin) {
-      console.log('Found existing administrator:', existingAdmin);
+      console.log('✅ Found existing administrator:', existingAdmin);
       setExistingAdmin(existingAdmin);
     } else {
+      console.log('❌ No existing administrator found');
       setExistingAdmin(null);
     }
     
@@ -243,8 +243,32 @@ const SolutionSeekersValidation: React.FC = () => {
   };
 
   const handleAdminCreated = async (adminData: any) => {
+    console.log('👥 Processing admin creation for seeker:', currentSeekerForAdmin?.organizationName, 'Admin data:', adminData);
+    
     try {
-      // Update the seeker's status to show admin was created
+      // Save administrator using the robust service
+      const adminRecord: AdminRecord = {
+        id: adminData.id,
+        sourceSeekerId: currentSeekerForAdmin?.id || '',
+        adminId: adminData.adminId,
+        adminName: adminData.adminName,
+        adminEmail: adminData.adminEmail,
+        createdAt: new Date().toISOString()
+      };
+      
+      const saveSuccess = await approvalStatusService.saveAdministrator(adminRecord);
+      
+      if (!saveSuccess) {
+        console.error('❌ Failed to save administrator to localStorage');
+        toast({
+          title: "Storage Error",
+          description: "Failed to save administrator. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Update local state to show admin was created
       const updatedSeekers = seekers.map(seeker => 
         seeker.id === currentSeekerForAdmin?.id 
           ? { ...seeker, hasAdministrator: true, administratorId: adminData.id }
@@ -252,7 +276,7 @@ const SolutionSeekersValidation: React.FC = () => {
       );
       setSeekers(updatedSeekers);
       
-      // Force refresh the administrator statuses from localStorage to ensure persistence
+      // Refresh administrator statuses to ensure consistency
       const refreshedSeekers = loadAdministratorStatuses(updatedSeekers);
       setSeekers(refreshedSeekers);
       
@@ -260,11 +284,20 @@ const SolutionSeekersValidation: React.FC = () => {
       
       toast({
         title: existingAdmin ? "Administrator Updated" : "Administrator Created",
-        description: `Administrator ${adminData.adminName} has been successfully ${existingAdmin ? 'updated' : 'created'}. The status will persist across navigation.`,
+        description: `Administrator ${adminData.adminName} has been successfully ${existingAdmin ? 'updated' : 'created'}. The status will persist across sessions and navigation.`,
       });
       
+      // Log storage health
+      const health = approvalStatusService.getStorageHealth();
+      console.log('💾 Storage health after admin creation:', health);
+      
     } catch (error) {
-      console.error('Error updating seeker after admin creation:', error);
+      console.error('❌ Exception during admin creation processing:', error);
+      toast({
+        title: "Error",
+        description: `Failed to process administrator: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
     }
   };
 
