@@ -133,9 +133,9 @@ const SeekerLogin = () => {
         description: `Welcome back, ${user.contactPersonName}!`,
       });
 
-      // Navigate to home page
+      // Navigate to organization dashboard
       setTimeout(() => {
-        navigate('/');
+        navigate('/organization-dashboard');
       }, 1500);
 
     } catch (error) {

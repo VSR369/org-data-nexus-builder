@@ -18,6 +18,7 @@ import SeekingOrgAdministratorLogin from './pages/SeekingOrgAdministratorLogin';
 import ContributorEnrollment from './pages/ContributorEnrollment';
 import MasterDataPortal from './pages/MasterDataPortal';
 import AdminRegistration from './pages/AdminRegistration';
+import OrganizationDashboard from './pages/OrganizationDashboard';
 import TestPage from './pages/TestPage';
 
 // Create a client
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/seeker-login" element={<SeekerLogin />} />
                 <Route path="/solution-seeking-org/login" element={<SeekerLogin />} />
                 <Route path="/seeker-registration" element={<SeekerRegistration />} />
+                <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
                 <Route path="/contributor-login" element={<ContributorLogin />} />
                 <Route path="/seeking-org-administrator-login" element={<SeekingOrgAdministratorLogin />} />
                 <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
