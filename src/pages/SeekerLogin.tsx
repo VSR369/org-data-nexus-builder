@@ -17,12 +17,24 @@ const SeekerLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Auto-focus on first input field
+  // Auto-focus on first input field and debug storage
   useEffect(() => {
     const identifierInput = document.getElementById('identifier');
     if (identifierInput) {
       identifierInput.focus();
     }
+    
+    // Debug storage on page load
+    const debugStorage = async () => {
+      const { StorageDebugger } = await import('@/utils/storageDebugger');
+      await StorageDebugger.debugUserStorage('media@media.co.in');
+      
+      // Also check if the specific user exists
+      const userCheck = await StorageDebugger.checkUserExists('media@media.co.in');
+      console.log('🎯 SPECIFIC USER CHECK for media@media.co.in:', userCheck);
+    };
+    
+    debugStorage().catch(console.error);
   }, []);
 
   const validateEmail = (email: string) => {
