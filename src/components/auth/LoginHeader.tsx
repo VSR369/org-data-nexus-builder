@@ -1,12 +1,26 @@
 import React from 'react';
-import { Shield, Building2, MousePointer } from 'lucide-react';
+import { Shield, Building2, MousePointer, Target } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 interface LoginHeaderProps {
   routeSource?: 'direct' | 'general-signin' | 'post-registration' | 'post-signup' | 'legacy';
 }
 
 const LoginHeader: React.FC<LoginHeaderProps> = ({ routeSource = 'direct' }) => {
+  const location = useLocation();
+  
   const getHeaderContent = () => {
+    // Check if this is from general sign-in or has fromGeneralSignin state
+    const isFromGeneralSignin = location.state?.fromGeneralSignin || routeSource === 'general-signin';
+    
+    if (isFromGeneralSignin) {
+      return {
+        title: 'Solution Seeking Organization Login',
+        subtitle: 'Sign in to your organization account',
+        icon: Building2
+      };
+    }
+    
     switch (routeSource) {
       case 'post-registration':
         return {
@@ -20,18 +34,12 @@ const LoginHeader: React.FC<LoginHeaderProps> = ({ routeSource = 'direct' }) => 
           subtitle: 'Thank you for registering! Please sign in with your credentials to continue.',
           icon: Building2
         };
-      case 'general-signin':
-        return {
-          title: 'Organization Portal',
-          subtitle: 'You selected Solution Seeking Organization. Please sign in with your credentials.',
-          icon: MousePointer
-        };
       case 'direct':
       default:
         return {
-          title: 'Organization Portal',
-          subtitle: 'Sign in to access your solution seeking organization dashboard',
-          icon: Shield
+          title: 'Solution Seeking Organization Login',
+          subtitle: 'Sign in to your organization account',
+          icon: Target
         };
     }
   };

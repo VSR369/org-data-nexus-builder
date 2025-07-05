@@ -15,7 +15,7 @@ const GeneralSignIn = () => {
     
     if (selectedRole === 'seeking-organization') {
       console.log('🏢 GENERAL SIGNIN - Navigating to solution seeking organization login');
-      navigate('/solution-seeking-org/login', { 
+      navigate('/seeker-login', { 
         state: { fromGeneralSignin: true } 
       });
     } else if (selectedRole === 'contributor') {
@@ -156,7 +156,7 @@ const GeneralSignIn = () => {
                   <p className="text-sm text-green-700 mb-2">
                     Skip the selection and go directly to your login screen.
                   </p>
-                  <Link to="/solution-seeking-org/login">
+                  <Link to="/seeker-login">
                     <Button variant="outline" size="sm" className="border-green-300 text-green-700 hover:bg-green-100">
                       Direct Login
                       <ArrowRight className="ml-1 h-3 w-3" />

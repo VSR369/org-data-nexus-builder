@@ -70,22 +70,41 @@ const LoginForm = () => {
         loginTimestamp: new Date().toISOString()
       });
       
-      // Route based on current path
+      // Route based on current path and user type
       if (location.pathname === '/seeker-login') {
-        toast.success(`Successfully signed in as Solution Seeker!`);
-        navigate('/seeker-dashboard', { 
-          state: { 
-            userId: user.userId,
-            organizationName: user.organizationName,
-            organizationType: user.organizationType,
-            entityType: user.entityType,
-            country: user.country,
-            email: user.email,
-            contactPersonName: user.contactPersonName,
-            industrySegment: user.industrySegment,
-            organizationId: user.organizationId
-          }
-        });
+        // Check if this is a solution seeking organization
+        if (user.entityType && (user.entityType.toLowerCase().includes('solution') || 
+            user.entityType.toLowerCase().includes('seeker') || user.entityType.toLowerCase().includes('commercial'))) {
+          toast.success(`Welcome back, ${user.organizationName}!`);
+          navigate('/seeking-org-admin-dashboard', { 
+            state: { 
+              userId: user.userId,
+              organizationName: user.organizationName,
+              organizationType: user.organizationType,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName,
+              industrySegment: user.industrySegment,
+              organizationId: user.organizationId
+            }
+          });
+        } else {
+          toast.success(`Successfully signed in as Solution Seeker!`);
+          navigate('/seeker-dashboard', { 
+            state: { 
+              userId: user.userId,
+              organizationName: user.organizationName,
+              organizationType: user.organizationType,
+              entityType: user.entityType,
+              country: user.country,
+              email: user.email,
+              contactPersonName: user.contactPersonName,
+              industrySegment: user.industrySegment,
+              organizationId: user.organizationId
+            }
+          });
+        }
       } else if (location.pathname === '/contributor-login') {
         toast.success('Successfully signed in as Contributor!');
         navigate('/contributor-enrollment');
