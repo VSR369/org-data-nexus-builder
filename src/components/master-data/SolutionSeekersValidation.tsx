@@ -367,14 +367,52 @@ const SolutionSeekersValidation: React.FC = () => {
     console.log('👥 Opening administrator creation for seeker:', seeker.organizationName);
     setCurrentSeekerForAdmin(seeker);
     
-    // Check if administrator already exists using synchronized state
-    const existingAdmin = administratorRecords.find(admin => admin.sourceSeekerId === seeker.id);
+    // Check if administrator already exists - look in the main storage first
+    let existingAdmin = null;
+    
+    try {
+      // First, check the main administrators storage (used by login)
+      const mainAdminsData = localStorage.getItem('administrators');
+      if (mainAdminsData) {
+        const mainAdmins = JSON.parse(mainAdminsData);
+        existingAdmin = mainAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
+        console.log('🔍 Checked main administrators storage - found:', !!existingAdmin);
+      }
+      
+      // If not found in main storage, check the legacy storage
+      if (!existingAdmin) {
+        const legacyAdmin = administratorRecords.find(admin => admin.sourceSeekerId === seeker.id);
+        if (legacyAdmin) {
+          // Convert legacy format to main format for editing
+          existingAdmin = {
+            id: legacyAdmin.id,
+            name: legacyAdmin.adminName,
+            adminName: legacyAdmin.adminName,
+            email: legacyAdmin.adminEmail,
+            adminEmail: legacyAdmin.adminEmail,
+            contactNumber: '', // AdminRecord doesn't have this field
+            userId: '', // AdminRecord doesn't have this field
+            password: '', // Don't populate password for security
+            organizationId: seeker.organizationId,
+            organizationName: seeker.organizationName,
+            sourceSeekerId: seeker.id,
+            createdAt: legacyAdmin.createdAt,
+            adminCreatedAt: legacyAdmin.createdAt,
+            role: 'administrator',
+            isActive: true
+          };
+          console.log('🔍 Found in legacy storage and converted:', legacyAdmin.adminName);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error checking for existing administrator:', error);
+    }
     
     if (existingAdmin) {
-      console.log('✅ Found existing administrator in synchronized state:', existingAdmin);
+      console.log('✅ Found existing administrator:', existingAdmin.name || existingAdmin.adminName);
       setExistingAdmin(existingAdmin);
     } else {
-      console.log('❌ No existing administrator found in synchronized state');
+      console.log('❌ No existing administrator found');
       setExistingAdmin(null);
     }
     

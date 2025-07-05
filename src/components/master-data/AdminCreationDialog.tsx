@@ -379,6 +379,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         }));
         
         localStorage.setItem('created_administrators', JSON.stringify(legacyFormat));
+        console.log('✅ Successfully saved to created_administrators for backward compatibility');
       } catch (legacyError) {
         console.warn('⚠️ Failed to maintain legacy format compatibility:', legacyError);
       }
