@@ -13,12 +13,12 @@ export class CurrencyService {
     if (isCustomMode) {
       console.log('🎯 Custom-only mode detected, loading custom currencies...');
       const customData = localStorage.getItem('custom_currencies');
-      if (customData) {
+      if (customData !== null) {
         try {
           const parsed = JSON.parse(customData);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            console.log('✅ Using custom currencies:', parsed.length);
-            return parsed;
+          if (Array.isArray(parsed)) {
+            console.log('✅ Using custom currencies (including empty array):', parsed.length);
+            return parsed; // Return even if empty array - this preserves deletions
           }
         } catch (error) {
           console.error('❌ Failed to parse custom currency data:', error);
@@ -67,8 +67,32 @@ export class CurrencyService {
   }
   
   static saveCurrencies(currencies: Currency[]): void {
-    console.log('💾 Saving currencies in raw format:', currencies.length);
-    localStorage.setItem('master_data_currencies', JSON.stringify(currencies));
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    
+    if (isCustomMode) {
+      console.log('💾 Custom-only mode: Saving currencies to custom_currencies:', currencies.length);
+      localStorage.setItem('custom_currencies', JSON.stringify(currencies));
+      
+      // Validation: Read back to ensure it was saved correctly
+      const readBack = localStorage.getItem('custom_currencies');
+      if (readBack !== null) {
+        try {
+          const parsed = JSON.parse(readBack);
+          if (Array.isArray(parsed) && parsed.length === currencies.length) {
+            console.log('✅ Custom currencies save validated successfully');
+          } else {
+            console.error('❌ Custom currencies save validation failed - length mismatch');
+          }
+        } catch (error) {
+          console.error('❌ Custom currencies save validation failed - parse error:', error);
+        }
+      } else {
+        console.error('❌ Custom currencies save validation failed - null readback');
+      }
+    } else {
+      console.log('💾 Mixed mode: Saving currencies to master_data_currencies:', currencies.length);
+      localStorage.setItem('master_data_currencies', JSON.stringify(currencies));
+    }
   }
   
   static getCurrencyByCountry(country: string): Currency | null {
