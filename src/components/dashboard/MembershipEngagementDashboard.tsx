@@ -254,51 +254,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         organizationType: c.organizationType
       })));
       
-      // Try to find any config for this engagement model (ignoring membership status)
-      const anyConfig = allConfigs.find(config => 
-        (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase())
-      );
-      
-      if (anyConfig) {
-        console.log(`🔄 Using fallback config for ${selectedEngagementModel} (ignoring membership status):`, anyConfig);
-        const isFeeBasedModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(selectedEngagementModel);
-        
-        // For not-a-member, increase the percentages by 25% from member rates for fee-based models
-        if (membershipStatusForConfig === 'not-a-member' && isFeeBasedModel) {
-          const adjustedQuarterly = Math.round((anyConfig.quarterlyFee || 0) * 1.25);
-          const adjustedHalfYearly = Math.round((anyConfig.halfYearlyFee || 0) * 1.25);
-          const adjustedAnnual = Math.round((anyConfig.annualFee || 0) * 1.25);
-          
-          console.log(`📈 Adjusted pricing for not-a-member: Q:${adjustedQuarterly}% H:${adjustedHalfYearly}% A:${adjustedAnnual}%`);
-          
-          return { 
-            quarterly: adjustedQuarterly,
-            halfYearly: adjustedHalfYearly,
-            annual: adjustedAnnual,
-            currency: anyConfig.currency || 'INR',
-            configName: `${anyConfig.configName || selectedEngagementModel} (Not a Member - Estimated)`,
-            isPercentage: true
-          };
-        }
-        
-        // For Platform as a Service, increase INR amounts by 20% for not-a-member
-        if (membershipStatusForConfig === 'not-a-member' && !isFeeBasedModel) {
-          const adjustedQuarterly = Math.round((anyConfig.quarterlyFee || 0) * 1.2);
-          const adjustedHalfYearly = Math.round((anyConfig.halfYearlyFee || 0) * 1.2);
-          const adjustedAnnual = Math.round((anyConfig.annualFee || 0) * 1.2);
-          
-          return { 
-            quarterly: adjustedQuarterly,
-            halfYearly: adjustedHalfYearly,
-            annual: adjustedAnnual,
-            currency: anyConfig.currency || 'INR',
-            configName: `${anyConfig.configName || selectedEngagementModel} (Not a Member - Estimated)`,
-            isPercentage: false
-          };
-        }
-      }
-      
-      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'No Pricing Available', isPercentage: false };
+      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'Data not available', isPercentage: false };
     }
 
     console.log(`🔍 Found pricing config for ${selectedEngagementModel} (${membershipStatusForConfig}):`, {
