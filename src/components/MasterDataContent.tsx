@@ -75,7 +75,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'master-data-diagnostics':
         return <MasterDataDiagnostics />;
       case 'admin-creation':
-        return <MasterDataDiagnostics />;
+        return <SolutionSeekersValidation />;
       default:
         return <DomainGroupsConfig />;
     }
