@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { UserPlus, Eye, EyeOff, Edit, AlertTriangle, Key } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import CryptoJS from 'crypto-js';
+
 import type { UserRecord } from '@/services/types';
 
 interface SeekerDetails extends UserRecord {
@@ -27,47 +27,26 @@ interface AdminCreationDialogProps {
   existingAdmin?: any;
 }
 
-// Enhanced password validation schema
-const passwordSchema = z.string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number")
-  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
-
-// Conditional password schema for edit mode
-const createPasswordSchema = (isEditMode: boolean, isEditingPassword: boolean) => {
-  const baseSchema = z.object({
-    adminName: z.string()
-      .min(2, "Administrator name must be at least 2 characters")
-      .max(50, "Administrator name must not exceed 50 characters")
-      .regex(/^[a-zA-Z\s]+$/, "Name must contain only letters and spaces"),
-    email: z.string()
-      .email("Please enter a valid email address")
-      .toLowerCase(),
-    contactNumber: z.string()
-      .min(10, "Contact number must be at least 10 digits")
-      .max(15, "Contact number must not exceed 15 digits")
-      .regex(/^[\+]?[0-9\-\s\(\)]+$/, "Please enter a valid contact number"),
-    userId: z.string()
-      .min(3, "User ID must be at least 3 characters")
-      .max(20, "User ID must not exceed 20 characters")
-      .regex(/^[a-zA-Z0-9_]+$/, "User ID can only contain letters, numbers, and underscores"),
-    password: (!isEditMode || isEditingPassword) ? passwordSchema : z.string().optional(),
-    confirmPassword: (!isEditMode || isEditingPassword) ? z.string().min(8, "Please confirm your password") : z.string().optional()
-  });
-
-  if (!isEditMode || isEditingPassword) {
-    return baseSchema.refine((data) => data.password === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"]
-    });
-  }
-  
-  return baseSchema;
-};
-
-const adminSchema = createPasswordSchema(false, false); // Default for create mode
+// Simple password validation schema
+const adminSchema = z.object({
+  adminName: z.string()
+    .min(2, "Administrator name must be at least 2 characters")
+    .max(50, "Administrator name must not exceed 50 characters"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
+  contactNumber: z.string()
+    .min(10, "Contact number must be at least 10 digits")
+    .max(15, "Contact number must not exceed 15 digits"),
+  userId: z.string()
+    .min(3, "User ID must be at least 3 characters")
+    .max(20, "User ID must not exceed 20 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Please confirm your password")
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+});
 
 type AdminFormData = z.infer<typeof adminSchema>;
 
@@ -243,9 +222,6 @@ class AdminStorageManager {
     return { emailExists, userIdExists };
   }
 
-  static hashPassword(password: string): string {
-    return CryptoJS.SHA256(password + 'admin_salt_2024').toString();
-  }
 }
 
 const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
@@ -259,11 +235,11 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  
   const { toast } = useToast();
 
   const form = useForm<AdminFormData>({
-    resolver: zodResolver(createPasswordSchema(isEditMode, isEditingPassword)),
+    resolver: zodResolver(adminSchema),
     defaultValues: {
       adminName: '',
       email: '',
@@ -281,7 +257,6 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     if (open) {
       if (existingAdmin) {
         setIsEditMode(true);
-        setIsEditingPassword(false); // Reset password editing state
         console.log('✏️ EDIT MODE - Raw admin data:', JSON.stringify(existingAdmin, null, 2));
         
         // Extract form data with explicit field mapping
@@ -290,8 +265,8 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           email: existingAdmin.email || existingAdmin.adminEmail || '',
           contactNumber: existingAdmin.contactNumber || '',
           userId: existingAdmin.userId || existingAdmin.adminId || '',
-          password: '', // Will be shown as encrypted in display
-          confirmPassword: ''
+          password: existingAdmin.password || '',
+          confirmPassword: existingAdmin.password || ''
         };
         
         console.log('✏️ FORM DATA EXTRACTED:', JSON.stringify(formData, null, 2));
@@ -300,22 +275,10 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         setTimeout(() => {
           form.reset(formData);
           console.log('✅ FORM RESET COMPLETED with data:', formData);
-          
-          // Force form to update its display values
-          Object.keys(formData).forEach(key => {
-            if (key !== 'password' && key !== 'confirmPassword') {
-              form.setValue(key as keyof AdminFormData, formData[key as keyof typeof formData]);
-            }
-          });
-          
-          // Verify form values were set
-          const currentValues = form.getValues();
-          console.log('🔍 FORM VALUES AFTER RESET:', JSON.stringify(currentValues, null, 2));
         }, 100);
         
       } else {
         setIsEditMode(false);
-        setIsEditingPassword(false);
         console.log('➕ CREATE MODE - Clearing form');
         setTimeout(() => {
           form.reset({
@@ -337,8 +300,6 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     try {
       console.log('🔄 Starting administrator creation/update process...');
 
-      // Only check password fields if creating new admin or editing password
-      const shouldUpdatePassword = !isEditMode || isEditingPassword;
       
       // Check for duplicates first
       const { emailExists, userIdExists } = AdminStorageManager.checkForDuplicates(
@@ -382,8 +343,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           email: data.email.toLowerCase(),
           contactNumber: data.contactNumber,
           userId: data.userId,
-          // Only update password if editing password
-          password: shouldUpdatePassword ? AdminStorageManager.hashPassword(data.password) : existingAdmin.password,
+          password: data.password,
           lastUpdated: new Date().toISOString(),
           updatedBy: 'system'
         };
@@ -402,7 +362,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           email: data.email.toLowerCase(),
           contactNumber: data.contactNumber,
           userId: data.userId,
-          password: AdminStorageManager.hashPassword(data.password),
+          password: data.password,
           organizationId: seeker.organizationId || `org_${seeker.id}`,
           createdAt: new Date().toISOString(),
           isActive: true,
@@ -473,7 +433,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
 
       toast({
         title: `✅ Administrator ${isEditMode ? 'Updated' : 'Created'} Successfully`,
-        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}. ${shouldUpdatePassword ? 'Password has been securely updated.' : 'Profile information updated.'}`,
+        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}.`,
       });
 
       // Reset form and close dialog
@@ -485,7 +445,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         password: '',
         confirmPassword: ''
       });
-      setIsEditingPassword(false);
+      
       onOpenChange(false);
 
       console.log('✅ Administrator creation/update process completed successfully');
@@ -553,43 +513,12 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
             <span className="text-sm font-medium">Security Notice</span>
           </div>
           <p className="text-xs text-green-700 mt-1">
-            Passwords will be securely hashed before storage. Ensure you remember the password as it cannot be recovered.
+            Administrator data will be stored securely. Please keep your password safe.
           </p>
         </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Password Display/Edit Section - Only in Edit Mode */}
-            {isEditMode && existingAdmin && (
-              <Card className="mb-4 p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-gray-900">Administrator Password</h4>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditingPassword(!isEditingPassword)}
-                  >
-                    {isEditingPassword ? 'Cancel Password Edit' : 'Edit Password'}
-                  </Button>
-                </div>
-                
-                {!isEditingPassword ? (
-                  <div className="flex items-center gap-2 p-3 bg-white border rounded">
-                    <Key className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Password: ••••••••••••</span>
-                    <Badge variant="secondary" className="text-xs">Encrypted</Badge>
-                  </div>
-                ) : (
-                  <div className="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-sm text-blue-700">
-                      <AlertTriangle className="h-4 w-4 inline mr-1" />
-                      Creating a new password will replace the existing one permanently.
-                    </p>
-                  </div>
-                )}
-              </Card>
-            )}
             <FormField
               control={form.control}
               name="adminName"
@@ -646,68 +575,66 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
               )}
             />
 
-            {/* Password fields - Show when creating new admin OR when editing password */}
-            {(!isEditMode || isEditingPassword) && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{isEditMode ? 'New Password' : 'Password'}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder={isEditMode ? "Enter new password" : "Enter password"}
-                            {...field} 
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* Password fields - always show in edit mode */}
+            <>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="Enter password"
+                          {...field} 
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{isEditMode ? 'Confirm New Password' : 'Confirm Password'}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            type={showConfirmPassword ? "text" : "password"} 
-                            placeholder={isEditMode ? "Confirm new password" : "Confirm password"}
-                            {...field} 
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          >
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          type={showConfirmPassword ? "text" : "password"} 
+                          placeholder="Confirm password"
+                          {...field} 
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
 
             <div className="flex gap-3 pt-4">
               <Button
