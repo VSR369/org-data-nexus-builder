@@ -171,9 +171,19 @@ export const getPricingConfigs = (): PricingConfig[] => {
   if (isCustomMode) {
     console.log('🎯 Custom-only mode detected, loading custom pricing configs...');
     const customData = localStorage.getItem('custom_pricing');
+    console.log('📄 Raw custom_pricing data:', customData);
     if (customData !== null) {
       try {
         const parsed = JSON.parse(customData);
+        console.log('🔍 Parsed custom pricing data:', parsed);
+        console.log('🔍 Individual configs:', parsed.map((config: any) => ({
+          id: config.id,
+          engagementModel: config.engagementModel,
+          membershipStatus: config.membershipStatus,
+          quarterly: config.quarterlyFee,
+          halfYearly: config.halfYearlyFee,
+          annual: config.annualFee
+        })));
         if (Array.isArray(parsed)) {
           console.log('✅ Using custom pricing configs (including empty array):', parsed.length);
           return parsed; // Return even if empty array - this preserves deletions
@@ -195,6 +205,7 @@ export const getPricingConfigs = (): PricingConfig[] => {
     
     console.log('🔄 Mixed mode: Loading pricing configurations:', configs?.length || 0);
     console.log('🗑️ Deleted config IDs:', deletedConfigIds);
+    console.log('📊 All loaded pricing configs:', configs);
     
     // If no configs exist and no defaults have been explicitly deleted, initialize with defaults
     if (!Array.isArray(configs) || configs.length === 0) {
