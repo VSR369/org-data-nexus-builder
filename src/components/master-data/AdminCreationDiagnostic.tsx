@@ -52,11 +52,31 @@ const AdminCreationDiagnostic: React.FC = () => {
     const health = AdminDataManager.getStorageHealth();
     setStorageHealth(health);
     
-    // Load administrator data
+    // Load administrator data with detailed logging
     try {
       const adminData = localStorage.getItem('administrators');
+      console.log('🔍 RAW ADMIN DATA:', adminData);
+      
       if (adminData) {
         const parsed = JSON.parse(adminData);
+        console.log('🔍 PARSED ADMIN DATA:', JSON.stringify(parsed, null, 2));
+        
+        // Log each admin's structure
+        if (Array.isArray(parsed)) {
+          parsed.forEach((admin, index) => {
+            console.log(`🔍 Admin ${index + 1} structure:`, {
+              id: admin.id,
+              hasName: !!(admin.name || admin.adminName),
+              hasEmail: !!(admin.email || admin.adminEmail),
+              hasUserId: !!(admin.userId || admin.adminId),
+              hasContact: !!admin.contactNumber,
+              hasSeekerId: !!admin.sourceSeekerId,
+              hasOrgName: !!admin.organizationName,
+              allFields: Object.keys(admin)
+            });
+          });
+        }
+        
         setAdmins(Array.isArray(parsed) ? parsed : []);
         console.log('📊 Administrator storage loaded:', parsed.length, 'administrators');
       } else {
@@ -64,6 +84,7 @@ const AdminCreationDiagnostic: React.FC = () => {
         console.log('📭 No administrator data found');
       }
     } catch (error) {
+      console.error('❌ Admin data parse error:', error);
       foundIssues.push(`Administrator storage parse error: ${error}`);
       setAdmins([]);
     }
@@ -162,25 +183,48 @@ const AdminCreationDiagnostic: React.FC = () => {
     </div>
   );
 
-  const renderAdminData = (admin: AdminData, index: number) => (
-    <div key={index} className="p-3 border rounded-lg bg-gray-50">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-medium text-sm">
-          {admin.name || admin.adminName || `Admin ${index + 1}`}
-        </span>
-        <Badge variant="outline" className="text-xs">
-          Unified Storage
-        </Badge>
+  const renderAdminData = (admin: AdminData, index: number) => {
+    // Comprehensive field checking with debugging
+    const name = admin.name || admin.adminName || `Admin ${index + 1}`;
+    const email = admin.email || admin.adminEmail || 'Missing';
+    const userId = admin.userId || admin.adminId || 'Missing';
+    const contact = admin.contactNumber || 'Missing';
+    const seekerId = admin.sourceSeekerId || 'Missing';
+    const orgName = admin.organizationName || 'Missing';
+    
+    console.log(`🔍 Rendering Admin ${index + 1}:`, {
+      name, email, userId, contact, seekerId, orgName,
+      rawAdmin: admin
+    });
+    
+    return (
+      <div key={index} className="p-3 border rounded-lg bg-gray-50">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-medium text-sm">{name}</span>
+          <div className="flex gap-1">
+            <Badge variant="outline" className="text-xs">
+              Unified Storage
+            </Badge>
+            {Object.keys(admin).length <= 3 && (
+              <Badge variant="destructive" className="text-xs">
+                Incomplete Data
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div className="space-y-1 text-xs text-gray-600">
+          <div><span className="font-medium">Email:</span> <span className={email === 'Missing' ? 'text-red-600' : ''}>{email}</span></div>
+          <div><span className="font-medium">User ID:</span> <span className={userId === 'Missing' ? 'text-red-600' : ''}>{userId}</span></div>
+          <div><span className="font-medium">Contact:</span> <span className={contact === 'Missing' ? 'text-red-600' : ''}>{contact}</span></div>
+          <div><span className="font-medium">Seeker ID:</span> <span className={seekerId === 'Missing' ? 'text-red-600' : ''}>{seekerId}</span></div>
+          <div><span className="font-medium">Organization:</span> <span className={orgName === 'Missing' ? 'text-red-600' : ''}>{orgName}</span></div>
+          <div className="mt-2 text-xs text-gray-500">
+            <span className="font-medium">Available Fields:</span> {Object.keys(admin).join(', ')}
+          </div>
+        </div>
       </div>
-      <div className="space-y-1 text-xs text-gray-600">
-        <div><span className="font-medium">Email:</span> {admin.email || admin.adminEmail || 'Missing'}</div>
-        <div><span className="font-medium">User ID:</span> {admin.userId || admin.adminId || 'Missing'}</div>
-        <div><span className="font-medium">Contact:</span> {admin.contactNumber || 'Missing'}</div>
-        <div><span className="font-medium">Seeker ID:</span> {admin.sourceSeekerId || 'Missing'}</div>
-        <div><span className="font-medium">Organization:</span> {admin.organizationName || 'Missing'}</div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
