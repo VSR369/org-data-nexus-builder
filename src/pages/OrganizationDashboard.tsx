@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
+import MembershipTypeSelector from '@/components/dashboard/MembershipTypeSelector';
+import EngagementModelSelector from '@/components/dashboard/EngagementModelSelector';
 
 interface OrganizationSession {
   userId: string;
@@ -34,6 +36,9 @@ interface OrganizationSession {
 const OrganizationDashboard = () => {
   const [sessionData, setSessionData] = useState<OrganizationSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMembership, setSelectedMembership] = useState<any>(null);
+  const [selectedEngagement, setSelectedEngagement] = useState<any>(null);
+  const [engagementPricing, setEngagementPricing] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -148,67 +153,26 @@ const OrganizationDashboard = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Organization Details Card */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Organization Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Organization Name</label>
-                    <p className="text-lg font-semibold text-gray-900">{sessionData.organizationName}</p>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">User ID</label>
-                    <p className="text-lg font-semibold text-gray-900">{sessionData.userId}</p>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Entity Type</label>
-                    <Badge variant="secondary" className="mt-1">
-                      {sessionData.entityType}
-                    </Badge>
-                  </div>
-                  
-                  {sessionData.organizationType && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Organization Type</label>
-                      <Badge variant="outline" className="mt-1">
-                        {sessionData.organizationType}
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Country</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-900">{sessionData.country}</span>
-                    </div>
-                  </div>
-                  
-                  {sessionData.industrySegment && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Industry Segment</label>
-                      <Badge variant="outline" className="mt-1">
-                        {sessionData.industrySegment}
-                      </Badge>
-                    </div>
-                  )}
+        <div className="space-y-8">
+          {/* Organization Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Organization Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Organization</label>
+                  <p className="text-lg font-semibold text-gray-900">{sessionData.organizationName}</p>
+                  <p className="text-sm text-gray-600">{sessionData.userId}</p>
                 </div>
                 
-                <Separator />
-                
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Contact Information</label>
-                  <div className="mt-2 space-y-2">
+                  <label className="text-sm font-medium text-gray-500">Contact Person</label>
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-400" />
                       <span className="text-gray-900">{sessionData.contactPersonName}</span>
@@ -220,65 +184,130 @@ const OrganizationDashboard = () => {
                   </div>
                 </div>
                 
-                <Separator />
-                
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Session Information</label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      Logged in: {new Date(sessionData.loginTimestamp).toLocaleString()}
-                    </span>
-                  </div>
-                  {sessionData.organizationId && (
-                    <div className="mt-1">
-                      <span className="text-sm text-gray-500">Organization ID: </span>
-                      <span className="text-sm font-mono text-gray-900">{sessionData.organizationId}</span>
+                  <label className="text-sm font-medium text-gray-500">Details</label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-900">{sessionData.country}</span>
                     </div>
-                  )}
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">{sessionData.entityType}</Badge>
+                      {sessionData.organizationType && (
+                        <Badge variant="outline">{sessionData.organizationType}</Badge>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Selection Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Membership Type Selection (Optional) */}
+            <div>
+              <MembershipTypeSelector
+                organizationType={sessionData.organizationType || sessionData.entityType}
+                entityType={sessionData.entityType}
+                country={sessionData.country}
+                onMembershipSelect={setSelectedMembership}
+              />
+            </div>
+
+            {/* Engagement Model Selection (Mandatory) */}
+            <div>
+              <EngagementModelSelector
+                onEngagementSelect={(engagement, pricing) => {
+                  setSelectedEngagement(engagement);
+                  setEngagementPricing(pricing);
+                }}
+                selectedEngagement={selectedEngagement}
+              />
+            </div>
           </div>
 
-          {/* Quick Actions Card */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full justify-start" variant="outline">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Update Profile
-                </Button>
-                
-                <Button className="w-full justify-start" variant="outline">
-                  <FileText className="h-4 w-4 mr-2" />
-                  View Documents
-                </Button>
-                
-                <Link to="/master-data" className="block">
-                  <Button className="w-full justify-start" variant="outline">
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Master Data Portal
-                  </Button>
-                </Link>
-                
-                <Separator />
-                
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-2">Need assistance?</p>
-                  <Button size="sm" variant="secondary" className="w-full">
-                    Contact Support
-                  </Button>
+          {/* Selection Summary & Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Selection Summary & Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Membership Selection</label>
+                    {selectedMembership ? (
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="font-medium text-green-800">
+                          {selectedMembership.organizationType} - {selectedMembership.entityType}
+                        </p>
+                        <p className="text-sm text-green-600">
+                          {selectedMembership.currency} {selectedMembership.membershipFee.toLocaleString()}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-600">No membership selected (Optional)</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Engagement Model</label>
+                    {selectedEngagement ? (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="font-medium text-blue-800">{selectedEngagement.name}</p>
+                        {engagementPricing && (
+                          <p className="text-sm text-blue-600">
+                            {engagementPricing.currency} {engagementPricing.basePrice.toLocaleString()}
+                            {engagementPricing.discountPercentage && ` (-${engagementPricing.discountPercentage}%)`}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-600">Required: Please select an engagement model</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+
+                <Separator />
+
+                <div className="flex flex-wrap gap-4">
+                  <Button 
+                    className="flex items-center gap-2"
+                    disabled={!selectedEngagement}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Proceed with Configuration
+                  </Button>
+                  
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    View Details
+                  </Button>
+                  
+                  <Link to="/master-data">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Master Data Portal
+                    </Button>
+                  </Link>
+                  
+                  <div className="ml-auto">
+                    <Button size="sm" variant="secondary">
+                      Contact Support
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

@@ -1,251 +1,165 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup } from "@/components/ui/radio-group";
-import { Handshake, X } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { EngagementModel } from '@/components/master-data/engagement-models/types';
-import { getCleanEngagementModels } from '@/components/master-data/engagement-models/engagementModelsDataManager';
-import { PricingDataManager } from '@/utils/pricingDataManager';
-import { PricingConfig } from '@/types/pricing';
-import { EngagementModelCard } from '@/components/engagement/components/EngagementModelCard';
-import { PricingPlanSelector } from '@/components/engagement/components/PricingPlanSelector';
-import { ModelSelectionSummary } from '@/components/engagement/components/ModelSelectionSummary';
-import { EngagementModelLoadingState } from '@/components/engagement/components/EngagementModelLoadingState';
-import { EngagementModelEmptyState } from '@/components/engagement/components/EngagementModelEmptyState';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Handshake, Check, AlertCircle } from 'lucide-react';
+import { useEngagementModels } from '@/hooks/useEngagementModels';
+import { usePricingData } from '@/hooks/usePricingData';
 
-interface EngagementModelSelectorProps {
-  onClose: () => void;
-  onSelect: (model: EngagementModel, pricing?: PricingConfig | null, selectedPlan?: string) => void;
-  userCountry?: string;
-  userOrgType?: string;
-  membershipStatus?: 'active' | 'inactive';
-  currentSelectedModel?: EngagementModel | null;
-  currentSelectedPricingPlan?: string;
+interface EngagementModelOption {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
 }
 
-interface ModelWithPricing {
-  model: EngagementModel;
-  pricing: PricingConfig | null;
-  originalPrice?: number;
-  discountedPrice?: number;
+interface PricingDetails {
+  basePrice: number;
+  currency: string;
+  pricingTier: string;
+  discountPercentage?: number;
+}
+
+interface EngagementModelSelectorProps {
+  onEngagementSelect: (engagement: EngagementModelOption, pricing: PricingDetails | null) => void;
+  selectedEngagement?: EngagementModelOption | null;
 }
 
 const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
-  onClose,
-  onSelect,
-  userCountry = '',
-  userOrgType = '',
-  membershipStatus = 'inactive',
-  currentSelectedModel = null,
-  currentSelectedPricingPlan = ''
+  onEngagementSelect,
+  selectedEngagement
 }) => {
-  const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
-  const [modelsWithPricing, setModelsWithPricing] = useState<ModelWithPricing[]>([]);
-  const [selectedModelId, setSelectedModelId] = useState<string>(currentSelectedModel?.id || '');
-  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>(currentSelectedPricingPlan || '');
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [selectedModel, setSelectedModel] = useState<EngagementModelOption | null>(selectedEngagement || null);
+  const { engagementModels, loading: modelsLoading, error: modelsError } = useEngagementModels();
+  const { getConfigByOrgTypeAndEngagement } = usePricingData();
 
-  useEffect(() => {
-    const loadEngagementModelsWithPricing = () => {
-      try {
-        console.log('🔄 EngagementModelSelector: Loading engagement models with pricing...');
-        
-        const models = getCleanEngagementModels();
-        console.log('✅ EngagementModelSelector: Loaded engagement models:', models.length, models.map(m => m.name));
-        
-        if (!Array.isArray(models) || models.length === 0) {
-          console.error('❌ EngagementModelSelector: No valid engagement models found');
-          toast({
-            title: "Error",
-            description: "No engagement models are configured. Please check master data configuration.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-        
-        const pricingConfigs = PricingDataManager.getAllConfigurations();
-        console.log('✅ EngagementModelSelector: Loaded pricing configs:', pricingConfigs.length);
-        
-        const modelsWithPricingData: ModelWithPricing[] = models.map(model => {
-          console.log(`🔄 Processing model: ${model.name}`);
-          
-          const pricingConfig = PricingDataManager.getPricingForEngagementModel(model.name);
-          
-          console.log(`💰 Pricing config for ${model.name}:`, pricingConfig ? 'Found' : 'Not found');
-          
-          let originalPrice = 0;
-          let discountedPrice = 0;
-          
-          if (pricingConfig) {
-            originalPrice = pricingConfig.quarterlyFee || 0;
-            
-            if (membershipStatus === 'active' && pricingConfig.discountPercentage) {
-              discountedPrice = originalPrice * (1 - pricingConfig.discountPercentage / 100);
-            }
-            
-            console.log(`💰 Pricing for ${model.name}: Original: ${originalPrice}, Discounted: ${discountedPrice}`);
-          }
-          
-          return {
-            model,
-            pricing: pricingConfig || null,
-            originalPrice,
-            discountedPrice
-          };
-        });
-        
-        setEngagementModels(models);
-        setModelsWithPricing(modelsWithPricingData);
-        console.log('✅ EngagementModelSelector: Models with pricing data prepared:', modelsWithPricingData.length);
-        
-      } catch (error) {
-        console.error('❌ EngagementModelSelector: Error loading engagement models with pricing:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load engagement models and pricing. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
+  const handleSelect = (model: EngagementModelOption) => {
+    setSelectedModel(model);
+    
+    // Get pricing details for this engagement model  
+    const pricingDetails: PricingDetails = {
+      basePrice: 0,
+      currency: 'USD',
+      pricingTier: 'Standard',
+      discountPercentage: undefined
     };
 
-    loadEngagementModelsWithPricing();
-  }, [toast, membershipStatus]);
-
-  useEffect(() => {
-    if (currentSelectedModel) {
-      setSelectedModelId(currentSelectedModel.id);
-      console.log('🔄 Setting initial model selection:', currentSelectedModel.name);
-    }
-    if (currentSelectedPricingPlan) {
-      setSelectedPricingPlan(currentSelectedPricingPlan);
-      console.log('🔄 Setting initial pricing plan:', currentSelectedPricingPlan);
-    }
-  }, [currentSelectedModel, currentSelectedPricingPlan]);
-
-  const handleSelectModel = () => {
-    if (!selectedModelId) {
-      toast({
-        title: "Selection Required",
-        description: "Please select an engagement model.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedPricingPlan) {
-      toast({
-        title: "Pricing Plan Required",
-        description: "Please select a pricing plan.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === selectedModelId);
-    if (selectedModelWithPricing) {
-      console.log('✅ Selecting engagement model:', selectedModelWithPricing.model.name, 'with plan:', selectedPricingPlan);
-      onSelect(selectedModelWithPricing.model, selectedModelWithPricing.pricing, selectedPricingPlan);
-      toast({
-        title: "Engagement Model Selected",
-        description: `You have selected: ${selectedModelWithPricing.model.name} with ${selectedPricingPlan} pricing`,
-      });
-    }
+    onEngagementSelect(model, pricingDetails);
   };
 
-  if (loading) {
-    return <EngagementModelLoadingState />;
-  }
-
-  const selectedModelWithPricing = modelsWithPricing.find(item => item.model.id === selectedModelId);
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Handshake className="h-6 w-6 text-blue-600" />
-              <CardTitle className="text-xl font-bold">
-                {currentSelectedModel ? 'Modify Engagement Model Selection' : 'Select Engagement Model with Pricing'}
-              </CardTitle>
-            </div>
-            <Button variant="outline" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+  if (modelsLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <Handshake className="h-8 w-8 animate-pulse text-blue-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">Loading engagement models...</p>
           </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {modelsWithPricing.length === 0 ? (
-            <EngagementModelEmptyState />
-          ) : (
-            <>
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">
-                  Available Engagement Models with Pricing ({modelsWithPricing.length})
-                </h3>
-                <div className="flex items-center gap-4 text-sm text-blue-700">
-                  <span>Membership Status: <Badge variant={membershipStatus === 'active' ? 'default' : 'secondary'}>{membershipStatus}</Badge></span>
-                  {membershipStatus === 'active' && (
-                    <span className="text-green-600">✓ Eligible for member discounts</span>
-                  )}
-                  {currentSelectedModel && (
-                    <span className="text-purple-600">✓ Modifying existing selection</span>
-                  )}
-                </div>
-              </div>
-
-              <PricingPlanSelector 
-                selectedPricingPlan={selectedPricingPlan}
-                onPricingPlanChange={setSelectedPricingPlan}
-              />
-
-              <RadioGroup value={selectedModelId} onValueChange={setSelectedModelId}>
-                <div className="grid grid-cols-1 gap-4">
-                  {modelsWithPricing.map((item) => (
-                    <EngagementModelCard
-                      key={item.model.id}
-                      item={item}
-                      selectedModelId={selectedModelId}
-                      selectedPricingPlan={selectedPricingPlan}
-                      membershipStatus={membershipStatus}
-                      currentSelectedModel={currentSelectedModel}
-                    />
-                  ))}
-                </div>
-              </RadioGroup>
-
-              <ModelSelectionSummary
-                selectedModel={selectedModelWithPricing}
-                selectedPricingPlan={selectedPricingPlan}
-                membershipStatus={membershipStatus}
-              />
-
-              <div className="flex gap-4 pt-4">
-                <Button 
-                  onClick={handleSelectModel}
-                  disabled={!selectedModelId || !selectedPricingPlan}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Handshake className="mr-2 h-4 w-4" />
-                  {currentSelectedModel ? 'Update Selection' : 'Select Engagement Model'}
-                </Button>
-                <Button variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+
+  if (modelsError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="h-5 w-5" />
+            Error Loading Engagement Models
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{modelsError}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const activeModels = engagementModels.filter(model => model.isActive);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Handshake className="h-5 w-5" />
+          Select Engagement Model & Pricing
+          <Badge variant="destructive" className="ml-2">Mandatory</Badge>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Choose how you want to engage with solution providers. This selection is required to proceed.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {activeModels.length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No active engagement models are available. Please contact support or configure engagement models in the Master Data Portal.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <div className="grid gap-4">
+              {activeModels.map((model) => {
+                const isSelected = selectedModel?.id === model.id;
+
+                return (
+                  <div
+                    key={model.id}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleSelect(model)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium">{model.name}</h3>
+                          {isSelected && <Check className="h-4 w-4 text-blue-600" />}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">{model.description}</p>
+                        <Badge variant="outline">Standard Pricing</Badge>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-blue-600">
+                          Contact for Pricing
+                        </div>
+                        <div className="text-xs text-gray-500">Base Price</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!selectedModel && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Please select an engagement model to continue. This selection is mandatory.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {selectedModel && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800">
+                  <Check className="h-4 w-4" />
+                  <span className="font-medium">Selected: {selectedModel.name}</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
