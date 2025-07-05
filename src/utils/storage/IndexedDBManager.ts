@@ -56,6 +56,14 @@ export class IndexedDBManager {
             { name: 'country', keyPath: 'country' },
             { name: 'engagementModel', keyPath: 'engagementModel' }
           ]
+        },
+        {
+          name: 'administrators',
+          keyPath: 'id',
+          indexes: [
+            { name: 'adminId', keyPath: 'adminId', unique: true },
+            { name: 'adminEmail', keyPath: 'adminEmail', unique: true }
+          ]
         }
       ]
     };
@@ -143,6 +151,62 @@ export class IndexedDBManager {
 
     await Promise.all(promises);
     console.log('✅ All IndexedDB data cleared');
+  }
+
+  async saveItem(storeName: string, item: any): Promise<boolean> {
+    if (!this.db) {
+      console.error('❌ IndexedDB not initialized');
+      return false;
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([storeName], 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.put(item);
+
+      request.onsuccess = () => {
+        console.log(`✅ Item saved to ${storeName}:`, item.id || item.adminId);
+        resolve(true);
+      };
+
+      request.onerror = () => {
+        console.error(`❌ Error saving item to ${storeName}:`, request.error);
+        resolve(false);
+      };
+
+      transaction.onerror = () => {
+        console.error(`❌ Transaction error for ${storeName}:`, transaction.error);
+        resolve(false);
+      };
+    });
+  }
+
+  async getAllItems<T>(storeName: string): Promise<T[]> {
+    if (!this.db) {
+      console.error('❌ IndexedDB not initialized');
+      return [];
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([storeName], 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        console.log(`✅ Retrieved ${request.result.length} items from ${storeName}`);
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        console.error(`❌ Error getting items from ${storeName}:`, request.error);
+        resolve([]);
+      };
+
+      transaction.onerror = () => {
+        console.error(`❌ Transaction error for ${storeName}:`, transaction.error);
+        resolve([]);
+      };
+    });
   }
 }
 
