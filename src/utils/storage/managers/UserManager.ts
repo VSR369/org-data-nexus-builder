@@ -82,7 +82,9 @@ export class UserManager {
     if (usersResult.success && usersResult.data) {
       console.log('📊 LOGIN - UserManager loaded data successfully');
       const user = usersResult.data.find(u => 
-        u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
+        (u.userId.toLowerCase() === userId.toLowerCase() || 
+         u.email.toLowerCase() === userId.toLowerCase()) && 
+        u.password === password
       );
       
       if (user) {
@@ -106,7 +108,9 @@ export class UserManager {
         console.log('📊 LOGIN - Total users in localStorage:', users.length);
         
         const user = users.find((u: RegisteredUser) => 
-          u.userId.toLowerCase() === userId.toLowerCase() && u.password === password
+          (u.userId.toLowerCase() === userId.toLowerCase() || 
+           u.email.toLowerCase() === userId.toLowerCase()) && 
+          u.password === password
         );
         
         if (user) {
@@ -116,6 +120,7 @@ export class UserManager {
         } else {
           console.log('❌ LOGIN - User not found in users array');
           console.log('📊 LOGIN - Available userIds in localStorage:', users.map((u: any) => u.userId));
+          console.log('📊 LOGIN - Available emails in localStorage:', users.map((u: any) => u.email));
         }
       } else {
         console.log('📊 LOGIN - No data found in localStorage with key "registered_users"');

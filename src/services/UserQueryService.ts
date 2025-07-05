@@ -22,9 +22,12 @@ export class UserQueryService {
         return user;
       }
       
-      // Fallback: search through all users
+      // Fallback: search through all users by userId or email
       const allUsers = await this.getAllUsers();
-      const foundUser = allUsers.find(u => u.userId.toLowerCase() === userId.toLowerCase());
+      const foundUser = allUsers.find(u => 
+        u.userId.toLowerCase() === userId.toLowerCase() || 
+        u.email.toLowerCase() === userId.toLowerCase()
+      );
       
       if (foundUser) {
         console.log('✅ User found via collection search');
