@@ -81,10 +81,36 @@ const CustomDataManager: React.FC = () => {
     const customData = CustomDataExtractor.loadCustomOnlyData();
     console.log('📖 Loaded custom data:', customData);
     
+    // Check if we're in custom mode
+    const isCustomMode = CustomDataExtractor.isCustomOnlyMode();
+    
+    if (!isCustomMode) {
+      toast({
+        title: "Not in Custom Mode",
+        description: "Please extract custom data first to enable custom-only mode",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (Object.keys(customData).length === 0) {
+      toast({
+        title: "No Custom Data Found",
+        description: "No custom data available. Please extract custom data first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     toast({
-      title: "Custom Data Loaded",
-      description: `Loaded ${Object.keys(customData).length} custom data categories`,
+      title: "Custom Data Loaded Successfully! ✅",
+      description: `Loaded ${Object.keys(customData).length} custom data categories. Refreshing components...`,
     });
+    
+    // Force refresh all components to use custom data
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   const handleResetToMixed = () => {
@@ -217,13 +243,28 @@ const CustomDataManager: React.FC = () => {
             </Button>
             
             <Button 
-              onClick={handleLoadCustomData}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <FileText className="h-4 w-4" />
-              Load Custom Data
-            </Button>
+      onClick={handleLoadCustomData}
+      variant="outline"
+      className="flex items-center gap-2"
+    >
+      <FileText className="h-4 w-4" />
+      Load Custom Data
+    </Button>
+    
+    <Button 
+      onClick={() => {
+        CustomDataExtractor.debugDataStatus();
+        toast({
+          title: "Debug Info Logged",
+          description: "Check the browser console for detailed custom data status",
+        });
+      }}
+      variant="outline"
+      className="flex items-center gap-2"
+    >
+      <Settings className="h-4 w-4" />
+      Debug Status
+    </Button>
             
             {isCustomMode && (
               <Button 

@@ -218,6 +218,55 @@ export class CustomDataExtractor {
   }
 
   /**
+   * Get custom data for specific category with fallback support
+   */
+  static getCustomDataForCategory(category: string): any | null {
+    const isCustomMode = this.isCustomOnlyMode();
+    if (!isCustomMode) {
+      return null;
+    }
+    
+    const customKey = `custom_${category}`;
+    const customData = localStorage.getItem(customKey);
+    
+    if (customData) {
+      try {
+        return JSON.parse(customData);
+      } catch (error) {
+        console.error(`❌ Failed to parse custom data for ${category}:`, error);
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Debug function to show current data status
+   */
+  static debugDataStatus(): void {
+    console.log('🔍 === CUSTOM DATA DEBUG STATUS ===');
+    console.log('Custom-only mode:', this.isCustomOnlyMode());
+    
+    const customKeys = Object.keys(localStorage).filter(key => key.startsWith('custom_'));
+    console.log('Custom data keys found:', customKeys.length);
+    
+    customKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          const count = Array.isArray(parsed) ? parsed.length : Object.keys(parsed).length;
+          console.log(`  - ${key}: ${count} items`);
+        } catch (error) {
+          console.log(`  - ${key}: Invalid JSON`);
+        }
+      }
+    });
+    
+    console.log('=== END DEBUG STATUS ===');
+  }
+
+  /**
    * Get extraction report
    */
   static getExtractionReport(): CustomDataReport | null {

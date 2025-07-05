@@ -8,7 +8,25 @@ export class CurrencyService {
   static getCurrencies(): Currency[] {
     console.log('🔍 Getting currencies...');
     
-    // NEW APPROACH: Always use raw localStorage storage
+    // CHECK FOR CUSTOM-ONLY MODE FIRST
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    if (isCustomMode) {
+      console.log('🎯 Custom-only mode detected, loading custom currencies...');
+      const customData = localStorage.getItem('custom_currencies');
+      if (customData) {
+        try {
+          const parsed = JSON.parse(customData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            console.log('✅ Using custom currencies:', parsed.length);
+            return parsed;
+          }
+        } catch (error) {
+          console.error('❌ Failed to parse custom currency data:', error);
+        }
+      }
+    }
+    
+    // FALLBACK: Use raw localStorage storage
     const rawData = localStorage.getItem('master_data_currencies');
     if (rawData) {
       try {

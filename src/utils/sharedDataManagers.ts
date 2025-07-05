@@ -2,7 +2,7 @@
 import { LegacyDataManager } from './core/DataManager';
 import { Country } from '@/types/seekerRegistration';
 
-// Use LegacyDataManager for backward compatibility
+// Use LegacyDataManager for backward compatibility with custom data support
 export const countriesDataManager = new LegacyDataManager<Country[]>({
   key: 'master_data_countries',
   defaultData: [
@@ -12,6 +12,31 @@ export const countriesDataManager = new LegacyDataManager<Country[]>({
   ],
   version: 1
 });
+
+// Override loadData to check for custom data first
+const originalLoadData = countriesDataManager.loadData.bind(countriesDataManager);
+countriesDataManager.loadData = function() {
+  // Check for custom-only mode first
+  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+  if (isCustomMode) {
+    console.log('🎯 Custom-only mode detected, loading custom countries...');
+    const customData = localStorage.getItem('custom_countries');
+    if (customData) {
+      try {
+        const parsed = JSON.parse(customData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log('✅ Using custom countries:', parsed.length);
+          return parsed;
+        }
+      } catch (error) {
+        console.error('❌ Failed to parse custom countries data:', error);
+      }
+    }
+  }
+  
+  // Fallback to original method
+  return originalLoadData();
+};
 
 // Force initialization with default data if empty
 const initializeCountriesData = () => {
@@ -41,6 +66,31 @@ export const organizationTypesDataManager = new LegacyDataManager<string[]>({
   ] : [],
   version: 1
 });
+
+// Override loadData to check for custom data first
+const originalOrgTypesLoadData = organizationTypesDataManager.loadData.bind(organizationTypesDataManager);
+organizationTypesDataManager.loadData = function() {
+  // Check for custom-only mode first
+  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+  if (isCustomMode) {
+    console.log('🎯 Custom-only mode detected, loading custom organization types...');
+    const customData = localStorage.getItem('custom_organizationTypes');
+    if (customData) {
+      try {
+        const parsed = JSON.parse(customData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log('✅ Using custom organization types:', parsed.length);
+          return parsed;
+        }
+      } catch (error) {
+        console.error('❌ Failed to parse custom organization types data:', error);
+      }
+    }
+  }
+  
+  // Fallback to original method
+  return originalOrgTypesLoadData();
+};
 
 // Legacy compatibility layer for components that expect sync access
 export const countriesDataManagerCompat = {
