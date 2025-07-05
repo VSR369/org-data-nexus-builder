@@ -21,6 +21,7 @@ import MasterDataPortal from './pages/MasterDataPortal';
 import MembershipRegistration from './pages/MembershipRegistration';
 import SeekingOrgAdminDashboard from './pages/SeekingOrgAdminDashboard';
 import AdminRegistration from './pages/AdminRegistration';
+import TestPage from './pages/TestPage';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
+                <Route path="/test" element={<TestPage />} />
                 <Route path="/seeker-registration" element={<SeekerRegistration />} />
                 <Route path="/seeker-login" element={<SeekerLogin />} />
                 <Route path="/contributor-login" element={<ContributorLogin />} />
