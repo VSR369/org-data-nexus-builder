@@ -351,11 +351,35 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
       }
 
       // Save to localStorage with enhanced error handling
+      console.log('💾 SAVING ADMINISTRATORS - Current admins count:', updatedAdmins.length);
+      console.log('💾 SAVING ADMINISTRATORS - Admin being saved:', {
+        id: adminData.id,
+        name: adminData.name,
+        email: adminData.email,
+        userId: adminData.userId,
+        organizationName: adminData.organizationName
+      });
+      
       const saveResult = await AdminStorageManager.saveAdministrators(updatedAdmins);
       
       if (!saveResult.success) {
+        console.error('❌ SAVE FAILED:', saveResult.error);
         throw new Error(saveResult.error || 'Failed to save administrator data');
       }
+      
+      console.log('✅ SAVE SUCCESSFUL - Verifying storage...');
+      
+      // Immediately verify the save worked
+      const verification = AdminStorageManager.getAdministrators();
+      console.log('🔍 VERIFICATION - Administrators in storage:', verification.length);
+      verification.forEach((admin, index) => {
+        console.log(`   Admin ${index + 1}:`, {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          userId: admin.userId
+        });
+      });
 
       // Maintain backward compatibility - also save to old key for existing code
       try {
@@ -380,6 +404,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         
         localStorage.setItem('created_administrators', JSON.stringify(legacyFormat));
         console.log('✅ Successfully saved to created_administrators for backward compatibility');
+        console.log('🔍 LEGACY FORMAT SAVED:', legacyFormat.length, 'administrators');
       } catch (legacyError) {
         console.warn('⚠️ Failed to maintain legacy format compatibility:', legacyError);
       }

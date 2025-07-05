@@ -370,18 +370,48 @@ const SolutionSeekersValidation: React.FC = () => {
     // Check if administrator already exists - look in the main storage first
     let existingAdmin = null;
     
+    console.log('🔍 SEARCHING FOR EXISTING ADMIN - Seeker ID:', seeker.id, 'Organization:', seeker.organizationName);
+    
     try {
       // First, check the main administrators storage (used by login)
       const mainAdminsData = localStorage.getItem('administrators');
+      console.log('🔍 Main administrators raw data:', mainAdminsData ? 'Found' : 'Not found');
+      
       if (mainAdminsData) {
         const mainAdmins = JSON.parse(mainAdminsData);
+        console.log('🔍 Main administrators parsed:', mainAdmins.length, 'total admins');
+        mainAdmins.forEach((admin: any, index: number) => {
+          console.log(`   Main Admin ${index + 1}:`, {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            sourceSeekerId: admin.sourceSeekerId,
+            organizationName: admin.organizationName
+          });
+        });
+        
         existingAdmin = mainAdmins.find((admin: any) => admin.sourceSeekerId === seeker.id);
-        console.log('🔍 Checked main administrators storage - found:', !!existingAdmin);
+        console.log('🔍 Main storage search result:', existingAdmin ? 'FOUND' : 'NOT FOUND');
+        if (existingAdmin) {
+          console.log('✅ Found admin in main storage:', existingAdmin.name);
+        }
       }
       
       // If not found in main storage, check the legacy storage
       if (!existingAdmin) {
+        console.log('🔍 Checking legacy storage - administratorRecords count:', administratorRecords.length);
+        administratorRecords.forEach((admin, index) => {
+          console.log(`   Legacy Admin ${index + 1}:`, {
+            id: admin.id,
+            adminName: admin.adminName,
+            adminEmail: admin.adminEmail,
+            sourceSeekerId: admin.sourceSeekerId
+          });
+        });
+        
         const legacyAdmin = administratorRecords.find(admin => admin.sourceSeekerId === seeker.id);
+        console.log('🔍 Legacy storage search result:', legacyAdmin ? 'FOUND' : 'NOT FOUND');
+        
         if (legacyAdmin) {
           // Convert legacy format to main format for editing
           existingAdmin = {
