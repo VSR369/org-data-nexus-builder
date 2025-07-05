@@ -45,11 +45,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     countriesData: countries
   });
 
-  // Check if currency is auto-populated (same currency for all three periods)
-  const isCurrencyAutoSelected = currentEntry.country && 
-    currentEntry.quarterlyCurrency && 
-    currentEntry.quarterlyCurrency === currentEntry.halfYearlyCurrency && 
-    currentEntry.halfYearlyCurrency === currentEntry.annualCurrency;
+  // Check if currency is auto-populated for annual fee
+  const isCurrencyAutoSelected = !!(currentEntry.country && currentEntry.annualCurrency);
 
   React.useEffect(() => {
     if (editingEntry) {
@@ -70,8 +67,6 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
       setCurrentEntry(prev => ({
         ...prev,
         country: selectedCountry,
-        quarterlyCurrency: countryCurrency.code,
-        halfYearlyCurrency: countryCurrency.code,
         annualCurrency: countryCurrency.code
       }));
       
@@ -83,8 +78,6 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
       setCurrentEntry(prev => ({
         ...prev,
         country: selectedCountry,
-        quarterlyCurrency: '',
-        halfYearlyCurrency: '',
         annualCurrency: ''
       }));
       
@@ -103,10 +96,6 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
       country: currentEntry.country,
       organizationType: currentEntry.organizationType,
       entityType: currentEntry.entityType,
-      quarterlyAmount: currentEntry.quarterlyAmount,
-      quarterlyCurrency: currentEntry.quarterlyCurrency,
-      halfYearlyAmount: currentEntry.halfYearlyAmount,
-      halfYearlyCurrency: currentEntry.halfYearlyCurrency,
       annualAmount: currentEntry.annualAmount,
       annualCurrency: currentEntry.annualCurrency
     };
@@ -144,6 +133,11 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     const entry = {
       ...currentEntry,
       id: currentEntry.id || `user_${Date.now()}`,
+      // Set default values for quarterly and half yearly to maintain data structure
+      quarterlyAmount: 0,
+      quarterlyCurrency: currentEntry.annualCurrency || '',
+      halfYearlyAmount: 0,
+      halfYearlyCurrency: currentEntry.annualCurrency || '',
       createdAt: currentEntry.createdAt || now.split('T')[0],
       updatedAt: now,
       isUserCreated: true
@@ -250,111 +244,11 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Quarterly Fee */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-blue-500 pb-2">Quarterly</h3>
-              </div>
-              <div>
-                <Label htmlFor="quarterlyCurrency">Currency *</Label>
-                <Select
-                  key={`quarterlyCurrency-${formKey}`}
-                  value={currentEntry.quarterlyCurrency || ''}
-                  onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, quarterlyCurrency: value }))}
-                  disabled={isCurrencyAutoSelected}
-                >
-                  <SelectTrigger className={isCurrencyAutoSelected ? "bg-gray-100 cursor-not-allowed" : ""}>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userCurrencies.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.code} - {currency.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isCurrencyAutoSelected && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Currency auto-selected based on country
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="quarterlyAmount">Amount *</Label>
-                <Input
-                  id="quarterlyAmount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={currentEntry.quarterlyAmount ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setCurrentEntry(prev => ({ 
-                      ...prev, 
-                      quarterlyAmount: value === '' ? 0 : parseFloat(value) 
-                    }));
-                  }}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            {/* Half Yearly Fee */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-green-500 pb-2">Half-yearly</h3>
-              </div>
-              <div>
-                <Label htmlFor="halfYearlyCurrency">Currency *</Label>
-                <Select
-                  key={`halfYearlyCurrency-${formKey}`}
-                  value={currentEntry.halfYearlyCurrency || ''}
-                  onValueChange={(value) => setCurrentEntry(prev => ({ ...prev, halfYearlyCurrency: value }))}
-                  disabled={isCurrencyAutoSelected}
-                >
-                  <SelectTrigger className={isCurrencyAutoSelected ? "bg-gray-100 cursor-not-allowed" : ""}>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userCurrencies.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.code} - {currency.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isCurrencyAutoSelected && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Currency auto-selected based on country
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="halfYearlyAmount">Amount *</Label>
-                <Input
-                  id="halfYearlyAmount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={currentEntry.halfYearlyAmount ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setCurrentEntry(prev => ({ 
-                      ...prev, 
-                      halfYearlyAmount: value === '' ? 0 : parseFloat(value) 
-                    }));
-                  }}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
+          <div className="max-w-md mx-auto">
             {/* Annual Fee */}
             <div className="space-y-4">
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-purple-500 pb-2">Annually</h3>
+                <h3 className="text-lg font-semibold text-gray-900 border-b-2 border-purple-500 pb-2">Annual Membership Fee</h3>
               </div>
               <div>
                 <Label htmlFor="annualCurrency">Currency *</Label>
@@ -382,7 +276,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
                 )}
               </div>
               <div>
-                <Label htmlFor="annualAmount">Amount *</Label>
+                <Label htmlFor="annualAmount">Annual Amount *</Label>
                 <Input
                   id="annualAmount"
                   type="number"

@@ -45,8 +45,6 @@ const MembershipConfigsList: React.FC<MembershipConfigsListProps> = ({
                     <TableHead>Country</TableHead>
                     <TableHead>Organization Type</TableHead>
                     <TableHead>Entity Type</TableHead>
-                    <TableHead>Quarterly Fee</TableHead>
-                    <TableHead>Half Yearly Fee</TableHead>
                     <TableHead>Annual Fee</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
@@ -65,17 +63,7 @@ const MembershipConfigsList: React.FC<MembershipConfigsListProps> = ({
                         <Badge variant="secondary">{fee.entityType}</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          {formatCurrency(fee.quarterlyAmount, fee.quarterlyCurrency)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {formatCurrency(fee.halfYearlyAmount, fee.halfYearlyCurrency)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
+                        <div className="text-sm font-medium">
                           {formatCurrency(fee.annualAmount, fee.annualCurrency)}
                         </div>
                       </TableCell>
