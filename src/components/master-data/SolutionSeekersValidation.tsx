@@ -414,26 +414,31 @@ const SolutionSeekersValidation: React.FC = () => {
         
         if (legacyAdmin) {
           // Enhanced conversion from legacy format to main format for editing
-          // Only use properties that exist in AdminRecord type
+          // Include ALL available fields from legacy AdminRecord type
           existingAdmin = {
             id: legacyAdmin.id,
-            name: legacyAdmin.adminName,
-            adminName: legacyAdmin.adminName, // Keep for backward compatibility in display
-            email: legacyAdmin.adminEmail,
-            adminEmail: legacyAdmin.adminEmail, // Keep for backward compatibility in display
+            name: legacyAdmin.adminName || '', // Map adminName to name for form
+            adminName: legacyAdmin.adminName || '', // Keep original field
+            email: legacyAdmin.adminEmail || '', // Map adminEmail to email for form
+            adminEmail: legacyAdmin.adminEmail || '', // Keep original field
             contactNumber: '', // Not available in AdminRecord - will be blank in form
-            userId: legacyAdmin.adminId || '', // Use adminId as userId fallback
-            password: '', // Don't populate password for security
-            organizationId: seeker.organizationId,
+            userId: legacyAdmin.adminId || '', // Map adminId to userId for form
+            adminId: legacyAdmin.adminId || '', // Keep original field
+            password: '', // Don't expose password
+            organizationId: seeker.organizationId || `org_${seeker.id}`,
             organizationName: seeker.organizationName,
             sourceSeekerId: legacyAdmin.sourceSeekerId,
-            createdAt: legacyAdmin.createdAt,
-            adminCreatedAt: legacyAdmin.createdAt, // Keep for backward compatibility in display
-            role: 'administrator',
+            createdAt: legacyAdmin.createdAt || new Date().toISOString(),
             isActive: true,
+            role: 'administrator',
             adminCreatedBy: 'system'
           };
-          console.log('🔄 LEGACY CONVERSION - Converted admin data with available fields:', existingAdmin);
+          console.log('✅ Converted legacy admin for editing:', {
+            name: existingAdmin.name,
+            email: existingAdmin.email,
+            userId: existingAdmin.userId,
+            contactNumber: existingAdmin.contactNumber
+          });
         }
       }
     } catch (error) {

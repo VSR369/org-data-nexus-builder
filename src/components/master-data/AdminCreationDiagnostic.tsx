@@ -34,6 +34,7 @@ interface AdminData {
   adminId?: string;
   sourceSeekerId: string;
   organizationName?: string;
+  createdAt?: string;
 }
 
 const AdminCreationDiagnostic: React.FC = () => {
@@ -76,20 +77,35 @@ const AdminCreationDiagnostic: React.FC = () => {
       foundIssues.push('Legacy administrator storage detected - migration recommended');
     }
 
-    // Check for missing required fields
+    // Check for missing required fields in administrators
     admins.forEach((admin, index) => {
       const adminName = admin.name || admin.adminName || `Admin ${index + 1}`;
       
       if (!admin.name && !admin.adminName) {
-        foundIssues.push(`Administrator ${adminName} missing name field`);
+        foundIssues.push(`❌ Administrator ${adminName} missing name field - Edit form will be blank`);
       }
       
       if (!admin.email && !admin.adminEmail) {
-        foundIssues.push(`Administrator ${adminName} missing email field`);
+        foundIssues.push(`❌ Administrator ${adminName} missing email field - Edit form will be blank`);
+      }
+      
+      if (!admin.userId && !admin.adminId) {
+        foundIssues.push(`❌ Administrator ${adminName} missing userId field - Edit form will be blank`);
+      }
+      
+      if (!admin.contactNumber) {
+        foundIssues.push(`⚠️ Administrator ${adminName} missing contactNumber field`);
       }
       
       if (!admin.sourceSeekerId) {
-        foundIssues.push(`Administrator ${adminName} missing sourceSeekerId`);
+        foundIssues.push(`❌ Administrator ${adminName} missing sourceSeekerId - Cannot link to organization`);
+      }
+      
+      // Check for incomplete data structure (only has id, sourceSeekerId, createdAt)
+      const hasOnlyBasicFields = admin.id && admin.sourceSeekerId && admin.createdAt && 
+                                 !admin.name && !admin.adminName && !admin.email && !admin.adminEmail;
+      if (hasOnlyBasicFields) {
+        foundIssues.push(`🚨 CRITICAL: Administrator ${admin.id} has incomplete data structure - Edit form will be completely blank!`);
       }
     });
 
