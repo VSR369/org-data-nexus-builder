@@ -14,16 +14,183 @@ interface CustomDataReport {
 export class CustomDataExtractor {
   
   /**
+   * Clear all default data from localStorage before saving custom configurations
+   */
+  static clearAllDefaultData(): string[] {
+    console.log('🧹 === CLEARING ALL DEFAULT DATA ===');
+    
+    const clearedKeys: string[] = [];
+    
+    // Define ALL possible localStorage keys for master data
+    const allMasterDataKeys = [
+      // Currency related keys
+      'master_data_currencies',
+      'currencies',
+      'currency_data',
+      'fallback_currencies',
+      'default_currencies',
+      'emergency_currencies',
+      
+      // Countries related keys
+      'master_data_countries',
+      'countries',
+      'country_data',
+      'fallback_countries',
+      'default_countries',
+      
+      // Industry segments related keys
+      'master_data_industry_segments',
+      'industrySegments',
+      'industry_segments',
+      'fallback_industry_segments',
+      'default_industry_segments',
+      
+      // Organization types related keys
+      'master_data_organization_types',
+      'organizationTypes',
+      'organization_types',
+      'fallback_organization_types',
+      'default_organization_types',
+      
+      // Entity types related keys
+      'master_data_entity_types',
+      'entityTypes',
+      'entity_types',
+      'fallback_entity_types',
+      'default_entity_types',
+      
+      // Departments related keys
+      'master_data_departments',
+      'departments',
+      'department_data',
+      'fallback_departments',
+      'default_departments',
+      
+      // Domain groups related keys
+      'master_data_domain_groups',
+      'domainGroups',
+      'domain_groups',
+      'fallback_domain_groups',
+      'default_domain_groups',
+      
+      // Challenge statuses related keys
+      'master_data_challenge_statuses',
+      'challengeStatuses',
+      'challenge_statuses',
+      'fallback_challenge_statuses',
+      'default_challenge_statuses',
+      
+      // Solution statuses related keys
+      'master_data_solution_statuses',
+      'solutionStatuses',
+      'solution_statuses',
+      'fallback_solution_statuses',
+      'default_solution_statuses',
+      
+      // Competency capabilities related keys
+      'master_data_competency_capabilities',
+      'competencyCapabilities',
+      'competency_capabilities',
+      'fallback_competency_capabilities',
+      'default_competency_capabilities',
+      
+      // Communication types related keys
+      'master_data_communication_types',
+      'communicationTypes',
+      'communication_types',
+      'fallback_communication_types',
+      'default_communication_types',
+      
+      // Reward types related keys
+      'master_data_reward_types',
+      'rewardTypes',
+      'reward_types',
+      'fallback_reward_types',
+      'default_reward_types',
+      
+      // Seeker membership fees related keys
+      'master_data_seeker_membership_fees',
+      'seekerMembershipFees',
+      'seeker_membership_fees',
+      'membership_fees',
+      'fallback_membership_fees',
+      'default_membership_fees',
+      
+      // Engagement models related keys
+      'master_data_engagement_models',
+      'engagementModels',
+      'engagement_models',
+      'fallback_engagement_models',
+      'default_engagement_models',
+      
+      // Pricing configurations related keys
+      'master_data_pricing',
+      'pricing_configurations',
+      'pricing_data',
+      'fallback_pricing',
+      'default_pricing',
+      
+      // Events calendar related keys
+      'master_data_events',
+      'eventsCalendar',
+      'events_calendar',
+      'fallback_events',
+      'default_events'
+    ];
+    
+    // Clear each key and log the action
+    allMasterDataKeys.forEach(key => {
+      const existingData = localStorage.getItem(key);
+      if (existingData) {
+        localStorage.removeItem(key);
+        clearedKeys.push(key);
+        console.log(`🗑️ CLEARED: ${key} (had ${existingData.length} characters of data)`);
+      } else {
+        console.log(`⚪ SKIP: ${key} (not found)`);
+      }
+    });
+    
+    // Also clear any keys that match common patterns
+    const allKeys = Object.keys(localStorage);
+    const patternKeys = allKeys.filter(key => 
+      key.includes('fallback_') ||
+      key.includes('default_') ||
+      key.includes('seed_') ||
+      key.includes('emergency_') ||
+      key.includes('auto_generated_') ||
+      key.includes('master_data_seeded_') ||
+      key.includes('initialized_')
+    );
+    
+    patternKeys.forEach(key => {
+      if (!clearedKeys.includes(key)) {
+        const existingData = localStorage.getItem(key);
+        if (existingData) {
+          localStorage.removeItem(key);
+          clearedKeys.push(key);
+          console.log(`🗑️ PATTERN CLEARED: ${key} (pattern-based removal)`);
+        }
+      }
+    });
+    
+    console.log(`✅ === CLEARING COMPLETE: ${clearedKeys.length} keys removed ===`);
+    return clearedKeys;
+  }
+
+  /**
    * Extract and preserve only custom configured data permanently
    */
   static async extractAndPreserveCustomData(): Promise<CustomDataReport> {
     console.log('🔍 === CUSTOM DATA EXTRACTION START ===');
     
+    // STEP 0: Clear all default data FIRST
+    const clearedKeys = this.clearAllDefaultData();
+    
     const report: CustomDataReport = {
       totalCustomConfigurations: 0,
       customDataCategories: [],
       extractedData: {},
-      removedDefaultKeys: [],
+      removedDefaultKeys: clearedKeys, // Use the actually cleared keys
       preservedCustomKeys: []
     };
 
