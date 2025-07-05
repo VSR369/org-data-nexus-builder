@@ -6,9 +6,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Handshake, Check, AlertCircle, Calendar, DollarSign, Save } from 'lucide-react';
+import { Handshake, Check, AlertCircle, Calendar, DollarSign, Save, Crown } from 'lucide-react';
 import { useEngagementModels } from '@/hooks/useEngagementModels';
 import { usePricingData } from '@/hooks/usePricingData';
+import { useMembershipData } from '@/hooks/useMembershipData';
+import { MembershipService } from '@/services/MembershipService';
 import { useToast } from "@/hooks/use-toast";
 
 interface EngagementModelOption {
@@ -40,6 +42,7 @@ interface EngagementModelSelectorProps {
   country: string;
   organizationType: string;
   entityType: string;
+  userId?: string; // Add userId to check membership status
   onEngagementSelect: (engagement: EngagementModelOption, pricing: PricingDetails | null) => void;
   selectedEngagement?: EngagementModelOption | null;
 }
@@ -48,6 +51,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   country,
   organizationType,
   entityType,
+  userId,
   onEngagementSelect,
   selectedEngagement
 }) => {
@@ -56,7 +60,11 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const [isConfirmed, setIsConfirmed] = useState(false);
   const { engagementModels, loading: modelsLoading, error: modelsError } = useEngagementModels();
   const { getConfigByOrgTypeAndEngagement } = usePricingData();
+  const { membershipData, countryPricing, loading: membershipLoading } = useMembershipData(entityType, country, organizationType);
   const { toast } = useToast();
+
+  // Check if user has active membership
+  const hasActiveMembership = userId ? MembershipService.getMembershipData(userId).status === 'active' : false;
 
   // Load saved selection on component mount
   useEffect(() => {
@@ -99,7 +107,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       country,
       engagementModel: model.name,
       frequency,
-      foundConfig: pricingConfig
+      foundConfig: pricingConfig,
+      hasActiveMembership
     });
     
     if (!pricingConfig) {
@@ -129,7 +138,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       return null;
     }
     
-    const discountPercentage = pricingConfig.discountPercentage;
+    // Only apply discount if user has active membership
+    const discountPercentage = hasActiveMembership ? (pricingConfig.discountPercentage || 0) : undefined;
     const baseMonthlyPrice = frequency === 'quarterly' ? Math.round(totalAmount / 3) : 
                             frequency === 'half-yearly' ? Math.round(totalAmount / 6) : 
                             Math.round(totalAmount / 12);
@@ -139,6 +149,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
       currency,
       frequency,
       discountPercentage,
+      hasActiveMembership,
       baseMonthlyPrice
     });
     
@@ -244,18 +255,91 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const activeModels = engagementModels.filter(model => model.isActive);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Handshake className="h-5 w-5" />
-          Select Engagement Model & Pricing
-          <Badge variant="destructive" className="ml-2">Mandatory</Badge>
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Choose your engagement model and billing frequency. Pricing is customized for {organizationType} ({entityType}) in {country}.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Membership Details Section */}
+      <div className="lg:col-span-1">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-600" />
+              Membership Details
+              {hasActiveMembership && <Badge variant="default" className="bg-green-600">Active</Badge>}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Your membership pricing for {organizationType} ({entityType}) in {country}
+            </p>
+          </CardHeader>
+          <CardContent>
+            {membershipLoading ? (
+              <div className="text-center py-4">
+                <Crown className="h-6 w-6 animate-pulse text-yellow-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Loading membership data...</p>
+              </div>
+            ) : countryPricing ? (
+              <div className="space-y-4">
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h5 className="font-medium text-yellow-800 mb-2">Membership Fees</h5>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Quarterly:</span>
+                      <span className="font-medium">{countryPricing.currency} {countryPricing.quarterlyPrice}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Half-Yearly:</span>
+                      <span className="font-medium">{countryPricing.currency} {countryPricing.halfYearlyPrice}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Annually:</span>
+                      <span className="font-medium">{countryPricing.currency} {countryPricing.annualPrice}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {!hasActiveMembership && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      <strong>Membership Benefits:</strong> Get discounts on engagement models when you activate membership.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {hasActiveMembership && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-sm text-green-700">
+                      <strong>Membership Active:</strong> You're eligible for discounts on engagement pricing!
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            ) : (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  No membership data found for your organization type. Please configure membership fees in Master Data Portal.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Engagement Model Selection Section */}
+      <div className="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Handshake className="h-5 w-5" />
+              Select Engagement Model & Pricing
+              <Badge variant="destructive" className="ml-2">Mandatory</Badge>
+              {hasActiveMembership && <Badge variant="default" className="bg-green-600 ml-2">Member Discounts Available</Badge>}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Choose your engagement model and billing frequency. Pricing is customized for {organizationType} ({entityType}) in {country}.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
         {activeModels.length === 0 ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -474,8 +558,10 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

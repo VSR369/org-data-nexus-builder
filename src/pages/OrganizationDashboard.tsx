@@ -386,6 +386,7 @@ const OrganizationDashboard = () => {
                 country={completeUserData?.country || sessionData.country}
                 organizationType={completeUserData?.organizationType || sessionData.organizationType || sessionData.entityType}
                 entityType={completeUserData?.entityType || sessionData.entityType}
+                userId={sessionData.userId}
                 onEngagementSelect={(engagement, pricing) => {
                   setSelectedEngagement(engagement);
                   setEngagementPricing(pricing);
