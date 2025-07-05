@@ -302,10 +302,10 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
         </p>
       </div>
 
-      {/* Main Content - Single Row Layout */}
-      <div className="space-y-6">
-        {/* Membership Plans - Horizontal */}
-        <Card>
+      {/* Main Content - Full Width Horizontal Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Membership Plans - Left Column */}
+        <Card className="h-fit">
           <CardHeader className="text-center pb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Crown className="h-5 w-5 text-yellow-600" />
@@ -325,15 +325,20 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                 <RadioGroup 
                   value={selectedMembershipFrequency} 
                   onValueChange={(value: string) => setSelectedMembershipFrequency(value as 'quarterly' | 'half-yearly' | 'annually')}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                  className="space-y-3"
                 >
                   <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors">
                     <RadioGroupItem value="quarterly" id="membership-quarterly" />
                     <Label htmlFor="membership-quarterly" className="flex-1 cursor-pointer">
-                      <div className="text-center">
-                        <div className="font-semibold">Quarterly</div>
-                        <div className="text-xl font-bold text-yellow-700">{countryPricing.currency} {countryPricing.quarterlyPrice}</div>
-                        <div className="text-xs text-muted-foreground">~{countryPricing.currency} {Math.round(countryPricing.quarterlyPrice / 3)}/month</div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold">Quarterly</div>
+                          <div className="text-sm text-muted-foreground">3 months</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-yellow-700">{countryPricing.currency} {countryPricing.quarterlyPrice}</div>
+                          <div className="text-xs text-muted-foreground">~{countryPricing.currency} {Math.round(countryPricing.quarterlyPrice / 3)}/month</div>
+                        </div>
                       </div>
                     </Label>
                   </div>
@@ -341,10 +346,15 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                   <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors">
                     <RadioGroupItem value="half-yearly" id="membership-half-yearly" />
                     <Label htmlFor="membership-half-yearly" className="flex-1 cursor-pointer">
-                      <div className="text-center">
-                        <div className="font-semibold">Half-Yearly</div>
-                        <div className="text-xl font-bold text-yellow-700">{countryPricing.currency} {countryPricing.halfYearlyPrice}</div>
-                        <div className="text-xs text-muted-foreground">~{countryPricing.currency} {Math.round(countryPricing.halfYearlyPrice / 6)}/month</div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold">Half-Yearly</div>
+                          <div className="text-sm text-muted-foreground">6 months</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-yellow-700">{countryPricing.currency} {countryPricing.halfYearlyPrice}</div>
+                          <div className="text-xs text-muted-foreground">~{countryPricing.currency} {Math.round(countryPricing.halfYearlyPrice / 6)}/month</div>
+                        </div>
                       </div>
                     </Label>
                   </div>
@@ -353,10 +363,15 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                     <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-600 z-10">Best</Badge>
                     <RadioGroupItem value="annually" id="membership-annually" />
                     <Label htmlFor="membership-annually" className="flex-1 cursor-pointer">
-                      <div className="text-center">
-                        <div className="font-semibold">Annual</div>
-                        <div className="text-xl font-bold text-green-700">{countryPricing.currency} {countryPricing.annualPrice}</div>
-                        <div className="text-xs text-green-600">~{countryPricing.currency} {Math.round(countryPricing.annualPrice / 12)}/month</div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold">Annual</div>
+                          <div className="text-sm text-muted-foreground">12 months</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-green-700">{countryPricing.currency} {countryPricing.annualPrice}</div>
+                          <div className="text-xs text-green-600">~{countryPricing.currency} {Math.round(countryPricing.annualPrice / 12)}/month</div>
+                        </div>
                       </div>
                     </Label>
                   </div>
@@ -378,8 +393,8 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           </CardContent>
         </Card>
 
-        {/* Engagement Models - Horizontal */}
-        <Card>
+        {/* Engagement Models - Right Column */}
+        <Card className="h-fit">
           <CardHeader className="text-center pb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Handshake className="h-5 w-5 text-primary" />
