@@ -419,33 +419,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         });
       });
 
-      // Maintain backward compatibility - also save to old key for existing code
-      try {
-        const legacyFormat = updatedAdmins.map(admin => ({
-          id: admin.id,
-          adminName: admin.name,
-          adminEmail: admin.email,
-          email: admin.email,
-          contactNumber: admin.contactNumber,
-          userId: admin.userId,
-          password: admin.password,
-          organizationId: admin.organizationId,
-          organizationName: admin.organizationName,
-          sourceSeekerId: admin.sourceSeekerId,
-          adminCreatedAt: admin.createdAt,
-          adminCreatedBy: admin.adminCreatedBy,
-          role: admin.role,
-          status: admin.isActive ? 'active' : 'inactive',
-          lastUpdated: admin.lastUpdated,
-          updatedBy: admin.updatedBy
-        }));
-        
-        localStorage.setItem('created_administrators', JSON.stringify(legacyFormat));
-        console.log('✅ Successfully saved to created_administrators for backward compatibility');
-        console.log('🔍 LEGACY FORMAT SAVED:', legacyFormat.length, 'administrators');
-      } catch (legacyError) {
-        console.warn('⚠️ Failed to maintain legacy format compatibility:', legacyError);
-      }
+      console.log('✅ Administrator saved to single unified storage successfully');
 
       if (!isEditMode) {
         // Create seeker-admin link for new administrators

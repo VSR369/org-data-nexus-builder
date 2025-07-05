@@ -18,9 +18,9 @@ import {
 import { AdminDataManager } from '@/utils/adminDataManager';
 
 interface StorageHealth {
-  mainStorage: { exists: boolean; count: number; valid: boolean; error: string | null };
-  legacyStorage: { exists: boolean; count: number; valid: boolean; error: string | null };
-  unified: { totalCount: number; duplicates: number };
+  storage: { exists: boolean; count: number; valid: boolean; error: string | null };
+  legacyExists: boolean;
+  totalCount: number;
 }
 
 interface AdminData {
@@ -38,8 +38,7 @@ interface AdminData {
 
 const AdminCreationDiagnostic: React.FC = () => {
   const [storageHealth, setStorageHealth] = useState<StorageHealth | null>(null);
-  const [mainAdmins, setMainAdmins] = useState<AdminData[]>([]);
-  const [legacyAdmins, setLegacyAdmins] = useState<AdminData[]>([]);
+  const [admins, setAdmins] = useState<AdminData[]>([]);
   const [issues, setIssues] = useState<string[]>([]);
   const [showRawData, setShowRawData] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,66 +51,45 @@ const AdminCreationDiagnostic: React.FC = () => {
     const health = AdminDataManager.getStorageHealth();
     setStorageHealth(health);
     
-    // Load main storage data
+    // Load administrator data
     try {
-      const mainData = localStorage.getItem('administrators');
-      if (mainData) {
-        const parsed = JSON.parse(mainData);
-        setMainAdmins(Array.isArray(parsed) ? parsed : []);
-        console.log('📊 Main storage loaded:', parsed.length, 'administrators');
+      const adminData = localStorage.getItem('administrators');
+      if (adminData) {
+        const parsed = JSON.parse(adminData);
+        setAdmins(Array.isArray(parsed) ? parsed : []);
+        console.log('📊 Administrator storage loaded:', parsed.length, 'administrators');
       } else {
-        setMainAdmins([]);
-        console.log('📭 No main storage data found');
+        setAdmins([]);
+        console.log('📭 No administrator data found');
       }
     } catch (error) {
-      foundIssues.push(`Main storage parse error: ${error}`);
-      setMainAdmins([]);
-    }
-
-    // Load legacy storage data
-    try {
-      const legacyData = localStorage.getItem('created_administrators');
-      if (legacyData) {
-        const parsed = JSON.parse(legacyData);
-        setLegacyAdmins(Array.isArray(parsed) ? parsed : []);
-        console.log('📊 Legacy storage loaded:', parsed.length, 'administrators');
-      } else {
-        setLegacyAdmins([]);
-        console.log('📭 No legacy storage data found');
-      }
-    } catch (error) {
-      foundIssues.push(`Legacy storage parse error: ${error}`);
-      setLegacyAdmins([]);
+      foundIssues.push(`Administrator storage parse error: ${error}`);
+      setAdmins([]);
     }
 
     // Analyze data quality issues
-    if (health.mainStorage.exists && !health.mainStorage.valid) {
-      foundIssues.push('Main storage contains invalid data format');
-    }
-    
-    if (health.legacyStorage.exists && !health.legacyStorage.valid) {
-      foundIssues.push('Legacy storage contains invalid data format');
+    if (health.storage.exists && !health.storage.valid) {
+      foundIssues.push('Administrator storage contains invalid data format');
     }
 
-    if (health.unified.duplicates > 0) {
-      foundIssues.push(`Found ${health.unified.duplicates} duplicate administrators across storages`);
+    if (health.legacyExists) {
+      foundIssues.push('Legacy administrator storage detected - migration recommended');
     }
 
     // Check for missing required fields
-    [...mainAdmins, ...legacyAdmins].forEach((admin, index) => {
-      const source = index < mainAdmins.length ? 'main' : 'legacy';
+    admins.forEach((admin, index) => {
       const adminName = admin.name || admin.adminName || `Admin ${index + 1}`;
       
       if (!admin.name && !admin.adminName) {
-        foundIssues.push(`${source} storage: ${adminName} missing name field`);
+        foundIssues.push(`Administrator ${adminName} missing name field`);
       }
       
       if (!admin.email && !admin.adminEmail) {
-        foundIssues.push(`${source} storage: ${adminName} missing email field`);
+        foundIssues.push(`Administrator ${adminName} missing email field`);
       }
       
       if (!admin.sourceSeekerId) {
-        foundIssues.push(`${source} storage: ${adminName} missing sourceSeekerId`);
+        foundIssues.push(`Administrator ${adminName} missing sourceSeekerId`);
       }
     });
 
@@ -122,7 +100,7 @@ const AdminCreationDiagnostic: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
+      await new Promise(resolve => setTimeout(resolve, 500));
       analyzeAdminData();
     } finally {
       setRefreshing(false);
@@ -143,19 +121,19 @@ const AdminCreationDiagnostic: React.FC = () => {
     analyzeAdminData();
   }, []);
 
-  const renderStorageStatus = (storage: any, title: string) => (
+  const renderStorageStatus = () => (
     <div className="flex items-center justify-between p-3 border rounded-lg">
       <div className="flex items-center gap-2">
         <Database className="h-4 w-4" />
-        <span className="font-medium">{title}</span>
+        <span className="font-medium">Administrator Storage</span>
       </div>
       <div className="flex items-center gap-2">
-        {storage.exists ? (
+        {storageHealth?.storage.exists ? (
           <>
-            <Badge variant={storage.valid ? "default" : "destructive"}>
-              {storage.count} records
+            <Badge variant={storageHealth.storage.valid ? "default" : "destructive"}>
+              {storageHealth.storage.count} records
             </Badge>
-            {storage.valid ? (
+            {storageHealth.storage.valid ? (
               <CheckCircle className="h-4 w-4 text-green-600" />
             ) : (
               <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -168,14 +146,14 @@ const AdminCreationDiagnostic: React.FC = () => {
     </div>
   );
 
-  const renderAdminData = (admin: AdminData, source: string, index: number) => (
-    <div key={`${source}-${index}`} className="p-3 border rounded-lg bg-gray-50">
+  const renderAdminData = (admin: AdminData, index: number) => (
+    <div key={index} className="p-3 border rounded-lg bg-gray-50">
       <div className="flex items-center justify-between mb-2">
         <span className="font-medium text-sm">
           {admin.name || admin.adminName || `Admin ${index + 1}`}
         </span>
         <Badge variant="outline" className="text-xs">
-          {source}
+          Unified Storage
         </Badge>
       </div>
       <div className="space-y-1 text-xs text-gray-600">
@@ -197,7 +175,7 @@ const AdminCreationDiagnostic: React.FC = () => {
             Admin Creation Diagnostic
           </h1>
           <p className="text-gray-600 mt-1">
-            Analyze administrator storage, diagnose issues, and troubleshoot data retrieval problems
+            Unified administrator storage analysis and troubleshooting
           </p>
         </div>
         <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
@@ -217,20 +195,24 @@ const AdminCreationDiagnostic: React.FC = () => {
         <CardContent className="space-y-4">
           {storageHealth && (
             <>
-              {renderStorageStatus(storageHealth.mainStorage, "Main Administrator Storage")}
-              {renderStorageStatus(storageHealth.legacyStorage, "Legacy Administrator Storage")}
+              {renderStorageStatus()}
+              
+              {storageHealth.legacyExists && (
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <span className="font-medium">Legacy Storage Detected</span>
+                  </div>
+                  <Badge variant="destructive">Migration needed</Badge>
+                </div>
+              )}
               
               <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span className="font-medium">Unified View</span>
+                  <span className="font-medium">Total Administrators</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default">{storageHealth.unified.totalCount} total</Badge>
-                  {storageHealth.unified.duplicates > 0 && (
-                    <Badge variant="destructive">{storageHealth.unified.duplicates} duplicates</Badge>
-                  )}
-                </div>
+                <Badge variant="default">{storageHealth.totalCount} total</Badge>
               </div>
             </>
           )}
@@ -273,25 +255,27 @@ const AdminCreationDiagnostic: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 className="font-medium text-yellow-800 mb-2">Common Edit Admin Issues:</h4>
-            <ul className="space-y-1 text-sm text-yellow-700">
-              <li>• Form fields showing blank: Data format mismatch between storage formats</li>
-              <li>• "Administrator not found": Missing sourceSeekerId mapping</li>
-              <li>• Missing contact/user ID: Legacy data doesn't have these fields</li>
-              <li>• Form not populating: Timing issues with form reset</li>
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h4 className="font-medium text-green-800 mb-2">✅ Unified Storage Solution:</h4>
+            <ul className="space-y-1 text-sm text-green-700">
+              <li>• Single administrator storage for all operations</li>
+              <li>• Consistent data format across all components</li>
+              <li>• Direct form field mapping from storage</li>
+              <li>• Eliminated dual storage complexity</li>
             </ul>
           </div>
           
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Data Migration Solution:</h4>
-            <p className="text-sm text-blue-700 mb-3">
-              Migrate legacy administrator data to the unified format to resolve edit issues.
-            </p>
-            <Button onClick={handleMigration} variant="outline" size="sm">
-              Migrate Legacy Data
-            </Button>
-          </div>
+          {storageHealth?.legacyExists && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-2">Migration Required:</h4>
+              <p className="text-sm text-blue-700 mb-3">
+                Legacy administrator data detected. Migrate to unified storage for full functionality.
+              </p>
+              <Button onClick={handleMigration} variant="outline" size="sm">
+                Migrate Legacy Data
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -300,7 +284,7 @@ const AdminCreationDiagnostic: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5" />
-            Administrator Data ({mainAdmins.length + legacyAdmins.length} total)
+            Administrator Data ({admins.length} total)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -310,32 +294,27 @@ const AdminCreationDiagnostic: React.FC = () => {
               variant="outline" 
               size="sm"
             >
-              {showRawData ? 'Hide' : 'Show'} Raw Data
+              {showRawData ? 'Hide' : 'Show'} Administrator Details
             </Button>
             <Info className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-600">
-              View stored administrator data to understand format differences
+              View stored administrator data from unified storage
             </span>
           </div>
 
           {showRawData && (
             <>
-              {mainAdmins.length > 0 && (
+              {admins.length > 0 ? (
                 <div>
-                  <h4 className="font-medium mb-3">Main Storage ({mainAdmins.length})</h4>
+                  <h4 className="font-medium mb-3">Administrators ({admins.length})</h4>
                   <div className="grid gap-3 md:grid-cols-2">
-                    {mainAdmins.map((admin, index) => renderAdminData(admin, 'main', index))}
+                    {admins.map((admin, index) => renderAdminData(admin, index))}
                   </div>
                 </div>
-              )}
-
-              {legacyAdmins.length > 0 && (
-                <div>
-                  <Separator className="my-4" />
-                  <h4 className="font-medium mb-3">Legacy Storage ({legacyAdmins.length})</h4>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {legacyAdmins.map((admin, index) => renderAdminData(admin, 'legacy', index))}
-                  </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No administrators found in storage</p>
                 </div>
               )}
             </>

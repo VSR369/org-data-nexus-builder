@@ -47,8 +47,7 @@ export interface MainStorageAdmin {
 }
 
 export class AdminDataManager {
-  private static readonly MAIN_STORAGE_KEY = 'administrators';
-  private static readonly LEGACY_STORAGE_KEY = 'created_administrators';
+  private static readonly STORAGE_KEY = 'administrators';
   
   /**
    * Convert legacy admin record to unified format
@@ -106,38 +105,20 @@ export class AdminDataManager {
   static findAdminForSeeker(seekerId: string, seekerData?: any): UnifiedAdminData | null {
     console.log('🔍 Searching for administrator for seeker ID:', seekerId);
     
-    // First, check main storage
     try {
-      const mainData = localStorage.getItem(this.MAIN_STORAGE_KEY);
-      if (mainData) {
-        const mainAdmins: MainStorageAdmin[] = JSON.parse(mainData);
-        console.log('🔍 Main storage - Found', mainAdmins.length, 'administrators');
+      const storageData = localStorage.getItem(this.STORAGE_KEY);
+      if (storageData) {
+        const admins: MainStorageAdmin[] = JSON.parse(storageData);
+        console.log('🔍 Found', admins.length, 'administrators in storage');
         
-        const mainAdmin = mainAdmins.find(admin => admin.sourceSeekerId === seekerId);
-        if (mainAdmin) {
-          console.log('✅ Found administrator in main storage:', mainAdmin.name);
-          return this.convertMainToUnified(mainAdmin);
+        const admin = admins.find(admin => admin.sourceSeekerId === seekerId);
+        if (admin) {
+          console.log('✅ Found administrator:', admin.name);
+          return this.convertMainToUnified(admin);
         }
       }
     } catch (error) {
-      console.error('❌ Error reading main storage:', error);
-    }
-
-    // If not found, check legacy storage
-    try {
-      const legacyData = localStorage.getItem(this.LEGACY_STORAGE_KEY);
-      if (legacyData) {
-        const legacyAdmins: LegacyAdminRecord[] = JSON.parse(legacyData);
-        console.log('🔍 Legacy storage - Found', legacyAdmins.length, 'administrators');
-        
-        const legacyAdmin = legacyAdmins.find(admin => admin.sourceSeekerId === seekerId);
-        if (legacyAdmin) {
-          console.log('✅ Found administrator in legacy storage:', legacyAdmin.adminName);
-          return this.convertLegacyToUnified(legacyAdmin, seekerData);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error reading legacy storage:', error);
+      console.error('❌ Error reading administrator storage:', error);
     }
 
     console.log('❌ No administrator found for seeker ID:', seekerId);
@@ -151,41 +132,21 @@ export class AdminDataManager {
     console.log('📊 Loading all administrators in unified format');
     const admins: UnifiedAdminData[] = [];
 
-    // Load from main storage
     try {
-      const mainData = localStorage.getItem(this.MAIN_STORAGE_KEY);
-      if (mainData) {
-        const mainAdmins: MainStorageAdmin[] = JSON.parse(mainData);
-        console.log('📊 Main storage - Found', mainAdmins.length, 'administrators');
+      const storageData = localStorage.getItem(this.STORAGE_KEY);
+      if (storageData) {
+        const storageAdmins: MainStorageAdmin[] = JSON.parse(storageData);
+        console.log('📊 Found', storageAdmins.length, 'administrators in storage');
         
-        mainAdmins.forEach(admin => {
+        storageAdmins.forEach(admin => {
           admins.push(this.convertMainToUnified(admin));
         });
       }
     } catch (error) {
-      console.error('❌ Error reading main storage:', error);
+      console.error('❌ Error reading administrator storage:', error);
     }
 
-    // Load from legacy storage (only if not already in main storage)
-    try {
-      const legacyData = localStorage.getItem(this.LEGACY_STORAGE_KEY);
-      if (legacyData) {
-        const legacyAdmins: LegacyAdminRecord[] = JSON.parse(legacyData);
-        console.log('📊 Legacy storage - Found', legacyAdmins.length, 'administrators');
-        
-        legacyAdmins.forEach(legacyAdmin => {
-          // Only add if not already present from main storage
-          const existsInMain = admins.some(admin => admin.sourceSeekerId === legacyAdmin.sourceSeekerId);
-          if (!existsInMain) {
-            admins.push(this.convertLegacyToUnified(legacyAdmin));
-          }
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error reading legacy storage:', error);
-    }
-
-    console.log('✅ Total unified administrators loaded:', admins.length);
+    console.log('✅ Total administrators loaded:', admins.length);
     return admins;
   }
 
@@ -218,7 +179,7 @@ export class AdminDataManager {
   }
 
   /**
-   * Migrate legacy data to main storage
+   * Migrate legacy data from 'created_administrators' to main storage
    */
   static async migrateLegacyData(): Promise<{ success: boolean; migratedCount: number; errors: string[] }> {
     console.log('🔄 Starting legacy data migration...');
@@ -227,17 +188,17 @@ export class AdminDataManager {
 
     try {
       // Get existing main storage data
-      const mainData = localStorage.getItem(this.MAIN_STORAGE_KEY);
+      const mainData = localStorage.getItem(this.STORAGE_KEY);
       const existingMainAdmins: MainStorageAdmin[] = mainData ? JSON.parse(mainData) : [];
       
-      // Get legacy data
-      const legacyData = localStorage.getItem(this.LEGACY_STORAGE_KEY);
+      // Get legacy data from 'created_administrators'
+      const legacyData = localStorage.getItem('created_administrators');
       if (!legacyData) {
-        console.log('📭 No legacy data to migrate');
+        console.log('📭 No legacy data to migrate from created_administrators');
         return { success: true, migratedCount: 0, errors: [] };
       }
 
-      const legacyAdmins: LegacyAdminRecord[] = JSON.parse(legacyData);
+      const legacyAdmins: any[] = JSON.parse(legacyData);
       console.log('🔄 Found', legacyAdmins.length, 'legacy administrators to migrate');
 
       // Convert and migrate each legacy admin
@@ -250,20 +211,29 @@ export class AdminDataManager {
           );
 
           if (!existsInMain) {
-            const unifiedAdmin = this.convertLegacyToUnified(legacyAdmin);
-            
-            // Convert to main storage format
+            // Convert legacy format to unified format
             const mainAdmin: MainStorageAdmin = {
-              ...unifiedAdmin,
-              password: 'MIGRATED_FROM_LEGACY' // Placeholder - will need reset
+              id: legacyAdmin.id,
+              name: legacyAdmin.adminName || legacyAdmin.name,
+              email: legacyAdmin.adminEmail || legacyAdmin.email,
+              contactNumber: legacyAdmin.contactNumber || '',
+              userId: legacyAdmin.userId || legacyAdmin.adminId,
+              password: legacyAdmin.password,
+              organizationId: legacyAdmin.organizationId,
+              organizationName: legacyAdmin.organizationName,
+              sourceSeekerId: legacyAdmin.sourceSeekerId,
+              createdAt: legacyAdmin.adminCreatedAt || legacyAdmin.createdAt || new Date().toISOString(),
+              isActive: legacyAdmin.status === 'active' || true,
+              role: legacyAdmin.role || 'administrator',
+              adminCreatedBy: legacyAdmin.adminCreatedBy || 'system'
             };
 
             existingMainAdmins.push(mainAdmin);
             migratedCount++;
-            console.log('✅ Migrated administrator:', legacyAdmin.adminName);
+            console.log('✅ Migrated administrator:', mainAdmin.name);
           }
         } catch (error) {
-          const errorMsg = `Failed to migrate admin ${legacyAdmin.adminName}: ${error}`;
+          const errorMsg = `Failed to migrate admin ${legacyAdmin.adminName || legacyAdmin.name}: ${error}`;
           console.error('❌', errorMsg);
           errors.push(errorMsg);
         }
@@ -271,8 +241,12 @@ export class AdminDataManager {
 
       // Save migrated data
       if (migratedCount > 0) {
-        localStorage.setItem(this.MAIN_STORAGE_KEY, JSON.stringify(existingMainAdmins));
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(existingMainAdmins));
         console.log('✅ Migration complete -', migratedCount, 'administrators migrated');
+        
+        // Remove legacy storage after successful migration
+        localStorage.removeItem('created_administrators');
+        console.log('🧹 Legacy storage removed after successful migration');
       }
 
       return {
@@ -299,46 +273,33 @@ export class AdminDataManager {
     console.log('🏥 Checking administrator storage health...');
     
     const health = {
-      mainStorage: { exists: false, count: 0, valid: true, error: null as string | null },
-      legacyStorage: { exists: false, count: 0, valid: true, error: null as string | null },
-      unified: { totalCount: 0, duplicates: 0 }
+      storage: { exists: false, count: 0, valid: true, error: null as string | null },
+      legacyExists: false,
+      totalCount: 0
     };
 
     // Check main storage
     try {
-      const mainData = localStorage.getItem(this.MAIN_STORAGE_KEY);
-      if (mainData) {
-        const mainAdmins = JSON.parse(mainData);
-        health.mainStorage.exists = true;
-        health.mainStorage.count = Array.isArray(mainAdmins) ? mainAdmins.length : 0;
-        health.mainStorage.valid = Array.isArray(mainAdmins);
+      const storageData = localStorage.getItem(this.STORAGE_KEY);
+      if (storageData) {
+        const admins = JSON.parse(storageData);
+        health.storage.exists = true;
+        health.storage.count = Array.isArray(admins) ? admins.length : 0;
+        health.storage.valid = Array.isArray(admins);
+        health.totalCount = health.storage.count;
       }
     } catch (error) {
-      health.mainStorage.error = `Parse error: ${error}`;
-      health.mainStorage.valid = false;
+      health.storage.error = `Parse error: ${error}`;
+      health.storage.valid = false;
     }
 
-    // Check legacy storage
+    // Check if legacy storage exists (for migration purposes)
     try {
-      const legacyData = localStorage.getItem(this.LEGACY_STORAGE_KEY);
-      if (legacyData) {
-        const legacyAdmins = JSON.parse(legacyData);
-        health.legacyStorage.exists = true;
-        health.legacyStorage.count = Array.isArray(legacyAdmins) ? legacyAdmins.length : 0;
-        health.legacyStorage.valid = Array.isArray(legacyAdmins);
-      }
+      const legacyData = localStorage.getItem('created_administrators');
+      health.legacyExists = !!legacyData;
     } catch (error) {
-      health.legacyStorage.error = `Parse error: ${error}`;
-      health.legacyStorage.valid = false;
+      console.warn('Error checking legacy storage:', error);
     }
-
-    // Check for duplicates
-    const allAdmins = this.getAllAdministrators();
-    health.unified.totalCount = allAdmins.length;
-    
-    const seekerIds = allAdmins.map(admin => admin.sourceSeekerId);
-    const uniqueSeekerIds = new Set(seekerIds);
-    health.unified.duplicates = seekerIds.length - uniqueSeekerIds.size;
 
     console.log('🏥 Storage health check complete:', health);
     return health;

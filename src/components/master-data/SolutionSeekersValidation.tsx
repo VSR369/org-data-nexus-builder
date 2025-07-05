@@ -53,7 +53,7 @@ const SolutionSeekersValidation: React.FC = () => {
     error: adminsError,
     refresh: refreshAdmins
   } = useLocalStorageState<AdminRecord[]>({
-    key: 'created_administrators',
+    key: 'administrators',
     defaultValue: [],
     validator: (value): value is AdminRecord[] => Array.isArray(value),
     onError: (error, operation) => {
