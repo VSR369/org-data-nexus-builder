@@ -39,7 +39,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   // State for selections
   const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<string>('');
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string>('');
-  const [selectedPricingFrequency, setSelectedPricingFrequency] = useState<string>('halfyearly');
+  const [selectedPricingFrequency, setSelectedPricingFrequency] = useState<string>('');
   
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
@@ -104,6 +104,52 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   }, [selectedEngagementModel, selectedMembershipPlan]);
 
+  // Handle membership plan selection/deselection
+  const handleMembershipPlanChange = (value: string) => {
+    if (selectedMembershipPlan === value) {
+      // Deselect if clicking on already selected plan
+      setSelectedMembershipPlan('');
+      setSelectedEngagementModel(''); // Clear engagement model when deselecting membership
+      setSelectedPricingFrequency(''); // Clear pricing frequency too
+      localStorage.removeItem('selectedMembershipPlan');
+      localStorage.removeItem('selectedEngagementModel');
+      localStorage.removeItem('selectedPricingFrequency');
+      console.log('🔄 Deselected membership plan');
+    } else {
+      setSelectedMembershipPlan(value);
+      console.log('✅ Selected membership plan:', value);
+    }
+  };
+
+  // Handle engagement model selection/deselection
+  const handleEngagementModelChange = (value: string) => {
+    if (selectedEngagementModel === value) {
+      // Deselect if clicking on already selected model
+      setSelectedEngagementModel('');
+      setSelectedPricingFrequency(''); // Clear pricing frequency when deselecting
+      localStorage.removeItem('selectedEngagementModel');
+      localStorage.removeItem('selectedPricingFrequency');
+      console.log('🔄 Deselected engagement model');
+    } else {
+      setSelectedEngagementModel(value);
+      console.log('✅ Selected engagement model:', value);
+    }
+  };
+
+  // Handle pricing frequency selection/deselection
+  const handlePricingFrequencyChange = (value: string) => {
+    if (selectedPricingFrequency === value) {
+      // Deselect if clicking on already selected frequency
+      setSelectedPricingFrequency('');
+      localStorage.removeItem('selectedPricingFrequency');
+      console.log('🔄 Deselected pricing frequency');
+    } else {
+      setSelectedPricingFrequency(value);
+      console.log('✅ Selected pricing frequency:', value);
+    }
+  };
+
+  // Update localStorage when pricing frequency changes
   useEffect(() => {
     if (selectedPricingFrequency) {
       localStorage.setItem('selectedPricingFrequency', selectedPricingFrequency);
@@ -273,7 +319,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <RadioGroup value={selectedMembershipPlan} onValueChange={setSelectedMembershipPlan}>
+            <RadioGroup value={selectedMembershipPlan} onValueChange={handleMembershipPlanChange}>
               <div className="space-y-4">
                 {membershipPlans.map((plan) => (
                   <div key={plan.id} className="space-y-2">
@@ -320,7 +366,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           </CardHeader>
           <CardContent>
             {selectedMembershipPlan ? (
-              <RadioGroup value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
+              <RadioGroup value={selectedEngagementModel} onValueChange={handleEngagementModelChange}>
                 <div className="space-y-6">
                   {engagementModels.map((model) => (
                     <div key={model.id}>
@@ -377,7 +423,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           </CardHeader>
           <CardContent>
             {selectedMembershipPlan ? (
-              <RadioGroup value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
+              <RadioGroup value={selectedEngagementModel} onValueChange={handleEngagementModelChange}>
                 <div className="space-y-6">
                   {advancedModels.map((model) => (
                     <div key={model.id}>
@@ -435,11 +481,11 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                 {/* Featured pricing - Half-Yearly highlighted */}
                 <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                   <CardContent className="p-6 text-center">
-                    <div className="text-sm opacity-90 mb-1">{getPricingForDisplay('halfyearly').configName}</div>
+                    <div className="text-sm opacity-90 mb-1">{getPricingForDisplay(selectedPricingFrequency || 'halfyearly').configName}</div>
                     <div className="text-3xl font-bold mb-1">
-                      {formatCurrency(getPricingForDisplay('halfyearly').price, getPricingForDisplay('halfyearly').currency)}
+                      {formatCurrency(getPricingForDisplay(selectedPricingFrequency || 'halfyearly').price, getPricingForDisplay(selectedPricingFrequency || 'halfyearly').currency)}
                     </div>
-                    <div className="text-sm opacity-90">Half-Yearly</div>
+                    <div className="text-sm opacity-90">{selectedPricingFrequency ? (selectedPricingFrequency.charAt(0).toUpperCase() + selectedPricingFrequency.slice(1)) : 'Half-Yearly'}</div>
                     {membershipStatus === 'active' && (
                       <div className="text-xs opacity-75 mt-1">Member Discount Applied</div>
                     )}
@@ -447,7 +493,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                 </Card>
 
                 {/* Other pricing options */}
-                <RadioGroup value={selectedPricingFrequency} onValueChange={setSelectedPricingFrequency}>
+                <RadioGroup value={selectedPricingFrequency} onValueChange={handlePricingFrequencyChange}>
                   <div className="space-y-3">
                     <Label htmlFor="pricing-quarterly" className="cursor-pointer">
                       <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
@@ -491,7 +537,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
                 {/* Pricing Configuration Info */}
                 <div className="text-xs text-gray-500 text-center p-2 bg-gray-50 rounded">
-                  Pricing from: {getPricingForDisplay(selectedPricingFrequency).configName}
+                  Pricing from: {getPricingForDisplay(selectedPricingFrequency || 'halfyearly').configName}
                 </div>
               </div>
             ) : (
