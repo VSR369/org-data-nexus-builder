@@ -513,11 +513,19 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         <Card className="bg-green-50 border border-green-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <span className="font-medium">Current Selection:</span>
-                {selectedMembershipPlan && <span className="ml-2 text-green-700">{selectedMembershipPlan.charAt(0).toUpperCase() + selectedMembershipPlan.slice(1)} Plan</span>}
-                {selectedMembershipPlan && selectedEngagementModel && <span className="mx-2">•</span>}
-                {selectedEngagementModel && <span className="text-green-700">{selectedEngagementModel}</span>}
+              <div className="text-sm space-y-1">
+                {selectedMembershipPlan && (
+                  <div>
+                    <span className="font-medium">Current Selection of Membership Plan:</span>
+                    <span className="ml-2 text-green-700">{selectedMembershipPlan.charAt(0).toUpperCase() + selectedMembershipPlan.slice(1)} Plan</span>
+                  </div>
+                )}
+                {selectedEngagementModel && (
+                  <div>
+                    <span className="font-medium">Current Selection of Engagement Model:</span>
+                    <span className="ml-2 text-green-700">{selectedEngagementModel}</span>
+                  </div>
+                )}
               </div>
               {membershipStatus === 'active' && (
                 <Badge className="bg-green-100 text-green-800">20% Member Discount Applied</Badge>
