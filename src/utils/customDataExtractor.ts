@@ -272,21 +272,27 @@ export class CustomDataExtractor {
       }
     });
 
-    // Step 3: Create clean custom-only storage structure
+    // Step 3: Create clean custom-only storage structure with validation and redundancy
     console.log('🏗️ Creating clean custom-only storage structure...');
     
-    // Clear and recreate with only custom data
-    const customOnlyPrefix = 'custom_';
-    Object.keys(report.extractedData).forEach(category => {
-      const cleanKey = `${customOnlyPrefix}${category}`;
-      localStorage.setItem(cleanKey, JSON.stringify(report.extractedData[category]));
-      console.log(`✅ Preserved custom data: ${cleanKey}`);
-    });
+    const saveResults = await this.saveCustomConfig(report.extractedData);
+    
+    // Update report with save results
+    report.preservedCustomKeys = saveResults.savedKeys;
+    if (saveResults.errors.length > 0) {
+      console.error('❌ Some data failed to save:', saveResults.errors);
+    }
 
-    // Step 4: Set permanent custom-only flag
-    localStorage.setItem('master_data_mode', 'custom_only');
-    localStorage.setItem('custom_data_extraction_timestamp', new Date().toISOString());
-    localStorage.setItem('custom_data_report', JSON.stringify(report));
+    // Step 4: Set permanent custom-only flag with validation
+    const configData = {
+      mode: 'custom_only',
+      timestamp: new Date().toISOString(),
+      report: report
+    };
+    
+    await this.saveWithValidation('master_data_mode', 'custom_only');
+    await this.saveWithValidation('custom_data_extraction_timestamp', new Date().toISOString());
+    await this.saveWithValidation('custom_data_report', JSON.stringify(report));
 
     console.log('✅ === CUSTOM DATA EXTRACTION COMPLETE ===');
     console.log(`📊 Summary: ${report.totalCustomConfigurations} custom configurations across ${report.customDataCategories.length} categories`);
@@ -397,6 +403,131 @@ export class CustomDataExtractor {
     }
 
     return false;
+  }
+
+  /**
+   * Save custom configuration data with validation and redundancy
+   */
+  static async saveCustomConfig(extractedData: Record<string, any>): Promise<{
+    savedKeys: string[];
+    errors: string[];
+  }> {
+    console.log('💾 === SAVING CUSTOM CONFIG WITH VALIDATION ===');
+    
+    const savedKeys: string[] = [];
+    const errors: string[] = [];
+    
+    for (const [category, data] of Object.entries(extractedData)) {
+      console.log(`💾 Saving custom data for category: ${category}`);
+      
+      // Primary storage key
+      const primaryKey = `custom_${category}`;
+      // Backup storage keys for redundancy
+      const backupKey1 = `custom_backup_${category}`;
+      const backupKey2 = `custom_backup2_${category}`;
+      
+      try {
+        const jsonData = JSON.stringify(data);
+        
+        // Save to primary location
+        const primarySaveResult = await this.saveWithValidation(primaryKey, jsonData);
+        if (primarySaveResult.success) {
+          savedKeys.push(primaryKey);
+          console.log(`✅ PRIMARY: Saved ${primaryKey} (${jsonData.length} characters)`);
+        } else {
+          errors.push(`Primary save failed for ${category}: ${primarySaveResult.error}`);
+        }
+        
+        // Save to backup locations for redundancy
+        const backup1Result = await this.saveWithValidation(backupKey1, jsonData);
+        if (backup1Result.success) {
+          savedKeys.push(backupKey1);
+          console.log(`✅ BACKUP1: Saved ${backupKey1}`);
+        } else {
+          errors.push(`Backup1 save failed for ${category}: ${backup1Result.error}`);
+        }
+        
+        const backup2Result = await this.saveWithValidation(backupKey2, jsonData);
+        if (backup2Result.success) {
+          savedKeys.push(backupKey2);
+          console.log(`✅ BACKUP2: Saved ${backupKey2}`);
+        } else {
+          errors.push(`Backup2 save failed for ${category}: ${backup2Result.error}`);
+        }
+        
+        console.log(`📊 Category ${category}: ${Array.isArray(data) ? data.length : Object.keys(data).length} items saved`);
+        
+      } catch (error) {
+        const errorMsg = `Failed to process ${category}: ${error}`;
+        errors.push(errorMsg);
+        console.error(`❌ ${errorMsg}`);
+      }
+    }
+    
+    console.log(`💾 === SAVE COMPLETE: ${savedKeys.length} keys saved, ${errors.length} errors ===`);
+    return { savedKeys, errors };
+  }
+
+  /**
+   * Save data with validation and error handling
+   */
+  static async saveWithValidation(key: string, value: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      // Attempt to save
+      localStorage.setItem(key, value);
+      
+      // Validate by immediately reading back
+      const readBack = localStorage.getItem(key);
+      
+      if (readBack === null) {
+        return {
+          success: false,
+          error: 'Failed to save - localStorage.getItem returned null'
+        };
+      }
+      
+      if (readBack !== value) {
+        return {
+          success: false,
+          error: 'Data integrity check failed - saved data does not match original'
+        };
+      }
+      
+      // Additional validation for JSON data
+      if (value.startsWith('{') || value.startsWith('[')) {
+        try {
+          JSON.parse(readBack);
+        } catch (jsonError) {
+          return {
+            success: false,
+            error: `JSON validation failed: ${jsonError}`
+          };
+        }
+      }
+      
+      console.log(`✅ VALIDATED: ${key} saved and verified successfully`);
+      return { success: true };
+      
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`❌ SAVE FAILED: ${key} - ${errorMsg}`);
+      
+      // Handle quota exceeded error specifically
+      if (errorMsg.includes('QuotaExceededError') || errorMsg.includes('quota')) {
+        return {
+          success: false,
+          error: 'localStorage quota exceeded - please clear some data'
+        };
+      }
+      
+      return {
+        success: false,
+        error: errorMsg
+      };
+    }
   }
 
   /**
