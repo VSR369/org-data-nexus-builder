@@ -247,18 +247,57 @@ const MasterDataRecoveryCenter: React.FC = () => {
     }
   };
 
-  const restoreAllDefaults = () => {
+  const restoreCustomData = () => {
     try {
-      seedingService.seedAll();
-      checkDataHealth();
-      toast({
-        title: "Restore Successful",
-        description: "All master data restored to default values",
-      });
+      console.log('🔍 Checking for custom master data backups...');
+      
+      // Check for any existing custom data in localStorage
+      const customDataKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('master_data') && !key.includes('last_backup') && !key.includes('gist_url')) {
+          customDataKeys.push(key);
+        }
+      }
+
+      if (customDataKeys.length > 0) {
+        console.log('✅ Found custom master data keys:', customDataKeys);
+        
+        // Restore from existing custom data
+        customDataKeys.forEach(key => {
+          const data = localStorage.getItem(key);
+          if (data) {
+            console.log(`📥 Restoring custom data for ${key}`);
+            // Force refresh the data managers
+            if (key.includes('domain_groups')) {
+              domainGroupsDataManager.saveData(JSON.parse(data));
+            } else if (key.includes('countries')) {
+              countriesDataManager.saveData(JSON.parse(data));
+            } else if (key.includes('organization_types')) {
+              organizationTypesDataManager.saveData(JSON.parse(data));
+            }
+          }
+        });
+        
+        checkDataHealth();
+        
+        toast({
+          title: "Custom Data Restored ✅",
+          description: `Successfully restored your custom master data from ${customDataKeys.length} sources`,
+        });
+      } else {
+        // Check for backup files or other recovery options
+        toast({
+          title: "No Custom Data Found",
+          description: "No custom master data found in storage. Please import from backup file or configure manually.",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
+      console.error('❌ Error restoring custom data:', error);
       toast({
         title: "Restore Failed",
-        description: "Failed to restore master data defaults",
+        description: "Failed to restore custom master data",
         variant: "destructive"
       });
     }
@@ -421,13 +460,35 @@ const MasterDataRecoveryCenter: React.FC = () => {
               <h3 className="text-lg font-medium mb-4">Emergency Recovery Actions</h3>
               
               <div className="space-y-4">
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <h4 className="font-medium mb-2">Restore Custom Data</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Restore your custom master data configurations from local storage backups.
+                  </p>
+                  <Button 
+                    onClick={restoreCustomData}
+                    variant="default"
+                    className="flex items-center gap-2 mr-4"
+                  >
+                    <Save className="w-4 h-4" />
+                    Restore Custom Data
+                  </Button>
+                </div>
+
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <h4 className="font-medium mb-2">Restore All Defaults</h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    This will reset all master data to default values. Use this if data is corrupted or missing.
+                    This will reset all master data to default values. Use this only if you want to start fresh.
                   </p>
                   <Button 
-                    onClick={restoreAllDefaults}
+                    onClick={() => {
+                      seedingService.seedAll();
+                      checkDataHealth();
+                      toast({
+                        title: "Defaults Restored",
+                        description: "All master data restored to default values",
+                      });
+                    }}
                     variant="outline"
                     className="flex items-center gap-2"
                   >
