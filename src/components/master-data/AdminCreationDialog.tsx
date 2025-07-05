@@ -58,7 +58,7 @@ const adminSchema = z.object({
 
 type AdminFormData = z.infer<typeof adminSchema>;
 
-// Administrator data structure as per requirements
+// Unified Administrator data structure
 interface AdminData {
   id: string;
   name: string;
@@ -74,6 +74,26 @@ interface AdminData {
   sourceSeekerId: string;
   role: string;
   adminCreatedBy: string;
+  lastUpdated?: string;
+  updatedBy?: string;
+}
+
+// Legacy administrator format for backward compatibility
+interface LegacyAdminData {
+  id: string;
+  adminName: string;
+  adminEmail: string;
+  email: string;
+  contactNumber?: string;
+  userId?: string;
+  password: string;
+  organizationId: string;
+  organizationName: string;
+  sourceSeekerId: string;
+  adminCreatedAt: string;
+  adminCreatedBy: string;
+  role: string;
+  status: string;
   lastUpdated?: string;
   updatedBy?: string;
 }
@@ -240,21 +260,38 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     }
   });
 
+  // Enhanced form binding utility to handle both data formats
+  const extractAdminFormData = (admin: any): Partial<AdminFormData> => {
+    console.log('🔄 FORM BINDING - Processing admin data:', admin);
+    
+    // Try both main and legacy formats
+    const formData = {
+      adminName: admin.name || admin.adminName || '',
+      email: admin.email || admin.adminEmail || '',
+      contactNumber: admin.contactNumber || '',
+      userId: admin.userId || '',
+      password: '', // Never populate password for security
+      confirmPassword: ''
+    };
+    
+    console.log('🔄 FORM BINDING - Extracted data:', formData);
+    return formData;
+  };
+
   // Update form when dialog opens - only pre-fill when editing existing admin
   useEffect(() => {
     if (open) {
       if (existingAdmin) {
         setIsEditMode(true);
-        form.reset({
-          adminName: existingAdmin.adminName || '',
-          email: existingAdmin.email || '',
-          contactNumber: existingAdmin.contactNumber || '',
-          userId: existingAdmin.userId || '',
-          password: existingAdmin.password || '',
-          confirmPassword: existingAdmin.password || ''
-        });
+        console.log('✏️ EDIT MODE - Populating form with:', existingAdmin);
+        
+        const formData = extractAdminFormData(existingAdmin);
+        form.reset(formData);
+        
+        console.log('✏️ FORM POPULATED - Form values set to:', formData);
       } else {
         setIsEditMode(false);
+        console.log('➕ CREATE MODE - Resetting form to blank');
         // Reset to completely blank form for new administrator
         form.reset({
           adminName: '',
@@ -488,12 +525,16 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           <div className="mb-4 p-3 bg-blue-50 rounded-lg border">
             <h4 className="font-medium text-blue-900 mb-2">Current Administrator Details</h4>
             <div className="space-y-1 text-sm text-blue-800">
-              <div><span className="font-medium">Name:</span> {existingAdmin.adminName}</div>
-              <div><span className="font-medium">Email:</span> {existingAdmin.email}</div>
-              <div><span className="font-medium">Contact:</span> {existingAdmin.contactNumber}</div>
-              <div><span className="font-medium">User ID:</span> {existingAdmin.userId}</div>
-              <div><span className="font-medium">Created:</span> {new Date(existingAdmin.adminCreatedAt).toLocaleDateString()}</div>
-              {existingAdmin.lastUpdated && (
+              <div><span className="font-medium">Name:</span> {existingAdmin.name || existingAdmin.adminName || 'Not provided'}</div>
+              <div><span className="font-medium">Email:</span> {existingAdmin.email || existingAdmin.adminEmail || 'Not provided'}</div>
+              <div><span className="font-medium">Contact:</span> {existingAdmin.contactNumber || 'Not provided'}</div>
+              <div><span className="font-medium">User ID:</span> {existingAdmin.userId || existingAdmin.adminId || 'Not provided'}</div>
+              <div><span className="font-medium">Created:</span> {
+                existingAdmin.createdAt || existingAdmin.adminCreatedAt 
+                  ? new Date(existingAdmin.createdAt || existingAdmin.adminCreatedAt).toLocaleDateString()
+                  : 'Not available'
+              }</div>
+              {(existingAdmin.lastUpdated) && (
                 <div><span className="font-medium">Last Updated:</span> {new Date(existingAdmin.lastUpdated).toLocaleDateString()}</div>
               )}
             </div>

@@ -413,25 +413,27 @@ const SolutionSeekersValidation: React.FC = () => {
         console.log('🔍 Legacy storage search result:', legacyAdmin ? 'FOUND' : 'NOT FOUND');
         
         if (legacyAdmin) {
-          // Convert legacy format to main format for editing
+          // Enhanced conversion from legacy format to main format for editing
+          // Only use properties that exist in AdminRecord type
           existingAdmin = {
             id: legacyAdmin.id,
             name: legacyAdmin.adminName,
-            adminName: legacyAdmin.adminName,
+            adminName: legacyAdmin.adminName, // Keep for backward compatibility in display
             email: legacyAdmin.adminEmail,
-            adminEmail: legacyAdmin.adminEmail,
-            contactNumber: '', // AdminRecord doesn't have this field
-            userId: '', // AdminRecord doesn't have this field
+            adminEmail: legacyAdmin.adminEmail, // Keep for backward compatibility in display
+            contactNumber: '', // Not available in AdminRecord - will be blank in form
+            userId: legacyAdmin.adminId || '', // Use adminId as userId fallback
             password: '', // Don't populate password for security
             organizationId: seeker.organizationId,
             organizationName: seeker.organizationName,
-            sourceSeekerId: seeker.id,
+            sourceSeekerId: legacyAdmin.sourceSeekerId,
             createdAt: legacyAdmin.createdAt,
-            adminCreatedAt: legacyAdmin.createdAt,
+            adminCreatedAt: legacyAdmin.createdAt, // Keep for backward compatibility in display
             role: 'administrator',
-            isActive: true
+            isActive: true,
+            adminCreatedBy: 'system'
           };
-          console.log('🔍 Found in legacy storage and converted:', legacyAdmin.adminName);
+          console.log('🔄 LEGACY CONVERSION - Converted admin data with available fields:', existingAdmin);
         }
       }
     } catch (error) {
