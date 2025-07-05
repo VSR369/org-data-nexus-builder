@@ -248,6 +248,14 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       console.log(`⚠️ No pricing found for engagement model: ${selectedEngagementModel} with membership status: ${membershipStatusForConfig}`);
       return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'No Pricing Available', isPercentage: false };
     }
+
+    console.log(`🔍 Found pricing config for ${selectedEngagementModel} (${membershipStatusForConfig}):`, {
+      configId: finalConfig.id,
+      quarterly: finalConfig.quarterlyFee,
+      halfYearly: finalConfig.halfYearlyFee,
+      annual: finalConfig.annualFee,
+      membershipStatus: finalConfig.membershipStatus
+    });
     
     // For fee-based engagement models (Market Place, Aggregator, etc.), use percentage pricing
     const isFeeBasedModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(selectedEngagementModel);
