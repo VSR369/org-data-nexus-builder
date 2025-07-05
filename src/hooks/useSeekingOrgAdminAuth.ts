@@ -54,6 +54,27 @@ export const useSeekingOrgAdminAuth = () => {
     console.log('🔐 === SEEKING ORG ADMIN LOGIN START ===');
     console.log('🔐 Attempting login with email:', identifier);
     
+    // Debug: Check what administrators exist in localStorage
+    const adminData = localStorage.getItem('administrators');
+    console.log('🔍 Raw administrator data in localStorage:', adminData);
+    if (adminData) {
+      try {
+        const parsedAdmins = JSON.parse(adminData);
+        console.log('📊 Parsed administrators:', parsedAdmins);
+        console.log('📊 Number of administrators found:', parsedAdmins.length);
+        parsedAdmins.forEach((admin: any, index: number) => {
+          console.log(`Admin ${index + 1}:`, {
+            name: admin.name,
+            email: admin.email,
+            userId: admin.userId,
+            isActive: admin.isActive
+          });
+        });
+      } catch (e) {
+        console.log('❌ Error parsing admin data:', e);
+      }
+    }
+    
     try {
       // Clear any existing session
       SeekingOrgAdminAuthService.clearSession();
