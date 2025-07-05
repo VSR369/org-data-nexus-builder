@@ -517,6 +517,21 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               <div className="space-y-4">
                 {(() => {
                   const pricing = getAllFrequencyPricing();
+                  
+                  // Check if data is not available
+                  if (pricing.configName === 'Data not available') {
+                    return (
+                      <div className="text-center py-8">
+                        <div className="text-sm text-gray-500 mb-2">
+                          {pricing.configName}
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          Please configure pricing for this engagement model and membership status
+                        </p>
+                      </div>
+                    );
+                  }
+                  
                   return (
                     <>
                       {/* Configuration Info */}
