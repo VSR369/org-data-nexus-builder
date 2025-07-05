@@ -66,6 +66,33 @@ const CustomDataManager: React.FC = () => {
   const handleDebugDataStatus = () => {
     console.log('🔍 === COMPREHENSIVE DATA STATUS DEBUG ===');
     
+    // CURRENCY-SPECIFIC DEBUG (for the current issue)
+    console.log('💰 === CURRENCY DEBUG ===');
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    console.log('Custom-only mode:', isCustomMode);
+    
+    // Check all currency-related keys
+    const currencyKeys = ['custom_currencies', 'master_data_currencies', 'currencies'];
+    currencyKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      if (data) {
+        console.log(`💰 Found ${key}:`, data);
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) {
+            console.log(`💰 ${key} contains ${parsed.length} currencies:`, parsed.map(c => `${c.code} (${c.name})`));
+          } else {
+            console.log(`💰 ${key} structure:`, Object.keys(parsed));
+          }
+        } catch (error) {
+          console.log(`💰 ${key} parsing error:`, error);
+        }
+      } else {
+        console.log(`💰 ${key}: NOT FOUND`);
+      }
+    });
+    console.log('💰 === END CURRENCY DEBUG ===');
+    
     // 1. Scan ALL localStorage for any data that looks custom
     const allKeys = Object.keys(localStorage);
     const masterDataKeys = allKeys.filter(key => 

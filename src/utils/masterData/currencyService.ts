@@ -54,8 +54,14 @@ export class CurrencyService {
       }
     }
 
-    // Use emergency fallback and store it
-    console.log('📦 No valid data found, using emergency fallback currencies');
+    // IMPORTANT: In custom-only mode, do NOT use emergency fallback
+    if (isCustomMode) {
+      console.log('🚫 Custom-only mode: No custom currencies found, returning empty array instead of fallback');
+      return [];
+    }
+
+    // Use emergency fallback only in mixed mode
+    console.log('📦 Mixed mode: No valid data found, using emergency fallback currencies');
     localStorage.setItem('master_data_currencies', JSON.stringify(emergencyFallbackCurrencies));
     return emergencyFallbackCurrencies;
   }

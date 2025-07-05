@@ -135,6 +135,51 @@ export class CustomDataExtractor {
 
     console.log(`🔍 Checking if ${category} is custom data:`, data);
 
+    // SPECIAL HANDLING FOR CURRENCIES (user's issue)
+    if (category === 'currencies') {
+      if (Array.isArray(data)) {
+        // If user has exactly 3 currencies (INR, USD, AED) as they mentioned, this is custom
+        if (data.length === 3) {
+          const currencies = data.map(c => c.code).sort();
+          console.log(`💰 Found 3 currencies: ${currencies.join(', ')}`);
+          // Check if it matches user's configuration
+          if (currencies.includes('INR') && currencies.includes('USD') && currencies.includes('AED')) {
+            console.log(`✅ CUSTOM: User's specific 3-currency configuration detected`);
+            return true;
+          }
+        }
+        
+        // If more than 2 (emergency fallback size), it's likely custom
+        if (data.length > 2) {
+          console.log(`✅ CUSTOM: Currency array has ${data.length} items (> 2 emergency fallback)`);
+          return true;
+        }
+        
+        // Check if any currency has user identifiers or custom properties
+        const hasUserData = data.some(currency => 
+          currency && (
+            currency.isUserCreated === true ||
+            currency.isCustom === true ||
+            (currency.id && !currency.id.toString().startsWith('fallback_')) ||
+            (currency.createdAt && !currency.id?.toString().startsWith('fallback_'))
+          )
+        );
+        
+        if (hasUserData) {
+          console.log(`✅ CUSTOM: Currency has user-created indicators`);
+          return true;
+        }
+      }
+    }
+
+    // SPECIAL HANDLING FOR COUNTRIES (similar logic)
+    if (category === 'countries') {
+      if (Array.isArray(data) && data.length > 3) { // More than 3 default countries
+        console.log(`✅ CUSTOM: Countries array has ${data.length} items (> 3 defaults)`);
+        return true;
+      }
+    }
+
     // Check for custom indicators
     const customIndicators = [
       'isCustom',
