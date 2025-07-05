@@ -39,18 +39,40 @@ export class AdminDataRecoveryService {
     let repairedCount = 0;
 
     try {
-      // Step 1: Assess current data state
-      const currentAdmins = this.getCurrentAdmins();
-      console.log('📊 Current administrators found:', currentAdmins.length);
-
-      // Step 2: Find incomplete records that need repair
-      const incompleteAdmins = this.identifyIncompleteRecords(currentAdmins);
-      console.log('🔍 Incomplete records identified:', incompleteAdmins.length);
-
-      // Step 3: Gather all seeker data for reconstruction
+      // Step 1: Gather all seeker data for reconstruction FIRST
       await unifiedUserStorageService.initialize();
       const allSeekers = await unifiedUserStorageService.getAllUsers();
       console.log('👥 Available seeker records:', allSeekers.length);
+
+      if (allSeekers.length === 0) {
+        throw new Error('No seeker data available for admin reconstruction. Please ensure seeker registrations exist first.');
+      }
+
+      // Step 2: Assess current data state
+      const currentAdmins = this.getCurrentAdmins();
+      console.log('📊 Current administrators found:', currentAdmins.length);
+
+      // Step 3: Find incomplete records that need repair
+      const incompleteAdmins = this.identifyIncompleteRecords(currentAdmins);
+      console.log('🔍 Incomplete records identified:', incompleteAdmins.length);
+
+      // Step 4: If NO admins exist at all, create them from seekers
+      if (currentAdmins.length === 0) {
+        console.log('🚨 No administrators found - creating from seeker data');
+        const newAdmins = await this.createAdminsFromSeekers(allSeekers);
+        recoveredCount = newAdmins.length;
+        console.log('✅ Created', recoveredCount, 'administrators from seeker data');
+        
+        // Save and return early
+        await this.saveRecoveredData(newAdmins);
+        return {
+          success: true,
+          recoveredCount,
+          repairedCount: 0,
+          errors,
+          summary: `Successfully created ${recoveredCount} administrator accounts from existing seeker registrations.`
+        };
+      }
 
       // Step 4: Reconstruct incomplete administrator records
       const reconstructedAdmins: UnifiedAdminData[] = [];
@@ -123,6 +145,55 @@ export class AdminDataRecoveryService {
         summary: `Recovery failed: ${errorMsg}`
       };
     }
+  }
+
+  /**
+   * Create administrator records from seeker data (when no admins exist)
+   */
+  private static async createAdminsFromSeekers(seekers: any[]): Promise<UnifiedAdminData[]> {
+    const newAdmins: UnifiedAdminData[] = [];
+    
+    console.log('🏗️ Creating administrators from', seekers.length, 'seeker records');
+    
+    for (const seeker of seekers) {
+      try {
+        if (!seeker.organizationName || !seeker.id) {
+          console.warn('⚠️ Skipping seeker without organization name or ID:', seeker);
+          continue;
+        }
+
+        // Generate admin details from seeker data
+        const adminId = `admin_${seeker.id}_${Date.now()}`;
+        const orgNameSlug = seeker.organizationName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        const newAdmin: UnifiedAdminData = {
+          id: adminId,
+          name: `${seeker.organizationName} Administrator`,
+          email: `admin@${orgNameSlug}.com`,
+          contactNumber: seeker.contactNumber || seeker.phoneNumber || '',
+          userId: `admin_${seeker.id}`,
+          password: 'NEEDS_RESET',
+          organizationId: seeker.organizationId || `org_${seeker.id}`,
+          organizationName: seeker.organizationName,
+          sourceSeekerId: seeker.id,
+          createdAt: new Date().toISOString(),
+          isActive: true,
+          role: 'administrator',
+          adminCreatedBy: 'recovery_service',
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'recovery_service'
+        };
+
+        newAdmins.push(newAdmin);
+        console.log('✅ Created admin for:', seeker.organizationName);
+        
+      } catch (error) {
+        console.error('❌ Error creating admin for seeker:', seeker.organizationName, error);
+      }
+    }
+    
+    console.log('🏗️ Created', newAdmins.length, 'new administrator records');
+    return newAdmins;
   }
 
   /**
