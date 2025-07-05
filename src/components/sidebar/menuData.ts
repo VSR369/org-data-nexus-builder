@@ -14,8 +14,18 @@ import {
   Award,
   FileText,
   UserCheck,
-  Key
+  Key,
+  Download
 } from 'lucide-react';
+
+export const customDataMenuItems = [
+  {
+    id: 'custom-data-manager',
+    title: 'Custom Data Manager',
+    icon: Download,
+    description: 'Extract and preserve only your custom configured data'
+  }
+];
 
 export const foundationMenuItems = [
   {

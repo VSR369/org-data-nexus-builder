@@ -11,7 +11,7 @@ import { MasterDataRestorer } from "@/utils/masterDataRestorer";
 import { useToast } from "@/hooks/use-toast";
 
 const MasterDataPortal = () => {
-  const [activeSection, setActiveSection] = useState('domain-groups');
+  const [activeSection, setActiveSection] = useState('custom-data-manager');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toast } = useToast();
 

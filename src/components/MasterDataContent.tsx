@@ -20,6 +20,7 @@ import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
 import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
+import CustomDataManager from "./master-data/CustomDataManager";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -31,6 +32,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'custom-data-manager':
+        return <CustomDataManager />;
       case 'countries':
         return <CountryConfig />;
       case 'currencies':
@@ -72,7 +75,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'admin-creation':
         return <AdminCreationDiagnostic />;
       default:
-        return <DomainGroupsConfig />;
+        return <CustomDataManager />;
     }
   };
 

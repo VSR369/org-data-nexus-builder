@@ -13,7 +13,8 @@ import {
   challengeMenuItems,
   systemMenuItems,
   validationMenuItems,
-  administrationMenuItems
+  administrationMenuItems,
+  customDataMenuItems
 } from './sidebar/menuData';
 
 interface AppSidebarProps {
@@ -50,6 +51,13 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
     <Sidebar collapsible="offcanvas">
       <AppSidebarHeader />
       <SidebarContent className="gap-0">
+        <SidebarMenuGroup
+          title="🎯 Custom Data Management"
+          items={customDataMenuItems}
+          activeSection={activeSection}
+          isOnMasterDataPortal={isOnMasterDataPortal}
+          onItemClick={handleMasterDataClick}
+        />
         <SidebarMenuGroup
           title="Foundation Data"
           items={foundationMenuItems}
