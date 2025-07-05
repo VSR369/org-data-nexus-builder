@@ -104,17 +104,17 @@ export const useMembershipFeeData = () => {
     
     console.log('🔍 Checking for auto-recovery need...');
     
-    // Check if we have data in storage but empty state
-    const hasStorageData = localStorage.getItem('master_data_seeker_membership_fees') !== null;
+    // Check if we have data in storage but empty state using MembershipFeeFixer
+    const storageData = MembershipFeeFixer.getMembershipFees();
+    const hasStorageData = storageData.length > 0;
     const hasStateData = membershipFees.length > 0;
     
     if (hasStorageData && !hasStateData) {
       console.log('🚨 Data loss detected! Storage has data but state is empty. Recovering...');
       
-      const recoveredFees = MembershipFeeFixer.getMembershipFees();
-      if (recoveredFees.length > 0) {
-        console.log('🔄 Auto-recovering', recoveredFees.length, 'membership fees');
-        setMembershipFees(recoveredFees.map(fee => ({
+      if (storageData.length > 0) {
+        console.log('🔄 Auto-recovering', storageData.length, 'membership fees');
+        setMembershipFees(storageData.map(fee => ({
           ...fee,
           isUserCreated: fee.isUserCreated ?? false
         })));
@@ -156,7 +156,7 @@ export const useMembershipFeeData = () => {
     console.log('🌟 [state change] membershipFees now:', membershipFees.length, membershipFees);
   }, [membershipFees]);
 
-  // FIXED: Save ONLY in raw format to prevent diagnostic issues
+  // FIXED: Save using MembershipFeeFixer to respect custom-only mode
   useEffect(() => {
     if (!isInitialized || isLoading) {
       console.log('📥 Skipping save - not initialized or loading...');
@@ -169,16 +169,12 @@ export const useMembershipFeeData = () => {
       return;
     }
     
-    console.log(`💾 Saving ${membershipFees.length} membership fees in RAW FORMAT ONLY`);
+    console.log(`💾 Saving ${membershipFees.length} membership fees using MembershipFeeFixer`);
     
     try {
-      // CRITICAL: Save in raw format only - no wrapped format
-      localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(membershipFees));
-      console.log("✅ Successfully saved membership fees in raw format");
-      
-      // Remove any wrapped format data to prevent conflicts
-      localStorage.removeItem('user_created_master_data_seeker_membership_fees');
-      localStorage.removeItem('backup_master_data_seeker_membership_fees');
+      // Use MembershipFeeFixer to save with mode-aware storage
+      MembershipFeeFixer.saveMembershipFees(membershipFees);
+      console.log("✅ Successfully saved membership fees using MembershipFeeFixer");
       
       setDataHealth(checkDataHealth());
     } catch (error) {

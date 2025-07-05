@@ -239,6 +239,31 @@ export class MembershipFeeFixer {
    * Get membership fees in guaranteed raw format
    */
   static getMembershipFees(): MembershipFeeEntry[] {
+    console.log('🔍 Getting membership fees...');
+    
+    // CHECK FOR CUSTOM-ONLY MODE FIRST
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    if (isCustomMode) {
+      console.log('🎯 Custom-only mode detected, loading custom membership fees...');
+      const customData = localStorage.getItem('custom_seekerMembershipFees');
+      if (customData !== null) {
+        try {
+          const parsed = JSON.parse(customData);
+          if (Array.isArray(parsed)) {
+            console.log('✅ Using custom membership fees (including empty array):', parsed.length);
+            return parsed; // Return even if empty array - this preserves deletions
+          }
+        } catch (error) {
+          console.error('❌ Failed to parse custom membership fees data:', error);
+        }
+      }
+      
+      // In custom-only mode, don't fall back to defaults if no custom data
+      console.log('🚫 Custom-only mode: No custom membership fees found, returning empty array');
+      return [];
+    }
+    
+    // Mixed mode: use existing logic with fallback
     const fixResult = this.fixMembershipFeeStructure();
     
     try {
@@ -254,6 +279,38 @@ export class MembershipFeeFixer {
     }
     
     return FALLBACK_MEMBERSHIP_FEES;
+  }
+  
+  /**
+   * Save membership fees with mode-aware storage
+   */
+  static saveMembershipFees(fees: MembershipFeeEntry[]): void {
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    
+    if (isCustomMode) {
+      console.log('💾 Custom-only mode: Saving membership fees to custom_seekerMembershipFees:', fees.length);
+      localStorage.setItem('custom_seekerMembershipFees', JSON.stringify(fees));
+      
+      // Validation: Read back to ensure it was saved correctly
+      const readBack = localStorage.getItem('custom_seekerMembershipFees');
+      if (readBack !== null) {
+        try {
+          const parsed = JSON.parse(readBack);
+          if (Array.isArray(parsed) && parsed.length === fees.length) {
+            console.log('✅ Custom membership fees save validated successfully');
+          } else {
+            console.error('❌ Custom membership fees save validation failed - length mismatch');
+          }
+        } catch (error) {
+          console.error('❌ Custom membership fees save validation failed - parse error:', error);
+        }
+      } else {
+        console.error('❌ Custom membership fees save validation failed - null readback');
+      }
+    } else {
+      console.log('💾 Mixed mode: Saving membership fees to master_data_seeker_membership_fees:', fees.length);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(fees));
+    }
   }
 }
 
