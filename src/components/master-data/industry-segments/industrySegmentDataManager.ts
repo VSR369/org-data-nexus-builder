@@ -51,6 +51,19 @@ class IndustrySegmentDataManager extends LegacyDataManager<IndustrySegmentData> 
     
     return rawData;
   }
+
+  saveData(data: IndustrySegmentData): void {
+    // CHECK FOR CUSTOM-ONLY MODE FIRST
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    if (isCustomMode) {
+      console.log('🎯 Custom-only mode detected, using IndustrySegmentService for save...');
+      IndustrySegmentService.saveIndustrySegments(data);
+      return;
+    }
+    
+    // Use parent class method for mixed mode
+    super.saveData(data);
+  }
 }
 
 export const industrySegmentDataManager = new IndustrySegmentDataManager({
