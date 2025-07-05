@@ -22,11 +22,17 @@ interface PricingDetails {
 }
 
 interface EngagementModelSelectorProps {
+  country: string;
+  organizationType: string;
+  entityType: string;
   onEngagementSelect: (engagement: EngagementModelOption, pricing: PricingDetails | null) => void;
   selectedEngagement?: EngagementModelOption | null;
 }
 
 const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
+  country,
+  organizationType,
+  entityType,
   onEngagementSelect,
   selectedEngagement
 }) => {
@@ -37,10 +43,12 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const handleSelect = (model: EngagementModelOption) => {
     setSelectedModel(model);
     
-    // Get pricing details for this engagement model  
+    // Get pricing details based on country, org type, entity type, and engagement model
+    const pricingConfig = getConfigByOrgTypeAndEngagement(organizationType, model.name);
+    
     const pricingDetails: PricingDetails = {
       basePrice: 0,
-      currency: 'USD',
+      currency: pricingConfig?.currency || 'USD',
       pricingTier: 'Standard',
       discountPercentage: undefined
     };
@@ -91,7 +99,7 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
           <Badge variant="destructive" className="ml-2">Mandatory</Badge>
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Choose how you want to engage with solution providers. This selection is required to proceed.
+          Choose how you want to engage with solution providers. Pricing is customized for {organizationType} in {country}. This selection is required to proceed.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -125,13 +133,30 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                           {isSelected && <Check className="h-4 w-4 text-blue-600" />}
                         </div>
                         <p className="text-sm text-gray-600 mb-3">{model.description}</p>
-                        <Badge variant="outline">Standard Pricing</Badge>
+                        <div className="flex gap-2">
+                          <Badge variant="outline">{organizationType}</Badge>
+                          <Badge variant="outline">{entityType}</Badge>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-blue-600">
-                          Contact for Pricing
-                        </div>
-                        <div className="text-xs text-gray-500">Base Price</div>
+                        {(() => {
+                          const pricingConfig = getConfigByOrgTypeAndEngagement(organizationType, model.name);
+                          return pricingConfig ? (
+                            <div>
+                              <div className="text-lg font-bold text-blue-600">
+                                {pricingConfig.currency} Contact for Pricing
+                              </div>
+                              <div className="text-xs text-gray-500">Standard Rate</div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="text-lg font-bold text-blue-600">
+                                Contact for Pricing
+                              </div>
+                              <div className="text-xs text-gray-500">Custom Quote</div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

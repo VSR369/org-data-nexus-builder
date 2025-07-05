@@ -18,9 +18,7 @@ import {
   Phone,
   Globe,
   AlertCircle,
-  Loader2,
-  Upload,
-  Eye
+  Upload
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +52,6 @@ const OrganizationDashboard = () => {
   const { userData: completeUserData, loading: userDataLoading, error: userDataError } = useCompleteUserData(sessionData?.userId);
 
   useEffect(() => {
-    // Load session data
     const loadSessionData = () => {
       try {
         const session = sessionStorage.getItem('seeker_session');
@@ -64,7 +61,6 @@ const OrganizationDashboard = () => {
           console.log('✅ Organization session loaded:', parsedSession);
         } else {
           console.log('❌ No organization session found');
-          // Redirect to login if no session
           navigate('/seeker-login');
         }
       } catch (error) {
@@ -164,7 +160,7 @@ const OrganizationDashboard = () => {
           </p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Data Loading Status */}
           {userDataError && (
             <Alert variant="destructive">
@@ -175,244 +171,201 @@ const OrganizationDashboard = () => {
             </Alert>
           )}
 
-          {/* Complete Organization Information Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Complete Organization Information
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                All information captured during registration
-              </p>
-            </CardHeader>
-            <CardContent>
-              {completeUserData ? (
-                <div className="space-y-6">
-                  {/* Basic Organization Details */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Organization Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Organization Overview Cards - Compact Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Primary Organization Info */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Building2 className="h-5 w-5" />
+                  Organization Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {completeUserData ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Organization Name</label>
-                        <p className="text-base font-semibold text-gray-900">{completeUserData.organizationName}</p>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Organization</label>
+                        <p className="text-sm font-semibold mt-1">{completeUserData.organizationName}</p>
                       </div>
-                      
                       <div>
-                        <label className="text-sm font-medium text-gray-500">User ID</label>
-                        <p className="text-base font-semibold text-gray-900">{completeUserData.userId}</p>
-                      </div>
-                      
-                      {completeUserData.organizationId && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Organization ID</label>
-                          <p className="text-base font-mono text-gray-900">{completeUserData.organizationId}</p>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Organization Type</label>
+                        <div className="mt-1">
+                          <Badge variant="secondary" className="text-xs">{completeUserData.organizationType}</Badge>
                         </div>
-                      )}
-                      
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Entity Type</label>
-                        <Badge variant="secondary">{completeUserData.entityType}</Badge>
                       </div>
-                      
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Organization Type</label>
-                        <Badge variant="outline">{completeUserData.organizationType}</Badge>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Entity Type</label>
+                        <div className="mt-1">
+                          <Badge variant="outline" className="text-xs">{completeUserData.entityType}</Badge>
+                        </div>
                       </div>
-                      
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">User ID</label>
+                        <p className="text-sm font-mono mt-1">{completeUserData.userId}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">{completeUserData.country}</span>
+                        </div>
+                      </div>
                       {completeUserData.industrySegment && (
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Industry Segment</label>
-                          <Badge variant="outline">{completeUserData.industrySegment}</Badge>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Contact Information */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Contact Person</label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{completeUserData.contactPersonName}</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Email Address</label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{completeUserData.email}</span>
-                        </div>
-                      </div>
-                      
-                      {completeUserData.phoneNumber && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">
-                              {completeUserData.countryCode ? `+${completeUserData.countryCode} ` : ''}
-                              {completeUserData.phoneNumber}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {completeUserData.website && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Website</label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Globe className="h-4 w-4 text-gray-400" />
-                            <a href={completeUserData.website} target="_blank" rel="noopener noreferrer" 
-                               className="text-blue-600 hover:underline">
-                              {completeUserData.website}
-                            </a>
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Industry</label>
+                          <div className="mt-1">
+                            <Badge variant="outline" className="text-xs">{completeUserData.industrySegment}</Badge>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
-
-                  <Separator />
-
-                  {/* Location Information */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Location Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Country</label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{completeUserData.country}</span>
-                        </div>
-                      </div>
-                      
-                      {completeUserData.address && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Address</label>
-                          <div className="flex items-start gap-2 mt-1">
-                            <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                            <span className="text-gray-900">{completeUserData.address}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading organization data...</p>
                   </div>
+                )}
+              </CardContent>
+            </Card>
 
-                  <Separator />
-
-                  {/* Document Information */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Uploaded Documents</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Upload className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-700">Registration Documents</span>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {completeUserData.registrationDocuments?.length || 0} files uploaded
-                        </p>
-                        {(completeUserData.registrationDocuments?.length || 0) > 0 && (
-                          <Button size="sm" variant="outline" className="mt-2">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View Files
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-700">Company Profile</span>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {completeUserData.companyProfile?.length || 0} files uploaded
-                        </p>
-                        {(completeUserData.companyProfile?.length || 0) > 0 && (
-                          <Button size="sm" variant="outline" className="mt-2">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View Files
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-700">Company Logo</span>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {completeUserData.companyLogo?.length || 0} files uploaded
-                        </p>
-                        {(completeUserData.companyLogo?.length || 0) > 0 && (
-                          <Button size="sm" variant="outline" className="mt-2">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View Logo
-                          </Button>
-                        )}
+            {/* Contact Info */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="h-5 w-5" />
+                  Contact Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {completeUserData ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact Person</label>
+                      <p className="text-sm font-medium mt-1">{completeUserData.contactPersonName}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Email</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm truncate">{completeUserData.email}</span>
                       </div>
                     </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Registration Timestamp */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Registration History</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {completeUserData.registrationTimestamp && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Registration Date</label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Calendar className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">
-                              {new Date(completeUserData.registrationTimestamp).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
+                    {completeUserData.phoneNumber && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Last Login</label>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone</label>
                         <div className="flex items-center gap-2 mt-1">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">
-                            {new Date(sessionData.loginTimestamp).toLocaleString()}
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">
+                            {completeUserData.countryCode ? `+${completeUserData.countryCode} ` : ''}
+                            {completeUserData.phoneNumber}
                           </span>
                         </div>
                       </div>
+                    )}
+                    {completeUserData.website && (
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Website</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Globe className="h-3 w-3 text-muted-foreground" />
+                          <a href={completeUserData.website} target="_blank" rel="noopener noreferrer" 
+                             className="text-sm text-blue-600 hover:underline truncate">
+                            {completeUserData.website}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <User className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading contact data...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Additional Details - Compact */}
+          {completeUserData && (
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5" />
+                  Additional Information & Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Organization Details */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium mb-3">Organization Information</h4>
+                    <div className="space-y-2 text-sm">
+                      {completeUserData.organizationId && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Organization ID:</span>
+                          <span className="font-mono">{completeUserData.organizationId}</span>
+                        </div>
+                      )}
+                      {completeUserData.address && (
+                        <div>
+                          <span className="text-muted-foreground">Address:</span>
+                          <p className="mt-1">{completeUserData.address}</p>
+                        </div>
+                      )}
+                      {completeUserData.registrationTimestamp && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Registered:</span>
+                          <span>{new Date(completeUserData.registrationTimestamp).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Documents */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium mb-3">Uploaded Documents</h4>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="text-center p-3 border rounded-lg">
+                        <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                        <div className="text-xs text-muted-foreground">Registration</div>
+                        <div className="text-xs font-medium">
+                          {completeUserData.registrationDocuments?.length || 0} files
+                        </div>
+                      </div>
+                      <div className="text-center p-3 border rounded-lg">
+                        <FileText className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                        <div className="text-xs text-muted-foreground">Profile</div>
+                        <div className="text-xs font-medium">
+                          {completeUserData.companyProfile?.length || 0} files
+                        </div>
+                      </div>
+                      <div className="text-center p-3 border rounded-lg">
+                        <Building2 className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                        <div className="text-xs text-muted-foreground">Logo</div>
+                        <div className="text-xs font-medium">
+                          {completeUserData.companyLogo?.length || 0} files
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">
-                    Complete organization data not available. Using session data only.
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    This may happen if the registration was completed in a different browser or the data was cleared.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Selection Options */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Membership Type Selection (Optional) */}
             <div>
               <MembershipTypeSelector
-                organizationType={sessionData.organizationType || sessionData.entityType}
-                entityType={sessionData.entityType}
-                country={sessionData.country}
+                organizationType={completeUserData?.organizationType || sessionData.organizationType || sessionData.entityType}
+                entityType={completeUserData?.entityType || sessionData.entityType}
+                country={completeUserData?.country || sessionData.country}
                 onMembershipSelect={setSelectedMembership}
               />
             </div>
@@ -420,6 +373,9 @@ const OrganizationDashboard = () => {
             {/* Engagement Model Selection (Mandatory) */}
             <div>
               <EngagementModelSelector
+                country={completeUserData?.country || sessionData.country}
+                organizationType={completeUserData?.organizationType || sessionData.organizationType || sessionData.entityType}
+                entityType={completeUserData?.entityType || sessionData.entityType}
                 onEngagementSelect={(engagement, pricing) => {
                   setSelectedEngagement(engagement);
                   setEngagementPricing(pricing);
