@@ -8,6 +8,7 @@ import EngagementValidationWarning from './solution-seekers/EngagementValidation
 import ValidationHeader from './solution-seekers/ValidationHeader';
 import ValidationLoadingError from './solution-seekers/ValidationLoadingError';
 import { useSolutionSeekersValidation } from '@/hooks/useSolutionSeekersValidation';
+import SeekerValidationDiagnostic from './solution-seekers/SeekerValidationDiagnostic';
 import { useAdministratorManagement } from '@/hooks/useAdministratorManagement';
 
 const SolutionSeekersValidation: React.FC = () => {
@@ -94,6 +95,8 @@ const SolutionSeekersValidation: React.FC = () => {
       />
 
       <EngagementValidationWarning />
+
+      <SeekerValidationDiagnostic />
 
       <StatusDiagnosticPanel />
 
