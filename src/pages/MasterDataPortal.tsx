@@ -19,58 +19,58 @@ const MasterDataPortal = () => {
     setIsLoggedIn(true);
   };
 
-  const handleRestoreCustomData = () => {
-    console.log('🔧 User requested data restoration...');
-    const result = MasterDataRestorer.restoreUserData();
+  const handleRestoreCustomData = async () => {
+    console.log('🔧 User requested comprehensive data restoration...');
     
-    if (result.success) {
+    // Use the enhanced restoration processor
+    const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
+    const result = await MasterDataRestoreProcessor.restoreAllCustomData();
+    
+    if (result.customDataFound.length > 0) {
       toast({
         title: "Custom Data Restored",
-        description: result.message,
+        description: `Successfully restored ${result.customDataFound.length} master data categories with ${result.totalCustomConfigurations} total configurations`,
       });
-      // Refresh the page to ensure all components reload
+      
+      // Refresh the page to ensure all components reload with custom data
       setTimeout(() => {
         window.location.reload();
-      }, 1500);
+      }, 2000);
     } else {
       toast({
         title: "No Custom Data Found",
-        description: result.message,
+        description: "No custom master data configurations found. System will use defaults.",
         variant: "destructive",
       });
+      
+      // Show what's available
+      console.log('📋 Available storage keys:', Object.keys(localStorage).filter(k => k.startsWith('master_data_')));
     }
   };
 
-  // Initialize master data on portal load
+  // Initialize master data on portal load with enhanced restoration
   React.useEffect(() => {
-    console.log('🔍 Master Data Portal - Checking for existing user data...');
+    console.log('🔍 Master Data Portal - Enhanced custom data analysis...');
     
-    // Check if user has any custom master data
-    const userDataKeys = [
-      'master_data_currencies',
-      'master_data_countries', 
-      'master_data_industry_segments',
-      'master_data_organization_types',
-      'master_data_entity_types',
-      'master_data_departments',
-      'master_data_domain_groups',
-      'master_data_engagement_models',
-      'master_data_seeker_membership_fees',
-      'master_data_competency_capabilities'
-    ];
+    const initializeCustomData = async () => {
+      // Import and run the enhanced restoration processor
+      const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
+      
+      // Validate and restore custom data
+      const healthReport = await MasterDataRestoreProcessor.validateCustomDataIntegrity();
+      
+      if (healthReport.totalConfigurations > 0) {
+        console.log(`✅ Found ${healthReport.totalConfigurations} custom configurations across ${healthReport.customDataPercentage}% of master data categories`);
+        console.log('🎯 Preserving custom master data configurations');
+      } else {
+        console.log('⚠️ No custom configurations found - will initialize defaults');
+        // Only seed if truly no custom data exists
+        const { MasterDataSeeder } = await import('@/utils/masterDataSeeder');
+        MasterDataSeeder.seedAllMasterData();
+      }
+    };
     
-    const hasUserData = userDataKeys.some(key => {
-      const data = localStorage.getItem(key);
-      return data && data !== 'null' && data !== '[]';
-    });
-    
-    if (hasUserData) {
-      console.log('✅ Found existing user master data - preserving custom configuration');
-      // Don't seed - let components load existing user data
-    } else {
-      console.log('🌱 No user data found - initializing with defaults');
-      MasterDataSeeder.seedAllMasterData();
-    }
+    initializeCustomData().catch(console.error);
   }, []);
 
   console.log('MasterDataPortal - activeSection:', activeSection);
