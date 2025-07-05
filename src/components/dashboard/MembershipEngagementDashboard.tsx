@@ -208,10 +208,10 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   ];
 
-  // Get pricing for display in column 4 with detailed master data lookup - Annual only
-  const getPricingForDisplay = (): { price: number; currency: string; configName: string } => {
+  // Get pricing for display in column 4 with detailed master data lookup
+  const getPricingForDisplay = (): { price: number; currency: string; configName: string; isPercentage: boolean } => {
     if (!selectedEngagementModel || !selectedMembershipPlan) {
-      return { price: 0, currency: 'INR', configName: 'Select Membership Plan First' };
+      return { price: 0, currency: 'INR', configName: 'Select Membership Plan First', isPercentage: false };
     }
 
     // Get the specific pricing configuration for the selected engagement model
@@ -223,25 +223,66 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
     if (!engagementPricing) {
       console.log('⚠️ No pricing found for engagement model:', selectedEngagementModel);
-      return { price: 0, currency: 'INR', configName: 'No Pricing Available' };
+      return { price: 0, currency: 'INR', configName: 'No Pricing Available', isPercentage: false };
     }
     
-    // Only use annual pricing
-    const basePrice = engagementPricing.annualFee || 0;
-    const finalPrice = calculatePrice(basePrice);
+    // For fee-based engagement models (Market Place, Aggregator, etc.), use percentage pricing
+    const isFeeBasedModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(selectedEngagementModel);
     
-    console.log(`💰 Annual pricing for ${selectedEngagementModel}:`, {
-      basePrice,
-      finalPrice,
-      membershipDiscount: membershipStatus === 'active' ? '20%' : 'None',
-      config: engagementPricing.configName
-    });
-    
-    return { 
-      price: finalPrice, 
-      currency: engagementPricing.currency || 'INR',
-      configName: engagementPricing.configName || selectedEngagementModel
-    };
+    if (isFeeBasedModel) {
+      // Get the percentage based on selected membership plan cycle
+      let percentageFee = 0;
+      let cycleName = '';
+      
+      switch (selectedMembershipPlan) {
+        case 'quarterly':
+          percentageFee = engagementPricing.quarterlyFee || 0;
+          cycleName = 'Quarterly';
+          break;
+        case 'half-yearly':
+          percentageFee = engagementPricing.halfYearlyFee || 0;
+          cycleName = 'Half-Yearly';
+          break;
+        case 'annual':
+          percentageFee = engagementPricing.annualFee || 0;
+          cycleName = 'Annual';
+          break;
+        default:
+          percentageFee = engagementPricing.annualFee || 0;
+          cycleName = 'Annual';
+      }
+      
+      console.log(`💰 ${cycleName} percentage fee for ${selectedEngagementModel}:`, {
+        percentageFee,
+        membershipDiscount: membershipStatus === 'active' ? '20%' : 'None',
+        config: engagementPricing.configName
+      });
+      
+      return { 
+        price: percentageFee, 
+        currency: engagementPricing.currency || 'INR',
+        configName: `${engagementPricing.configName || selectedEngagementModel} - ${cycleName}`,
+        isPercentage: true
+      };
+    } else {
+      // For fixed pricing models (Platform as a Service), use currency amounts
+      const basePrice = engagementPricing.annualFee || 0;
+      const finalPrice = calculatePrice(basePrice);
+      
+      console.log(`💰 Annual pricing for ${selectedEngagementModel}:`, {
+        basePrice,
+        finalPrice,
+        membershipDiscount: membershipStatus === 'active' ? '20%' : 'None',
+        config: engagementPricing.configName
+      });
+      
+      return { 
+        price: finalPrice, 
+        currency: engagementPricing.currency || 'INR',
+        configName: engagementPricing.configName || selectedEngagementModel,
+        isPercentage: false
+      };
+    }
   };
 
   return (
@@ -443,10 +484,18 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                  <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                    <CardContent className="p-6 text-center">
                      <div className="text-sm opacity-90 mb-1">{getPricingForDisplay().configName}</div>
-                     <div className="text-3xl font-bold mb-1">
-                       {formatCurrency(getPricingForDisplay().price, getPricingForDisplay().currency)}
-                     </div>
-                     <div className="text-sm opacity-90">Annual</div>
+                      <div className="text-3xl font-bold mb-1">
+                        {getPricingForDisplay().isPercentage 
+                          ? `${getPricingForDisplay().price}%` 
+                          : formatCurrency(getPricingForDisplay().price, getPricingForDisplay().currency)
+                        }
+                      </div>
+                      <div className="text-sm opacity-90">
+                        {getPricingForDisplay().isPercentage 
+                          ? 'of Solution Fee' 
+                          : 'Annual'
+                        }
+                      </div>
                      {membershipStatus === 'active' && (
                        <div className="text-xs opacity-75 mt-1">Member Discount Applied</div>
                      )}
