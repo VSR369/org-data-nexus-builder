@@ -208,21 +208,42 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   ];
 
-  // Get pricing for all frequencies from master data
+  // Get pricing for all frequencies from master data based on membership status
   const getAllFrequencyPricing = (): { quarterly: number; halfYearly: number; annual: number; currency: string; configName: string; isPercentage: boolean } => {
-    if (!selectedEngagementModel) {
-      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'Select Engagement Model', isPercentage: false };
+    if (!selectedEngagementModel || !selectedMembershipPlan) {
+      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'Select Engagement Model & Plan', isPercentage: false };
     }
 
-    // Get the specific pricing configuration for the selected engagement model
-    const engagementPricing = PricingDataManager.getPricingForCountryOrgTypeAndEngagement(
-      country, 
-      organizationType, 
-      selectedEngagementModel
+    // Map selected membership plan to master data membership status format
+    const getMembershipStatusForConfig = (plan: string): string => {
+      return plan === 'not-member' ? 'Not a Member' : 'Member';
+    };
+    
+    const membershipStatusForConfig = getMembershipStatusForConfig(selectedMembershipPlan);
+    
+    // Get all pricing configurations for the engagement model
+    const allConfigs = PricingDataManager.getAllConfigurations();
+    
+    // Find the specific configuration that matches our criteria including membership status
+    const engagementPricing = allConfigs.find(config => 
+      normalizeCountryName(config.country || '') === normalizeCountryName(country) &&
+      (config.organizationType === organizationType || config.organizationType === 'All') &&
+      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
+      config.membershipStatus === membershipStatusForConfig
     );
 
-    if (!engagementPricing) {
-      console.log('⚠️ No pricing found for engagement model:', selectedEngagementModel);
+    // Fallback: try to find global config with membership status
+    const fallbackConfig = !engagementPricing ? allConfigs.find(config =>
+      (!config.country || config.country === 'Global' || config.country === 'All') &&
+      (config.organizationType === organizationType || config.organizationType === 'All') &&
+      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
+      config.membershipStatus === membershipStatusForConfig
+    ) : null;
+
+    const finalConfig = engagementPricing || fallbackConfig;
+
+    if (!finalConfig) {
+      console.log(`⚠️ No pricing found for engagement model: ${selectedEngagementModel} with membership status: ${membershipStatusForConfig}`);
       return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'No Pricing Available', isPercentage: false };
     }
     
@@ -230,43 +251,55 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     const isFeeBasedModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(selectedEngagementModel);
     
     if (isFeeBasedModel) {
-      console.log(`💰 All frequency pricing for ${selectedEngagementModel}:`, {
-        quarterly: engagementPricing.quarterlyFee || 0,
-        halfYearly: engagementPricing.halfYearlyFee || 0,
-        annual: engagementPricing.annualFee || 0,
-        config: engagementPricing.configName
+      console.log(`💰 ${membershipStatusForConfig.toUpperCase()} pricing for ${selectedEngagementModel}:`, {
+        quarterly: finalConfig.quarterlyFee || 0,
+        halfYearly: finalConfig.halfYearlyFee || 0,
+        annual: finalConfig.annualFee || 0,
+        membershipStatus: membershipStatusForConfig,
+        config: finalConfig.configName
       });
       
       return { 
-        quarterly: engagementPricing.quarterlyFee || 0,
-        halfYearly: engagementPricing.halfYearlyFee || 0,
-        annual: engagementPricing.annualFee || 0,
-        currency: engagementPricing.currency || 'INR',
-        configName: engagementPricing.configName || selectedEngagementModel,
+        quarterly: finalConfig.quarterlyFee || 0,
+        halfYearly: finalConfig.halfYearlyFee || 0,
+        annual: finalConfig.annualFee || 0,
+        currency: finalConfig.currency || 'INR',
+        configName: `${finalConfig.configName || selectedEngagementModel} (${membershipStatusForConfig})`,
         isPercentage: true
       };
     } else {
       // For fixed pricing models (Platform as a Service), use currency amounts
-      const quarterlyPrice = calculatePrice(engagementPricing.quarterlyFee || 0);
-      const halfYearlyPrice = calculatePrice(engagementPricing.halfYearlyFee || 0);
-      const annualPrice = calculatePrice(engagementPricing.annualFee || 0);
+      const quarterlyPrice = finalConfig.quarterlyFee || 0;
+      const halfYearlyPrice = finalConfig.halfYearlyFee || 0;
+      const annualPrice = finalConfig.annualFee || 0;
       
-      console.log(`💰 All frequency pricing for ${selectedEngagementModel}:`, {
+      console.log(`💰 ${membershipStatusForConfig.toUpperCase()} pricing for ${selectedEngagementModel}:`, {
         quarterly: quarterlyPrice,
         halfYearly: halfYearlyPrice,
         annual: annualPrice,
-        config: engagementPricing.configName
+        membershipStatus: membershipStatusForConfig,
+        config: finalConfig.configName
       });
       
       return { 
         quarterly: quarterlyPrice,
         halfYearly: halfYearlyPrice,
         annual: annualPrice,
-        currency: engagementPricing.currency || 'INR',
-        configName: engagementPricing.configName || selectedEngagementModel,
+        currency: finalConfig.currency || 'INR',
+        configName: `${finalConfig.configName || selectedEngagementModel} (${membershipStatusForConfig})`,
         isPercentage: false
       };
     }
+  };
+
+  // Helper function to normalize country names (needed for pricing lookup)
+  const normalizeCountryName = (country: string): string => {
+    if (!country) return '';
+    const normalizedCountry = country.trim();
+    if (['India', 'IN', 'IND'].includes(normalizedCountry)) return 'India';
+    if (['UAE', 'AE', 'United Arab Emirates'].includes(normalizedCountry)) return 'United Arab Emirates';
+    if (['USA', 'US', 'United States', 'United States of America'].includes(normalizedCountry)) return 'United States of America';
+    return normalizedCountry;
   };
 
   return (
