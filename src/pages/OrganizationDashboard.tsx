@@ -219,6 +219,16 @@ const OrganizationDashboard = () => {
                           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Industry</label>
                           <div className="mt-1">
                             <Badge variant="outline" className="text-xs">{completeUserData.industrySegment}</Badge>
+                            <p className="text-xs text-gray-500 mt-1">From registration data</p>
+                          </div>
+                        </div>
+                      )}
+                      {!completeUserData.industrySegment && (
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Industry</label>
+                          <div className="mt-1">
+                            <Badge variant="outline" className="text-xs text-orange-600">Not specified</Badge>
+                            <p className="text-xs text-gray-500 mt-1">Missing from registration</p>
                           </div>
                         </div>
                       )}

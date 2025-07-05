@@ -92,6 +92,11 @@ export const useCompleteUserData = (userId?: string) => {
             phoneNumber: foundUser.phoneNumber,
             industrySegment: foundUser.industrySegment
           });
+          console.log('🏭 INDUSTRY SEGMENT DEBUG:', {
+            industrySegment: foundUser.industrySegment,
+            rawValue: JSON.stringify(foundUser.industrySegment),
+            allUserData: foundUser
+          });
         } else {
           console.warn('⚠️ Complete user data not found for:', userId);
           setError('Complete user data not found');
