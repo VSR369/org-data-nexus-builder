@@ -281,6 +281,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     if (open) {
       if (existingAdmin) {
         setIsEditMode(true);
+        setIsEditingPassword(false); // Reset password editing state
         console.log('✏️ EDIT MODE - Raw admin data:', JSON.stringify(existingAdmin, null, 2));
         
         // Extract form data with explicit field mapping
@@ -289,34 +290,43 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           email: existingAdmin.email || existingAdmin.adminEmail || '',
           contactNumber: existingAdmin.contactNumber || '',
           userId: existingAdmin.userId || existingAdmin.adminId || '',
-          password: '',
+          password: '', // Will be shown as encrypted in display
           confirmPassword: ''
         };
         
         console.log('✏️ FORM DATA EXTRACTED:', JSON.stringify(formData, null, 2));
         
-        // Force form reset with setTimeout to ensure it happens after render
+        // Reset form with delay to ensure proper population
         setTimeout(() => {
           form.reset(formData);
           console.log('✅ FORM RESET COMPLETED with data:', formData);
           
+          // Force form to update its display values
+          Object.keys(formData).forEach(key => {
+            if (key !== 'password' && key !== 'confirmPassword') {
+              form.setValue(key as keyof AdminFormData, formData[key as keyof typeof formData]);
+            }
+          });
+          
           // Verify form values were set
           const currentValues = form.getValues();
           console.log('🔍 FORM VALUES AFTER RESET:', JSON.stringify(currentValues, null, 2));
-        }, 50);
+        }, 100);
         
       } else {
         setIsEditMode(false);
         setIsEditingPassword(false);
         console.log('➕ CREATE MODE - Clearing form');
-        form.reset({
-          adminName: '',
-          email: '',
-          contactNumber: '',
-          userId: '',
-          password: '',
-          confirmPassword: ''
-        });
+        setTimeout(() => {
+          form.reset({
+            adminName: '',
+            email: '',
+            contactNumber: '',
+            userId: '',
+            password: '',
+            confirmPassword: ''
+          });
+        }, 50);
       }
     }
   }, [open, existingAdmin, form]);
