@@ -33,30 +33,41 @@ const SeekingOrgAdminLoginForm = () => {
     e.preventDefault();
     setError('');
     
-    console.log('🔄 Form submitted with identifier:', identifier);
+    console.log('🔄 FORM SUBMIT TRIGGERED with identifier:', identifier);
+    console.log('🔄 Password length:', password.length);
     console.log('🔄 Remember me checked:', rememberMe);
     
+    // Check if localStorage has any administrators
+    const adminData = localStorage.getItem('administrators');
+    console.log('🔍 Raw administrator data in localStorage:', adminData);
+    
     if (!identifier.trim() || !password.trim()) {
+      console.log('❌ Form validation failed - missing fields');
       setError('Please enter both email/user ID and password.');
       return;
     }
     
-    console.log('✅ Form validation passed, calling login...');
-    const result = await login(identifier.trim(), password, rememberMe);
-    console.log('📋 Login result received:', result);
-    
-    if (!result.success && result.error) {
-      console.log('❌ Setting error message:', result.error);
-      setError(result.error);
-    }
-    
-    // Clear form after successful login (login function handles redirect)
-    if (result.success) {
-      console.log('✅ Login successful, clearing form...');
-      setIdentifier('');
-      setPassword('');
-      setShowPassword(false);
-      setError('');
+    console.log('✅ Form validation passed, calling login function...');
+    try {
+      const result = await login(identifier.trim(), password, rememberMe);
+      console.log('📋 Login result received:', result);
+      
+      if (!result.success && result.error) {
+        console.log('❌ Login failed, setting error message:', result.error);
+        setError(result.error);
+      } else if (result.success) {
+        console.log('✅ Login successful, clearing form...');
+        setIdentifier('');
+        setPassword('');
+        setShowPassword(false);
+        setError('');
+      } else {
+        console.log('⚠️ Unexpected result format:', result);
+        setError('Login failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('💥 Login function threw an error:', error);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 
