@@ -88,11 +88,36 @@ const deletedConfigsManager = new LegacyDataManager<string[]>({
 });
 
 export const getPricingConfigs = (): PricingConfig[] => {
+  console.log('🔍 Getting pricing configurations...');
+  
+  // CHECK FOR CUSTOM-ONLY MODE FIRST
+  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+  if (isCustomMode) {
+    console.log('🎯 Custom-only mode detected, loading custom pricing configs...');
+    const customData = localStorage.getItem('custom_pricing');
+    if (customData !== null) {
+      try {
+        const parsed = JSON.parse(customData);
+        if (Array.isArray(parsed)) {
+          console.log('✅ Using custom pricing configs (including empty array):', parsed.length);
+          return parsed; // Return even if empty array - this preserves deletions
+        }
+      } catch (error) {
+        console.error('❌ Failed to parse custom pricing data:', error);
+      }
+    }
+    
+    // In custom-only mode, don't fall back to defaults if no custom data
+    console.log('🚫 Custom-only mode: No custom pricing configs found, returning empty array');
+    return [];
+  }
+  
+  // Mixed mode: use existing logic with fallback
   try {
     const configs = pricingDataManager.loadData();
     const deletedConfigIds = deletedConfigsManager.loadData();
     
-    console.log('🔄 Loading pricing configurations:', configs?.length || 0);
+    console.log('🔄 Mixed mode: Loading pricing configurations:', configs?.length || 0);
     console.log('🗑️ Deleted config IDs:', deletedConfigIds);
     
     // If no configs exist and no defaults have been explicitly deleted, initialize with defaults
@@ -114,6 +139,35 @@ export const getPricingConfigs = (): PricingConfig[] => {
   }
 };
 
+export const savePricingConfigs = (configs: PricingConfig[]): void => {
+  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+  
+  if (isCustomMode) {
+    console.log('💾 Custom-only mode: Saving pricing configs to custom_pricing:', configs.length);
+    localStorage.setItem('custom_pricing', JSON.stringify(configs));
+    
+    // Validation: Read back to ensure it was saved correctly
+    const readBack = localStorage.getItem('custom_pricing');
+    if (readBack !== null) {
+      try {
+        const parsed = JSON.parse(readBack);
+        if (Array.isArray(parsed) && parsed.length === configs.length) {
+          console.log('✅ Custom pricing configs save validated successfully');
+        } else {
+          console.error('❌ Custom pricing configs save validation failed - length mismatch');
+        }
+      } catch (error) {
+        console.error('❌ Custom pricing configs save validation failed - parse error:', error);
+      }
+    } else {
+      console.error('❌ Custom pricing configs save validation failed - null readback');
+    }
+  } else {
+    console.log('💾 Mixed mode: Saving pricing configs to master_data_pricing_configs:', configs.length);
+    pricingDataManager.saveData(configs);
+  }
+};
+
 export const savePricingConfig = (config: PricingConfig): void => {
   const configs = getPricingConfigs();
   const existingIndex = configs.findIndex(c => c.id === config.id);
@@ -124,22 +178,26 @@ export const savePricingConfig = (config: PricingConfig): void => {
     configs.push(config);
   }
   
-  pricingDataManager.saveData(configs);
+  savePricingConfigs(configs);
 };
 
 export const deletePricingConfig = (id: string): void => {
   const configs = getPricingConfigs();
   const filteredConfigs = configs.filter(c => c.id !== id);
   
-  // Track deleted configuration ID to prevent auto-recreation
-  const deletedConfigIds = deletedConfigsManager.loadData();
-  if (!deletedConfigIds.includes(id)) {
-    deletedConfigIds.push(id);
-    deletedConfigsManager.saveData(deletedConfigIds);
-    console.log('🗑️ Marked config as deleted:', id);
+  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+  
+  if (!isCustomMode) {
+    // Track deleted configuration ID to prevent auto-recreation in mixed mode
+    const deletedConfigIds = deletedConfigsManager.loadData();
+    if (!deletedConfigIds.includes(id)) {
+      deletedConfigIds.push(id);
+      deletedConfigsManager.saveData(deletedConfigIds);
+      console.log('🗑️ Marked config as deleted:', id);
+    }
   }
   
-  pricingDataManager.saveData(filteredConfigs);
+  savePricingConfigs(filteredConfigs);
 };
 
 // Helper function to normalize country names for comparison
@@ -169,7 +227,7 @@ export class PricingDataManager {
   }
 
   static saveConfigurations(configs: PricingConfig[]): void {
-    pricingDataManager.saveData(configs);
+    savePricingConfigs(configs);
   }
 
   static getPricingForCountryOrgTypeAndEngagement(country: string, orgType: string, engagement: string): PricingConfig | null {
