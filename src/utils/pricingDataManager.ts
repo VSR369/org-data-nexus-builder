@@ -207,6 +207,11 @@ const normalizeCountryName = (country: string): string => {
   // Handle common variations
   const normalizedCountry = country.trim();
   
+  // India variations
+  if (['India', 'IN', 'IND'].includes(normalizedCountry)) {
+    return 'India';
+  }
+  
   // UAE variations
   if (['UAE', 'AE', 'United Arab Emirates'].includes(normalizedCountry)) {
     return 'United Arab Emirates';
@@ -235,6 +240,16 @@ export class PricingDataManager {
     const normalizedCountry = normalizeCountryName(country);
     
     console.log(`🔍 Looking for pricing config - Country: "${normalizedCountry}", OrgType: "${orgType}", Engagement: "${engagement}"`);
+    console.log('📋 Available configs:', configs.map(c => ({
+      id: c.id,
+      country: c.country,
+      normalizedCountry: normalizeCountryName(c.country || ''),
+      orgType: c.organizationType,
+      engagement: c.engagementModel,
+      quarterlyFee: c.quarterlyFee,
+      halfYearlyFee: c.halfYearlyFee,
+      annualFee: c.annualFee
+    })));
     
     // First try exact match with normalized country
     let foundConfig = configs.find(c => 
