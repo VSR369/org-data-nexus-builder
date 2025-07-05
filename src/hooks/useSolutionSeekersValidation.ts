@@ -53,17 +53,26 @@ export const useSolutionSeekersValidation = () => {
       
       let solutionSeekers = allUsers.filter(user => {
         const isSolutionSeeker = user.entityType?.toLowerCase().includes('solution') ||
-                               user.entityType?.toLowerCase().includes('seeker');
+                               user.entityType?.toLowerCase().includes('seeker') ||
+                               user.entityType === 'solution-seeker' ||
+                               user.entityType === 'Solution Seeker';
+        
         const isOrgSeeker = user.organizationType?.toLowerCase().includes('seeker');
         
-        if (!isSolutionSeeker && !isOrgSeeker) return false;
-        
-        const engagementValidation = EngagementValidator.validateSeekerEngagement(
-          user.id, user.organizationId, user.organizationName
-        );
-        
-        return engagementValidation.hasEngagementModel;
+        // Show all solution seekers regardless of engagement details
+        // Engagement validation will be enforced at approval/rejection time
+        return isSolutionSeeker || isOrgSeeker;
       }) as SeekerDetails[];
+      
+      console.log('✅ Solution seekers found (before engagement filter):', solutionSeekers.length);
+      
+      // Log engagement status for each seeker for debugging
+      solutionSeekers.forEach(seeker => {
+        const engagementValidation = EngagementValidator.validateSeekerEngagement(
+          seeker.id, seeker.organizationId, seeker.organizationName
+        );
+        console.log(`🔍 ${seeker.organizationName}: engagement=${engagementValidation.hasEngagementModel}, pricing=${engagementValidation.hasPricing}`);
+      });
       
       solutionSeekers = solutionSeekers.map(seeker => ({
         ...seeker,
