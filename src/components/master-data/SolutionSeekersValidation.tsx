@@ -7,7 +7,7 @@ import SeekersList from './solution-seekers/SeekersList';
 import EngagementValidationWarning from './solution-seekers/EngagementValidationWarning';
 import ValidationHeader from './solution-seekers/ValidationHeader';
 import ValidationLoadingError from './solution-seekers/ValidationLoadingError';
-import { useSeekerValidation } from '@/hooks/useSeekerValidation';
+import { useSolutionSeekersValidation } from '@/hooks/useSolutionSeekersValidation';
 import { useAdministratorManagement } from '@/hooks/useAdministratorManagement';
 
 const SolutionSeekersValidation: React.FC = () => {
@@ -22,7 +22,7 @@ const SolutionSeekersValidation: React.FC = () => {
     processingApproval, 
     handleApproval, 
     refresh 
-  } = useSeekerValidation();
+  } = useSolutionSeekersValidation();
 
   const {
     adminDialogOpen,
