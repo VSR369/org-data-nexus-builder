@@ -443,17 +443,12 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                             <Button 
                               variant="outline"
                               onClick={() => {
-                                // Reset all selections to allow full modification
-                                setSelectedModel(null);
-                                setSelectedFrequency('annually'); // Reset to default
+                                // Just unconfirm to allow modifications, keep current selections
                                 setIsConfirmed(false);
                                 
-                                // Clear the callback to reset parent state
-                                onEngagementSelect(null, null);
-                                
                                 toast({
-                                  title: "Selection Reset",
-                                  description: "You can now select any engagement model and pricing frequency",
+                                  title: "Modification Enabled",
+                                  description: "You can now change your engagement model and pricing frequency",
                                 });
                               }}
                             >
