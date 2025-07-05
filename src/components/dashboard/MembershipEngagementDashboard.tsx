@@ -187,22 +187,6 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
     const plans = [
       {
-        id: 'quarterly',
-        name: 'Quarterly',
-        duration: '3 months',
-        description: `${membershipFee.organizationType} ${membershipFee.entityType} - 3 month plan`,
-        price: membershipFee.quarterlyAmount,
-        currency: membershipFee.quarterlyCurrency || 'INR'
-      },
-      {
-        id: 'halfyearly',
-        name: 'Half-Yearly',
-        duration: '6 months',
-        description: `${membershipFee.organizationType} ${membershipFee.entityType} - 6 month plan`,
-        price: membershipFee.halfYearlyAmount,
-        currency: membershipFee.halfYearlyCurrency || 'INR'
-      },
-      {
         id: 'annual',
         name: 'Annual',
         duration: '12 months',
@@ -269,20 +253,20 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       return { price: 0, currency: 'INR', configName: 'No Pricing Available' };
     }
     
-    let basePrice = 0;
-    switch (frequency) {
-      case 'quarterly':
-        basePrice = engagementPricing.quarterlyFee || 0;
-        break;
-      case 'halfyearly':
-        basePrice = engagementPricing.halfYearlyFee || 0;
-        break;
-      case 'annual':
-        basePrice = engagementPricing.annualFee || 0;
-        break;
-      default:
-        basePrice = engagementPricing.halfYearlyFee || 0;
-    }
+     let basePrice = 0;
+     switch (frequency) {
+       case 'quarterly':
+         basePrice = engagementPricing.quarterlyFee || 0;
+         break;
+       case 'halfyearly':
+         basePrice = engagementPricing.halfYearlyFee || 0;
+         break;
+       case 'annual':
+         basePrice = engagementPricing.annualFee || 0;
+         break;
+       default:
+         basePrice = engagementPricing.annualFee || 0;
+     }
     
     const finalPrice = calculatePrice(basePrice);
     console.log(`💰 Pricing for ${selectedEngagementModel} (${frequency}):`, {
@@ -350,11 +334,11 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                               {formatCurrency(calculatePrice(plan.price), plan.currency)}
                             </div>
                           )}
-                          {plan.price && (
-                            <div className="text-xs text-gray-400">
-                              ~{formatCurrency(Math.round(calculatePrice(plan.price) / (plan.id === 'quarterly' ? 3 : plan.id === 'halfyearly' ? 6 : 12)), plan.currency)}/mo
-                            </div>
-                          )}
+                           {plan.price && (
+                             <div className="text-xs text-gray-400">
+                               ~{formatCurrency(Math.round(calculatePrice(plan.price) / 12), plan.currency)}/mo
+                             </div>
+                           )}
                         </div>
                       </div>
                     </Label>
@@ -494,49 +478,23 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           <CardContent>
             {selectedEngagementModel && selectedMembershipPlan ? (
               <div className="space-y-4">
-                {/* Featured pricing - Half-Yearly highlighted */}
-                <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                  <CardContent className="p-6 text-center">
-                    <div className="text-sm opacity-90 mb-1">{getPricingForDisplay(selectedPricingFrequency || 'halfyearly').configName}</div>
-                    <div className="text-3xl font-bold mb-1">
-                      {formatCurrency(getPricingForDisplay(selectedPricingFrequency || 'halfyearly').price, getPricingForDisplay(selectedPricingFrequency || 'halfyearly').currency)}
-                    </div>
-                    <div className="text-sm opacity-90">{selectedPricingFrequency ? (selectedPricingFrequency.charAt(0).toUpperCase() + selectedPricingFrequency.slice(1)) : 'Half-Yearly'}</div>
-                    {membershipStatus === 'active' && (
-                      <div className="text-xs opacity-75 mt-1">Member Discount Applied</div>
-                    )}
-                  </CardContent>
-                </Card>
+                 {/* Featured pricing - Annual highlighted */}
+                 <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                   <CardContent className="p-6 text-center">
+                     <div className="text-sm opacity-90 mb-1">{getPricingForDisplay(selectedPricingFrequency || 'annual').configName}</div>
+                     <div className="text-3xl font-bold mb-1">
+                       {formatCurrency(getPricingForDisplay(selectedPricingFrequency || 'annual').price, getPricingForDisplay(selectedPricingFrequency || 'annual').currency)}
+                     </div>
+                     <div className="text-sm opacity-90">{selectedPricingFrequency ? (selectedPricingFrequency.charAt(0).toUpperCase() + selectedPricingFrequency.slice(1)) : 'Annual'}</div>
+                     {membershipStatus === 'active' && (
+                       <div className="text-xs opacity-75 mt-1">Member Discount Applied</div>
+                     )}
+                   </CardContent>
+                 </Card>
 
                 {/* Other pricing options */}
                 <RadioGroup value={selectedPricingFrequency} onValueChange={handlePricingFrequencyChange}>
                   <div className="space-y-3">
-                    <Label htmlFor="pricing-quarterly" className="cursor-pointer">
-                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <RadioGroupItem value="quarterly" id="pricing-quarterly" />
-                          <span className="font-medium">Quarterly</span>
-                        </div>
-                        <span className="font-bold text-blue-600">
-                          {formatCurrency(getPricingForDisplay('quarterly').price, getPricingForDisplay('quarterly').currency)}
-                        </span>
-                      </div>
-                    </Label>
-
-                    <Label htmlFor="pricing-halfyearly" className="cursor-pointer">
-                      <div className={`flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 ${
-                        selectedPricingFrequency === 'halfyearly' ? 'border-blue-500 bg-blue-50' : ''
-                      }`}>
-                        <div className="flex items-center space-x-3">
-                          <RadioGroupItem value="halfyearly" id="pricing-halfyearly" />
-                          <span className="font-medium">Half-Yearly</span>
-                        </div>
-                        <span className="font-bold text-blue-600">
-                          {formatCurrency(getPricingForDisplay('halfyearly').price, getPricingForDisplay('halfyearly').currency)}
-                        </span>
-                      </div>
-                    </Label>
-
                     <Label htmlFor="pricing-annual" className="cursor-pointer">
                       <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                         <div className="flex items-center space-x-3">
@@ -551,10 +509,10 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                   </div>
                 </RadioGroup>
 
-                {/* Pricing Configuration Info */}
-                <div className="text-xs text-gray-500 text-center p-2 bg-gray-50 rounded">
-                  Pricing from: {getPricingForDisplay(selectedPricingFrequency || 'halfyearly').configName}
-                </div>
+                 {/* Pricing Configuration Info */}
+                 <div className="text-xs text-gray-500 text-center p-2 bg-gray-50 rounded">
+                   Pricing from: {getPricingForDisplay(selectedPricingFrequency || 'annual').configName}
+                 </div>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
