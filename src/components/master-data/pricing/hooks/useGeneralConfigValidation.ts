@@ -64,7 +64,7 @@ export const useGeneralConfigValidation = () => {
       return false;
     }
 
-    if (config.membershipStatus === 'active' && (config.discountPercentage === undefined || config.discountPercentage < 0)) {
+    if (config.membershipStatus === 'member' && (config.discountPercentage === undefined || config.discountPercentage < 0)) {
       toast({
         title: "Validation Error",
         description: "Please provide a valid discount percentage for active members.",

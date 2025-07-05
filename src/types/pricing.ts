@@ -6,7 +6,7 @@ export interface CountryPricing {
   quarterlyPrice: number;
   halfYearlyPrice: number;
   annualPrice: number;
-  membershipStatus?: 'active' | 'inactive' | 'not-a-member';
+  membershipStatus?: 'member' | 'not-a-member';
   discountPercentage?: number;
 }
 
@@ -22,7 +22,7 @@ export interface PricingConfig {
   quarterlyFee?: number;
   halfYearlyFee?: number;
   annualFee?: number;
-  membershipStatus?: 'active' | 'inactive' | 'not-a-member';
+  membershipStatus?: 'member' | 'not-a-member';
   discountPercentage?: number;
   generalConfig?: {
     marketPlaceFee: number;

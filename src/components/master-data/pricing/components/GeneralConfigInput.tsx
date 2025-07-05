@@ -121,8 +121,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   const isCurrentModelPaaS = isPaaSModel(currentConfig.engagementModel || '');
 
   const membershipStatuses = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
+    { value: 'member', label: 'Member' },
     { value: 'not-a-member', label: 'Not a Member' }
   ];
 
@@ -205,11 +204,11 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
             <Label htmlFor="membershipStatus">Membership Status *</Label>
             <Select 
               value={currentConfig.membershipStatus || ""} 
-              onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+              onValueChange={(value: 'member' | 'not-a-member') => {
                 setCurrentConfig(prev => ({ 
                   ...prev, 
                   membershipStatus: value,
-                  discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+                  discountPercentage: value === 'member' ? prev.discountPercentage : undefined
                 }));
               }}
             >
@@ -227,8 +226,8 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
           </div>
         </div>
 
-        {/* Member Discount Section - Only show if membership status is active */}
-        {currentConfig.membershipStatus === 'active' && (
+        {/* Member Discount Section - Only show if membership status is member */}
+        {currentConfig.membershipStatus === 'member' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="discountPercentage">Member Discount (%) *</Label>
