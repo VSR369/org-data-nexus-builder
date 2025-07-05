@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import SolutionSeekingOrgLogin from '@/components/auth/SolutionSeekingOrgLogin';
-import AuthDebugPanel from '@/components/auth/AuthDebugPanel';
+import LoginDebugPanel from '@/components/debug/LoginDebugPanel';
 
 const SeekingOrgAdminLogin = () => {
   const location = useLocation();
@@ -72,7 +72,7 @@ const SeekingOrgAdminLogin = () => {
       
       {/* Debug Panel - Remove in production */}
       <div className="w-full max-w-4xl">
-        <AuthDebugPanel />
+        <LoginDebugPanel />
       </div>
     </div>
   );

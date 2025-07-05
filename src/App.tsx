@@ -9,6 +9,7 @@ import { MasterDataHealthProvider } from "@/components/providers/MasterDataHealt
 // Import pages
 import Index from './pages/Index';
 import SignIn from './pages/SignIn';
+import GeneralSignIn from './pages/GeneralSignIn';
 import SignUp from './pages/SignUp';
 import SeekerRegistration from './pages/SeekerRegistration';
 import SeekerLogin from './pages/SeekerLogin';
@@ -36,7 +37,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/signin" element={<SignIn />} />
-                <Route path="/general-signin" element={<SignIn />} />
+                <Route path="/general-signin" element={<GeneralSignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/test" element={<TestPage />} />
                 <Route path="/seeker-registration" element={<SeekerRegistration />} />
