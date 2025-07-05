@@ -1,23 +1,17 @@
 
 import React from 'react';
-import { Card } from "@/components/ui/card";
-import SeekingOrgAdminLoginHeader from '@/components/auth/SeekingOrgAdminLoginHeader';
-import SolutionSeekingOrgLoginForm from '@/components/auth/SolutionSeekingOrgLoginForm';
-import UserDataDebugger from '@/components/debug/UserDataDebugger';
+import { Card, CardContent } from "@/components/ui/card";
+import SolutionSeekingOrgLogin from '@/components/auth/SolutionSeekingOrgLogin';
 
 const SeekingOrgAdminLogin = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         <Card className="shadow-xl border-0">
-          <SeekingOrgAdminLoginHeader />
-          <SolutionSeekingOrgLoginForm />
+          <CardContent className="p-6">
+            <SolutionSeekingOrgLogin />
+          </CardContent>
         </Card>
-      </div>
-      
-      {/* Debug component - remove this after fixing the issue */}
-      <div className="w-full max-w-4xl">
-        <UserDataDebugger />
       </div>
     </div>
   );
