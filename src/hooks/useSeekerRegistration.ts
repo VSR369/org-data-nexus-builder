@@ -110,9 +110,9 @@ export const useSeekerRegistration = () => {
       description: `Welcome ${formData.contactPersonName}! Your account has been created successfully. You can now login with User ID: ${formData.userId}`,
     });
 
-    // Navigate to login page after successful registration
+    // Navigate to home page after successful registration
     setTimeout(() => {
-      navigate('/seeker-login');
+      navigate('/');
     }, 3000);
   };
 
