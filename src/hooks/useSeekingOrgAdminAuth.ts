@@ -43,6 +43,8 @@ export const useSeekingOrgAdminAuth = () => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
+    console.log('🔐 === SEEKING ORG ADMIN LOGIN START ===');
+    console.log('🔐 Attempting login with email:', email);
     
     try {
       // Clear any existing session first
@@ -50,11 +52,71 @@ export const useSeekingOrgAdminAuth = () => {
       setCurrentOrganization(null);
       setIsAuthenticated(false);
       
-      // Import the unified user storage service to check for actual user
+      // Try to authenticate using the dedicated administrator service
+      const { administratorStorageService } = await import('@/services/AdministratorStorageService');
+      
+      // First try admin service (using email as adminId for backward compatibility)
+      let authResult = await administratorStorageService.authenticateAdmin(email, password);
+      
+      if (!authResult.success) {
+        // Fallback: try to find admin by email
+        const adminByEmail = await administratorStorageService.findAdminByEmail(email);
+        if (adminByEmail) {
+          authResult = await administratorStorageService.authenticateAdmin(adminByEmail.adminId, password);
+        }
+      }
+      
+      if (authResult.success && authResult.admin) {
+        const admin = authResult.admin;
+        console.log('✅ Admin authentication successful:', admin.adminId);
+        
+        const organizationData: SeekingOrganization = {
+          organizationId: admin.adminId,
+          organizationName: admin.organizationName,
+          role: 'seeking_organization',
+          permissions: admin.permissions
+        };
+        
+        setCurrentOrganization(organizationData);
+        setIsAuthenticated(true);
+        
+        // Save session using administrator service
+        await administratorStorageService.saveSession({
+          adminId: admin.adminId,
+          organizationName: admin.organizationName,
+          adminEmail: admin.adminEmail,
+          adminName: admin.adminName,
+          role: admin.role,
+          permissions: admin.permissions,
+          loginTimestamp: new Date().toISOString()
+        });
+        
+        // Also save legacy session for backward compatibility
+        const sessionDataToStore = {
+          ...organizationData,
+          loginTime: new Date().toISOString(),
+          adminData: {
+            adminId: admin.adminId,
+            adminName: admin.adminName,
+            adminEmail: admin.adminEmail,
+            role: admin.role
+          }
+        };
+        
+        console.log('📊 LOGIN - Saving session data to localStorage');
+        localStorage.setItem('seeking_org_admin_session', JSON.stringify(sessionDataToStore));
+        
+        toast.success(`Successfully signed in as ${admin.adminName}!`);
+        navigate('/seeking-org-admin-dashboard');
+        console.log('🔐 === SEEKING ORG ADMIN LOGIN SUCCESS ===');
+        return true;
+      }
+      
+      // Fallback to regular user authentication for backward compatibility
+      console.log('📊 Falling back to regular user authentication...');
       const { unifiedUserStorageService } = await import('@/services/UnifiedUserStorageService');
       await unifiedUserStorageService.initialize();
       
-      // Try to find the actual user data
       const allUsers = await unifiedUserStorageService.getAllUsers();
       const foundUser = allUsers.find(user => user.email === email);
       
@@ -69,31 +131,29 @@ export const useSeekingOrgAdminAuth = () => {
         setCurrentOrganization(organizationData);
         setIsAuthenticated(true);
         
-        // Store organization session
         const sessionDataToStore = {
           ...organizationData,
-          loginTime: new Date().toISOString()
+          loginTime: new Date().toISOString(),
+          fallbackAuth: true
         };
-        console.log('📊 LOGIN - Saving session data to localStorage with key "seeking_org_admin_session"');
-        console.log('📊 LOGIN - Session data being saved:', JSON.stringify(sessionDataToStore, null, 2));
-        localStorage.setItem('seeking_org_admin_session', JSON.stringify(sessionDataToStore));
         
-        // Verify the save
-        const verification = localStorage.getItem('seeking_org_admin_session');
-        console.log('📊 LOGIN - Session verification read:', verification);
+        localStorage.setItem('seeking_org_admin_session', JSON.stringify(sessionDataToStore));
         
         toast.success('Successfully signed in to your organization account!');
         navigate('/seeking-org-admin-dashboard');
+        console.log('🔐 === SEEKING ORG ADMIN LOGIN SUCCESS (FALLBACK) ===');
         return true;
-      } else if (!foundUser) {
-        toast.error('User not found. Please check your email or register first.');
-        return false;
-      } else {
-        toast.error('Please enter both email and password');
-        return false;
       }
+      
+      console.log('❌ No valid authentication found');
+      toast.error('Invalid credentials. Please check your email and password.');
+      console.log('🔐 === SEEKING ORG ADMIN LOGIN FAILED ===');
+      return false;
+      
     } catch (error) {
+      console.error('❌ Login error:', error);
       toast.error('Login failed. Please try again.');
+      console.log('🔐 === SEEKING ORG ADMIN LOGIN ERROR ===');
       return false;
     } finally {
       setIsLoading(false);

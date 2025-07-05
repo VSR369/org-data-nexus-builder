@@ -19,6 +19,7 @@ import SeekerDashboard from './pages/SeekerDashboard';
 import MasterDataPortal from './pages/MasterDataPortal';
 import MembershipRegistration from './pages/MembershipRegistration';
 import SeekingOrgAdminDashboard from './pages/SeekingOrgAdminDashboard';
+import AdminRegistration from './pages/AdminRegistration';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
                 <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
                 <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
+                <Route path="/admin-registration" element={<AdminRegistration />} />
                 <Route path="/master-data-portal" element={<MasterDataPortal />} />
                 <Route path="/master-data" element={<MasterDataPortal />} />
                 <Route path="/membership-registration" element={<MembershipRegistration />} />
