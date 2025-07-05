@@ -1,7 +1,10 @@
 export interface RewardType {
   id: string;
+  type: 'monetary' | 'non-monetary';
   name: string;
-  description: string;
+  description?: string;
+  currency?: string;
+  amount?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -10,6 +13,7 @@ export interface RewardType {
 const emergencyFallbackRewardTypes: RewardType[] = [
   {
     id: '1',
+    type: 'non-monetary',
     name: 'Recognition Badge',
     description: 'Digital badge for achievements',
     isActive: true,
@@ -18,6 +22,7 @@ const emergencyFallbackRewardTypes: RewardType[] = [
   },
   {
     id: '2',
+    type: 'non-monetary',
     name: 'Certificate of Excellence',
     description: 'Official certificate for outstanding performance',
     isActive: true,
