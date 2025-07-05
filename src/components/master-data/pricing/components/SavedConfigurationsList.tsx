@@ -79,96 +79,179 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                 const hasDiscount = config.membershipStatus === 'member' && discount > 0;
                 const isPaaS = isPaaSModel(config.engagementModel);
 
-                return (
-                  <TableRow key={config.id}>
-                    <TableCell className="font-medium">{config.country}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{config.currency}</Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{config.organizationType}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{config.entityType}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{config.engagementModel}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={config.membershipStatus === 'member' ? 'default' : 'secondary'}>
-                        {config.membershipStatus === 'member' ? 'Member' : 'Not a Member'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {discount > 0 ? `${discount}%` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {config.quarterlyFee !== undefined ? (
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel)}
-                          </div>
-                          {hasDiscount && (
-                            <div className="text-xs text-green-600">
-                              After discount: {isPaaS ? 
-                                `${config.currency} ${calculateDiscountedPrice(config.quarterlyFee, discount).toLocaleString()}` : 
-                                `${calculateDiscountedPrice(config.quarterlyFee, discount)}%`}
-                            </div>
-                          )}
+                // Generate rows based on membership status and discount
+                const rows = [];
+
+                if (hasDiscount) {
+                  // Member row (with discount)
+                  rows.push(
+                    <TableRow key={`${config.id}-member`}>
+                      <TableCell className="font-medium">{config.country}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.currency}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{config.organizationType}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.entityType}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.engagementModel}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">Member</Badge>
+                      </TableCell>
+                      <TableCell>{discount}%</TableCell>
+                      <TableCell>
+                        {config.quarterlyFee !== undefined ? 
+                          formatFeeDisplay(calculateDiscountedPrice(config.quarterlyFee, discount), config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        {config.halfYearlyFee !== undefined ? 
+                          formatFeeDisplay(calculateDiscountedPrice(config.halfYearlyFee, discount), config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        {config.annualFee !== undefined ? 
+                          formatFeeDisplay(calculateDiscountedPrice(config.annualFee, discount), config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>{config.createdAt}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(config)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(config.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {config.halfYearlyFee !== undefined ? (
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel)}
-                          </div>
-                          {hasDiscount && (
-                            <div className="text-xs text-green-600">
-                              After discount: {isPaaS ? 
-                                `${config.currency} ${calculateDiscountedPrice(config.halfYearlyFee, discount).toLocaleString()}` : 
-                                `${calculateDiscountedPrice(config.halfYearlyFee, discount)}%`}
-                            </div>
-                          )}
+                      </TableCell>
+                    </TableRow>
+                  );
+
+                  // Non-member row (original price)
+                  rows.push(
+                    <TableRow key={`${config.id}-non-member`}>
+                      <TableCell className="font-medium">{config.country}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.currency}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{config.organizationType}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.entityType}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.engagementModel}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">Not a Member</Badge>
+                      </TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>
+                        {config.quarterlyFee !== undefined ? 
+                          formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        {config.halfYearlyFee !== undefined ? 
+                          formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        {config.annualFee !== undefined ? 
+                          formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>{config.createdAt}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(config)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(config.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {config.annualFee !== undefined ? (
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {formatFeeDisplay(config.annualFee, config.currency, config.engagementModel)}
-                          </div>
-                          {hasDiscount && (
-                            <div className="text-xs text-green-600">
-                              After discount: {isPaaS ? 
-                                `${config.currency} ${calculateDiscountedPrice(config.annualFee, discount).toLocaleString()}` : 
-                                `${calculateDiscountedPrice(config.annualFee, discount)}%`}
-                            </div>
-                          )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                } else {
+                  // Single row for non-member or member without discount
+                  rows.push(
+                    <TableRow key={config.id}>
+                      <TableCell className="font-medium">{config.country}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.currency}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{config.organizationType}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.entityType}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{config.engagementModel}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={config.membershipStatus === 'member' ? 'default' : 'secondary'}>
+                          {config.membershipStatus === 'member' ? 'Member' : 'Not a Member'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>
+                        {config.quarterlyFee !== undefined ? 
+                          formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        {config.halfYearlyFee !== undefined ? 
+                          formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        {config.annualFee !== undefined ? 
+                          formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                      <TableCell>{config.createdAt}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(config)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(config.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>{config.createdAt}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(config)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDelete(config.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+
+                return rows;
               })}
             </TableBody>
           </Table>
