@@ -1,4 +1,4 @@
-import CryptoJS from 'crypto-js';
+
 
 // Administrator data structure 
 interface AdminData {
@@ -56,10 +56,10 @@ export class SeekingOrgAdminAuthService {
   private static readonly REMEMBER_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
 
   /**
-   * Hash password using the same method as AdminCreationDialog
+   * Simple password comparison (no hashing)
    */
-  private static hashPassword(password: string): string {
-    return CryptoJS.SHA256(password + this.PASSWORD_SALT).toString();
+  private static comparePassword(inputPassword: string, storedPassword: string): boolean {
+    return inputPassword === storedPassword;
   }
 
   /**
@@ -216,11 +216,8 @@ export class SeekingOrgAdminAuthService {
         };
       }
 
-      // Verify password
-      const hashedPassword = this.hashPassword(password);
-      console.log('🔒 Password verification in progress...');
-      
-      if (admin.password !== hashedPassword) {
+      // Simple password comparison
+      if (!this.comparePassword(password, admin.password)) {
         console.log('❌ Password verification failed for:', admin.userId);
         this.logLoginAttempt(identifier, false);
         return {
