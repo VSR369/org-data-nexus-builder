@@ -29,6 +29,8 @@ const SolutionSeekersValidation: React.FC = () => {
   const [currentSeekerForAdmin, setCurrentSeekerForAdmin] = useState<SeekerDetails | null>(null);
   const [currentSeekerForRejection, setCurrentSeekerForRejection] = useState<SeekerDetails | null>(null);
   const [existingAdmin, setExistingAdmin] = useState<any>(null);
+  const [processingApproval, setProcessingApproval] = useState<string | null>(null);
+  const [processingAdmin, setProcessingAdmin] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Use custom localStorage hooks for state synchronization
@@ -214,10 +216,49 @@ const SolutionSeekersValidation: React.FC = () => {
     }
   }, [approvalStatuses, administratorRecords, loading, seekers, syncApprovalStatuses, syncAdministratorStatuses]);
 
+  // Retry mechanism for localStorage operations
+  const retryLocalStorageOperation = async (operation: () => boolean, maxRetries: number = 3): Promise<boolean> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`🔄 Attempt ${attempt}/${maxRetries} for localStorage operation`);
+      
+      if (operation()) {
+        console.log('✅ localStorage operation succeeded on attempt', attempt);
+        return true;
+      }
+      
+      if (attempt < maxRetries) {
+        console.log(`⏳ Retrying localStorage operation in ${attempt * 500}ms...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+      }
+    }
+    
+    console.error('❌ localStorage operation failed after', maxRetries, 'attempts');
+    return false;
+  };
+
+  // Confirmation dialog for approval actions
+  const confirmApprovalAction = (seeker: SeekerDetails, action: 'approve' | 'reject'): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const confirmed = window.confirm(
+        `Are you sure you want to ${action} ${seeker.organizationName}?\n\nThis action will be saved and synchronized across all sessions.`
+      );
+      resolve(confirmed);
+    });
+  };
+
   const handleApproval = async (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => {
     console.log('🔄 Processing approval/rejection with synchronized state:', { seekerId, status, reason, documentsCount: documents?.length || 0 });
     
+    // Set loading state
+    setProcessingApproval(seekerId);
+    
     try {
+      // Show loading toast
+      const loadingToast = toast({
+        title: "Processing...",
+        description: `${status === 'approved' ? 'Approving' : 'Rejecting'} seeker. Please wait...`,
+      });
+
       // Create approval record
       const approvalRecord: ApprovalRecord = {
         seekerId,
@@ -228,17 +269,17 @@ const SolutionSeekersValidation: React.FC = () => {
         documents: documents ? documents.map(file => ({ name: file.name, size: file.size, type: file.type })) : []
       };
       
-      // Update approval statuses using the synchronized hook
+      // Update approval statuses using the synchronized hook with retry mechanism
       const updatedApprovals = approvalStatuses.filter(a => a.seekerId !== seekerId);
       updatedApprovals.push(approvalRecord);
       
-      const saveSuccess = setApprovalStatuses(updatedApprovals);
+      const saveSuccess = await retryLocalStorageOperation(() => setApprovalStatuses(updatedApprovals));
       
       if (!saveSuccess) {
-        console.error('❌ Failed to save approval status using synchronized state');
+        console.error('❌ Failed to save approval status after retries');
         toast({
           title: "Storage Error",
-          description: "Failed to save approval status. localStorage may be full or disabled.",
+          description: "Failed to save approval status after multiple attempts. localStorage may be full, disabled, or corrupted. Please try again or contact support.",
           variant: "destructive"
         });
         return;
@@ -249,6 +290,11 @@ const SolutionSeekersValidation: React.FC = () => {
         const docSaveSuccess = await approvalStatusService.saveDocuments(seekerId, documents);
         if (!docSaveSuccess) {
           console.warn('⚠️ Documents failed to save but approval status was saved');
+          toast({
+            title: "Partial Success",
+            description: "Approval status saved but documents failed to upload. The approval is still valid.",
+            variant: "default"
+          });
         }
       }
       
@@ -259,8 +305,8 @@ const SolutionSeekersValidation: React.FC = () => {
       if (!reason) {
         const seekerName = seekers.find(s => s.id === seekerId)?.organizationName;
         toast({
-          title: status === 'approved' ? "Seeker Approved" : "Seeker Rejected",
-          description: `${seekerName} has been ${status}. Status synchronized across sessions. ${status === 'approved' ? 'You can now create an administrator.' : ''}`,
+          title: status === 'approved' ? "✅ Seeker Approved" : "❌ Seeker Rejected",
+          description: `${seekerName} has been ${status} successfully. Status synchronized across sessions. ${status === 'approved' ? 'You can now create an administrator.' : ''}`,
           variant: status === 'approved' ? "default" : "destructive"
         });
       }
@@ -268,11 +314,43 @@ const SolutionSeekersValidation: React.FC = () => {
     } catch (error) {
       console.error('❌ Exception during synchronized approval processing:', error);
       toast({
-        title: "Error",
-        description: `Failed to update approval status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: "Processing Error",
+        description: `Failed to update approval status: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         variant: "destructive"
       });
+    } finally {
+      // Clear loading state
+      setProcessingApproval(null);
     }
+  };
+
+  // Handle approval with confirmation
+  const handleApprovalWithConfirmation = async (seeker: SeekerDetails, status: 'approved' | 'rejected') => {
+    // Prevent double-clicks during processing
+    if (processingApproval === seeker.id) {
+      console.log('⏳ Already processing approval for seeker:', seeker.organizationName);
+      return;
+    }
+
+    // Check localStorage availability
+    if (!localStorage) {
+      toast({
+        title: "Storage Unavailable",
+        description: "localStorage is not available in your browser. Please enable it or try a different browser.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = await confirmApprovalAction(seeker, status === 'approved' ? 'approve' : 'reject');
+    
+    if (!confirmed) {
+      console.log('❌ User cancelled approval action for:', seeker.organizationName);
+      return;
+    }
+
+    await handleApproval(seeker.id, status);
   };
 
   const handleRejectClick = (seeker: SeekerDetails) => {
@@ -288,6 +366,12 @@ const SolutionSeekersValidation: React.FC = () => {
   };
 
   const handleCreateAdministrator = async (seeker: SeekerDetails) => {
+    // Prevent double-clicks during processing
+    if (processingAdmin === seeker.id) {
+      console.log('⏳ Already processing administrator for seeker:', seeker.organizationName);
+      return;
+    }
+
     console.log('👥 Opening administrator creation for seeker:', seeker.organizationName);
     setCurrentSeekerForAdmin(seeker);
     
@@ -308,7 +392,18 @@ const SolutionSeekersValidation: React.FC = () => {
   const handleAdminCreated = async (adminData: any) => {
     console.log('👥 Processing admin creation with synchronized state for seeker:', currentSeekerForAdmin?.organizationName, 'Admin data:', adminData);
     
+    // Set loading state
+    if (currentSeekerForAdmin) {
+      setProcessingAdmin(currentSeekerForAdmin.id);
+    }
+    
     try {
+      // Show loading toast
+      toast({
+        title: "Processing...",
+        description: `${existingAdmin ? 'Updating' : 'Creating'} administrator. Please wait...`,
+      });
+
       // Create administrator record
       const adminRecord: AdminRecord = {
         id: adminData.id,
@@ -319,17 +414,17 @@ const SolutionSeekersValidation: React.FC = () => {
         createdAt: new Date().toISOString()
       };
       
-      // Update administrator records using synchronized hook
+      // Update administrator records using synchronized hook with retry mechanism
       const updatedAdmins = administratorRecords.filter(admin => admin.sourceSeekerId !== adminRecord.sourceSeekerId);
       updatedAdmins.push(adminRecord);
       
-      const saveSuccess = setAdministratorRecords(updatedAdmins);
+      const saveSuccess = await retryLocalStorageOperation(() => setAdministratorRecords(updatedAdmins));
       
       if (!saveSuccess) {
-        console.error('❌ Failed to save administrator using synchronized state');
+        console.error('❌ Failed to save administrator after retries');
         toast({
           title: "Storage Error",
-          description: "Failed to save administrator. localStorage may be full or disabled.",
+          description: "Failed to save administrator after multiple attempts. localStorage may be full, disabled, or corrupted. Please try again or contact support.",
           variant: "destructive"
         });
         return;
@@ -339,17 +434,20 @@ const SolutionSeekersValidation: React.FC = () => {
       console.log('✅ Administrator record saved, component state will auto-sync');
       
       toast({
-        title: existingAdmin ? "Administrator Updated" : "Administrator Created",
+        title: existingAdmin ? "✅ Administrator Updated" : "✅ Administrator Created",
         description: `Administrator ${adminData.adminName} has been successfully ${existingAdmin ? 'updated' : 'created'}. Status synchronized across sessions.`,
       });
       
     } catch (error) {
       console.error('❌ Exception during synchronized admin creation processing:', error);
       toast({
-        title: "Error",
-        description: `Failed to process administrator: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: "Processing Error",
+        description: `Failed to process administrator: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         variant: "destructive"
       });
+    } finally {
+      // Clear loading state
+      setProcessingAdmin(null);
     }
   };
 
@@ -561,53 +659,65 @@ const SolutionSeekersValidation: React.FC = () => {
               </Badge>
             </div>
             
-            <div className="flex gap-2">
-              {seeker.approvalStatus === 'pending' && (
-                <>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-green-600 border-green-600 hover:bg-green-50"
-                    onClick={() => handleApproval(seeker.id, 'approved')}
-                  >
-                    <UserCheck className="h-4 w-4 mr-1" />
-                    Approve
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-red-600 border-red-600 hover:bg-red-50"
-                    onClick={() => handleRejectClick(seeker)}
-                  >
-                    <UserX className="h-4 w-4 mr-1" />
-                    Reject
-                  </Button>
-                </>
-              )}
-              
-              {seeker.approvalStatus === 'rejected' && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-orange-600 border-orange-600 hover:bg-orange-50"
-                  onClick={() => handleReapproveClick(seeker)}
-                >
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Reapprove
-                </Button>
-              )}
-              
-              {seeker.approvalStatus === 'approved' && (
-                <Button 
-                  size="sm" 
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => handleCreateAdministrator(seeker)}
-                >
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  {seeker.hasAdministrator ? 'Edit Administrator' : 'Create Administrator'}
-                </Button>
-              )}
-            </div>
+             <div className="flex gap-2">
+               {seeker.approvalStatus === 'pending' && (
+                 <>
+                   <Button 
+                     size="sm" 
+                     variant="outline" 
+                     className="text-green-600 border-green-600 hover:bg-green-50"
+                     onClick={() => handleApprovalWithConfirmation(seeker, 'approved')}
+                     disabled={processingApproval === seeker.id}
+                   >
+                     {processingApproval === seeker.id ? (
+                       <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                     ) : (
+                       <UserCheck className="h-4 w-4 mr-1" />
+                     )}
+                     {processingApproval === seeker.id ? 'Processing...' : 'Approve'}
+                   </Button>
+                   <Button 
+                     size="sm" 
+                     variant="outline" 
+                     className="text-red-600 border-red-600 hover:bg-red-50"
+                     onClick={() => handleRejectClick(seeker)}
+                     disabled={processingApproval === seeker.id}
+                   >
+                     <UserX className="h-4 w-4 mr-1" />
+                     Reject
+                   </Button>
+                 </>
+               )}
+               
+               {seeker.approvalStatus === 'rejected' && (
+                 <Button 
+                   size="sm" 
+                   variant="outline" 
+                   className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                   onClick={() => handleReapproveClick(seeker)}
+                   disabled={processingApproval === seeker.id}
+                 >
+                   <RotateCcw className="h-4 w-4 mr-1" />
+                   Reapprove
+                 </Button>
+               )}
+               
+               {seeker.approvalStatus === 'approved' && (
+                 <Button 
+                   size="sm" 
+                   className="bg-blue-600 hover:bg-blue-700"
+                   onClick={() => handleCreateAdministrator(seeker)}
+                   disabled={processingAdmin === seeker.id}
+                 >
+                   {processingAdmin === seeker.id ? (
+                     <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                   ) : (
+                     <UserPlus className="h-4 w-4 mr-1" />
+                   )}
+                   {processingAdmin === seeker.id ? 'Processing...' : (seeker.hasAdministrator ? 'Edit Administrator' : 'Create Administrator')}
+                 </Button>
+               )}
+             </div>
           </div>
         </div>
       </DialogContent>
@@ -815,29 +925,35 @@ const SolutionSeekersValidation: React.FC = () => {
                       <ViewDetailsDialog seeker={seeker} />
                     </Dialog>
                     
-                    {/* Approval Buttons - Only show for pending seekers */}
-                    {seeker.approvalStatus === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
-                          onClick={() => handleApproval(seeker.id, 'approved')}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
-                          onClick={() => handleRejectClick(seeker)}
-                        >
-                          <UserX className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
-                    )}
+                     {/* Approval Buttons - Only show for pending seekers */}
+                     {seeker.approvalStatus === 'pending' && (
+                       <div className="flex gap-2">
+                         <Button 
+                           size="sm" 
+                           variant="outline" 
+                           className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
+                           onClick={() => handleApprovalWithConfirmation(seeker, 'approved')}
+                           disabled={processingApproval === seeker.id}
+                         >
+                           {processingApproval === seeker.id ? (
+                             <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                           ) : (
+                             <CheckCircle className="h-4 w-4 mr-1" />
+                           )}
+                           {processingApproval === seeker.id ? 'Processing...' : 'Approve'}
+                         </Button>
+                         <Button 
+                           size="sm" 
+                           variant="outline" 
+                           className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                           onClick={() => handleRejectClick(seeker)}
+                           disabled={processingApproval === seeker.id}
+                         >
+                           <UserX className="h-4 w-4 mr-1" />
+                           Reject
+                         </Button>
+                       </div>
+                     )}
                     
                     {/* Rejected Status Actions */}
                     {seeker.approvalStatus === 'rejected' && (
