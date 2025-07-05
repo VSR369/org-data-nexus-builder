@@ -51,7 +51,8 @@ export const useSeekingOrgAdminAuth = () => {
 
   const login = async (identifier: string, password: string, rememberMe: boolean = false): Promise<AuthResult> => {
     setIsLoading(true);
-    console.log('🔐 Starting administrator login for:', identifier);
+    console.log('🔐 === SEEKING ORG ADMIN LOGIN START ===');
+    console.log('🔐 Attempting login with email:', identifier);
     
     try {
       // Clear any existing session
@@ -59,10 +60,10 @@ export const useSeekingOrgAdminAuth = () => {
       setCurrentOrganization(null);
       setIsAuthenticated(false);
       
-      // Authenticate using the new service
-      console.log('🔍 Calling authentication service...');
+      // Authenticate using the SeekingOrgAdminAuthService (localStorage-based)
+      console.log('🔍 Calling SeekingOrgAdminAuthService...');
       const authResult = await SeekingOrgAdminAuthService.authenticate(identifier, password);
-      console.log('📋 Authentication result:', authResult);
+      console.log('📋 Authentication result from SeekingOrgAdminAuthService:', authResult);
       
       if (authResult.success && authResult.admin) {
         const admin = authResult.admin;
