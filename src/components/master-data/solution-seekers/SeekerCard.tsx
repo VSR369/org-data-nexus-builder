@@ -200,20 +200,11 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
         <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
           <h4 className="font-medium text-blue-900 mb-2">Engagement & Pricing Details</h4>
           <div className="space-y-1 text-xs text-blue-800">
-            {seeker.selectedPlan && (
-              <div><span className="font-medium">Plan:</span> {safeRender(seeker.selectedPlan)}</div>
+            {engagementValidation.engagementData?.engagementModel && (
+              <div><span className="font-medium">Model:</span> {safeRender(engagementValidation.engagementData.engagementModel)}</div>
             )}
-            {seeker.selectedEngagementModel && (
-              <div><span className="font-medium">Model:</span> {safeRender(seeker.selectedEngagementModel)}</div>
-            )}
-            {membershipData?.selectedPlan && (
-              <div><span className="font-medium">Selected Plan:</span> {safeRender(membershipData.selectedPlan)}</div>
-            )}
-            {membershipData?.paidAt && (
-              <div><span className="font-medium">Paid At:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
-            )}
-            {pricingData?.engagementModel && (
-              <div><span className="font-medium">Engagement:</span> {safeRender(pricingData.engagementModel)}</div>
+            {engagementValidation.engagementData?.selectedModel && (
+              <div><span className="font-medium">Selected Model:</span> {safeRender(engagementValidation.engagementData.selectedModel)}</div>
             )}
             {pricingData?.currency && pricingData?.amount && (
               <div>
@@ -221,8 +212,14 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
                 {pricingData.frequency && ` (${safeRender(pricingData.frequency)})`}
               </div>
             )}
-            {!seeker.selectedPlan && !seeker.selectedEngagementModel && !membershipData && !pricingData && (
-              <div className="text-gray-500 italic">No engagement/pricing details found</div>
+            {membershipData?.selectedPlan && (
+              <div><span className="font-medium">Membership Plan:</span> {safeRender(membershipData.selectedPlan)}</div>
+            )}
+            {membershipData?.paidAt && (
+              <div><span className="font-medium">Payment Date:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
+            )}
+            {!engagementValidation.hasEngagementModel && (
+              <div className="text-red-500 italic">No engagement model selected</div>
             )}
           </div>
         </div>

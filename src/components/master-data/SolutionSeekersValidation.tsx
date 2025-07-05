@@ -129,7 +129,7 @@ const SolutionSeekersValidation: React.FC = () => {
         
         console.log('👥 All users retrieved:', allUsers.length);
         
-        // Enhanced filtering for solution seekers
+        // Enhanced filtering for solution seekers with engagement validation
         let solutionSeekers = allUsers.filter(user => {
           const isSolutionSeeker = user.entityType?.toLowerCase().includes('solution') ||
                                  user.entityType?.toLowerCase().includes('seeker') ||
@@ -138,7 +138,25 @@ const SolutionSeekersValidation: React.FC = () => {
           
           const isOrgSeeker = user.organizationType?.toLowerCase().includes('seeker');
           
-          return isSolutionSeeker || isOrgSeeker;
+          if (!isSolutionSeeker && !isOrgSeeker) {
+            return false;
+          }
+          
+          // Additional filter: Only show seekers that have engagement details
+          const engagementValidation = EngagementValidator.validateSeekerEngagement(
+            user.id, 
+            user.organizationId, 
+            user.organizationName
+          );
+          
+          console.log(`🔍 Engagement check for ${user.organizationName}:`, {
+            hasEngagement: engagementValidation.hasEngagementModel,
+            hasPricing: engagementValidation.hasPricing,
+            isValid: engagementValidation.isValid
+          });
+          
+          // Only show if engagement model is selected
+          return engagementValidation.hasEngagementModel;
         }) as SeekerDetails[];
         
         console.log('✅ Solution seekers found:', solutionSeekers.length);
