@@ -7,24 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X, MessageSquare, ExternalLink } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { LegacyDataManager } from '@/utils/core/DataManager';
-
-interface CommunicationChannel {
-  id: string;
-  name: string;
-  link: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const defaultChannels: CommunicationChannel[] = [];
-
-const channelsDataManager = new LegacyDataManager<CommunicationChannel[]>({
-  key: 'master_data_communication_channels',
-  defaultData: defaultChannels,
-  version: 1
-});
+import { CommunicationTypeService, CommunicationChannel } from '@/utils/masterData/communicationTypeService';
 
 const CommunicationTypeConfig = () => {
   const { toast } = useToast();
@@ -33,18 +16,24 @@ const CommunicationTypeConfig = () => {
   const [editingLink, setEditingLink] = useState('');
   const [newChannel, setNewChannel] = useState({ name: '', link: '' });
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // Load data on component mount
   useEffect(() => {
-    const loadedChannels = channelsDataManager.loadData();
+    const loadedChannels = CommunicationTypeService.getCommunicationChannels();
+    console.log('🔍 CommunicationTypeConfig - Loaded channels from service:', loadedChannels);
     setChannels(loadedChannels);
+    setIsInitialized(true);
   }, []);
 
   // Save data whenever channels change
   useEffect(() => {
-    if (channels.length >= 0) {
-      channelsDataManager.saveData(channels);
+    if (!isInitialized) {
+      return;
     }
-  }, [channels]);
+    console.log('💾 CommunicationTypeConfig - Saving channels to service:', channels.length);
+    CommunicationTypeService.saveCommunicationChannels(channels);
+  }, [channels, isInitialized]);
 
   const addChannel = () => {
     if (newChannel.name && newChannel.link) {

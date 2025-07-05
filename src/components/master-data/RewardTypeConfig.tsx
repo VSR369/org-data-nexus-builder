@@ -7,59 +7,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Plus, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { LegacyDataManager } from '@/utils/core/DataManager';
-
-export interface RewardType {
-  id: string;
-  name: string;
-  description: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const defaultRewardTypes: RewardType[] = [
-  {
-    id: '1',
-    name: 'Recognition Badge',
-    description: 'Digital badge for achievements',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Certificate of Excellence',
-    description: 'Official certificate for outstanding performance',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-const rewardTypesDataManager = new LegacyDataManager<RewardType[]>({
-  key: 'master_data_non_monetary_reward_types',
-  defaultData: defaultRewardTypes,
-  version: 1
-});
+import { RewardTypeService, RewardType } from '@/utils/masterData/rewardTypeService';
 
 const RewardTypeConfig = () => {
   const [rewardTypes, setRewardTypes] = useState<RewardType[]>([]);
   const [newRewardType, setNewRewardType] = useState({ name: '', description: '' });
   const { toast } = useToast();
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // Load data on component mount
   useEffect(() => {
-    const loadedRewardTypes = rewardTypesDataManager.loadData();
+    const loadedRewardTypes = RewardTypeService.getRewardTypes();
+    console.log('🔍 RewardTypeConfig - Loaded reward types from service:', loadedRewardTypes);
     setRewardTypes(loadedRewardTypes);
+    setIsInitialized(true);
   }, []);
 
   // Save data whenever rewardTypes change
   useEffect(() => {
-    if (rewardTypes.length > 0) {
-      rewardTypesDataManager.saveData(rewardTypes);
+    if (!isInitialized) {
+      return;
     }
-  }, [rewardTypes]);
+    console.log('💾 RewardTypeConfig - Saving reward types to service:', rewardTypes.length);
+    RewardTypeService.saveRewardTypes(rewardTypes);
+  }, [rewardTypes, isInitialized]);
 
   const addRewardType = () => {
     if (newRewardType.name && newRewardType.description) {
