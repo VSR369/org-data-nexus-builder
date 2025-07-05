@@ -7,8 +7,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserPlus, Eye, EyeOff, Edit } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Edit, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import CryptoJS from 'crypto-js';
 import type { UserRecord } from '@/services/types';
 
 interface SeekerDetails extends UserRecord {
@@ -24,12 +25,31 @@ interface AdminCreationDialogProps {
   existingAdmin?: any;
 }
 
+// Enhanced password validation schema
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
+
 const adminSchema = z.object({
-  adminName: z.string().min(2, "Administrator name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  contactNumber: z.string().min(10, "Contact number must be at least 10 digits"),
-  userId: z.string().min(3, "User ID must be at least 3 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  adminName: z.string()
+    .min(2, "Administrator name must be at least 2 characters")
+    .max(50, "Administrator name must not exceed 50 characters")
+    .regex(/^[a-zA-Z\s]+$/, "Name must contain only letters and spaces"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
+  contactNumber: z.string()
+    .min(10, "Contact number must be at least 10 digits")
+    .max(15, "Contact number must not exceed 15 digits")
+    .regex(/^[\+]?[0-9\-\s\(\)]+$/, "Please enter a valid contact number"),
+  userId: z.string()
+    .min(3, "User ID must be at least 3 characters")
+    .max(20, "User ID must not exceed 20 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "User ID can only contain letters, numbers, and underscores"),
+  password: passwordSchema,
   confirmPassword: z.string().min(8, "Please confirm your password")
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -37,6 +57,163 @@ const adminSchema = z.object({
 });
 
 type AdminFormData = z.infer<typeof adminSchema>;
+
+// Administrator data structure as per requirements
+interface AdminData {
+  id: string;
+  name: string;
+  email: string;
+  contactNumber: string;
+  userId: string;
+  password: string; // This will be hashed
+  organizationId: string;
+  createdAt: string;
+  isActive: boolean;
+  // Additional tracking fields
+  organizationName: string;
+  sourceSeekerId: string;
+  role: string;
+  adminCreatedBy: string;
+  lastUpdated?: string;
+  updatedBy?: string;
+}
+
+// localStorage operations with enhanced error handling
+class AdminStorageManager {
+  private static readonly STORAGE_KEY = 'administrators';
+  private static readonly BACKUP_KEY = 'administrators_backup';
+  private static readonly MAX_RETRIES = 3;
+
+  static async saveAdministrators(administrators: AdminData[]): Promise<{ success: boolean; error?: string }> {
+    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        // Create backup before saving
+        const existing = this.getAdministrators();
+        if (existing.length > 0) {
+          localStorage.setItem(this.BACKUP_KEY, JSON.stringify(existing));
+        }
+
+        // Validate data before saving
+        if (!Array.isArray(administrators)) {
+          throw new Error('Invalid data format: administrators must be an array');
+        }
+
+        const serializedData = JSON.stringify(administrators);
+        
+        // Check if we have enough storage space
+        const testKey = `__storage_test_${Date.now()}`;
+        try {
+          localStorage.setItem(testKey, serializedData);
+          localStorage.removeItem(testKey);
+        } catch (e) {
+          throw new Error('Storage quota exceeded. Please clear some browser data and try again.');
+        }
+
+        localStorage.setItem(this.STORAGE_KEY, serializedData);
+        
+        // Verify the save was successful
+        const verification = localStorage.getItem(this.STORAGE_KEY);
+        if (verification !== serializedData) {
+          throw new Error('Data verification failed after save');
+        }
+
+        console.log(`✅ Successfully saved ${administrators.length} administrators`);
+        return { success: true };
+
+      } catch (error) {
+        console.error(`❌ Attempt ${attempt}/${this.MAX_RETRIES} failed:`, error);
+        
+        if (attempt === this.MAX_RETRIES) {
+          return { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Unknown storage error' 
+          };
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, attempt * 100));
+      }
+    }
+    
+    return { success: false, error: 'Maximum retry attempts exceeded' };
+  }
+
+  static getAdministrators(): AdminData[] {
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEY);
+      if (!data) return [];
+
+      const parsed = JSON.parse(data);
+      
+      // Validate the parsed data
+      if (!Array.isArray(parsed)) {
+        console.warn('⚠️ Invalid administrator data format, attempting recovery');
+        return this.recoverFromBackup();
+      }
+
+      // Validate each administrator object
+      const validAdmins = parsed.filter(admin => 
+        admin && 
+        typeof admin === 'object' && 
+        admin.id && 
+        admin.name && 
+        admin.email && 
+        admin.userId
+      );
+
+      if (validAdmins.length !== parsed.length) {
+        console.warn(`⚠️ Filtered out ${parsed.length - validAdmins.length} invalid administrator records`);
+      }
+
+      return validAdmins;
+
+    } catch (error) {
+      console.error('❌ Error reading administrators:', error);
+      return this.recoverFromBackup();
+    }
+  }
+
+  static recoverFromBackup(): AdminData[] {
+    try {
+      console.log('🔄 Attempting to recover from backup...');
+      const backup = localStorage.getItem(this.BACKUP_KEY);
+      if (!backup) {
+        console.log('📭 No backup available');
+        return [];
+      }
+
+      const parsed = JSON.parse(backup);
+      if (Array.isArray(parsed)) {
+        console.log('✅ Successfully recovered from backup');
+        // Restore the main data from backup
+        localStorage.setItem(this.STORAGE_KEY, backup);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('❌ Backup recovery failed:', error);
+    }
+    
+    return [];
+  }
+
+  static checkForDuplicates(email: string, userId: string, excludeId?: string): { emailExists: boolean; userIdExists: boolean } {
+    const administrators = this.getAdministrators();
+    
+    const emailExists = administrators.some(admin => 
+      admin.email.toLowerCase() === email.toLowerCase() && admin.id !== excludeId
+    );
+    
+    const userIdExists = administrators.some(admin => 
+      admin.userId === userId && admin.id !== excludeId
+    );
+
+    return { emailExists, userIdExists };
+  }
+
+  static hashPassword(password: string): string {
+    return CryptoJS.SHA256(password + 'admin_salt_2024').toString();
+  }
+}
 
 const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
   open,
@@ -95,107 +272,174 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Get existing administrators
-      const existingAdmins = JSON.parse(localStorage.getItem('created_administrators') || '[]');
-      
-      if (!isEditMode) {
-        // Check if user ID already exists when creating new admin
-        const userIdExists = existingAdmins.some((admin: any) => admin.userId === data.userId);
-        
-        if (userIdExists) {
-          form.setError('userId', { message: 'User ID already exists' });
-          setIsSubmitting(false);
-          return;
-        }
-      } else {
-        // In edit mode, check if user ID exists for other admins (not current one)
-        const userIdExists = existingAdmins.some((admin: any) => 
-          admin.userId === data.userId && admin.id !== existingAdmin.id
-        );
-        
-        if (userIdExists) {
-          form.setError('userId', { message: 'User ID already exists' });
-          setIsSubmitting(false);
-          return;
-        }
+      console.log('🔄 Starting administrator creation/update process...');
+
+      // Check for duplicates first
+      const { emailExists, userIdExists } = AdminStorageManager.checkForDuplicates(
+        data.email, 
+        data.userId, 
+        isEditMode ? existingAdmin?.id : undefined
+      );
+
+      if (emailExists) {
+        form.setError('email', { message: 'Email address already exists' });
+        toast({
+          title: "Validation Error",
+          description: "An administrator with this email address already exists.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
       }
 
-      let adminData;
-      let updatedAdmins;
+      if (userIdExists) {
+        form.setError('userId', { message: 'User ID already exists' });
+        toast({
+          title: "Validation Error", 
+          description: "An administrator with this User ID already exists.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
-      if (isEditMode) {
+      // Get current administrators
+      const existingAdmins = AdminStorageManager.getAdministrators();
+      let adminData: AdminData;
+      let updatedAdmins: AdminData[];
+
+      if (isEditMode && existingAdmin) {
         // Update existing administrator
         adminData = {
           ...existingAdmin,
-          adminName: data.adminName,
-          email: data.email,
+          name: data.adminName,
+          email: data.email.toLowerCase(),
           contactNumber: data.contactNumber,
           userId: data.userId,
-          password: data.password, // In production, this should be hashed
+          password: AdminStorageManager.hashPassword(data.password),
           lastUpdated: new Date().toISOString(),
           updatedBy: 'system'
         };
 
         // Update the administrator in the array
-        updatedAdmins = existingAdmins.map((admin: any) => 
+        updatedAdmins = existingAdmins.map(admin => 
           admin.id === existingAdmin.id ? adminData : admin
         );
+
+        console.log('✏️ Updated existing administrator:', adminData.name);
       } else {
-        // Create new administrator
+        // Create new administrator with enhanced structure
         adminData = {
-          id: `admin_${Date.now()}`,
-          adminName: data.adminName,
-          email: data.email,
+          id: `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: data.adminName,
+          email: data.email.toLowerCase(),
           contactNumber: data.contactNumber,
           userId: data.userId,
-          password: data.password, // In production, this should be hashed
-          role: 'administrator',
-          organizationId: seeker.organizationId,
+          password: AdminStorageManager.hashPassword(data.password),
+          organizationId: seeker.organizationId || `org_${seeker.id}`,
+          createdAt: new Date().toISOString(),
+          isActive: true,
+          // Additional tracking fields
           organizationName: seeker.organizationName,
           sourceSeekerId: seeker.id,
-          createdAsAdmin: true,
-          adminCreatedAt: new Date().toISOString(),
-          adminCreatedBy: 'system',
-          status: 'active'
+          role: 'administrator',
+          adminCreatedBy: 'system'
         };
 
         updatedAdmins = [...existingAdmins, adminData];
+        console.log('➕ Created new administrator:', adminData.name);
       }
 
-      // Save to localStorage
-      localStorage.setItem('created_administrators', JSON.stringify(updatedAdmins));
+      // Save to localStorage with enhanced error handling
+      const saveResult = await AdminStorageManager.saveAdministrators(updatedAdmins);
+      
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Failed to save administrator data');
+      }
+
+      // Maintain backward compatibility - also save to old key for existing code
+      try {
+        const legacyFormat = updatedAdmins.map(admin => ({
+          id: admin.id,
+          adminName: admin.name,
+          adminEmail: admin.email,
+          email: admin.email,
+          contactNumber: admin.contactNumber,
+          userId: admin.userId,
+          password: admin.password,
+          organizationId: admin.organizationId,
+          organizationName: admin.organizationName,
+          sourceSeekerId: admin.sourceSeekerId,
+          adminCreatedAt: admin.createdAt,
+          adminCreatedBy: admin.adminCreatedBy,
+          role: admin.role,
+          status: admin.isActive ? 'active' : 'inactive',
+          lastUpdated: admin.lastUpdated,
+          updatedBy: admin.updatedBy
+        }));
+        
+        localStorage.setItem('created_administrators', JSON.stringify(legacyFormat));
+      } catch (legacyError) {
+        console.warn('⚠️ Failed to maintain legacy format compatibility:', legacyError);
+      }
 
       if (!isEditMode) {
         // Create seeker-admin link for new administrators
-        const seekerAdminLink = {
-          seekerId: seeker.id,
-          adminId: adminData.id,
-          adminUserId: data.userId,
-          createdAt: new Date().toISOString()
-        };
-        
-        const existingLinks = JSON.parse(localStorage.getItem('seeker_admin_links') || '[]');
-        existingLinks.push(seekerAdminLink);
-        localStorage.setItem('seeker_admin_links', JSON.stringify(existingLinks));
+        try {
+          const seekerAdminLink = {
+            seekerId: seeker.id,
+            adminId: adminData.id,
+            adminUserId: data.userId,
+            createdAt: new Date().toISOString()
+          };
+          
+          const existingLinks = JSON.parse(localStorage.getItem('seeker_admin_links') || '[]');
+          existingLinks.push(seekerAdminLink);
+          localStorage.setItem('seeker_admin_links', JSON.stringify(existingLinks));
+        } catch (linkError) {
+          console.warn('⚠️ Failed to create seeker-admin link:', linkError);
+        }
       }
 
       // Call the callback to update the parent component
       onAdminCreated(adminData);
 
       toast({
-        title: isEditMode ? "Administrator Updated Successfully" : "Administrator Created Successfully",
-        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}.`,
+        title: `✅ Administrator ${isEditMode ? 'Updated' : 'Created'} Successfully`,
+        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}. Password has been securely hashed.`,
       });
 
       // Reset form and close dialog
-      form.reset();
+      form.reset({
+        adminName: '',
+        email: '',
+        contactNumber: '',
+        userId: '',
+        password: '',
+        confirmPassword: ''
+      });
       onOpenChange(false);
 
+      console.log('✅ Administrator creation/update process completed successfully');
+
     } catch (error) {
-      console.error('Error saving administrator:', error);
+      console.error('❌ Error during administrator operation:', error);
+      
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('quota')) {
+          errorMessage = 'Storage space is full. Please clear some browser data and try again.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast({
-        title: "Error",
-        description: `Failed to ${isEditMode ? 'update' : 'create'} administrator. Please try again.`,
+        title: `❌ Failed to ${isEditMode ? 'Update' : 'Create'} Administrator`,
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -229,6 +473,17 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
             </div>
           </div>
         )}
+
+        {/* Storage Status Indicator */}
+        <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+          <div className="flex items-center gap-2 text-green-800">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm font-medium">Security Notice</span>
+          </div>
+          <p className="text-xs text-green-700 mt-1">
+            Passwords will be securely hashed before storage. Ensure you remember the password as it cannot be recovered.
+          </p>
+        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
