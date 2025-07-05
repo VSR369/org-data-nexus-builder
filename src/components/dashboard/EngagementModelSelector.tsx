@@ -90,39 +90,63 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   }, [organizationType, entityType, country, onEngagementSelect, toast]);
 
   const calculatePricing = (model: EngagementModelOption, frequency: 'quarterly' | 'half-yearly' | 'annually') => {
+    // Get pricing configuration from master data for this specific combination
     const pricingConfig = getConfigByOrgTypeAndEngagement(organizationType, model.name);
     
-    const baseMonthlyPrice = 1000; // Default base price since pricingConfig structure varies
-    const currency = pricingConfig?.currency || 'USD';
+    console.log('💰 Looking up pricing for:', {
+      organizationType,
+      entityType,
+      country,
+      engagementModel: model.name,
+      frequency,
+      foundConfig: pricingConfig
+    });
     
-    // Calculate pricing based on frequency
-    let multiplier = 12; // Default annually
-    let discountPercentage = 0;
+    if (!pricingConfig) {
+      console.log('❌ No pricing data found in master data for this combination');
+      return null; // Return null when no data is available
+    }
+    
+    // Get the actual price based on frequency from master data
+    let totalAmount = 0;
+    const currency = pricingConfig.currency || 'USD';
     
     switch (frequency) {
       case 'quarterly':
-        multiplier = 3;
-        discountPercentage = 0; // No discount for quarterly
+        totalAmount = pricingConfig.quarterlyFee || 0;
         break;
       case 'half-yearly':
-        multiplier = 6;
-        discountPercentage = 5; // 5% discount for half-yearly
+        totalAmount = pricingConfig.halfYearlyFee || 0;
         break;
       case 'annually':
-        multiplier = 12;
-        discountPercentage = 10; // 10% discount for annually
+        totalAmount = pricingConfig.annualFee || 0;
         break;
     }
     
-    const totalBeforeDiscount = baseMonthlyPrice * multiplier;
-    const discountAmount = (totalBeforeDiscount * discountPercentage) / 100;
-    const totalAmount = totalBeforeDiscount - discountAmount;
+    // If the specific frequency price is not configured, return null
+    if (totalAmount === 0) {
+      console.log(`❌ No ${frequency} pricing configured for ${model.name}`);
+      return null;
+    }
+    
+    const discountPercentage = pricingConfig.discountPercentage;
+    const baseMonthlyPrice = frequency === 'quarterly' ? Math.round(totalAmount / 3) : 
+                            frequency === 'half-yearly' ? Math.round(totalAmount / 6) : 
+                            Math.round(totalAmount / 12);
+    
+    console.log('✅ Pricing calculated from master data:', {
+      totalAmount,
+      currency,
+      frequency,
+      discountPercentage,
+      baseMonthlyPrice
+    });
     
     return {
       basePrice: baseMonthlyPrice,
       currency,
-      pricingTier: 'Standard',
-      discountPercentage: discountPercentage > 0 ? discountPercentage : undefined,
+      pricingTier: pricingConfig.configName || 'Standard',
+      discountPercentage,
       frequency,
       totalAmount
     };
@@ -298,27 +322,40 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                       
                       return (
                         <div key={frequency} className="flex items-center space-x-3">
-                          <RadioGroupItem value={frequency} id={frequency} />
+                          <RadioGroupItem value={frequency} id={frequency} disabled={!pricing} />
                           <Label htmlFor={frequency} className="flex-1 cursor-pointer">
-                            <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                            <div className={`p-4 border rounded-lg ${pricing ? 'border-gray-200 hover:bg-gray-50' : 'border-gray-100 bg-gray-50'}`}>
                               <div className="flex items-center justify-between mb-2">
-                                <h5 className="font-medium">{frequencyLabels[frequency]}</h5>
-                                <Calendar className="h-4 w-4 text-gray-400" />
+                                <h5 className={`font-medium ${!pricing ? 'text-gray-400' : ''}`}>
+                                  {frequencyLabels[frequency]}
+                                </h5>
+                                <Calendar className={`h-4 w-4 ${pricing ? 'text-gray-400' : 'text-gray-300'}`} />
                               </div>
-                              <div className="text-lg font-bold text-blue-600">
-                                {pricing.currency} {pricing.totalAmount.toLocaleString()}
-                              </div>
-                              {pricing.discountPercentage && (
-                                <div className="text-sm text-green-600">
-                                  Save {pricing.discountPercentage}% 
-                                  <span className="text-gray-500 line-through ml-2">
-                                    {pricing.currency} {(pricing.basePrice * (frequency === 'quarterly' ? 3 : frequency === 'half-yearly' ? 6 : 12)).toLocaleString()}
-                                  </span>
-                                </div>
+                              
+                              {pricing ? (
+                                <>
+                                  <div className="text-lg font-bold text-blue-600">
+                                    {pricing.currency} {pricing.totalAmount.toLocaleString()}
+                                  </div>
+                                  {pricing.discountPercentage && (
+                                    <div className="text-sm text-green-600">
+                                      {pricing.discountPercentage}% discount included
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {pricing.currency} {pricing.basePrice}/month effective rate
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="text-lg font-bold text-gray-400">
+                                    No Data Available
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Not configured in master data
+                                  </div>
+                                </>
                               )}
-                              <div className="text-xs text-gray-500 mt-1">
-                                {pricing.currency} {pricing.basePrice}/month base rate
-                              </div>
                             </div>
                           </Label>
                         </div>
@@ -339,55 +376,87 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                     Confirm Selection
                   </h4>
                   
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                    <h5 className="font-medium text-blue-800 mb-2">Your Selection Summary</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-blue-600">Engagement Model:</span>
-                        <div className="font-medium">{selectedModel.name}</div>
-                      </div>
-                      <div>
-                        <span className="text-blue-600">Billing Frequency:</span>
-                        <div className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</div>
-                      </div>
-                      <div>
-                        <span className="text-blue-600">Total Amount:</span>
-                        <div className="font-medium text-lg">
-                          {calculatePricing(selectedModel, selectedFrequency).currency} {calculatePricing(selectedModel, selectedFrequency).totalAmount.toLocaleString()}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-blue-600">Organization:</span>
-                        <div className="font-medium">{organizationType} - {entityType}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-4">
-                    <Button 
-                      onClick={confirmSelection}
-                      disabled={isConfirmed}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {isConfirmed ? 'Selection Confirmed ✅' : 'Confirm & Save Selection'}
-                    </Button>
+                  {(() => {
+                    const currentPricing = calculatePricing(selectedModel, selectedFrequency);
                     
-                    {isConfirmed && (
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setIsConfirmed(false);
-                          toast({
-                            title: "Selection Reset",
-                            description: "You can now modify your selection",
-                          });
-                        }}
-                      >
-                        Modify Selection
-                      </Button>
-                    )}
-                  </div>
+                    if (!currentPricing) {
+                      return (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            No pricing data available for {selectedModel.name} with {selectedFrequency} billing frequency. 
+                            Please configure pricing in Master Data or select a different option.
+                          </AlertDescription>
+                        </Alert>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                          <h5 className="font-medium text-blue-800 mb-2">Your Selection Summary</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-blue-600">Engagement Model:</span>
+                              <div className="font-medium">{selectedModel.name}</div>
+                            </div>
+                            <div>
+                              <span className="text-blue-600">Billing Frequency:</span>
+                              <div className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</div>
+                            </div>
+                            <div>
+                              <span className="text-blue-600">Total Amount:</span>
+                              <div className="font-medium text-lg">
+                                {currentPricing.currency} {currentPricing.totalAmount.toLocaleString()}
+                                {currentPricing.discountPercentage && (
+                                  <span className="text-sm text-green-600 ml-2">
+                                    ({currentPricing.discountPercentage}% discount applied)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-blue-600">Organization:</span>
+                              <div className="font-medium">{organizationType} - {entityType}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <Alert>
+                          <DollarSign className="h-4 w-4" />
+                          <AlertDescription>
+                            <strong>Pricing Source:</strong> Master Data Configuration - {currentPricing.pricingTier}
+                          </AlertDescription>
+                        </Alert>
+                        
+                        <div className="flex gap-4 mt-4">
+                          <Button 
+                            onClick={confirmSelection}
+                            disabled={isConfirmed}
+                            className="flex items-center gap-2"
+                          >
+                            <Save className="h-4 w-4" />
+                            {isConfirmed ? 'Selection Confirmed ✅' : 'Confirm & Save Selection'}
+                          </Button>
+                          
+                          {isConfirmed && (
+                            <Button 
+                              variant="outline"
+                              onClick={() => {
+                                setIsConfirmed(false);
+                                toast({
+                                  title: "Selection Reset",
+                                  description: "You can now modify your selection",
+                                });
+                              }}
+                            >
+                              Modify Selection
+                            </Button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </>
             )}
