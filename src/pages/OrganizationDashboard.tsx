@@ -52,12 +52,24 @@ const OrganizationDashboard = () => {
           setSessionData(parsedSession);
           console.log('✅ Organization session loaded:', parsedSession);
         } else {
-          console.log('❌ No organization session found');
-          navigate('/seeker-login');
+          // Temporary: Create demo session data for testing
+          const demoSession = {
+            userId: 'demo-user-123',
+            organizationName: 'Demo Organization',
+            entityType: 'Corporation',
+            country: 'United States',
+            contactPersonName: 'John Demo',
+            email: 'demo@example.com',
+            organizationType: 'Technology',
+            industrySegment: 'Software',
+            organizationId: 'ORG-DEMO-001',
+            loginTimestamp: new Date().toISOString()
+          };
+          setSessionData(demoSession);
+          console.log('🔧 Demo session created for testing');
         }
       } catch (error) {
         console.error('Error loading session:', error);
-        navigate('/seeker-login');
       } finally {
         setIsLoading(false);
       }
