@@ -302,159 +302,90 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
         </p>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Membership Selection Card */}
-        <Card className="h-fit">
+      {/* Main Content - Single Row Layout */}
+      <div className="space-y-6">
+        {/* Membership Plans - Horizontal */}
+        <Card>
           <CardHeader className="text-center pb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Crown className="h-5 w-5 text-yellow-600" />
               <CardTitle className="text-xl">Membership Plans</CardTitle>
               {hasActiveMembership && <Badge className="bg-green-600">Active</Badge>}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Choose your membership plan to unlock exclusive benefits
-            </p>
           </CardHeader>
           
-          <CardContent className="space-y-6">
+          <CardContent>
             {membershipLoading ? (
-              <div className="text-center py-8">
-                <Crown className="h-8 w-8 animate-pulse text-yellow-400 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Loading membership plans...</p>
+              <div className="text-center py-4">
+                <Crown className="h-6 w-6 animate-pulse text-yellow-400 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Loading...</p>
               </div>
             ) : countryPricing ? (
               <div className="space-y-4">
                 <RadioGroup 
                   value={selectedMembershipFrequency} 
                   onValueChange={(value: string) => setSelectedMembershipFrequency(value as 'quarterly' | 'half-yearly' | 'annually')}
-                  className="space-y-3"
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
                 >
-                  {/* Quarterly Plan */}
-                  <div className="relative">
-                    <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors duration-200">
-                      <RadioGroupItem value="quarterly" id="membership-quarterly" />
-                      <Label htmlFor="membership-quarterly" className="flex-1 cursor-pointer">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-semibold text-gray-900">Quarterly Plan</div>
-                            <div className="text-sm text-muted-foreground">3 months • Save 5%</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-yellow-700">
-                              {countryPricing.currency} {countryPricing.quarterlyPrice}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              ~{countryPricing.currency} {Math.round(countryPricing.quarterlyPrice / 3)}/month
-                            </div>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
+                  <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors">
+                    <RadioGroupItem value="quarterly" id="membership-quarterly" />
+                    <Label htmlFor="membership-quarterly" className="flex-1 cursor-pointer">
+                      <div className="text-center">
+                        <div className="font-semibold">Quarterly</div>
+                        <div className="text-xl font-bold text-yellow-700">{countryPricing.currency} {countryPricing.quarterlyPrice}</div>
+                        <div className="text-xs text-muted-foreground">~{countryPricing.currency} {Math.round(countryPricing.quarterlyPrice / 3)}/month</div>
+                      </div>
+                    </Label>
                   </div>
-
-                  {/* Half-Yearly Plan */}
-                  <div className="relative">
-                    <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors duration-200">
-                      <RadioGroupItem value="half-yearly" id="membership-half-yearly" />
-                      <Label htmlFor="membership-half-yearly" className="flex-1 cursor-pointer">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-semibold text-gray-900">Half-Yearly Plan</div>
-                            <div className="text-sm text-muted-foreground">6 months • Save 15%</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-yellow-700">
-                              {countryPricing.currency} {countryPricing.halfYearlyPrice}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              ~{countryPricing.currency} {Math.round(countryPricing.halfYearlyPrice / 6)}/month
-                            </div>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
+                  
+                  <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors">
+                    <RadioGroupItem value="half-yearly" id="membership-half-yearly" />
+                    <Label htmlFor="membership-half-yearly" className="flex-1 cursor-pointer">
+                      <div className="text-center">
+                        <div className="font-semibold">Half-Yearly</div>
+                        <div className="text-xl font-bold text-yellow-700">{countryPricing.currency} {countryPricing.halfYearlyPrice}</div>
+                        <div className="text-xs text-muted-foreground">~{countryPricing.currency} {Math.round(countryPricing.halfYearlyPrice / 6)}/month</div>
+                      </div>
+                    </Label>
                   </div>
-
-                  {/* Annual Plan - Most Popular */}
-                  <div className="relative">
-                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-600 z-10">
-                      Most Popular
-                    </Badge>
-                    <div className="flex items-center space-x-3 p-4 border-2 border-green-300 bg-green-50 rounded-xl hover:border-green-400 transition-colors duration-200">
-                      <RadioGroupItem value="annually" id="membership-annually" />
-                      <Label htmlFor="membership-annually" className="flex-1 cursor-pointer">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-semibold text-gray-900">Annual Plan</div>
-                            <div className="text-sm text-green-700">12 months • Save 25%</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-green-700">
-                              {countryPricing.currency} {countryPricing.annualPrice}
-                            </div>
-                            <div className="text-xs text-green-600">
-                              ~{countryPricing.currency} {Math.round(countryPricing.annualPrice / 12)}/month
-                            </div>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
+                  
+                  <div className="relative flex items-center space-x-3 p-4 border-2 border-green-300 bg-green-50 rounded-xl hover:border-green-400 transition-colors">
+                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-600 z-10">Best</Badge>
+                    <RadioGroupItem value="annually" id="membership-annually" />
+                    <Label htmlFor="membership-annually" className="flex-1 cursor-pointer">
+                      <div className="text-center">
+                        <div className="font-semibold">Annual</div>
+                        <div className="text-xl font-bold text-green-700">{countryPricing.currency} {countryPricing.annualPrice}</div>
+                        <div className="text-xs text-green-600">~{countryPricing.currency} {Math.round(countryPricing.annualPrice / 12)}/month</div>
+                      </div>
+                    </Label>
                   </div>
                 </RadioGroup>
                 
-                {/* Membership Action */}
-                <div className="pt-4 border-t">
-                  {selectedMembershipFrequency && !hasActiveMembership && (
-                    <Button
-                      onClick={handleMembershipActivation}
-                      className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      <Crown className="h-5 w-5 mr-2" />
-                      Activate {selectedMembershipFrequency.charAt(0).toUpperCase() + selectedMembershipFrequency.slice(1)} Plan
-                    </Button>
-                  )}
-                  
-                  {hasActiveMembership ? (
-                    <Alert className="border-green-200 bg-green-50">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-700">
-                        <strong>Membership Active!</strong> You're eligible for exclusive discounts on all engagement models.
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <Alert className="border-blue-200 bg-blue-50">
-                      <AlertCircle className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-700">
-                        <strong>Unlock Benefits:</strong> Get exclusive discounts and priority support with membership.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
+                {selectedMembershipFrequency && !hasActiveMembership && (
+                  <Button onClick={handleMembershipActivation} className="w-full bg-yellow-600 hover:bg-yellow-700">
+                    <Crown className="h-4 w-4 mr-2" />
+                    Activate {selectedMembershipFrequency} Plan
+                  </Button>
+                )}
               </div>
             ) : (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  No membership plans found. Please configure membership fees in Master Data Portal.
-                </AlertDescription>
+                <AlertDescription>No membership plans found.</AlertDescription>
               </Alert>
             )}
           </CardContent>
         </Card>
 
-        {/* Engagement Model Selection Card */}
-        <Card className="h-fit">
+        {/* Engagement Models - Horizontal */}
+        <Card>
           <CardHeader className="text-center pb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Handshake className="h-5 w-5 text-primary" />
               <CardTitle className="text-xl">Engagement Models</CardTitle>
               <Badge variant="destructive">Required</Badge>
-              {hasActiveMembership && <Badge className="bg-green-600 ml-1">Discounts Active</Badge>}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Select your preferred engagement model and billing frequency
-            </p>
           </CardHeader>
           
           <CardContent className="space-y-6">
