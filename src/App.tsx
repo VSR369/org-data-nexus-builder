@@ -11,6 +11,7 @@ import Index from './pages/Index';
 import SignIn from './pages/SignIn';
 import GeneralSignIn from './pages/GeneralSignIn';
 import SignUp from './pages/SignUp';
+import SeekerLogin from './pages/SeekerLogin';
 import ContributorLogin from './pages/ContributorLogin';
 import SeekingOrgAdministratorLogin from './pages/SeekingOrgAdministratorLogin';
 import ContributorEnrollment from './pages/ContributorEnrollment';
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/general-signin" element={<GeneralSignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/test" element={<TestPage />} />
+                <Route path="/seeker-login" element={<SeekerLogin />} />
                 <Route path="/contributor-login" element={<ContributorLogin />} />
                 <Route path="/seeking-org-administrator-login" element={<SeekingOrgAdministratorLogin />} />
                 <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
