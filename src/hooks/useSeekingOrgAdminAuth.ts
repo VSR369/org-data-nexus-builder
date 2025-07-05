@@ -60,14 +60,23 @@ export const useSeekingOrgAdminAuth = () => {
       setIsAuthenticated(false);
       
       // Authenticate using the new service
+      console.log('🔍 Calling authentication service...');
       const authResult = await SeekingOrgAdminAuthService.authenticate(identifier, password);
+      console.log('📋 Authentication result:', authResult);
       
       if (authResult.success && authResult.admin) {
         const admin = authResult.admin;
         console.log('✅ Authentication successful for:', admin.name);
+        console.log('🏢 Organization details:', {
+          organizationId: admin.organizationId,
+          organizationName: admin.organizationName,
+          adminRole: admin.role
+        });
         
         // Create session
+        console.log('🔄 Creating session...');
         const session = SeekingOrgAdminAuthService.createSession(admin, rememberMe);
+        console.log('✅ Session created:', session.sessionId);
         
         // Set organization data
         const organizationData: SeekingOrganization = {
@@ -77,10 +86,12 @@ export const useSeekingOrgAdminAuth = () => {
           permissions: ['manage_admin', 'view_dashboard', 'manage_organization']
         };
         
+        console.log('🔄 Setting organization data:', organizationData);
         setCurrentOrganization(organizationData);
         setIsAuthenticated(true);
         
         toast.success(`Welcome back, ${admin.name}!`);
+        console.log('🔄 Navigating to admin dashboard...');
         navigate('/seeking-org-admin-dashboard');
         
         return { success: true };
@@ -88,6 +99,7 @@ export const useSeekingOrgAdminAuth = () => {
         // Authentication failed
         const errorMessage = authResult.error || 'Authentication failed';
         console.log('❌ Authentication failed:', errorMessage);
+        console.log('❌ Error code:', authResult.errorCode);
         
         // Don't show toast here, let the form handle the error display
         return { 

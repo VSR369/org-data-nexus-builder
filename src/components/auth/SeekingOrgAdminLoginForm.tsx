@@ -33,19 +33,26 @@ const SeekingOrgAdminLoginForm = () => {
     e.preventDefault();
     setError('');
     
+    console.log('🔄 Form submitted with identifier:', identifier);
+    console.log('🔄 Remember me checked:', rememberMe);
+    
     if (!identifier.trim() || !password.trim()) {
       setError('Please enter both email/user ID and password.');
       return;
     }
     
+    console.log('✅ Form validation passed, calling login...');
     const result = await login(identifier.trim(), password, rememberMe);
+    console.log('📋 Login result received:', result);
     
     if (!result.success && result.error) {
+      console.log('❌ Setting error message:', result.error);
       setError(result.error);
     }
     
     // Clear form after successful login (login function handles redirect)
     if (result.success) {
+      console.log('✅ Login successful, clearing form...');
       setIdentifier('');
       setPassword('');
       setShowPassword(false);

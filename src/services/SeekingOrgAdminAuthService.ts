@@ -74,26 +74,49 @@ export class SeekingOrgAdminAuthService {
    */
   private static getAdministrators(): AdminData[] {
     try {
+      console.log('🔍 Attempting to retrieve administrators from localStorage...');
       const data = localStorage.getItem(this.STORAGE_KEY);
-      if (!data) return [];
+      console.log('📋 Raw administrator data:', data ? 'Data found' : 'No data found');
+      
+      if (!data) {
+        console.log('📭 No administrators found in localStorage');
+        return [];
+      }
 
       const parsed = JSON.parse(data);
+      console.log('📊 Parsed administrator data:', parsed);
       
       if (!Array.isArray(parsed)) {
-        console.warn('⚠️ Invalid administrator data format');
+        console.warn('⚠️ Invalid administrator data format - not an array');
         return [];
       }
 
       // Validate each administrator object
-      return parsed.filter(admin => 
-        admin && 
-        typeof admin === 'object' && 
-        admin.id && 
-        admin.name && 
-        admin.email && 
-        admin.userId &&
-        admin.password
-      );
+      const validAdmins = parsed.filter(admin => {
+        const isValid = admin && 
+          typeof admin === 'object' && 
+          admin.id && 
+          admin.name && 
+          admin.email && 
+          admin.userId &&
+          admin.password;
+        
+        if (!isValid) {
+          console.warn('⚠️ Invalid administrator object:', admin);
+        }
+        
+        return isValid;
+      });
+
+      console.log(`✅ Found ${validAdmins.length} valid administrators out of ${parsed.length} total`);
+      console.log('👥 Valid administrators:', validAdmins.map(a => ({ 
+        name: a.name, 
+        email: a.email, 
+        userId: a.userId,
+        organizationName: a.organizationName 
+      })));
+
+      return validAdmins;
 
     } catch (error) {
       console.error('❌ Error reading administrators:', error);
@@ -151,10 +174,21 @@ export class SeekingOrgAdminAuthService {
     try {
       console.log('🔐 Starting admin authentication for:', identifier);
 
+      // First, let's check what administrators we have
+      const allAdmins = this.getAdministrators();
+      console.log(`📊 Retrieved ${allAdmins.length} administrators from storage`);
+
       // Find administrator
       const admin = this.findAdministrator(identifier);
       
       if (!admin) {
+        console.log(`❌ Administrator not found for identifier: ${identifier}`);
+        console.log('Available administrators:', allAdmins.map(a => ({ 
+          email: a.email, 
+          userId: a.userId,
+          name: a.name 
+        })));
+        
         this.logLoginAttempt(identifier, false);
         return {
           success: false,
@@ -163,8 +197,17 @@ export class SeekingOrgAdminAuthService {
         };
       }
 
+      console.log('✅ Administrator found:', {
+        name: admin.name,
+        email: admin.email,
+        userId: admin.userId,
+        isActive: admin.isActive,
+        organizationName: admin.organizationName
+      });
+
       // Check if account is active
       if (!admin.isActive) {
+        console.log('❌ Administrator account is inactive:', admin.userId);
         this.logLoginAttempt(identifier, false);
         return {
           success: false,
@@ -175,7 +218,10 @@ export class SeekingOrgAdminAuthService {
 
       // Verify password
       const hashedPassword = this.hashPassword(password);
+      console.log('🔒 Password verification in progress...');
+      
       if (admin.password !== hashedPassword) {
+        console.log('❌ Password verification failed for:', admin.userId);
         this.logLoginAttempt(identifier, false);
         return {
           success: false,
@@ -184,6 +230,7 @@ export class SeekingOrgAdminAuthService {
         };
       }
 
+      console.log('✅ Password verified successfully');
       this.logLoginAttempt(identifier, true);
       console.log('✅ Admin authentication successful:', admin.userId);
       
