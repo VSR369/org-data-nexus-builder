@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { PricingDataManager } from '@/utils/pricingDataManager';
 import { PricingConfig } from '@/types/pricing';
+import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
 
 interface MembershipEngagementDashboardProps {
   organizationType: string;
@@ -42,8 +43,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
-  const [membershipPricingConfigs, setMembershipPricingConfigs] = useState<PricingConfig[]>([]);
-  const [selectedMembershipConfig, setSelectedMembershipConfig] = useState<PricingConfig | null>(null);
+  const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
+  const [selectedMembershipFee, setSelectedMembershipFee] = useState<MembershipFeeEntry | null>(null);
 
   // Load localStorage data and pricing configurations on mount
   useEffect(() => {
@@ -59,18 +60,24 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     const allConfigs = PricingDataManager.getAllConfigurations();
     setPricingConfigs(allConfigs);
     
-    // Load membership pricing configurations - independent of engagement models
-    const membershipConfigs = PricingDataManager.getPricingForCountry(country, organizationType, entityType);
-    setMembershipPricingConfigs(membershipConfigs);
+    // Load membership fees from SeekerMembershipFeeConfig - CORRECT DATA SOURCE
+    const allMembershipFees = MembershipFeeFixer.getMembershipFees();
+    const filteredMembershipFees = allMembershipFees.filter(fee => 
+      fee.country === country && 
+      fee.organizationType === organizationType && 
+      fee.entityType === entityType
+    );
+    setMembershipFees(filteredMembershipFees);
     
     console.log('🔍 Loading membership pricing for:', { country, organizationType, entityType });
-    console.log('📊 Found membership configurations:', membershipConfigs.length);
+    console.log('📊 Found membership fees:', filteredMembershipFees.length);
+    console.log('💡 Membership fees data:', filteredMembershipFees);
     
-    // Set initial membership config if we have saved plan
-    if (savedMembershipPlan && membershipConfigs.length > 0) {
-      const initialConfig = membershipConfigs[0]; // Use first available config
-      setSelectedMembershipConfig(initialConfig);
-      console.log('💰 Initial membership config loaded:', initialConfig);
+    // Set initial membership fee if we have saved plan
+    if (savedMembershipPlan && filteredMembershipFees.length > 0) {
+      const initialFee = filteredMembershipFees[0]; // Use first available config
+      setSelectedMembershipFee(initialFee);
+      console.log('💰 Initial membership fee loaded:', initialFee);
     }
   }, [country, organizationType, entityType]);
 
@@ -80,14 +87,14 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       localStorage.setItem('selectedMembershipPlan', selectedMembershipPlan);
       console.log('💾 Saved membership plan to localStorage:', selectedMembershipPlan);
       
-      // Update membership config when plan changes
-      if (membershipPricingConfigs.length > 0) {
-        const config = membershipPricingConfigs[0]; // Use first available config for now
-        setSelectedMembershipConfig(config);
-        console.log('🔄 Updated membership config:', config);
+      // Update membership fee when plan changes
+      if (membershipFees.length > 0) {
+        const fee = membershipFees[0]; // Use first available fee for now
+        setSelectedMembershipFee(fee);
+        console.log('🔄 Updated membership fee:', fee);
       }
     }
-  }, [selectedMembershipPlan, membershipPricingConfigs]);
+  }, [selectedMembershipPlan, membershipFees]);
 
   // Update localStorage when engagement model changes (only if membership plan is selected)
   useEffect(() => {
@@ -122,43 +129,45 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
   // Get membership plans with dynamic pricing from master data (independent of engagement model)
   const getMembershipPlans = (): PricingPlan[] => {
-    if (membershipPricingConfigs.length === 0) {
-      console.log('⚠️ No membership pricing configurations found');
+    if (membershipFees.length === 0) {
+      console.log('⚠️ No membership fees found');
       return [];
     }
 
-    // Use the first available pricing config for membership plans
-    const pricingConfig = membershipPricingConfigs[0];
-    console.log('📋 Using config for membership plans:', pricingConfig.configName);
+    // Use the first available membership fee entry
+    const membershipFee = membershipFees[0];
+    console.log('📋 Using membership fee entry:', membershipFee.id);
+    console.log('💰 Fee data:', membershipFee);
 
     const plans = [
       {
         id: 'quarterly',
         name: 'Quarterly',
         duration: '3 months',
-        description: `${pricingConfig.configName || 'Standard'} - 3 month plan`,
-        price: pricingConfig.quarterlyFee,
-        currency: pricingConfig.currency || 'INR'
+        description: `${membershipFee.organizationType} ${membershipFee.entityType} - 3 month plan`,
+        price: membershipFee.quarterlyAmount,
+        currency: membershipFee.quarterlyCurrency || 'INR'
       },
       {
         id: 'halfyearly',
         name: 'Half-Yearly',
         duration: '6 months',
-        description: `${pricingConfig.configName || 'Standard'} - 6 month plan`,
-        price: pricingConfig.halfYearlyFee,
-        currency: pricingConfig.currency || 'INR'
+        description: `${membershipFee.organizationType} ${membershipFee.entityType} - 6 month plan`,
+        price: membershipFee.halfYearlyAmount,
+        currency: membershipFee.halfYearlyCurrency || 'INR'
       },
       {
         id: 'annual',
         name: 'Annual',
         duration: '12 months',
-        description: `${pricingConfig.configName || 'Standard'} - 12 month plan`,
-        price: pricingConfig.annualFee,
-        currency: pricingConfig.currency || 'INR'
+        description: `${membershipFee.organizationType} ${membershipFee.entityType} - 12 month plan`,
+        price: membershipFee.annualAmount,
+        currency: membershipFee.annualCurrency || 'INR'
       }
     ].filter(plan => plan.price && plan.price > 0); // Only show plans with valid pricing
 
     console.log('🏷️ Generated membership plans:', plans.length);
+    console.log('📊 Plans data:', plans);
     return plans;
   };
 
