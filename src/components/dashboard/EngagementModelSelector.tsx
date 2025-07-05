@@ -408,21 +408,19 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
                   <RadioGroup 
                     value={selectedModel?.id || ''} 
                     onValueChange={handleModelSelect}
-                    className="space-y-3"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                   >
                     {activeModels.map((model) => (
                       <div key={model.id} className="relative">
-                        <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-primary/30 transition-colors duration-200">
-                          <RadioGroupItem value={model.id} id={model.id} />
-                          <Label htmlFor={model.id} className="flex-1 cursor-pointer">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h5 className="font-semibold text-gray-900">{model.name}</h5>
-                                <p className="text-sm text-muted-foreground mt-1">{model.description}</p>
-                                <div className="flex gap-2 mt-2">
-                                  <Badge variant="outline" className="text-xs">{organizationType}</Badge>
-                                  <Badge variant="outline" className="text-xs">{entityType}</Badge>
-                                </div>
+                        <div className="flex flex-col items-center space-y-3 p-4 border-2 rounded-xl hover:border-primary/30 transition-colors duration-200 h-full">
+                          <RadioGroupItem value={model.id} id={model.id} className="self-center" />
+                          <Label htmlFor={model.id} className="flex-1 cursor-pointer text-center">
+                            <div className="space-y-2">
+                              <h5 className="font-semibold text-gray-900">{model.name}</h5>
+                              <p className="text-sm text-muted-foreground">{model.description}</p>
+                              <div className="flex gap-1 justify-center flex-wrap">
+                                <Badge variant="outline" className="text-xs">{organizationType}</Badge>
+                                <Badge variant="outline" className="text-xs">{entityType}</Badge>
                               </div>
                             </div>
                           </Label>
