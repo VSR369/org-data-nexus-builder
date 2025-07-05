@@ -7,10 +7,10 @@ export function generateOrganizationId(): string {
   return `ORG-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 }
 
-// Save user data with IndexedDB
+// Save user data with IndexedDB and localStorage fallback
 export async function saveUserDataSecurely(userData: any): Promise<boolean> {
   try {
-    console.log('💾 Starting secure user data save process with IndexedDB...');
+    console.log('💾 Starting secure user data save process...');
     
     // Validate required fields
     const required = ['userId', 'password', 'organizationName', 'organizationType', 'entityType', 'country', 'email', 'contactPersonName'];
@@ -21,13 +21,49 @@ export async function saveUserDataSecurely(userData: any): Promise<boolean> {
       }
     }
     
-    const success = await userDataManager.saveUser(userData);
+    // Save to IndexedDB first
+    const indexedDBSuccess = await userDataManager.saveUser(userData);
     
-    if (success) {
-      console.log('✅ User data successfully saved and verified in IndexedDB');
+    if (indexedDBSuccess) {
+      console.log('✅ User data successfully saved to IndexedDB');
+      
+      // Also save to localStorage as fallback
+      try {
+        const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        const userExists = existingUsers.find((u: any) => 
+          u.userId.toLowerCase() === userData.userId.toLowerCase()
+        );
+        
+        if (!userExists) {
+          existingUsers.push(userData);
+          localStorage.setItem('registered_users', JSON.stringify(existingUsers));
+          console.log('✅ User data also saved to localStorage');
+        }
+      } catch (localStorageError) {
+        console.warn('⚠️ Failed to save to localStorage, but IndexedDB save succeeded:', localStorageError);
+      }
+      
       return true;
     } else {
       console.log('❌ Failed to save user data to IndexedDB');
+      
+      // Fallback: try localStorage only
+      try {
+        const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        const userExists = existingUsers.find((u: any) => 
+          u.userId.toLowerCase() === userData.userId.toLowerCase()
+        );
+        
+        if (!userExists) {
+          existingUsers.push(userData);
+          localStorage.setItem('registered_users', JSON.stringify(existingUsers));
+          console.log('✅ Fallback: User data saved to localStorage only');
+          return true;
+        }
+      } catch (localStorageError) {
+        console.error('❌ Both IndexedDB and localStorage saves failed:', localStorageError);
+      }
+      
       return false;
     }
     

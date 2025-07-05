@@ -50,27 +50,70 @@ const SeekerLogin = () => {
     }
 
     try {
-      // Check credentials against localStorage
+      console.log('🔐 Starting login process for:', identifier);
+      let user = null;
+
+      // First check localStorage
       const usersData = localStorage.getItem('registered_users');
-      
-      if (!usersData) {
-        setError('No registered users found. Please register first.');
-        setIsLoading(false);
-        return;
+      if (usersData) {
+        try {
+          const users = JSON.parse(usersData);
+          user = users.find((u: any) => 
+            (u.email.toLowerCase() === identifier.toLowerCase() || 
+             u.userId.toLowerCase() === identifier.toLowerCase()) &&
+            u.password === password
+          );
+          if (user) {
+            console.log('✅ User found in localStorage');
+          }
+        } catch (error) {
+          console.error('Error parsing localStorage data:', error);
+        }
       }
 
-      const users = JSON.parse(usersData);
-      const user = users.find((u: any) => 
-        (u.email.toLowerCase() === identifier.toLowerCase() || 
-         u.userId.toLowerCase() === identifier.toLowerCase()) &&
-        u.password === password
-      );
+      // If not found in localStorage, check IndexedDB using userDataManager
+      if (!user) {
+        console.log('🔍 Checking IndexedDB for user...');
+        try {
+          const { userDataManager } = await import('@/utils/storage/UserDataManager');
+          const foundUser = await userDataManager.findUser(identifier, password);
+          if (foundUser) {
+            user = foundUser;
+            console.log('✅ User found in IndexedDB');
+            
+            // Sync to localStorage for faster future access
+            const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+            const userExists = existingUsers.find((u: any) => u.userId === foundUser.userId);
+            if (!userExists) {
+              existingUsers.push(foundUser);
+              localStorage.setItem('registered_users', JSON.stringify(existingUsers));
+              console.log('📥 Synced user data to localStorage');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking IndexedDB:', error);
+        }
+      }
 
       if (!user) {
         setError('Invalid credentials. Please check your email/username and password.');
         setIsLoading(false);
         return;
       }
+
+      // Store user session
+      const sessionData = {
+        userId: user.userId,
+        organizationName: user.organizationName,
+        entityType: user.entityType,
+        country: user.country,
+        contactPersonName: user.contactPersonName,
+        email: user.email,
+        loginTimestamp: new Date().toISOString()
+      };
+      
+      sessionStorage.setItem('seeker_session', JSON.stringify(sessionData));
+      console.log('💾 User session stored');
 
       // Successful login
       toast({
