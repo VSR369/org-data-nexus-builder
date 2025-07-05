@@ -44,8 +44,7 @@ const MasterDataSelectionSection: React.FC<MasterDataSelectionSectionProps> = ({
   };
 
   const membershipStatuses = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
+    { value: 'member', label: 'Member' },
     { value: 'not-a-member', label: 'Not a Member' }
   ];
 
@@ -132,11 +131,11 @@ const MasterDataSelectionSection: React.FC<MasterDataSelectionSectionProps> = ({
         <Label htmlFor="membershipStatus">Membership Status *</Label>
         <Select
           value={currentConfig.membershipStatus || ''}
-          onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+          onValueChange={(value: 'member' | 'not-a-member') => {
             setCurrentConfig(prev => ({ 
               ...prev, 
               membershipStatus: value,
-              discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+              discountPercentage: value === 'member' ? prev.discountPercentage : undefined
             }));
           }}
         >

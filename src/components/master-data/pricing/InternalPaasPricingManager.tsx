@@ -39,8 +39,8 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
     const requiredFields = ['organizationType', 'country', 'currency', 'membershipStatus'];
     const missingFields = requiredFields.filter(field => !newCountryPricing[field as keyof typeof newCountryPricing]);
     
-    // If membership status is active, discount percentage is required
-    if (newCountryPricing.membershipStatus === 'active' && 
+    // If membership status is member, discount percentage is required
+    if (newCountryPricing.membershipStatus === 'member' && 
         (newCountryPricing.discountPercentage === undefined || 
          newCountryPricing.discountPercentage === null || 
          isNaN(newCountryPricing.discountPercentage))) {
@@ -49,8 +49,8 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
 
     if (missingFields.length > 0) {
       let errorMessage = `Please fill in all required fields: ${missingFields.join(', ')}`;
-      if (newCountryPricing.membershipStatus === 'active' && missingFields.includes('discountPercentage')) {
-        errorMessage = "Discount percentage is required when membership status is Active.";
+      if (newCountryPricing.membershipStatus === 'member' && missingFields.includes('discountPercentage')) {
+        errorMessage = "Discount percentage is required when membership status is Member.";
       }
       toast({
         title: "Error",
@@ -71,7 +71,7 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
       halfYearlyPrice: newCountryPricing.halfYearlyPrice || 0,
       annualPrice: newCountryPricing.annualPrice || 0,
       membershipStatus: newCountryPricing.membershipStatus!,
-      discountPercentage: newCountryPricing.membershipStatus === 'active' ? newCountryPricing.discountPercentage! : undefined,
+      discountPercentage: newCountryPricing.membershipStatus === 'member' ? newCountryPricing.discountPercentage! : undefined,
     } as CountryPricing;
 
     if (existingConfig) {

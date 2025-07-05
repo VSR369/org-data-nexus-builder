@@ -38,13 +38,12 @@ const PaasPricingTable: React.FC<PaasPricingTableProps> = ({ pricingEntries }) =
                   <Badge variant="outline">{pricing.currency}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={pricing.membershipStatus === 'active' ? 'default' : 'secondary'}>
-                    {pricing.membershipStatus === 'active' ? 'Active' : 
-                     pricing.membershipStatus === 'inactive' ? 'Inactive' : 'Not a Member'}
+                  <Badge variant={pricing.membershipStatus === 'member' ? 'default' : 'secondary'}>
+                    {pricing.membershipStatus === 'member' ? 'Member' : 'Not a Member'}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {pricing.membershipStatus === 'active' && pricing.discountPercentage ? 
+                  {pricing.membershipStatus === 'member' && pricing.discountPercentage ? 
                     `${pricing.discountPercentage}%` : '-'}
                 </TableCell>
                 <TableCell>{formatCurrency(pricing.quarterlyPrice, pricing.currency)}</TableCell>

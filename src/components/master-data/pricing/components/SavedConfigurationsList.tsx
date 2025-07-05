@@ -76,7 +76,7 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
             <TableBody>
               {configs.map((config) => {
                 const discount = config.discountPercentage || 0;
-                const hasDiscount = config.membershipStatus === 'active' && discount > 0;
+                const hasDiscount = config.membershipStatus === 'member' && discount > 0;
                 const isPaaS = isPaaSModel(config.engagementModel);
 
                 return (
@@ -93,9 +93,8 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       <Badge variant="outline">{config.engagementModel}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={config.membershipStatus === 'active' ? 'default' : 'secondary'}>
-                        {config.membershipStatus === 'active' ? 'Active' : 
-                         config.membershipStatus === 'inactive' ? 'Inactive' : 'Not a Member'}
+                      <Badge variant={config.membershipStatus === 'member' ? 'default' : 'secondary'}>
+                        {config.membershipStatus === 'member' ? 'Member' : 'Not a Member'}
                       </Badge>
                     </TableCell>
                     <TableCell>
