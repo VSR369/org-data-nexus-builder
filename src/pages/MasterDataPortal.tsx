@@ -4,21 +4,73 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import MasterDataContent from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Database } from "lucide-react";
+import { ArrowLeft, Database, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MasterDataSeeder } from "@/utils/masterDataSeeder";
+import { MasterDataRestorer } from "@/utils/masterDataRestorer";
+import { useToast } from "@/hooks/use-toast";
 
 const MasterDataPortal = () => {
   const [activeSection, setActiveSection] = useState('domain-groups');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { toast } = useToast();
 
   const handleSignInComplete = () => {
     setIsLoggedIn(true);
   };
 
+  const handleRestoreCustomData = () => {
+    console.log('🔧 User requested data restoration...');
+    const result = MasterDataRestorer.restoreUserData();
+    
+    if (result.success) {
+      toast({
+        title: "Custom Data Restored",
+        description: result.message,
+      });
+      // Refresh the page to ensure all components reload
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } else {
+      toast({
+        title: "No Custom Data Found",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   // Initialize master data on portal load
   React.useEffect(() => {
-    MasterDataSeeder.seedAllMasterData();
+    console.log('🔍 Master Data Portal - Checking for existing user data...');
+    
+    // Check if user has any custom master data
+    const userDataKeys = [
+      'master_data_currencies',
+      'master_data_countries', 
+      'master_data_industry_segments',
+      'master_data_organization_types',
+      'master_data_entity_types',
+      'master_data_departments',
+      'master_data_domain_groups',
+      'master_data_engagement_models',
+      'master_data_seeker_membership_fees',
+      'master_data_competency_capabilities'
+    ];
+    
+    const hasUserData = userDataKeys.some(key => {
+      const data = localStorage.getItem(key);
+      return data && data !== 'null' && data !== '[]';
+    });
+    
+    if (hasUserData) {
+      console.log('✅ Found existing user master data - preserving custom configuration');
+      // Don't seed - let components load existing user data
+    } else {
+      console.log('🌱 No user data found - initializing with defaults');
+      MasterDataSeeder.seedAllMasterData();
+    }
   }, []);
 
   console.log('MasterDataPortal - activeSection:', activeSection);
@@ -57,6 +109,18 @@ const MasterDataPortal = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    onClick={handleRestoreCustomData}
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Restore Custom Data
+                  </Button>
                 </div>
               </div>
             </div>
