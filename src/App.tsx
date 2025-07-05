@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MasterDataHealthProvider } from "@/components/providers/MasterDataHealthProvider";
+import { MasterDataAutoInitService } from "@/services/MasterDataAutoInitService";
 
 // Import pages
 import Index from './pages/Index';
@@ -25,6 +26,13 @@ import TestPage from './pages/TestPage';
 const queryClient = new QueryClient();
 
 function App() {
+  // Initialize master data persistence on app startup
+  useEffect(() => {
+    MasterDataAutoInitService.initialize().catch(error => {
+      console.error('❌ Failed to initialize master data:', error);
+    });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <MasterDataHealthProvider enableAutoFix={true} showToastNotifications={true}>
