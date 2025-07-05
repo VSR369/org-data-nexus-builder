@@ -173,6 +173,7 @@ export const MasterDataDiagnostics: React.FC = () => {
     setIsRunning(true);
 
     try {
+      console.log('🔍 Creating diagnostic report structure...');
       const report: DiagnosticReport = {
         totalKeys: 0,
         healthyKeys: 0,
@@ -182,9 +183,12 @@ export const MasterDataDiagnostics: React.FC = () => {
         solutionSeekingOrgFields: [],
         lastChecked: new Date().toISOString()
       };
+      console.log('🔍 Initial report created:', report);
 
       // Check each expected master data key
+      console.log('🔍 Analyzing master data keys...');
       Object.entries(EXPECTED_MASTER_DATA_KEYS).forEach(([key, config]) => {
+        console.log(`🔍 Processing key: ${key}`);
         const keyInfo = analyzeMasterDataKey(key, config);
         report.masterDataKeys.push(keyInfo);
         
@@ -196,12 +200,16 @@ export const MasterDataDiagnostics: React.FC = () => {
           report.missingKeys++;
         }
       });
+      console.log('🔍 Master data keys analysis complete. Keys processed:', report.masterDataKeys.length);
 
       report.totalKeys = report.masterDataKeys.length;
 
       // Analyze Solution Seeking Organization fields
+      console.log('🔍 Analyzing solution seeking org fields...');
       report.solutionSeekingOrgFields = analyzeSolutionSeekingOrgFields();
+      console.log('🔍 Solution seeking org fields analysis complete. Fields processed:', report.solutionSeekingOrgFields.length);
 
+      console.log('🔍 Setting diagnostic report...');
       setDiagnosticReport(report);
       console.log('🔍 === MASTER DATA DIAGNOSTICS COMPLETE ===', report);
 
