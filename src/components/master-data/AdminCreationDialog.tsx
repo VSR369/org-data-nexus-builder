@@ -260,39 +260,40 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     }
   });
 
-  // Enhanced form binding utility to handle both data formats
-  const extractAdminFormData = (admin: any): Partial<AdminFormData> => {
-    console.log('🔄 FORM BINDING - Processing admin data:', admin);
-    
-    // Try both main and legacy formats
-    const formData = {
-      adminName: admin.name || admin.adminName || '',
-      email: admin.email || admin.adminEmail || '',
-      contactNumber: admin.contactNumber || '',
-      userId: admin.userId || '',
-      password: '', // Never populate password for security
-      confirmPassword: ''
-    };
-    
-    console.log('🔄 FORM BINDING - Extracted data:', formData);
-    return formData;
-  };
-
-  // Update form when dialog opens - only pre-fill when editing existing admin
+  // Update form when dialog opens - fix form population
   useEffect(() => {
+    console.log('🔄 FORM EFFECT TRIGGERED - Open:', open, 'ExistingAdmin:', !!existingAdmin);
+    
     if (open) {
       if (existingAdmin) {
         setIsEditMode(true);
-        console.log('✏️ EDIT MODE - Populating form with:', existingAdmin);
+        console.log('✏️ EDIT MODE - Raw admin data:', JSON.stringify(existingAdmin, null, 2));
         
-        const formData = extractAdminFormData(existingAdmin);
-        form.reset(formData);
+        // Extract form data with explicit field mapping
+        const formData = {
+          adminName: existingAdmin.name || existingAdmin.adminName || '',
+          email: existingAdmin.email || existingAdmin.adminEmail || '',
+          contactNumber: existingAdmin.contactNumber || '',
+          userId: existingAdmin.userId || existingAdmin.adminId || '',
+          password: '',
+          confirmPassword: ''
+        };
         
-        console.log('✏️ FORM POPULATED - Form values set to:', formData);
+        console.log('✏️ FORM DATA EXTRACTED:', JSON.stringify(formData, null, 2));
+        
+        // Force form reset with setTimeout to ensure it happens after render
+        setTimeout(() => {
+          form.reset(formData);
+          console.log('✅ FORM RESET COMPLETED with data:', formData);
+          
+          // Verify form values were set
+          const currentValues = form.getValues();
+          console.log('🔍 FORM VALUES AFTER RESET:', JSON.stringify(currentValues, null, 2));
+        }, 50);
+        
       } else {
         setIsEditMode(false);
-        console.log('➕ CREATE MODE - Resetting form to blank');
-        // Reset to completely blank form for new administrator
+        console.log('➕ CREATE MODE - Clearing form');
         form.reset({
           adminName: '',
           email: '',
