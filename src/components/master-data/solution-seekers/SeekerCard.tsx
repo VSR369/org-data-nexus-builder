@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Building2, AlertCircle, Eye, UserPlus, UserCheck, UserX, RefreshCw, CheckCircle, RotateCcw } from 'lucide-react';
+import { Users, Building2, AlertCircle, Eye, UserPlus, UserCheck, UserX, RefreshCw, CheckCircle, RotateCcw, Lock } from 'lucide-react';
 import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './types';
 import ViewDetailsDialog from './ViewDetailsDialog';
+import { EngagementValidator } from '@/utils/engagementValidator';
 
 interface SeekerCardProps {
   seeker: SeekerDetails;
@@ -122,9 +123,22 @@ const loadEngagementPricingDetails = (seeker: SeekerDetails) => {
 const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing }) => {
   const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
   
-  console.log('🎯 Rendering seeker card:', seeker.organizationName, 'Status:', seeker.approvalStatus);
+  // Validate engagement details for this seeker
+  const engagementValidation = EngagementValidator.validateSeekerEngagement(
+    seeker.id, 
+    seeker.organizationId, 
+    seeker.organizationName
+  );
+  
+  console.log('🎯 Rendering seeker card:', seeker.organizationName, 'Status:', seeker.approvalStatus, 'Engagement Valid:', engagementValidation.isValid);
   
   const handleApprovalWithConfirmation = async (status: 'approved' | 'rejected') => {
+    // Check engagement validation first
+    if (!engagementValidation.isValid) {
+      alert(EngagementValidator.getValidationMessage(engagementValidation));
+      return;
+    }
+
     // Prevent double-clicks during processing
     if (processing.processingApproval === seeker.id) {
       console.log('⏳ Already processing approval for seeker:', seeker.organizationName);
@@ -228,32 +242,72 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
           
           {/* Approval Buttons - Only show for pending seekers */}
           {seeker.approvalStatus === 'pending' && (
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
-                onClick={() => handleApprovalWithConfirmation('approved')}
-                disabled={processing.processingApproval === seeker.id}
-              >
-                {processing.processingApproval === seeker.id ? (
-                  <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                )}
-                {processing.processingApproval === seeker.id ? 'Processing...' : 'Approve'}
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
-                onClick={() => handlers.onReject(seeker)}
-                disabled={processing.processingApproval === seeker.id}
-              >
-                <UserX className="h-4 w-4 mr-1" />
-                Reject
-              </Button>
-            </div>
+            <>
+              {/* Engagement Validation Warning */}
+              {!engagementValidation.isValid && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-amber-800 mb-2">
+                    <Lock className="h-4 w-4" />
+                    <span className="font-medium text-sm">Engagement Details Required</span>
+                  </div>
+                  <p className="text-xs text-amber-700 mb-2">
+                    {EngagementValidator.getValidationMessage(engagementValidation)}
+                  </p>
+                  {engagementValidation.missingDetails.length > 0 && (
+                    <div className="text-xs text-amber-700">
+                      <strong>Missing:</strong> {engagementValidation.missingDetails.join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className={`flex-1 ${
+                    engagementValidation.isValid 
+                      ? 'text-green-600 border-green-600 hover:bg-green-50' 
+                      : 'text-gray-400 border-gray-300 cursor-not-allowed opacity-50'
+                  }`}
+                  onClick={() => handleApprovalWithConfirmation('approved')}
+                  disabled={processing.processingApproval === seeker.id || !engagementValidation.isValid}
+                >
+                  {processing.processingApproval === seeker.id ? (
+                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                  ) : engagementValidation.isValid ? (
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                  ) : (
+                    <Lock className="h-4 w-4 mr-1" />
+                  )}
+                  {processing.processingApproval === seeker.id ? 'Processing...' : 'Approve'}
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className={`flex-1 ${
+                    engagementValidation.isValid 
+                      ? 'text-red-600 border-red-600 hover:bg-red-50' 
+                      : 'text-gray-400 border-gray-300 cursor-not-allowed opacity-50'
+                  }`}
+                  onClick={() => {
+                    if (!engagementValidation.isValid) {
+                      alert(EngagementValidator.getValidationMessage(engagementValidation));
+                      return;
+                    }
+                    handlers.onReject(seeker);
+                  }}
+                  disabled={processing.processingApproval === seeker.id || !engagementValidation.isValid}
+                >
+                  {engagementValidation.isValid ? (
+                    <UserX className="h-4 w-4 mr-1" />
+                  ) : (
+                    <Lock className="h-4 w-4 mr-1" />
+                  )}
+                  Reject
+                </Button>
+              </div>
+            </>
           )}
          
           {/* Rejected Status Actions */}

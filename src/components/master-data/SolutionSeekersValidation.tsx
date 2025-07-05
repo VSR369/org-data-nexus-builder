@@ -10,6 +10,7 @@ import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './solution-seekers/types';
 import StatusDiagnosticPanel from './solution-seekers/StatusDiagnosticPanel';
 import SeekersList from './solution-seekers/SeekersList';
+import { EngagementValidator } from '@/utils/engagementValidator';
 
 const SolutionSeekersValidation: React.FC = () => {
   const [seekers, setSeekers] = useState<SeekerDetails[]>([]);
@@ -550,6 +551,9 @@ const SolutionSeekersValidation: React.FC = () => {
     processingAdmin
   };
 
+  // Global engagement validation
+  const globalEngagementValidation = EngagementValidator.validateGlobalEngagement();
+  
   if (loading) {
     return (
       <div className="container mx-auto p-4">
@@ -599,6 +603,22 @@ const SolutionSeekersValidation: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Global Engagement Validation Warning */}
+      {!globalEngagementValidation.isValid && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-2 text-amber-800 mb-2">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">Engagement Configuration Required</span>
+          </div>
+          <p className="text-amber-700 mb-3">
+            {EngagementValidator.getValidationMessage(globalEngagementValidation)}
+          </p>
+          <div className="text-sm text-amber-600">
+            <strong>Impact:</strong> Solution seeker approval/rejection actions are disabled until engagement model configuration is complete.
+          </div>
+        </div>
+      )}
 
       {/* Status Diagnostic Panel */}
       <StatusDiagnosticPanel />
