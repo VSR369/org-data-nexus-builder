@@ -14,7 +14,7 @@ export class MasterDataAutoInitService {
     'master_data_currencies': 'custom_currencies',
     'master_data_industry_segments': 'custom_industrySegments', 
     'master_data_seeker_membership_fees': 'custom_seekerMembershipFees',
-    'master_data_pricing_configs': 'custom_pricingConfigs',
+    'master_data_pricing_configs': 'custom_pricing',
     'master_data_non_monetary_reward_types': 'custom_rewardTypes',
     'master_data_communication_channels': 'custom_communicationTypes',
     'master_data_entity_types': 'custom_entityTypes',
