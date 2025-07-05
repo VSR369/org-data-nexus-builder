@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserPlus, Eye, EyeOff, Edit, AlertTriangle } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Edit, AlertTriangle, Key } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import CryptoJS from 'crypto-js';
 import type { UserRecord } from '@/services/types';
@@ -33,28 +35,39 @@ const passwordSchema = z.string()
   .regex(/[0-9]/, "Password must contain at least one number")
   .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
-const adminSchema = z.object({
-  adminName: z.string()
-    .min(2, "Administrator name must be at least 2 characters")
-    .max(50, "Administrator name must not exceed 50 characters")
-    .regex(/^[a-zA-Z\s]+$/, "Name must contain only letters and spaces"),
-  email: z.string()
-    .email("Please enter a valid email address")
-    .toLowerCase(),
-  contactNumber: z.string()
-    .min(10, "Contact number must be at least 10 digits")
-    .max(15, "Contact number must not exceed 15 digits")
-    .regex(/^[\+]?[0-9\-\s\(\)]+$/, "Please enter a valid contact number"),
-  userId: z.string()
-    .min(3, "User ID must be at least 3 characters")
-    .max(20, "User ID must not exceed 20 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "User ID can only contain letters, numbers, and underscores"),
-  password: passwordSchema,
-  confirmPassword: z.string().min(8, "Please confirm your password")
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-});
+// Conditional password schema for edit mode
+const createPasswordSchema = (isEditMode: boolean, isEditingPassword: boolean) => {
+  const baseSchema = z.object({
+    adminName: z.string()
+      .min(2, "Administrator name must be at least 2 characters")
+      .max(50, "Administrator name must not exceed 50 characters")
+      .regex(/^[a-zA-Z\s]+$/, "Name must contain only letters and spaces"),
+    email: z.string()
+      .email("Please enter a valid email address")
+      .toLowerCase(),
+    contactNumber: z.string()
+      .min(10, "Contact number must be at least 10 digits")
+      .max(15, "Contact number must not exceed 15 digits")
+      .regex(/^[\+]?[0-9\-\s\(\)]+$/, "Please enter a valid contact number"),
+    userId: z.string()
+      .min(3, "User ID must be at least 3 characters")
+      .max(20, "User ID must not exceed 20 characters")
+      .regex(/^[a-zA-Z0-9_]+$/, "User ID can only contain letters, numbers, and underscores"),
+    password: (!isEditMode || isEditingPassword) ? passwordSchema : z.string().optional(),
+    confirmPassword: (!isEditMode || isEditingPassword) ? z.string().min(8, "Please confirm your password") : z.string().optional()
+  });
+
+  if (!isEditMode || isEditingPassword) {
+    return baseSchema.refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"]
+    });
+  }
+  
+  return baseSchema;
+};
+
+const adminSchema = createPasswordSchema(false, false); // Default for create mode
 
 type AdminFormData = z.infer<typeof adminSchema>;
 
@@ -246,10 +259,11 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<AdminFormData>({
-    resolver: zodResolver(adminSchema),
+    resolver: zodResolver(createPasswordSchema(isEditMode, isEditingPassword)),
     defaultValues: {
       adminName: '',
       email: '',
@@ -293,6 +307,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         
       } else {
         setIsEditMode(false);
+        setIsEditingPassword(false);
         console.log('➕ CREATE MODE - Clearing form');
         form.reset({
           adminName: '',
@@ -312,6 +327,9 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     try {
       console.log('🔄 Starting administrator creation/update process...');
 
+      // Only check password fields if creating new admin or editing password
+      const shouldUpdatePassword = !isEditMode || isEditingPassword;
+      
       // Check for duplicates first
       const { emailExists, userIdExists } = AdminStorageManager.checkForDuplicates(
         data.email, 
@@ -354,7 +372,8 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
           email: data.email.toLowerCase(),
           contactNumber: data.contactNumber,
           userId: data.userId,
-          password: AdminStorageManager.hashPassword(data.password),
+          // Only update password if editing password
+          password: shouldUpdatePassword ? AdminStorageManager.hashPassword(data.password) : existingAdmin.password,
           lastUpdated: new Date().toISOString(),
           updatedBy: 'system'
         };
@@ -444,7 +463,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
 
       toast({
         title: `✅ Administrator ${isEditMode ? 'Updated' : 'Created'} Successfully`,
-        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}. Password has been securely hashed.`,
+        description: `Administrator ${data.adminName} has been ${isEditMode ? 'updated' : 'created'} for ${seeker.organizationName}. ${shouldUpdatePassword ? 'Password has been securely updated.' : 'Profile information updated.'}`,
       });
 
       // Reset form and close dialog
@@ -456,6 +475,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         password: '',
         confirmPassword: ''
       });
+      setIsEditingPassword(false);
       onOpenChange(false);
 
       console.log('✅ Administrator creation/update process completed successfully');
@@ -529,6 +549,37 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Password Display/Edit Section - Only in Edit Mode */}
+            {isEditMode && existingAdmin && (
+              <Card className="mb-4 p-4 bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-gray-900">Administrator Password</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingPassword(!isEditingPassword)}
+                  >
+                    {isEditingPassword ? 'Cancel Password Edit' : 'Edit Password'}
+                  </Button>
+                </div>
+                
+                {!isEditingPassword ? (
+                  <div className="flex items-center gap-2 p-3 bg-white border rounded">
+                    <Key className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">Password: ••••••••••••</span>
+                    <Badge variant="secondary" className="text-xs">Encrypted</Badge>
+                  </div>
+                ) : (
+                  <div className="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-sm text-blue-700">
+                      <AlertTriangle className="h-4 w-4 inline mr-1" />
+                      Creating a new password will replace the existing one permanently.
+                    </p>
+                  </div>
+                )}
+              </Card>
+            )}
             <FormField
               control={form.control}
               name="adminName"
@@ -585,63 +636,68 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="Enter password" 
-                        {...field} 
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Password fields - Show when creating new admin OR when editing password */}
+            {(!isEditMode || isEditingPassword) && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{isEditMode ? 'New Password' : 'Password'}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder={isEditMode ? "Enter new password" : "Enter password"}
+                            {...field} 
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input 
-                        type={showConfirmPassword ? "text" : "password"} 
-                        placeholder="Confirm password" 
-                        {...field} 
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{isEditMode ? 'Confirm New Password' : 'Confirm Password'}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            placeholder={isEditMode ? "Confirm new password" : "Confirm password"}
+                            {...field} 
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
