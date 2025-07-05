@@ -1,67 +1,210 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, User, Lock, AlertCircle, Loader2, Building2, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from "@/hooks/use-toast";
 
 const SeekerLogin = () => {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Auto-focus on first input field
+  useEffect(() => {
+    const identifierInput = document.getElementById('identifier');
+    if (identifierInput) {
+      identifierInput.focus();
+    }
+  }, []);
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Basic validation
+    if (!identifier.trim() || !password.trim()) {
+      setError('Please enter both email/username and password.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Email format validation if identifier contains @
+    if (identifier.includes('@') && !validateEmail(identifier)) {
+      setError('Please enter a valid email address.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Check credentials against localStorage
+      const usersData = localStorage.getItem('registered_users');
+      
+      if (!usersData) {
+        setError('No registered users found. Please register first.');
+        setIsLoading(false);
+        return;
+      }
+
+      const users = JSON.parse(usersData);
+      const user = users.find((u: any) => 
+        (u.email.toLowerCase() === identifier.toLowerCase() || 
+         u.userId.toLowerCase() === identifier.toLowerCase()) &&
+        u.password === password
+      );
+
+      if (!user) {
+        setError('Invalid credentials. Please check your email/username and password.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Successful login
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${user.contactPersonName}!`,
+      });
+
+      // Navigate to home page
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An error occurred during login. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-xl border border-slate-200">
+        <Card className="shadow-xl border-0">
           <CardHeader className="text-center pb-6">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Trash2 className="h-6 w-6 text-orange-600" />
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <Link to="/signin">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
-            <CardTitle className="text-xl font-semibold text-slate-800">
-              Solution Seeking Organization Login
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Solution Seeking Organization
             </CardTitle>
-            <p className="text-sm text-slate-600 mt-2">
-              System Cleaned Successfully
+            <p className="text-gray-600 mt-2">
+              Sign in to your organization account
             </p>
           </CardHeader>
           
-          <CardContent className="space-y-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="font-medium text-orange-900 mb-1">
-                    Login System Removed
-                  </h4>
-                  <p className="text-sm text-orange-700 mb-3">
-                    All Solution Seeking Organization sign-in functionality has been completely removed as requested. The system is now clean and ready for fresh implementation.
-                  </p>
-                  <div className="text-xs text-orange-600 space-y-1">
-                    <div>✅ All login components deleted</div>
-                    <div>✅ Authentication services removed</div>
-                    <div>✅ Dashboard components cleaned</div>
-                    <div>✅ Routes and hooks removed</div>
-                    <div>✅ localStorage/cache cleared</div>
-                  </div>
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="identifier" className="text-sm font-medium text-gray-700">
+                  Email or User ID
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter your email or user ID"
+                    autoComplete="username"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <Link to="/" className="block">
-                <Button variant="outline" className="w-full" size="lg">
-                  Back to Home
-                </Button>
-              </Link>
-              
-              <Link to="/general-signin" className="block">
-                <Button className="w-full" size="lg">
-                  General Sign In
-                </Button>
-              </Link>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
 
-            <div className="text-center pt-4 border-t border-slate-200">
-              <p className="text-xs text-slate-500">
-                Ready to build new sign-in system from scratch
+              <div className="space-y-3 pt-4">
+                <Button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                  size="lg"
+                  disabled={isLoading || !identifier.trim() || !password.trim()}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Login'
+                  )}
+                </Button>
+                
+                <Link to="/signin">
+                  <Button variant="outline" className="w-full" size="lg" disabled={isLoading}>
+                    Back to Menu
+                  </Button>
+                </Link>
+              </div>
+            </form>
+
+            <div className="text-center pt-4 border-t">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/seeker-registration" className="text-green-600 hover:underline font-medium">
+                  Register Organization
+                </Link>
               </p>
             </div>
           </CardContent>
