@@ -74,6 +74,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <LocalStorageDebugPanel />;
       case 'master-data-diagnostics':
         return <MasterDataDiagnostics />;
+      case 'admin-creation':
+        return <MasterDataDiagnostics />;
       default:
         return <DomainGroupsConfig />;
     }
