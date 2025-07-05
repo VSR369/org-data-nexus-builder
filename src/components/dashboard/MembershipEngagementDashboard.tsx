@@ -216,7 +216,9 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
     // Map selected membership plan to master data membership status format
     const getMembershipStatusForConfig = (plan: string): string => {
-      return plan === 'not-member' ? 'Not a Member' : 'Member';
+      if (plan === 'not-member') return 'not-a-member';
+      if (plan === 'annual') return 'member'; // Annual plan = Member
+      return 'member'; // Default to Member for other plans
     };
     
     const membershipStatusForConfig = getMembershipStatusForConfig(selectedMembershipPlan);
