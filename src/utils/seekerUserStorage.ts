@@ -34,6 +34,47 @@ export async function saveUserDataSecurely(userData: any): Promise<boolean> {
 }
 
 export function prepareRegistrationData(formData: FormData) {
+  // Helper function to get industry segment name instead of ID
+  const getIndustrySegmentName = (industrySegmentId: string) => {
+    if (!industrySegmentId) return '';
+    
+    // If it's already a name (not numeric), return as is
+    if (isNaN(Number(industrySegmentId))) {
+      return industrySegmentId;
+    }
+    
+    // Look up the industry segment name from master data
+    try {
+      const masterDataKey = 'master_data_industry_segments';
+      const savedData = localStorage.getItem(masterDataKey);
+      if (savedData) {
+        const industryData = JSON.parse(savedData);
+        const segments = industryData.industrySegments || industryData;
+        
+        if (Array.isArray(segments)) {
+          const foundSegment = segments.find((segment: any) => 
+            segment.id === industrySegmentId
+          );
+          
+          if (foundSegment) {
+            console.log('✅ Found industry segment name:', foundSegment.industrySegment);
+            return foundSegment.industrySegment;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error looking up industry segment:', error);
+    }
+    
+    return industrySegmentId; // Fallback to ID if lookup fails
+  };
+
+  const resolvedIndustrySegment = getIndustrySegmentName(formData.industrySegment);
+  console.log('🏭 Industry segment resolution:', {
+    original: formData.industrySegment,
+    resolved: resolvedIndustrySegment
+  });
+
   return {
     // Basic Information
     userId: formData.userId.trim(),
@@ -42,7 +83,7 @@ export function prepareRegistrationData(formData: FormData) {
     organizationId: formData.organizationId,
     organizationType: formData.organizationType,
     entityType: formData.entityType,
-    industrySegment: formData.industrySegment,
+    industrySegment: resolvedIndustrySegment, // Store the actual name, not ID
     
     // Contact Details
     contactPersonName: formData.contactPersonName.trim(),
