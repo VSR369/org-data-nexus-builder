@@ -55,47 +55,7 @@ export const useSeekerRegistration = () => {
       return;
     }
 
-    // Check for duplicate user in both localStorage and IndexedDB
-    console.log('🔍 Checking for duplicate user...');
-    
-    // Check localStorage first
-    const usersData = localStorage.getItem('registered_users');
-    let userExists = false;
-    
-    if (usersData) {
-      try {
-        const users = JSON.parse(usersData);
-        userExists = users.some((user: any) => 
-          user.userId.toLowerCase() === formData.userId.trim().toLowerCase() ||
-          user.email.toLowerCase() === formData.email.trim().toLowerCase()
-        );
-      } catch (error) {
-        console.error('Error checking existing users in localStorage:', error);
-      }
-    }
-
-    // Also check IndexedDB
-    if (!userExists) {
-      try {
-        const existingUser = await sessionStorageManager.findUser(formData.userId.trim(), 'dummy_password_check');
-        if (existingUser) {
-          userExists = true;
-        }
-      } catch (error) {
-        console.error('Error checking existing users in IndexedDB:', error);
-      }
-    }
-    
-    if (userExists) {
-      console.log('❌ User already exists:', formData.userId);
-      toast({
-        title: "Registration Error",
-        description: `User ID "${formData.userId}" already exists. Please choose a different User ID.`,
-        variant: "destructive",
-      });
-      setErrors({ userId: "This User ID is already taken" });
-      return;
-    }
+    // The bulletproof service will handle all duplicate checking and validation
 
     // Prepare user data for storage
     const registeredUser = prepareRegistrationData(formData);
@@ -103,29 +63,24 @@ export const useSeekerRegistration = () => {
     console.log('💾 Attempting to save user data:', registeredUser);
 
     try {
-      // Save user data with proper await
+      // Use bulletproof registration service with comprehensive data protection
       const saveSuccess = await saveUserDataSecurely(registeredUser);
       
       if (!saveSuccess) {
-        console.log('❌ Failed to save user data');
+        console.log('❌ Bulletproof registration failed');
         toast({
           title: "Registration Error",
-          description: "Failed to save registration data. Please try again.",
+          description: "Failed to securely save your registration data. All information must be stored safely. Please try again.",
           variant: "destructive",
         });
         return;
       }
 
-      // Also save to localStorage for immediate availability
-      const existingUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
-      existingUsers.push(registeredUser);
-      localStorage.setItem('registered_users', JSON.stringify(existingUsers));
-
-      console.log('✅ Registration completed successfully');
+      console.log('✅ Bulletproof registration completed successfully');
       
       toast({
-        title: "Registration Successful",
-        description: `Welcome ${formData.contactPersonName}! Your account has been created successfully. You can now login with User ID: ${formData.userId}`,
+        title: "Registration Successful ✅",
+        description: `Welcome ${formData.contactPersonName}! Your account has been created and all information is safely stored. You can now login with User ID: ${formData.userId}`,
       });
 
       // Navigate to seeker login page after successful registration
@@ -133,10 +88,10 @@ export const useSeekerRegistration = () => {
         navigate('/seeker-login');
       }, 2000);
     } catch (error) {
-      console.error('❌ Registration error:', error);
+      console.error('❌ Bulletproof registration error:', error);
       toast({
         title: "Registration Error",
-        description: "Failed to save registration data. Please try again.",
+        description: "Failed to securely save your registration data. Please try again to ensure all information is protected.",
         variant: "destructive",
       });
     }
