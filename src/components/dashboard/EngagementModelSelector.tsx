@@ -290,376 +290,398 @@ const EngagementModelSelector: React.FC<EngagementModelSelectorProps> = ({
   const activeModels = engagementModels.filter(model => model.isActive);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Membership Details Section */}
-      <div className="lg:col-span-1">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-3">
+          <Handshake className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-bold">Membership & Engagement Selection</h2>
+        </div>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Configure your membership plan and engagement model for {organizationType} ({entityType}) in {country}
+        </p>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Membership Selection Card */}
+        <Card className="h-fit">
+          <CardHeader className="text-center pb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
               <Crown className="h-5 w-5 text-yellow-600" />
-              Membership Selection
-              {hasActiveMembership && <Badge variant="default" className="bg-green-600">Active</Badge>}
-            </CardTitle>
+              <CardTitle className="text-xl">Membership Plans</CardTitle>
+              {hasActiveMembership && <Badge className="bg-green-600">Active</Badge>}
+            </div>
             <p className="text-sm text-muted-foreground">
-              Select membership plan for {organizationType} ({entityType}) in {country}
+              Choose your membership plan to unlock exclusive benefits
             </p>
           </CardHeader>
-          <CardContent>
+          
+          <CardContent className="space-y-6">
             {membershipLoading ? (
-              <div className="text-center py-4">
-                <Crown className="h-6 w-6 animate-pulse text-yellow-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Loading membership data...</p>
+              <div className="text-center py-8">
+                <Crown className="h-8 w-8 animate-pulse text-yellow-400 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">Loading membership plans...</p>
               </div>
             ) : countryPricing ? (
               <div className="space-y-4">
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h5 className="font-medium text-yellow-800 mb-3">Available Membership Plans</h5>
-                  
-                  <RadioGroup 
-                    value={selectedMembershipFrequency} 
-                    onValueChange={(value: string) => setSelectedMembershipFrequency(value as 'quarterly' | 'half-yearly' | 'annually')}
-                    className="space-y-3"
-                  >
-                    {/* Quarterly Option */}
-                    <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <RadioGroup 
+                  value={selectedMembershipFrequency} 
+                  onValueChange={(value: string) => setSelectedMembershipFrequency(value as 'quarterly' | 'half-yearly' | 'annually')}
+                  className="space-y-3"
+                >
+                  {/* Quarterly Plan */}
+                  <div className="relative">
+                    <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors duration-200">
                       <RadioGroupItem value="quarterly" id="membership-quarterly" />
                       <Label htmlFor="membership-quarterly" className="flex-1 cursor-pointer">
                         <div className="flex justify-between items-center">
                           <div>
-                            <div className="font-medium">Quarterly Plan</div>
-                            <div className="text-sm text-gray-600">3 months billing cycle</div>
+                            <div className="font-semibold text-gray-900">Quarterly Plan</div>
+                            <div className="text-sm text-muted-foreground">3 months • Save 5%</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-yellow-700">
+                            <div className="text-xl font-bold text-yellow-700">
                               {countryPricing.currency} {countryPricing.quarterlyPrice}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {countryPricing.currency} {Math.round(countryPricing.quarterlyPrice / 3)}/month
+                            <div className="text-xs text-muted-foreground">
+                              ~{countryPricing.currency} {Math.round(countryPricing.quarterlyPrice / 3)}/month
                             </div>
                           </div>
                         </div>
                       </Label>
                     </div>
+                  </div>
 
-                    {/* Half-Yearly Option */}
-                    <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  {/* Half-Yearly Plan */}
+                  <div className="relative">
+                    <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-yellow-300 transition-colors duration-200">
                       <RadioGroupItem value="half-yearly" id="membership-half-yearly" />
                       <Label htmlFor="membership-half-yearly" className="flex-1 cursor-pointer">
                         <div className="flex justify-between items-center">
                           <div>
-                            <div className="font-medium">Half-Yearly Plan</div>
-                            <div className="text-sm text-gray-600">6 months billing cycle</div>
+                            <div className="font-semibold text-gray-900">Half-Yearly Plan</div>
+                            <div className="text-sm text-muted-foreground">6 months • Save 15%</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-yellow-700">
+                            <div className="text-xl font-bold text-yellow-700">
                               {countryPricing.currency} {countryPricing.halfYearlyPrice}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {countryPricing.currency} {Math.round(countryPricing.halfYearlyPrice / 6)}/month
+                            <div className="text-xs text-muted-foreground">
+                              ~{countryPricing.currency} {Math.round(countryPricing.halfYearlyPrice / 6)}/month
                             </div>
                           </div>
                         </div>
                       </Label>
                     </div>
+                  </div>
 
-                    {/* Annual Option */}
-                    <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  {/* Annual Plan - Most Popular */}
+                  <div className="relative">
+                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-600 z-10">
+                      Most Popular
+                    </Badge>
+                    <div className="flex items-center space-x-3 p-4 border-2 border-green-300 bg-green-50 rounded-xl hover:border-green-400 transition-colors duration-200">
                       <RadioGroupItem value="annually" id="membership-annually" />
                       <Label htmlFor="membership-annually" className="flex-1 cursor-pointer">
                         <div className="flex justify-between items-center">
                           <div>
-                            <div className="font-medium">Annual Plan</div>
-                            <div className="text-sm text-gray-600">12 months billing cycle</div>
-                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 mt-1">Best Value</Badge>
+                            <div className="font-semibold text-gray-900">Annual Plan</div>
+                            <div className="text-sm text-green-700">12 months • Save 25%</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-yellow-700">
+                            <div className="text-xl font-bold text-green-700">
                               {countryPricing.currency} {countryPricing.annualPrice}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {countryPricing.currency} {Math.round(countryPricing.annualPrice / 12)}/month
+                            <div className="text-xs text-green-600">
+                              ~{countryPricing.currency} {Math.round(countryPricing.annualPrice / 12)}/month
                             </div>
                           </div>
                         </div>
                       </Label>
                     </div>
-                  </RadioGroup>
+                  </div>
+                </RadioGroup>
+                
+                {/* Membership Action */}
+                <div className="pt-4 border-t">
+                  {selectedMembershipFrequency && !hasActiveMembership && (
+                    <Button
+                      onClick={handleMembershipActivation}
+                      className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      <Crown className="h-5 w-5 mr-2" />
+                      Activate {selectedMembershipFrequency.charAt(0).toUpperCase() + selectedMembershipFrequency.slice(1)} Plan
+                    </Button>
+                  )}
+                  
+                  {hasActiveMembership ? (
+                    <Alert className="border-green-200 bg-green-50">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-700">
+                        <strong>Membership Active!</strong> You're eligible for exclusive discounts on all engagement models.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Alert className="border-blue-200 bg-blue-50">
+                      <AlertCircle className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-blue-700">
+                        <strong>Unlock Benefits:</strong> Get exclusive discounts and priority support with membership.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
-                
-                {/* Membership Action Button */}
-                {selectedMembershipFrequency && !hasActiveMembership && (
-                  <Button
-                    onClick={handleMembershipActivation}
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                  >
-                    <Crown className="h-4 w-4 mr-2" />
-                    Activate {selectedMembershipFrequency.charAt(0).toUpperCase() + selectedMembershipFrequency.slice(1)} Membership
-                  </Button>
-                )}
-                
-                {hasActiveMembership && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-sm text-green-700">
-                      <strong>Membership Active:</strong> You're eligible for discounts on engagement pricing!
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                {!hasActiveMembership && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
-                      <strong>Membership Benefits:</strong> Get exclusive discounts on all engagement models when you activate membership.
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
             ) : (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  No membership data found for your organization type. Please configure membership fees in Master Data Portal.
+                <AlertDescription>
+                  No membership plans found. Please configure membership fees in Master Data Portal.
                 </AlertDescription>
               </Alert>
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Engagement Model Selection Section */}
-      <div className="lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Handshake className="h-5 w-5" />
-              Select Engagement Model & Pricing
-              <Badge variant="destructive" className="ml-2">Mandatory</Badge>
-              {hasActiveMembership && <Badge variant="default" className="bg-green-600 ml-2">Member Discounts Available</Badge>}
-            </CardTitle>
+        {/* Engagement Model Selection Card */}
+        <Card className="h-fit">
+          <CardHeader className="text-center pb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Handshake className="h-5 w-5 text-primary" />
+              <CardTitle className="text-xl">Engagement Models</CardTitle>
+              <Badge variant="destructive">Required</Badge>
+              {hasActiveMembership && <Badge className="bg-green-600 ml-1">Discounts Active</Badge>}
+            </div>
             <p className="text-sm text-muted-foreground">
-              Choose your engagement model and billing frequency. Pricing is customized for {organizationType} ({entityType}) in {country}.
+              Select your preferred engagement model and billing frequency
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-        {activeModels.length === 0 ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              No active engagement models are available. Please contact support or configure engagement models in the Master Data Portal.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-6">
-            {/* Step 1: Select Engagement Model */}
-            <div>
-              <h4 className="font-medium mb-4 flex items-center gap-2">
-                <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
-                Select Engagement Model
-              </h4>
-              
-              <RadioGroup 
-                value={selectedModel?.id || ''} 
-                onValueChange={handleModelSelect}
-                className="space-y-3"
-              >
-                {activeModels.map((model) => (
-                  <div key={model.id} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <RadioGroupItem value={model.id} id={model.id} />
-                    <Label htmlFor={model.id} className="flex-1 cursor-pointer">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h5 className="font-medium">{model.name}</h5>
-                          <p className="text-sm text-gray-600 mt-1">{model.description}</p>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline" className="text-xs">{organizationType}</Badge>
-                            <Badge variant="outline" className="text-xs">{entityType}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-
-            {/* Step 2: Select Billing Frequency */}
-            {selectedModel && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="font-medium mb-4 flex items-center gap-2">
-                    <span className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
-                    Select Billing Frequency
-                  </h4>
-                  
-                  <RadioGroup 
-                    value={selectedFrequency} 
-                    onValueChange={handleFrequencyChange}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                  >
-                    {(['quarterly', 'half-yearly', 'annually'] as const).map((frequency) => {
-                      const pricing = calculatePricing(selectedModel, frequency);
-                      const frequencyLabels = {
-                        'quarterly': 'Quarterly (3 months)',
-                        'half-yearly': 'Half-Yearly (6 months)', 
-                        'annually': 'Annually (12 months)'
-                      };
-                      
-                      return (
-                        <div key={frequency} className="flex items-center space-x-3">
-                          <RadioGroupItem value={frequency} id={frequency} disabled={!pricing} />
-                          <Label htmlFor={frequency} className="flex-1 cursor-pointer">
-                            <div className={`p-4 border rounded-lg ${pricing ? 'border-gray-200 hover:bg-gray-50' : 'border-gray-100 bg-gray-50'}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <h5 className={`font-medium ${!pricing ? 'text-gray-400' : ''}`}>
-                                  {frequencyLabels[frequency]}
-                                </h5>
-                                <Calendar className={`h-4 w-4 ${pricing ? 'text-gray-400' : 'text-gray-300'}`} />
-                              </div>
-                              
-                              {pricing ? (
-                                <>
-                                  <div className="text-lg font-bold text-blue-600">
-                                    {pricing.currency} {pricing.totalAmount.toLocaleString()}
-                                  </div>
-                                  {pricing.discountPercentage && (
-                                    <div className="text-sm text-green-600">
-                                      {pricing.discountPercentage}% discount included
-                                    </div>
-                                  )}
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {pricing.currency} {pricing.basePrice}/month effective rate
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="text-lg font-bold text-gray-400">
-                                    No Data Available
-                                  </div>
-                                  <div className="text-xs text-gray-400 mt-1">
-                                    Not configured in master data
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </Label>
-                        </div>
-                      );
-                    })}
-                  </RadioGroup>
-                </div>
-              </>
-            )}
-
-            {/* Step 3: Confirmation */}
-            {selectedModel && selectedFrequency && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="font-medium mb-4 flex items-center gap-2">
-                    <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
-                    Confirm Selection
-                  </h4>
-                  
-                  {(() => {
-                    const currentPricing = calculatePricing(selectedModel, selectedFrequency);
-                    
-                    if (!currentPricing) {
-                      return (
-                        <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            No pricing data available for {selectedModel.name} with {selectedFrequency} billing frequency. 
-                            Please configure pricing in Master Data or select a different option.
-                          </AlertDescription>
-                        </Alert>
-                      );
-                    }
-                    
-                    return (
-                      <>
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                          <h5 className="font-medium text-blue-800 mb-2">Your Selection Summary</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-blue-600">Engagement Model:</span>
-                              <div className="font-medium">{selectedModel.name}</div>
-                            </div>
-                            <div>
-                              <span className="text-blue-600">Billing Frequency:</span>
-                              <div className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</div>
-                            </div>
-                            <div>
-                              <span className="text-blue-600">Total Amount:</span>
-                              <div className="font-medium text-lg">
-                                {currentPricing.currency} {currentPricing.totalAmount.toLocaleString()}
-                                {currentPricing.discountPercentage && (
-                                  <span className="text-sm text-green-600 ml-2">
-                                    ({currentPricing.discountPercentage}% discount applied)
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-blue-600">Organization:</span>
-                              <div className="font-medium">{organizationType} - {entityType}</div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Alert>
-                          <DollarSign className="h-4 w-4" />
-                          <AlertDescription>
-                            <strong>Pricing Source:</strong> Master Data Configuration - {currentPricing.pricingTier}
-                          </AlertDescription>
-                        </Alert>
-                        
-                        <div className="flex gap-4 mt-4">
-                          <Button 
-                            onClick={confirmSelection}
-                            disabled={isConfirmed}
-                            className="flex items-center gap-2"
-                          >
-                            <Save className="h-4 w-4" />
-                            {isConfirmed ? 'Selection Confirmed ✅' : 'Confirm & Save Selection'}
-                          </Button>
-                          
-                          {isConfirmed && (
-                            <Button 
-                              variant="outline"
-                              onClick={() => {
-                                // Just unconfirm to allow modifications, keep current selections
-                                setIsConfirmed(false);
-                                
-                                toast({
-                                  title: "Modification Enabled",
-                                  description: "You can now change your engagement model and pricing frequency",
-                                });
-                              }}
-                            >
-                              Modify Selection
-                            </Button>
-                          )}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </>
-            )}
-
-            {/* No selection warning */}
-            {!selectedModel && (
+          
+          <CardContent className="space-y-6">
+            {activeModels.length === 0 ? (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Please select an engagement model to view pricing options. This selection is mandatory.
+                  No active engagement models are available. Please contact support or configure engagement models in the Master Data Portal.
                 </AlertDescription>
               </Alert>
+            ) : (
+              <div className="space-y-6">
+                {/* Step 1: Select Engagement Model */}
+                <div>
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-semibold">1</span>
+                    Choose Model
+                  </h4>
+                  
+                  <RadioGroup 
+                    value={selectedModel?.id || ''} 
+                    onValueChange={handleModelSelect}
+                    className="space-y-3"
+                  >
+                    {activeModels.map((model) => (
+                      <div key={model.id} className="relative">
+                        <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:border-primary/30 transition-colors duration-200">
+                          <RadioGroupItem value={model.id} id={model.id} />
+                          <Label htmlFor={model.id} className="flex-1 cursor-pointer">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className="font-semibold text-gray-900">{model.name}</h5>
+                                <p className="text-sm text-muted-foreground mt-1">{model.description}</p>
+                                <div className="flex gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">{organizationType}</Badge>
+                                  <Badge variant="outline" className="text-xs">{entityType}</Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* Step 2: Select Billing Frequency */}
+                {selectedModel && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-4 flex items-center gap-2">
+                        <span className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
+                        Choose Frequency
+                      </h4>
+                      
+                      <RadioGroup 
+                        value={selectedFrequency} 
+                        onValueChange={handleFrequencyChange}
+                        className="space-y-3"
+                      >
+                        {(['quarterly', 'half-yearly', 'annually'] as const).map((frequency) => {
+                          const pricing = calculatePricing(selectedModel, frequency);
+                          const frequencyLabels = {
+                            'quarterly': 'Quarterly',
+                            'half-yearly': 'Half-Yearly', 
+                            'annually': 'Annually'
+                          };
+                          const frequencyDesc = {
+                            'quarterly': '3 months',
+                            'half-yearly': '6 months', 
+                            'annually': '12 months'
+                          };
+                          
+                          return (
+                            <div key={frequency} className="relative">
+                              <div className={`flex items-center space-x-3 p-4 border-2 rounded-xl transition-colors duration-200 ${
+                                pricing ? 'hover:border-primary/30' : 'border-gray-100 bg-gray-50 cursor-not-allowed'
+                              }`}>
+                                <RadioGroupItem value={frequency} id={frequency} disabled={!pricing} />
+                                <Label htmlFor={frequency} className={`flex-1 ${!pricing ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <div className={`font-semibold ${!pricing ? 'text-gray-400' : 'text-gray-900'}`}>
+                                        {frequencyLabels[frequency]}
+                                      </div>
+                                      <div className={`text-sm ${!pricing ? 'text-gray-300' : 'text-muted-foreground'}`}>
+                                        {frequencyDesc[frequency]}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      {pricing ? (
+                                        <>
+                                          <div className="text-xl font-bold text-primary">
+                                            {pricing.currency} {pricing.totalAmount.toLocaleString()}
+                                          </div>
+                                          {hasActiveMembership && pricing.discountPercentage && (
+                                            <div className="text-sm text-green-600">
+                                              {pricing.discountPercentage}% member discount
+                                            </div>
+                                          )}
+                                          <div className="text-xs text-muted-foreground">
+                                            ~{pricing.currency} {pricing.basePrice}/month
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div className="text-lg font-bold text-gray-400">
+                                            No Data
+                                          </div>
+                                          <div className="text-xs text-gray-400">
+                                            Not configured
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </Label>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </RadioGroup>
+                    </div>
+                  </>
+                )}
+
+                {/* Step 3: Confirmation */}
+                {selectedModel && selectedFrequency && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold mb-4 flex items-center gap-2">
+                        <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
+                        Confirm Selection
+                      </h4>
+                      
+                      {(() => {
+                        const currentPricing = calculatePricing(selectedModel, selectedFrequency);
+                        
+                        if (!currentPricing) {
+                          return (
+                            <Alert variant="destructive">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>
+                                No pricing data available for {selectedModel.name} with {selectedFrequency} billing frequency. 
+                                Please configure pricing in Master Data or select a different option.
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        }
+                        
+                        return (
+                          <div className="space-y-4">
+                            <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                              <h5 className="font-semibold text-primary mb-3">Selection Summary</h5>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Model:</span>
+                                  <div className="font-medium">{selectedModel.name}</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Frequency:</span>
+                                  <div className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Total:</span>
+                                  <div className="font-bold text-lg text-primary">
+                                    {currentPricing.currency} {currentPricing.totalAmount.toLocaleString()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Discount:</span>
+                                  <div className="font-medium">
+                                    {hasActiveMembership && currentPricing.discountPercentage ? 
+                                      `${currentPricing.discountPercentage}% Applied` : 
+                                      'None'
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-3">
+                              <Button 
+                                onClick={confirmSelection}
+                                disabled={isConfirmed}
+                                className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                              >
+                                <Save className="h-4 w-4 mr-2" />
+                                {isConfirmed ? 'Confirmed ✅' : 'Confirm & Save'}
+                              </Button>
+                              
+                              {isConfirmed && (
+                                <Button 
+                                  variant="outline"
+                                  onClick={() => {
+                                    setIsConfirmed(false);
+                                    toast({
+                                      title: "Modification Enabled",
+                                      description: "You can now change your selections",
+                                    });
+                                  }}
+                                  className="px-6 rounded-xl border-2 hover:bg-gray-50"
+                                >
+                                  Modify
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
+
+                {/* No selection warning */}
+                {!selectedModel && (
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-700">
+                      Please select an engagement model to view pricing options. This selection is mandatory.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
             )}
-          </div>
-        )}
           </CardContent>
         </Card>
       </div>
