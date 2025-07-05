@@ -43,8 +43,9 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
   const [currentPricing, setCurrentPricing] = useState<PricingConfig | null>(null);
+  const [countryPricingConfigs, setCountryPricingConfigs] = useState<PricingConfig[]>([]);
 
-  // Load localStorage data on mount
+  // Load localStorage data and pricing configurations on mount
   useEffect(() => {
     const savedMembershipPlan = localStorage.getItem('selectedMembershipPlan');
     const savedEngagementModel = localStorage.getItem('selectedEngagementModel');
@@ -54,10 +55,28 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     if (savedEngagementModel) setSelectedEngagementModel(savedEngagementModel);
     if (savedPricingFrequency) setSelectedPricingFrequency(savedPricingFrequency);
 
-    // Load pricing data
-    const configs = PricingDataManager.getAllConfigurations();
-    setPricingConfigs(configs);
-  }, []);
+    // Load all pricing configurations
+    const allConfigs = PricingDataManager.getAllConfigurations();
+    setPricingConfigs(allConfigs);
+    
+    // Load country-specific pricing configurations
+    const countryConfigs = PricingDataManager.getPricingForCountry(country, organizationType, entityType);
+    setCountryPricingConfigs(countryConfigs);
+    
+    console.log('🔍 Loading pricing for:', { country, organizationType, entityType });
+    console.log('📊 Found configurations:', countryConfigs.length);
+    
+    // Set initial engagement model pricing if saved engagement model exists
+    if (savedEngagementModel) {
+      const pricing = PricingDataManager.getPricingForCountryOrgTypeAndEngagement(
+        country, 
+        organizationType, 
+        savedEngagementModel
+      );
+      setCurrentPricing(pricing);
+      console.log('💰 Initial pricing loaded:', pricing);
+    }
+  }, [country, organizationType, entityType]);
 
   // Update localStorage when selections change
   useEffect(() => {
@@ -103,33 +122,51 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     return `${currency} ${amount}`;
   };
 
-  // Membership plans data
-  const membershipPlans: PricingPlan[] = [
-    {
-      id: 'quarterly',
-      name: 'Quarterly',
-      duration: '3 months',
-      description: '',
-      price: currentPricing?.quarterlyFee,
-      currency: currentPricing?.currency || 'INR'
-    },
-    {
-      id: 'halfyearly',
-      name: 'Half-Yearly',
-      duration: '6 months',
-      description: '',
-      price: currentPricing?.halfYearlyFee,
-      currency: currentPricing?.currency || 'INR'
-    },
-    {
-      id: 'annual',
-      name: 'Annual',
-      duration: '12 months',
-      description: '',
-      price: currentPricing?.annualFee,
-      currency: currentPricing?.currency || 'INR'
+  // Get membership plans with dynamic pricing from master data
+  const getMembershipPlans = (): PricingPlan[] => {
+    // If no engagement model selected, try to get general pricing for the country/org type
+    let pricingConfig = currentPricing;
+    
+    if (!pricingConfig && countryPricingConfigs.length > 0) {
+      // Use the first available config for this country/org type
+      pricingConfig = countryPricingConfigs[0];
+      console.log('📋 Using first available config for membership plans:', pricingConfig);
     }
-  ];
+    
+    if (!pricingConfig) {
+      console.log('⚠️ No pricing configuration found for membership plans');
+      return [];
+    }
+
+    return [
+      {
+        id: 'quarterly',
+        name: 'Quarterly',
+        duration: '3 months',
+        description: `${pricingConfig.configName || 'Standard'} - 3 month plan`,
+        price: pricingConfig.quarterlyFee,
+        currency: pricingConfig.currency || 'INR'
+      },
+      {
+        id: 'halfyearly',
+        name: 'Half-Yearly',
+        duration: '6 months',
+        description: `${pricingConfig.configName || 'Standard'} - 6 month plan`,
+        price: pricingConfig.halfYearlyFee,
+        currency: pricingConfig.currency || 'INR'
+      },
+      {
+        id: 'annual',
+        name: 'Annual',
+        duration: '12 months',
+        description: `${pricingConfig.configName || 'Standard'} - 12 month plan`,
+        price: pricingConfig.annualFee,
+        currency: pricingConfig.currency || 'INR'
+      }
+    ].filter(plan => plan.price && plan.price > 0); // Only show plans with valid pricing
+  };
+
+  const membershipPlans = getMembershipPlans();
 
   // Engagement models data
   const engagementModels: EngagementModel[] = [
@@ -163,26 +200,52 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   ];
 
-  // Get pricing for display in column 4
-  const getPricingForDisplay = (frequency: string): number => {
-    if (!currentPricing) return 0;
+  // Get pricing for display in column 4 with detailed master data lookup
+  const getPricingForDisplay = (frequency: string): { price: number; currency: string; configName: string } => {
+    if (!selectedEngagementModel) {
+      return { price: 0, currency: 'INR', configName: 'No Model Selected' };
+    }
+
+    // Get the specific pricing configuration for the selected engagement model
+    const engagementPricing = PricingDataManager.getPricingForCountryOrgTypeAndEngagement(
+      country, 
+      organizationType, 
+      selectedEngagementModel
+    );
+
+    if (!engagementPricing) {
+      console.log('⚠️ No pricing found for engagement model:', selectedEngagementModel);
+      return { price: 0, currency: 'INR', configName: 'No Pricing Available' };
+    }
     
     let basePrice = 0;
     switch (frequency) {
       case 'quarterly':
-        basePrice = currentPricing.quarterlyFee || 0;
+        basePrice = engagementPricing.quarterlyFee || 0;
         break;
       case 'halfyearly':
-        basePrice = currentPricing.halfYearlyFee || 0;
+        basePrice = engagementPricing.halfYearlyFee || 0;
         break;
       case 'annual':
-        basePrice = currentPricing.annualFee || 0;
+        basePrice = engagementPricing.annualFee || 0;
         break;
       default:
-        basePrice = currentPricing.halfYearlyFee || 0;
+        basePrice = engagementPricing.halfYearlyFee || 0;
     }
     
-    return calculatePrice(basePrice);
+    const finalPrice = calculatePrice(basePrice);
+    console.log(`💰 Pricing for ${selectedEngagementModel} (${frequency}):`, {
+      basePrice,
+      finalPrice,
+      membershipDiscount: membershipStatus === 'active' ? '20%' : 'None',
+      config: engagementPricing.configName
+    });
+    
+    return { 
+      price: finalPrice, 
+      currency: engagementPricing.currency || 'INR',
+      configName: engagementPricing.configName || selectedEngagementModel
+    };
   };
 
   return (
@@ -349,11 +412,14 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                 {/* Featured pricing - Half-Yearly highlighted */}
                 <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                   <CardContent className="p-6 text-center">
-                    <div className="text-sm opacity-90 mb-1">{selectedEngagementModel}</div>
+                    <div className="text-sm opacity-90 mb-1">{getPricingForDisplay('halfyearly').configName}</div>
                     <div className="text-3xl font-bold mb-1">
-                      {formatCurrency(getPricingForDisplay('halfyearly'), currentPricing?.currency)}
+                      {formatCurrency(getPricingForDisplay('halfyearly').price, getPricingForDisplay('halfyearly').currency)}
                     </div>
                     <div className="text-sm opacity-90">Half-Yearly</div>
+                    {membershipStatus === 'active' && (
+                      <div className="text-xs opacity-75 mt-1">Member Discount Applied</div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -367,7 +433,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                           <span className="font-medium">Quarterly</span>
                         </div>
                         <span className="font-bold text-blue-600">
-                          {formatCurrency(getPricingForDisplay('quarterly'), currentPricing?.currency)}
+                          {formatCurrency(getPricingForDisplay('quarterly').price, getPricingForDisplay('quarterly').currency)}
                         </span>
                       </div>
                     </Label>
@@ -381,7 +447,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                           <span className="font-medium">Half-Yearly</span>
                         </div>
                         <span className="font-bold text-blue-600">
-                          {formatCurrency(getPricingForDisplay('halfyearly'), currentPricing?.currency)}
+                          {formatCurrency(getPricingForDisplay('halfyearly').price, getPricingForDisplay('halfyearly').currency)}
                         </span>
                       </div>
                     </Label>
@@ -393,12 +459,17 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                           <span className="font-medium">Annual</span>
                         </div>
                         <span className="font-bold text-blue-600">
-                          {formatCurrency(getPricingForDisplay('annual'), currentPricing?.currency)}
+                          {formatCurrency(getPricingForDisplay('annual').price, getPricingForDisplay('annual').currency)}
                         </span>
                       </div>
                     </Label>
                   </div>
                 </RadioGroup>
+
+                {/* Pricing Configuration Info */}
+                <div className="text-xs text-gray-500 text-center p-2 bg-gray-50 rounded">
+                  Pricing from: {getPricingForDisplay(selectedPricingFrequency).configName}
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
