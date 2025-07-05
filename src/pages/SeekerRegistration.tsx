@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import OrganizationRegistrationForm from '@/components/forms/OrganizationRegistrationForm';
+import SeekerRegistrationForm from '@/components/seeker-registration/SeekerRegistrationForm';
 
 const SeekerRegistration = () => {
   return (
@@ -30,10 +30,8 @@ const SeekerRegistration = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg border border-slate-200">
-          <OrganizationRegistrationForm />
-        </div>
+      <div className="py-4">
+        <SeekerRegistrationForm />
       </div>
 
       {/* Footer */}
