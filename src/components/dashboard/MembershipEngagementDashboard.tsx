@@ -42,8 +42,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
-  const [currentPricing, setCurrentPricing] = useState<PricingConfig | null>(null);
-  const [countryPricingConfigs, setCountryPricingConfigs] = useState<PricingConfig[]>([]);
+  const [membershipPricingConfigs, setMembershipPricingConfigs] = useState<PricingConfig[]>([]);
+  const [selectedMembershipConfig, setSelectedMembershipConfig] = useState<PricingConfig | null>(null);
 
   // Load localStorage data and pricing configurations on mount
   useEffect(() => {
@@ -55,49 +55,47 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     if (savedEngagementModel) setSelectedEngagementModel(savedEngagementModel);
     if (savedPricingFrequency) setSelectedPricingFrequency(savedPricingFrequency);
 
-    // Load all pricing configurations
+    // Load all pricing configurations for this country/organization/entity type
     const allConfigs = PricingDataManager.getAllConfigurations();
     setPricingConfigs(allConfigs);
     
-    // Load country-specific pricing configurations
-    const countryConfigs = PricingDataManager.getPricingForCountry(country, organizationType, entityType);
-    setCountryPricingConfigs(countryConfigs);
+    // Load membership pricing configurations - independent of engagement models
+    const membershipConfigs = PricingDataManager.getPricingForCountry(country, organizationType, entityType);
+    setMembershipPricingConfigs(membershipConfigs);
     
-    console.log('🔍 Loading pricing for:', { country, organizationType, entityType });
-    console.log('📊 Found configurations:', countryConfigs.length);
+    console.log('🔍 Loading membership pricing for:', { country, organizationType, entityType });
+    console.log('📊 Found membership configurations:', membershipConfigs.length);
     
-    // Set initial engagement model pricing if saved engagement model exists
-    if (savedEngagementModel) {
-      const pricing = PricingDataManager.getPricingForCountryOrgTypeAndEngagement(
-        country, 
-        organizationType, 
-        savedEngagementModel
-      );
-      setCurrentPricing(pricing);
-      console.log('💰 Initial pricing loaded:', pricing);
+    // Set initial membership config if we have saved plan
+    if (savedMembershipPlan && membershipConfigs.length > 0) {
+      const initialConfig = membershipConfigs[0]; // Use first available config
+      setSelectedMembershipConfig(initialConfig);
+      console.log('💰 Initial membership config loaded:', initialConfig);
     }
   }, [country, organizationType, entityType]);
 
-  // Update localStorage when selections change
+  // Update localStorage when membership plan changes
   useEffect(() => {
     if (selectedMembershipPlan) {
       localStorage.setItem('selectedMembershipPlan', selectedMembershipPlan);
-    }
-  }, [selectedMembershipPlan]);
-
-  useEffect(() => {
-    if (selectedEngagementModel) {
-      localStorage.setItem('selectedEngagementModel', selectedEngagementModel);
+      console.log('💾 Saved membership plan to localStorage:', selectedMembershipPlan);
       
-      // Update pricing based on engagement model selection
-      const pricing = PricingDataManager.getPricingForCountryOrgTypeAndEngagement(
-        country, 
-        organizationType, 
-        selectedEngagementModel
-      );
-      setCurrentPricing(pricing);
+      // Update membership config when plan changes
+      if (membershipPricingConfigs.length > 0) {
+        const config = membershipPricingConfigs[0]; // Use first available config for now
+        setSelectedMembershipConfig(config);
+        console.log('🔄 Updated membership config:', config);
+      }
     }
-  }, [selectedEngagementModel, country, organizationType]);
+  }, [selectedMembershipPlan, membershipPricingConfigs]);
+
+  // Update localStorage when engagement model changes (only if membership plan is selected)
+  useEffect(() => {
+    if (selectedEngagementModel && selectedMembershipPlan) {
+      localStorage.setItem('selectedEngagementModel', selectedEngagementModel);
+      console.log('💾 Saved engagement model to localStorage:', selectedEngagementModel);
+    }
+  }, [selectedEngagementModel, selectedMembershipPlan]);
 
   useEffect(() => {
     if (selectedPricingFrequency) {
@@ -122,23 +120,18 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     return `${currency} ${amount}`;
   };
 
-  // Get membership plans with dynamic pricing from master data
+  // Get membership plans with dynamic pricing from master data (independent of engagement model)
   const getMembershipPlans = (): PricingPlan[] => {
-    // If no engagement model selected, try to get general pricing for the country/org type
-    let pricingConfig = currentPricing;
-    
-    if (!pricingConfig && countryPricingConfigs.length > 0) {
-      // Use the first available config for this country/org type
-      pricingConfig = countryPricingConfigs[0];
-      console.log('📋 Using first available config for membership plans:', pricingConfig);
-    }
-    
-    if (!pricingConfig) {
-      console.log('⚠️ No pricing configuration found for membership plans');
+    if (membershipPricingConfigs.length === 0) {
+      console.log('⚠️ No membership pricing configurations found');
       return [];
     }
 
-    return [
+    // Use the first available pricing config for membership plans
+    const pricingConfig = membershipPricingConfigs[0];
+    console.log('📋 Using config for membership plans:', pricingConfig.configName);
+
+    const plans = [
       {
         id: 'quarterly',
         name: 'Quarterly',
@@ -164,6 +157,9 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         currency: pricingConfig.currency || 'INR'
       }
     ].filter(plan => plan.price && plan.price > 0); // Only show plans with valid pricing
+
+    console.log('🏷️ Generated membership plans:', plans.length);
+    return plans;
   };
 
   const membershipPlans = getMembershipPlans();
@@ -202,8 +198,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
   // Get pricing for display in column 4 with detailed master data lookup
   const getPricingForDisplay = (frequency: string): { price: number; currency: string; configName: string } => {
-    if (!selectedEngagementModel) {
-      return { price: 0, currency: 'INR', configName: 'No Model Selected' };
+    if (!selectedEngagementModel || !selectedMembershipPlan) {
+      return { price: 0, currency: 'INR', configName: 'Select Membership Plan First' };
     }
 
     // Get the specific pricing configuration for the selected engagement model
@@ -303,98 +299,116 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         </Card>
 
         {/* Column 2: Engagement Models */}
-        <Card className="h-fit">
+        <Card className={`h-fit ${!selectedMembershipPlan ? 'opacity-50 pointer-events-none' : ''}`}>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg flex items-center">
               <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
               Engagement Models
+              {!selectedMembershipPlan && (
+                <Badge variant="outline" className="ml-2 text-xs">Select Membership Plan First</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <RadioGroup value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
-              <div className="space-y-6">
-                {engagementModels.map((model) => (
-                  <div key={model.id}>
-                    <Label htmlFor={`engagement-${model.id}`} className="cursor-pointer">
-                      <Card className={`border-2 transition-all hover:shadow-sm ${
-                        selectedEngagementModel === model.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200'
-                      }`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start space-x-3">
-                            <RadioGroupItem 
-                              value={model.id} 
-                              id={`engagement-${model.id}`}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <div className="font-medium mb-2">{model.name}</div>
-                              <p className="text-sm text-gray-600 mb-3">{model.description}</p>
-                              <div className="flex gap-2">
-                                {model.tags.map((tag) => (
-                                  <Badge key={tag} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
+            {selectedMembershipPlan ? (
+              <RadioGroup value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
+                <div className="space-y-6">
+                  {engagementModels.map((model) => (
+                    <div key={model.id}>
+                      <Label htmlFor={`engagement-${model.id}`} className="cursor-pointer">
+                        <Card className={`border-2 transition-all hover:shadow-sm ${
+                          selectedEngagementModel === model.id 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200'
+                        }`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start space-x-3">
+                              <RadioGroupItem 
+                                value={model.id} 
+                                id={`engagement-${model.id}`}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium mb-2">{model.name}</div>
+                                <p className="text-sm text-gray-600 mb-3">{model.description}</p>
+                                <div className="flex gap-2">
+                                  {model.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Label>
-                  </div>
-                ))}
+                          </CardContent>
+                        </Card>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">Please select a membership plan first</p>
               </div>
-            </RadioGroup>
+            )}
           </CardContent>
         </Card>
 
         {/* Column 3: Advanced Models */}
-        <Card className="h-fit">
+        <Card className={`h-fit ${!selectedMembershipPlan ? 'opacity-50 pointer-events-none' : ''}`}>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg flex items-center">
               <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
               Advanced Models
+              {!selectedMembershipPlan && (
+                <Badge variant="outline" className="ml-2 text-xs">Select Membership Plan First</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <RadioGroup value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
-              <div className="space-y-6">
-                {advancedModels.map((model) => (
-                  <div key={model.id}>
-                    <Label htmlFor={`advanced-${model.id}`} className="cursor-pointer">
-                      <Card className={`border-2 transition-all hover:shadow-sm ${
-                        selectedEngagementModel === model.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200'
-                      }`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start space-x-3">
-                            <RadioGroupItem 
-                              value={model.id} 
-                              id={`advanced-${model.id}`}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <div className="font-medium mb-2">{model.name}</div>
-                              <p className="text-sm text-gray-600 mb-3">{model.description}</p>
-                              <div className="flex gap-2">
-                                {model.tags.map((tag) => (
-                                  <Badge key={tag} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
+            {selectedMembershipPlan ? (
+              <RadioGroup value={selectedEngagementModel} onValueChange={setSelectedEngagementModel}>
+                <div className="space-y-6">
+                  {advancedModels.map((model) => (
+                    <div key={model.id}>
+                      <Label htmlFor={`advanced-${model.id}`} className="cursor-pointer">
+                        <Card className={`border-2 transition-all hover:shadow-sm ${
+                          selectedEngagementModel === model.id 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200'
+                        }`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start space-x-3">
+                              <RadioGroupItem 
+                                value={model.id} 
+                                id={`advanced-${model.id}`}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium mb-2">{model.name}</div>
+                                <p className="text-sm text-gray-600 mb-3">{model.description}</p>
+                                <div className="flex gap-2">
+                                  {model.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Label>
-                  </div>
-                ))}
+                          </CardContent>
+                        </Card>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">Please select a membership plan first</p>
               </div>
-            </RadioGroup>
+            )}
           </CardContent>
         </Card>
 
@@ -407,7 +421,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedEngagementModel ? (
+            {selectedEngagementModel && selectedMembershipPlan ? (
               <div className="space-y-4">
                 {/* Featured pricing - Half-Yearly highlighted */}
                 <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
@@ -473,7 +487,12 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <p>Select an engagement model to view pricing</p>
+                <p className="text-sm">
+                  {!selectedMembershipPlan 
+                    ? "Select a membership plan first" 
+                    : "Select an engagement model to view pricing"
+                  }
+                </p>
               </div>
             )}
           </CardContent>
