@@ -321,6 +321,22 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           <CardContent>
             <RadioGroup value={selectedMembershipPlan} onValueChange={handleMembershipPlanChange}>
               <div className="space-y-4">
+                {/* Not a Member Option */}
+                <div className="space-y-2">
+                  <Label htmlFor="membership-not-member" className="cursor-pointer">
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="not-member" id="membership-not-member" />
+                      <div className="flex-1">
+                        <div className="font-medium">Not a Member</div>
+                        <div className="text-sm text-gray-500">No membership required</div>
+                        <div className="text-sm text-gray-600">
+                          Access basic features without membership
+                        </div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+                
                 {membershipPlans.map((plan) => (
                   <div key={plan.id} className="space-y-2">
                     <Label htmlFor={`membership-${plan.id}`} className="cursor-pointer">
