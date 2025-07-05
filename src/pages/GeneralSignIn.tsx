@@ -1,30 +1,31 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Users, LogIn, Building2, Shield } from 'lucide-react';
+import { Users, LogIn, Building2, Shield, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const SignIn = () => {
+const GeneralSignIn = () => {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    console.log('🔄 SignIn handleContinue called with selectedRole:', selectedRole);
+    console.log('🔄 GENERAL SIGNIN - handleContinue called with selectedRole:', selectedRole);
     
     if (selectedRole === 'seeking-organization') {
-      console.log('🏢 Navigating to solution seeking organization login');
-      navigate('/solution-seeking-org/login');
+      console.log('🏢 GENERAL SIGNIN - Navigating to solution seeking organization login');
+      navigate('/solution-seeking-org/login', { 
+        state: { fromGeneralSignin: true } 
+      });
     } else if (selectedRole === 'contributor') {
-      console.log('👥 Navigating to contributor login');
+      console.log('👥 GENERAL SIGNIN - Navigating to contributor login');
       navigate('/contributor-login');
     } else if (selectedRole === 'seeking-org-administrator') {
-      console.log('🔧 Navigating to seeking org administrator login');
+      console.log('🔧 GENERAL SIGNIN - Navigating to seeking org administrator login');
       navigate('/seeking-org-administrator-login');
     } else {
-      console.log('❌ No valid role selected');
+      console.log('❌ GENERAL SIGNIN - No valid role selected');
     }
   };
 
@@ -39,10 +40,10 @@ const SignIn = () => {
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              Sign In
+              General Sign In
             </CardTitle>
             <p className="text-gray-600 mt-2">
-              Select your role to continue
+              Select your user type to continue to the appropriate login screen
             </p>
           </CardHeader>
           
@@ -52,11 +53,11 @@ const SignIn = () => {
               onValueChange={setSelectedRole}
               className="space-y-4"
             >
-              {/* Solution Seeking Organization Option - First */}
+              {/* Solution Seeking Organization Option - Highlighted */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedRole === 'seeking-organization' 
-                  ? 'border-green-500 bg-green-50' 
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-green-500 bg-green-50 ring-2 ring-green-200' 
+                  : 'border-gray-200 hover:border-green-300 hover:bg-green-25'
               }`}>
                 <div className="flex items-start space-x-3">
                   <RadioGroupItem value="seeking-organization" id="seeking-organization" className="mt-1" />
@@ -65,16 +66,19 @@ const SignIn = () => {
                       <div className="flex items-center gap-2 mb-2">
                         <Building2 className="h-5 w-5 text-green-600" />
                         <span className="font-semibold text-gray-900">Solution Seeking Organization</span>
+                        {selectedRole === 'seeking-organization' && (
+                          <ArrowRight className="h-4 w-4 text-green-600 ml-auto" />
+                        )}
                       </div>
                       <p className="text-sm text-gray-600">
-                        Sign in as a solution seeking organization to manage your membership, engagement models, and organizational settings.
+                        Organizations looking for solutions to their business challenges. Access your dashboard, manage memberships, and explore engagement models.
                       </p>
                     </Label>
                   </div>
                 </div>
               </div>
 
-              {/* Contributor Option - Second */}
+              {/* Other User Types */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedRole === 'contributor' 
                   ? 'border-purple-500 bg-purple-50' 
@@ -89,14 +93,13 @@ const SignIn = () => {
                         <span className="font-semibold text-gray-900">Contributor</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Sign in as a contributor. A contributor could be a solution provider or solution assessor who offers expertise and evaluates solutions.
+                        Solution providers and assessors who offer expertise and evaluate solutions for organizations.
                       </p>
                     </Label>
                   </div>
                 </div>
               </div>
 
-              {/* Seeking Org Administrator Option - Third */}
               <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedRole === 'seeking-org-administrator' 
                   ? 'border-orange-500 bg-orange-50' 
@@ -108,10 +111,10 @@ const SignIn = () => {
                     <Label htmlFor="seeking-org-administrator" className="cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         <Shield className="h-5 w-5 text-orange-600" />
-                        <span className="font-semibold text-gray-900">Seeking Org Administrator</span>
+                        <span className="font-semibold text-gray-900">Organization Administrator</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Sign in as a seeking organization administrator to manage admin functions and organizational settings.
+                        Administrative access for managing organization settings and user accounts.
                       </p>
                     </Label>
                   </div>
@@ -126,7 +129,13 @@ const SignIn = () => {
                 className="w-full"
                 size="lg"
               >
-                Continue
+                {selectedRole === 'seeking-organization' 
+                  ? 'Continue to Organization Login' 
+                  : selectedRole 
+                    ? 'Continue to Login' 
+                    : 'Select User Type'
+                }
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               
               <Link to="/">
@@ -136,11 +145,36 @@ const SignIn = () => {
               </Link>
             </div>
 
+            {/* Quick Access for Solution Seeking Organizations */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Building2 className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-green-900 mb-1">
+                    Solution Seeking Organization?
+                  </h4>
+                  <p className="text-sm text-green-700 mb-2">
+                    Skip the selection and go directly to your login screen.
+                  </p>
+                  <Link to="/solution-seeking-org/login">
+                    <Button variant="outline" size="sm" className="border-green-300 text-green-700 hover:bg-green-100">
+                      Direct Login
+                      <ArrowRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-blue-600 hover:underline font-medium">
                   Sign Up
+                </Link>
+                {' | '}
+                <Link to="/seeker-registration" className="text-green-600 hover:underline font-medium">
+                  Register Organization
                 </Link>
               </p>
             </div>
@@ -151,4 +185,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default GeneralSignIn;

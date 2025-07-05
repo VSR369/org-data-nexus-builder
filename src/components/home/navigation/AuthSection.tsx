@@ -53,14 +53,14 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 bg-white" align="end">
               <DropdownMenuItem asChild>
-                <Link to="/signin" className="flex items-center">
+                <Link to="/general-signin" className="flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   General Sign In
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/seeking-org-admin-login" className="flex items-center">
+                <Link to="/solution-seeking-org/login" className="flex items-center">
                   <Building2 className="mr-2 h-4 w-4" />
                   Solution Seeking Organization
                 </Link>

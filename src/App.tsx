@@ -36,12 +36,17 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/signin" element={<SignIn />} />
+                <Route path="/general-signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/test" element={<TestPage />} />
                 <Route path="/seeker-registration" element={<SeekerRegistration />} />
                 <Route path="/seeker-login" element={<SeekerLogin />} />
                 <Route path="/contributor-login" element={<ContributorLogin />} />
+                
+                {/* Unified Solution Seeking Organization Routes */}
+                <Route path="/solution-seeking-org/login" element={<SeekingOrgAdminLogin />} />
                 <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
+                
                 <Route path="/seeking-org-administrator-login" element={<SeekingOrgAdministratorLogin />} />
                 <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
                 <Route path="/seeker-dashboard" element={<SeekerDashboard />} />

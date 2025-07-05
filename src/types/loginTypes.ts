@@ -27,6 +27,8 @@ export interface SolutionSeekingOrgLoginProps {
   showRegisterLink?: boolean;
   showHelpLink?: boolean;
   className?: string;
+  prefilledEmail?: string;
+  routeSource?: 'direct' | 'general-signin' | 'post-registration' | 'post-signup' | 'legacy';
 }
 
 export interface PasswordStrength {

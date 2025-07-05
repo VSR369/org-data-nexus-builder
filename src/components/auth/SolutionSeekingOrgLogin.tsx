@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useOrgLogin } from '@/hooks/useOrgLogin';
 import { SolutionSeekingOrgLoginProps } from '@/types/loginTypes';
 import LoginHeader from './LoginHeader';
@@ -12,6 +12,8 @@ const SolutionSeekingOrgLogin: React.FC<SolutionSeekingOrgLoginProps> = ({
   showRegisterLink = true,
   showHelpLink = true,
   className = '',
+  prefilledEmail = '',
+  routeSource = 'direct',
 }) => {
   const {
     form,
@@ -21,9 +23,17 @@ const SolutionSeekingOrgLogin: React.FC<SolutionSeekingOrgLoginProps> = ({
     togglePasswordVisibility,
   } = useOrgLogin({ onSuccess, redirectUrl });
 
+  // Pre-fill email when provided
+  useEffect(() => {
+    if (prefilledEmail && prefilledEmail.trim()) {
+      console.log('📧 LOGIN - Pre-filling email field:', prefilledEmail);
+      form.setValue('identifier', prefilledEmail.trim());
+    }
+  }, [prefilledEmail, form]);
+
   return (
     <div className={`space-y-6 ${className}`}>
-      <LoginHeader />
+      <LoginHeader routeSource={routeSource} />
       
       <LoginAlerts error={loginState.error} success={loginState.success} />
       
@@ -39,6 +49,7 @@ const SolutionSeekingOrgLogin: React.FC<SolutionSeekingOrgLoginProps> = ({
       <LoginFooter 
         showRegisterLink={showRegisterLink} 
         showHelpLink={showHelpLink} 
+        routeSource={routeSource}
       />
     </div>
   );
