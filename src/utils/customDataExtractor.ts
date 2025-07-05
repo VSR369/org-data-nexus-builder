@@ -133,6 +133,8 @@ export class CustomDataExtractor {
   private static isCustomData(data: any, category: string): boolean {
     if (!data) return false;
 
+    console.log(`🔍 Checking if ${category} is custom data:`, data);
+
     // Check for custom indicators
     const customIndicators = [
       'isCustom',
@@ -144,24 +146,42 @@ export class CustomDataExtractor {
       'user_'
     ];
 
+    // For industry segments - check nested structure
+    if (category === 'industrySegments' && data.industrySegments && Array.isArray(data.industrySegments)) {
+      const hasCustomData = data.industrySegments.length > this.getDefaultDataSize(category) ||
+        data.industrySegments.some((item: any) => 
+          typeof item === 'object' && 
+          (customIndicators.some(indicator => 
+            item.hasOwnProperty(indicator) || 
+            JSON.stringify(item).includes(indicator)
+          ) || (item.id && !item.id.toString().match(/^[1-3]$/))) // Not just default IDs 1,2,3
+        );
+      console.log(`✅ Industry segments custom check result: ${hasCustomData}`);
+      return hasCustomData;
+    }
+
     // For arrays
     if (Array.isArray(data)) {
-      return data.some(item => 
+      const hasCustomData = data.some(item => 
         typeof item === 'object' && 
         customIndicators.some(indicator => 
           item.hasOwnProperty(indicator) || 
           JSON.stringify(item).includes(indicator)
         )
       ) || data.length > this.getDefaultDataSize(category);
+      console.log(`✅ Array custom check result for ${category}: ${hasCustomData}`);
+      return hasCustomData;
     }
 
     // For objects
     if (typeof data === 'object') {
       const dataString = JSON.stringify(data);
-      return customIndicators.some(indicator => 
+      const hasCustomData = customIndicators.some(indicator => 
         data.hasOwnProperty(indicator) || 
         dataString.includes(indicator)
       ) || Object.keys(data).length > this.getDefaultDataSize(category);
+      console.log(`✅ Object custom check result for ${category}: ${hasCustomData}`);
+      return hasCustomData;
     }
 
     return false;
@@ -172,11 +192,11 @@ export class CustomDataExtractor {
    */
   private static getDefaultDataSize(category: string): number {
     const defaultSizes: Record<string, number> = {
-      'countries': 10,
-      'currencies': 5,
-      'industrySegments': 8,
+      'countries': 3,        // Reduced - only 3 defaults
+      'currencies': 2,       // Reduced - only 2 defaults  
+      'industrySegments': 3, // Reduced - only 3 defaults
       'organizationTypes': 5,
-      'entityTypes': 4,
+      'entityTypes': 2,      // Reduced - only 2 defaults
       'departments': 6,
       'domainGroups': 0,
       'challengeStatuses': 4,

@@ -67,25 +67,17 @@ export const organizationTypesDataManager = new LegacyDataManager<string[]>({
   version: 1
 });
 
+// Import the service
+import { OrganizationTypeService } from '@/utils/masterData/organizationTypeService';
+
 // Override loadData to check for custom data first
 const originalOrgTypesLoadData = organizationTypesDataManager.loadData.bind(organizationTypesDataManager);
 organizationTypesDataManager.loadData = function() {
   // Check for custom-only mode first
   const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
   if (isCustomMode) {
-    console.log('🎯 Custom-only mode detected, loading custom organization types...');
-    const customData = localStorage.getItem('custom_organizationTypes');
-    if (customData) {
-      try {
-        const parsed = JSON.parse(customData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          console.log('✅ Using custom organization types:', parsed.length);
-          return parsed;
-        }
-      } catch (error) {
-        console.error('❌ Failed to parse custom organization types data:', error);
-      }
-    }
+    console.log('🎯 Custom-only mode detected, using OrganizationTypeService...');
+    return OrganizationTypeService.getOrganizationTypes();
   }
   
   // Fallback to original method

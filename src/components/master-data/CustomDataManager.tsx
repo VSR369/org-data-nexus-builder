@@ -45,6 +45,61 @@ const CustomDataManager: React.FC = () => {
     });
   }, []);
 
+  const checkServiceStatus = (category: string, serviceName: string) => {
+    const isCustomMode = CustomDataExtractor.isCustomOnlyMode();
+    const customKey = `custom_${category}`;
+    const regularKey = `master_data_${category}`;
+    
+    const hasCustomData = !!localStorage.getItem(customKey);
+    const hasRegularData = !!localStorage.getItem(regularKey);
+    
+    return {
+      serviceName,
+      isCustomMode,
+      hasCustomData,
+      hasRegularData,
+      usingCustomData: isCustomMode && hasCustomData,
+      status: isCustomMode && hasCustomData ? 'CUSTOM' : 'DEFAULT/MOCK'
+    };
+  };
+
+  const handleDebugDataStatus = () => {
+    console.log('🔍 === COMPREHENSIVE DATA STATUS DEBUG ===');
+    
+    // Check each service individually
+    const serviceStatus = {
+      currencies: checkServiceStatus('currencies', 'CurrencyService'),
+      industrySegments: checkServiceStatus('industrySegments', 'IndustrySegmentService'), 
+      countries: checkServiceStatus('countries', 'CountriesDataManager'),
+      organizationTypes: checkServiceStatus('organizationTypes', 'OrganizationTypeService'),
+      entityTypes: checkServiceStatus('entityTypes', 'EntityTypeService')
+    };
+    
+    console.log('📊 Service Status Report:', serviceStatus);
+    
+    // Check extraction report details
+    const extractionReport = CustomDataExtractor.getExtractionReport();
+    if (extractionReport) {
+      console.log('📋 Extraction Report:', {
+        totalCustomConfigurations: extractionReport.totalCustomConfigurations,
+        customDataCategories: extractionReport.customDataCategories,
+        removedDefaultKeys: extractionReport.removedDefaultKeys,
+        preservedCustomKeys: extractionReport.preservedCustomKeys
+      });
+      
+      console.log('🔍 "Removed Default Keys" Analysis:');
+      console.log('These keys were identified as default/mock data and removed:', extractionReport.removedDefaultKeys);
+      console.log('These keys contain your custom configurations:', extractionReport.preservedCustomKeys);
+    }
+    
+    CustomDataExtractor.debugDataStatus();
+    
+    toast({
+      title: "Debug Analysis Complete ✅",
+      description: `Analyzed ${Object.keys(serviceStatus).length} services. Check console for detailed status report including "removed default keys" explanation.`,
+    });
+  };
+
   const handleExtractCustomData = async () => {
     setIsLoading(true);
     
@@ -243,28 +298,22 @@ const CustomDataManager: React.FC = () => {
             </Button>
             
             <Button 
-      onClick={handleLoadCustomData}
-      variant="outline"
-      className="flex items-center gap-2"
-    >
-      <FileText className="h-4 w-4" />
-      Load Custom Data
-    </Button>
-    
-    <Button 
-      onClick={() => {
-        CustomDataExtractor.debugDataStatus();
-        toast({
-          title: "Debug Info Logged",
-          description: "Check the browser console for detailed custom data status",
-        });
-      }}
-      variant="outline"
-      className="flex items-center gap-2"
-    >
-      <Settings className="h-4 w-4" />
-      Debug Status
-    </Button>
+              onClick={handleLoadCustomData}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Load Custom Data
+            </Button>
+            
+            <Button 
+              onClick={handleDebugDataStatus}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Debug Status & Analysis
+            </Button>
             
             {isCustomMode && (
               <Button 
@@ -302,7 +351,7 @@ const CustomDataManager: React.FC = () => {
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-semibold">3</div>
+              <div className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-semibale">3</div>
               <div>
                 <strong>Optimization:</strong> Creates a clean, custom-only storage structure that contains only your configured data.
               </div>
