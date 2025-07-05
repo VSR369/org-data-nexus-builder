@@ -23,9 +23,6 @@ const SignIn = () => {
     } else if (selectedRole === 'seeking-org-administrator') {
       console.log('🔧 Navigating to seeking org administrator login');
       navigate('/seeking-org-admin-login');
-    } else if (selectedRole === 'org-administrator') {
-      console.log('🛡️ Navigating to organization administrator login');
-      navigate('/seeking-org-admin-login');
     } else {
       console.log('❌ No valid role selected');
     }
@@ -115,28 +112,6 @@ const SignIn = () => {
                       </div>
                       <p className="text-sm text-gray-600">
                         Sign in as a seeking organization administrator to manage admin functions and organizational settings.
-                      </p>
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Solution Seeking Org Administrator Option - Fourth */}
-              <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                selectedRole === 'org-administrator' 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}>
-                <div className="flex items-start space-x-3">
-                  <RadioGroupItem value="org-administrator" id="org-administrator" className="mt-1" />
-                  <div className="flex-1">
-                    <Label htmlFor="org-administrator" className="cursor-pointer">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Shield className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-gray-900">Solution Seeking Org Administrator</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Sign in as an administrator to manage organizational users, permissions, and administrative settings.
                       </p>
                     </Label>
                   </div>
