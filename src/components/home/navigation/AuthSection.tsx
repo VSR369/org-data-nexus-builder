@@ -66,7 +66,7 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/seeking-org-admin-login" className="flex items-center">
+                <Link to="/seeking-org-administrator-login" className="flex items-center">
                   <Shield className="mr-2 h-4 w-4" />
                   Seeking Org Administrator
                 </Link>

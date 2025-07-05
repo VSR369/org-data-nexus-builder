@@ -14,6 +14,7 @@ import SeekerRegistration from './pages/SeekerRegistration';
 import SeekerLogin from './pages/SeekerLogin';
 import ContributorLogin from './pages/ContributorLogin';
 import SeekingOrgAdminLogin from './pages/SeekingOrgAdminLogin';
+import SeekingOrgAdministratorLogin from './pages/SeekingOrgAdministratorLogin';
 import ContributorEnrollment from './pages/ContributorEnrollment';
 import SeekerDashboard from './pages/SeekerDashboard';
 import MasterDataPortal from './pages/MasterDataPortal';
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/seeker-login" element={<SeekerLogin />} />
                 <Route path="/contributor-login" element={<ContributorLogin />} />
                 <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
+                <Route path="/seeking-org-administrator-login" element={<SeekingOrgAdministratorLogin />} />
                 <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
                 <Route path="/seeker-dashboard" element={<SeekerDashboard />} />
                 <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />

@@ -22,7 +22,7 @@ const SignIn = () => {
       navigate('/contributor-login');
     } else if (selectedRole === 'seeking-org-administrator') {
       console.log('🔧 Navigating to seeking org administrator login');
-      navigate('/seeking-org-admin-login');
+      navigate('/seeking-org-administrator-login');
     } else {
       console.log('❌ No valid role selected');
     }
