@@ -208,10 +208,10 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   ];
 
-  // Get pricing for display in column 4 with detailed master data lookup
-  const getPricingForDisplay = (): { price: number; currency: string; configName: string; isPercentage: boolean } => {
-    if (!selectedEngagementModel || !selectedMembershipPlan) {
-      return { price: 0, currency: 'INR', configName: 'Select Membership Plan First', isPercentage: false };
+  // Get pricing for all frequencies from master data
+  const getAllFrequencyPricing = (): { quarterly: number; halfYearly: number; annual: number; currency: string; configName: string; isPercentage: boolean } => {
+    if (!selectedEngagementModel) {
+      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'Select Engagement Model', isPercentage: false };
     }
 
     // Get the specific pricing configuration for the selected engagement model
@@ -223,61 +223,45 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
 
     if (!engagementPricing) {
       console.log('⚠️ No pricing found for engagement model:', selectedEngagementModel);
-      return { price: 0, currency: 'INR', configName: 'No Pricing Available', isPercentage: false };
+      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'No Pricing Available', isPercentage: false };
     }
     
     // For fee-based engagement models (Market Place, Aggregator, etc.), use percentage pricing
     const isFeeBasedModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(selectedEngagementModel);
     
     if (isFeeBasedModel) {
-      // Get the percentage based on selected membership plan cycle
-      let percentageFee = 0;
-      let cycleName = '';
-      
-      switch (selectedMembershipPlan) {
-        case 'quarterly':
-          percentageFee = engagementPricing.quarterlyFee || 0;
-          cycleName = 'Quarterly';
-          break;
-        case 'half-yearly':
-          percentageFee = engagementPricing.halfYearlyFee || 0;
-          cycleName = 'Half-Yearly';
-          break;
-        case 'annual':
-          percentageFee = engagementPricing.annualFee || 0;
-          cycleName = 'Annual';
-          break;
-        default:
-          percentageFee = engagementPricing.annualFee || 0;
-          cycleName = 'Annual';
-      }
-      
-      console.log(`💰 ${cycleName} percentage fee for ${selectedEngagementModel}:`, {
-        percentageFee,
-        membershipDiscount: membershipStatus === 'active' ? '20%' : 'None',
+      console.log(`💰 All frequency pricing for ${selectedEngagementModel}:`, {
+        quarterly: engagementPricing.quarterlyFee || 0,
+        halfYearly: engagementPricing.halfYearlyFee || 0,
+        annual: engagementPricing.annualFee || 0,
         config: engagementPricing.configName
       });
       
       return { 
-        price: percentageFee, 
+        quarterly: engagementPricing.quarterlyFee || 0,
+        halfYearly: engagementPricing.halfYearlyFee || 0,
+        annual: engagementPricing.annualFee || 0,
         currency: engagementPricing.currency || 'INR',
-        configName: `${engagementPricing.configName || selectedEngagementModel} - ${cycleName}`,
+        configName: engagementPricing.configName || selectedEngagementModel,
         isPercentage: true
       };
     } else {
       // For fixed pricing models (Platform as a Service), use currency amounts
-      const basePrice = engagementPricing.annualFee || 0;
-      const finalPrice = calculatePrice(basePrice);
+      const quarterlyPrice = calculatePrice(engagementPricing.quarterlyFee || 0);
+      const halfYearlyPrice = calculatePrice(engagementPricing.halfYearlyFee || 0);
+      const annualPrice = calculatePrice(engagementPricing.annualFee || 0);
       
-      console.log(`💰 Annual pricing for ${selectedEngagementModel}:`, {
-        basePrice,
-        finalPrice,
-        membershipDiscount: membershipStatus === 'active' ? '20%' : 'None',
+      console.log(`💰 All frequency pricing for ${selectedEngagementModel}:`, {
+        quarterly: quarterlyPrice,
+        halfYearly: halfYearlyPrice,
+        annual: annualPrice,
         config: engagementPricing.configName
       });
       
       return { 
-        price: finalPrice, 
+        quarterly: quarterlyPrice,
+        halfYearly: halfYearlyPrice,
+        annual: annualPrice,
         currency: engagementPricing.currency || 'INR',
         configName: engagementPricing.configName || selectedEngagementModel,
         isPercentage: false
@@ -478,42 +462,93 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedEngagementModel && selectedMembershipPlan ? (
+            {selectedEngagementModel ? (
               <div className="space-y-4">
-                 {/* Annual Pricing Display */}
-                 <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                   <CardContent className="p-6 text-center">
-                     <div className="text-sm opacity-90 mb-1">{getPricingForDisplay().configName}</div>
-                      <div className="text-3xl font-bold mb-1">
-                        {getPricingForDisplay().isPercentage 
-                          ? `${getPricingForDisplay().price}%` 
-                          : formatCurrency(getPricingForDisplay().price, getPricingForDisplay().currency)
-                        }
+                {(() => {
+                  const pricing = getAllFrequencyPricing();
+                  return (
+                    <>
+                      {/* Configuration Info */}
+                      <div className="text-sm text-center p-2 bg-gray-50 rounded mb-4">
+                        {pricing.configName}
                       </div>
-                      <div className="text-sm opacity-90">
-                        {getPricingForDisplay().isPercentage 
-                          ? 'of Solution Fee' 
-                          : 'Annual'
-                        }
-                      </div>
-                     {membershipStatus === 'active' && (
-                       <div className="text-xs opacity-75 mt-1">Member Discount Applied</div>
-                     )}
-                   </CardContent>
-                 </Card>
+                      
+                      {/* All Frequency Pricing Display */}
+                      <div className="space-y-3">
+                        {/* Quarterly */}
+                        <Card className={`border-2 transition-all ${
+                          selectedMembershipPlan === 'quarterly' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200'
+                        }`}>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-sm text-gray-600 mb-1">Quarterly</div>
+                            <div className="text-2xl font-bold">
+                              {pricing.isPercentage 
+                                ? `${pricing.quarterly}%` 
+                                : formatCurrency(pricing.quarterly, pricing.currency)
+                              }
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {pricing.isPercentage ? 'of Solution Fee' : '3 months'}
+                            </div>
+                          </CardContent>
+                        </Card>
 
-                 {/* Pricing Configuration Info */}
-                 <div className="text-xs text-gray-500 text-center p-2 bg-gray-50 rounded">
-                   Pricing from: {getPricingForDisplay().configName}
-                 </div>
+                        {/* Half-Yearly */}
+                        <Card className={`border-2 transition-all ${
+                          selectedMembershipPlan === 'half-yearly' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200'
+                        }`}>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-sm text-gray-600 mb-1">Half-Yearly</div>
+                            <div className="text-2xl font-bold">
+                              {pricing.isPercentage 
+                                ? `${pricing.halfYearly}%` 
+                                : formatCurrency(pricing.halfYearly, pricing.currency)
+                              }
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {pricing.isPercentage ? 'of Solution Fee' : '6 months'}
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Annual */}
+                        <Card className={`border-2 transition-all ${
+                          selectedMembershipPlan === 'annual' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200'
+                        }`}>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-sm text-gray-600 mb-1">Annual</div>
+                            <div className="text-2xl font-bold">
+                              {pricing.isPercentage 
+                                ? `${pricing.annual}%` 
+                                : formatCurrency(pricing.annual, pricing.currency)
+                              }
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {pricing.isPercentage ? 'of Solution Fee' : '12 months'}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {membershipStatus === 'active' && (
+                        <div className="text-xs text-center mt-2 p-2 bg-green-50 text-green-700 rounded">
+                          Member Discount Applied
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <p className="text-sm">
-                  {!selectedMembershipPlan 
-                    ? "Select a membership plan first" 
-                    : "Select an engagement model to view pricing"
-                  }
+                  Select an engagement model to view pricing
                 </p>
               </div>
             )}
