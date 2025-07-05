@@ -18,6 +18,7 @@ import PricingConfig from "./master-data/PricingConfig";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import SolutionSeekersValidation from "./master-data/SolutionSeekersValidation";
+import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
 import { CompleteDataResetButton } from "./admin/CompleteDataResetButton";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
 import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
@@ -75,7 +76,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'master-data-diagnostics':
         return <MasterDataDiagnostics />;
       case 'admin-creation':
-        return <SolutionSeekersValidation />;
+        return <AdminCreationDiagnostic />;
       default:
         return <DomainGroupsConfig />;
     }
