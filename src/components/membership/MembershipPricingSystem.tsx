@@ -329,8 +329,35 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       const displayInfo = getDisplayAmount(state.selected_frequency, pricing);
       const paymentAmount = displayInfo.amount; // Use the calculated amount (discounted if applicable)
       
-      // Add payment record
-      addPaymentRecord({
+      // Create comprehensive payment information for logging
+      const paymentDetails = {
+        engagementModel: state.selected_engagement_model,
+        engagementModelName: getEngagementModelName(state.selected_engagement_model),
+        billingFrequency: state.selected_frequency,
+        amount: paymentAmount,
+        currency: pricing.currency || 'INR',
+        originalAmount: displayInfo.originalAmount,
+        discountApplied: displayInfo.discountApplied,
+        discountPercentage: displayInfo.discountApplied ? pricing.discountPercentage : 0,
+        membershipStatus: state.membership_status,
+        organizationType: organizationType,
+        entityType: entityType,
+        country: country,
+        isPaaSModel: isPaaSModel,
+        pricingConfig: {
+          id: pricing.id,
+          quarterlyFee: pricing.quarterlyFee,
+          halfYearlyFee: pricing.halfYearlyFee,
+          annualFee: pricing.annualFee
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Log comprehensive payment information before processing
+      console.log('💳 Starting Engagement Payment:', paymentDetails);
+      
+      // Create basic payment record (only supported fields)
+      const paymentRecord = addPaymentRecord({
         type: 'engagement',
         amount: paymentAmount,
         currency: pricing.currency || 'INR',
@@ -340,11 +367,26 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Update payment record to completed
+      updatePaymentRecord(paymentRecord.id, { 
+        status: 'completed'
+      });
+      
+      // Log successful payment completion with all details
+      console.log('✅ Engagement Payment Completed Successfully:', {
+        ...paymentDetails,
+        paymentId: paymentRecord.id,
+        completedAt: new Date().toISOString(),
+        paymentMethod: 'simulated'
+      });
+      
       toast({
         title: "Payment Successful",
-        description: `Your ${state.selected_engagement_model} plan has been activated!${displayInfo.discountApplied ? ' (Member discount applied)' : ''}`
+        description: `Your ${getEngagementModelName(state.selected_engagement_model)} plan has been activated!${displayInfo.discountApplied ? ' (Member discount applied)' : ''}`
       });
+      
     } catch (error) {
+      console.error('❌ Engagement payment error:', error);
       toast({
         variant: "destructive",
         title: "Payment Failed",
@@ -623,20 +665,72 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                 </RadioGroup>
 
                 {state.selected_frequency && (
-                  <Button 
-                    className="w-full" 
-                    onClick={handleEngagementPayment}
-                    disabled={engagementPaymentLoading}
-                  >
-                    {engagementPaymentLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      `Activate ${getEngagementModelName(state.selected_engagement_model)}`
-                    )}
-                  </Button>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="text-sm font-medium mb-2">Payment Summary</div>
+                      {(() => {
+                        const displayInfo = getDisplayAmount(state.selected_frequency, engagementPricing);
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Engagement Model:</span>
+                              <span className="font-medium">{getEngagementModelName(state.selected_engagement_model)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Billing Frequency:</span>
+                              <span className="font-medium capitalize">{state.selected_frequency.replace('-', ' ')}</span>
+                            </div>
+                            {displayInfo.discountApplied && displayInfo.originalAmount && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm">Original Price:</span>
+                                <span className="text-gray-500 line-through">
+                                  {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">
+                                {displayInfo.discountApplied ? 'Discounted Price:' : 'Total Amount:'}
+                              </span>
+                              <span className="font-bold text-lg text-green-600">
+                                {isPaaSModel 
+                                  ? formatCurrency(displayInfo.amount, engagementPricing.currency)
+                                  : `${displayInfo.amount}% of solution fee`
+                                }
+                              </span>
+                            </div>
+                            {displayInfo.discountApplied && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-green-600">Member Discount:</span>
+                                <span className="text-green-600 font-medium">
+                                  -{engagementPricing.discountPercentage}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={handleEngagementPayment}
+                      disabled={engagementPaymentLoading}
+                    >
+                      {engagementPaymentLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Processing Payment...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Pay & Activate {getEngagementModelName(state.selected_engagement_model)}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
             ) : state.selected_engagement_model ? (
