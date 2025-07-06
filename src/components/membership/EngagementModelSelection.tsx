@@ -1,0 +1,71 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+
+interface EngagementModel {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+interface EngagementModelSelectionProps {
+  membershipType: string;
+  selectedEngagementModel: string;
+  engagementModels: EngagementModel[];
+  onEngagementModelChange: (value: string) => void;
+}
+
+export const EngagementModelSelection: React.FC<EngagementModelSelectionProps> = ({
+  membershipType,
+  selectedEngagementModel,
+  engagementModels,
+  onEngagementModelChange
+}) => {
+  return (
+    <Card className={membershipType ? '' : 'opacity-50'}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-primary rounded-full" />
+          Engagement Models
+          {!membershipType && (
+            <Badge variant="outline" className="text-xs">Select Plan First</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {membershipType ? (
+          <RadioGroup 
+            value={selectedEngagementModel || ''} 
+            onValueChange={onEngagementModelChange}
+          >
+            <div className="space-y-3">
+              {engagementModels.map((model) => (
+                <Label key={model.id} htmlFor={`model-${model.id}`} className="cursor-pointer">
+                  <div className={`flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent transition-colors ${
+                    selectedEngagementModel === model.id ? 'border-primary bg-primary/5' : ''
+                  }`}>
+                    <RadioGroupItem value={model.id} id={`model-${model.id}`} className="mt-1" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {model.icon}
+                        <span className="font-medium">{model.name}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{model.description}</p>
+                    </div>
+                  </div>
+                </Label>
+              ))}
+            </div>
+          </RadioGroup>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">Select a membership plan first</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
