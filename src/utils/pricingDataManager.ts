@@ -170,30 +170,9 @@ export const getPricingConfigs = (): PricingConfig[] => {
   // CHECK FOR CUSTOM-ONLY MODE FIRST
   const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
   if (isCustomMode) {
-    console.log('🎯 Custom-only mode detected, loading custom pricing configs...');
+    console.log('🎯 Custom-only mode detected, loading ONLY custom pricing configs...');
     
-    // Try loading from the actual master data configurations first
-    try {
-      const configs = pricingDataManager.loadData();
-      console.log('📊 Loaded configs from master data manager:', configs?.length || 0);
-      console.log('🔍 Individual master data configs:', configs?.map((config: any) => ({
-        id: config.id,
-        engagementModel: config.engagementModel,
-        membershipStatus: config.membershipStatus,
-        quarterly: config.quarterlyFee,
-        halfYearly: config.halfYearlyFee,
-        annual: config.annualFee
-      })));
-      
-      if (Array.isArray(configs) && configs.length > 0) {
-        console.log('✅ Using master data pricing configs:', configs.length);
-        return configs;
-      }
-    } catch (error) {
-      console.error('❌ Error loading from master data manager:', error);
-    }
-    
-    // Fallback to custom_pricing from localStorage
+    // PRIORITIZE custom_pricing from localStorage (user's custom configurations)
     const customData = localStorage.getItem('custom_pricing');
     console.log('📄 Raw custom_pricing data:', customData);
     if (customData !== null) {
@@ -204,17 +183,42 @@ export const getPricingConfigs = (): PricingConfig[] => {
           id: config.id,
           engagementModel: config.engagementModel,
           membershipStatus: config.membershipStatus,
+          country: config.country,
+          currency: config.currency,
+          organizationType: config.organizationType,
           quarterly: config.quarterlyFee,
           halfYearly: config.halfYearlyFee,
           annual: config.annualFee
         })));
         if (Array.isArray(parsed)) {
-          console.log('✅ Using custom pricing configs (including empty array):', parsed.length);
-          return parsed; // Return even if empty array - this preserves deletions
+          console.log('✅ Using CUSTOM pricing configs ONLY:', parsed.length);
+          return parsed; // Return custom data - this is the user's configured data
         }
       } catch (error) {
         console.error('❌ Failed to parse custom pricing data:', error);
       }
+    }
+    
+    // Only if no custom_pricing exists, check master data manager as fallback
+    try {
+      const configs = pricingDataManager.loadData();
+      console.log('📊 Fallback: Loaded configs from master data manager:', configs?.length || 0);
+      
+      if (Array.isArray(configs) && configs.length > 0) {
+        // Filter out any default configs that might have been stored
+        const customConfigs = configs.filter(config => 
+          config.country !== 'Global' && 
+          config.organizationType !== 'All' && 
+          config.entityType !== 'All'
+        );
+        
+        if (customConfigs.length > 0) {
+          console.log('✅ Using filtered custom configs from master data:', customConfigs.length);
+          return customConfigs;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading from master data manager:', error);
     }
     
     // In custom-only mode, don't fall back to defaults if no custom data

@@ -19,9 +19,23 @@ const PricingConfig = () => {
   useEffect(() => {
     console.log('🔄 PricingConfig: Loading comprehensive pricing data...');
     
-    // Load pricing configurations
-    const loadedConfigs = PricingDataManager.getAllConfigurations();
-    setConfigs(loadedConfigs);
+    // Force custom pricing mode to ensure user's custom data is preserved
+    const initializeCustomMode = async () => {
+      const { ForceCustomPricingMode } = await import('@/utils/forceCustomPricingMode');
+      ForceCustomPricingMode.enableCustomPricingMode();
+      ForceCustomPricingMode.logCurrentPricingState();
+      
+      // Load pricing configurations after ensuring custom mode
+      const loadedConfigs = PricingDataManager.getAllConfigurations();
+      setConfigs(loadedConfigs);
+      
+      console.log('✅ Custom pricing configurations loaded:', loadedConfigs.length);
+      loadedConfigs.forEach((config, index) => {
+        console.log(`  ${index + 1}. ${config.engagementModel} (${config.membershipStatus}) - ${config.country}/${config.currency} - Q:${config.quarterlyFee}/H:${config.halfYearlyFee}/A:${config.annualFee}`);
+      });
+    };
+    
+    initializeCustomMode().catch(console.error);
     
     // Load organization types
     const loadedOrgTypes = organizationTypesDataManager.loadData();
