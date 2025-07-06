@@ -20,26 +20,23 @@ const MasterDataPortal = () => {
   };
 
   const handleRestoreCustomData = async () => {
-    console.log('🔧 User requested comprehensive data restoration...');
+    console.log('🔧 User requested custom data restoration (custom-only mode)...');
     
-    // Use the enhanced restoration processor
-    const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
-    const result = await MasterDataRestoreProcessor.restoreAllCustomData();
+    // Use the custom data restoration utility
+    const { CustomDataRestoration } = await import('@/utils/customDataRestoration');
+    const result = await CustomDataRestoration.restoreAllCustomDataOnly();
     
     if (result.customDataFound.length > 0) {
       toast({
         title: "Custom Data Restored",
-        description: `Successfully restored ${result.customDataFound.length} master data categories with ${result.totalCustomConfigurations} total configurations`,
+        description: `Restored ${result.customDataFound.length} custom master data categories. Only custom configurations will be shown.`,
       });
       
-      // Refresh the page to ensure all components reload with custom data
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      // Page will auto-reload from the restoration utility
     } else {
       toast({
         title: "No Custom Data Found",
-        description: "No custom master data configurations found. System will use defaults.",
+        description: "No custom master data configurations found in storage.",
         variant: "destructive",
       });
       
