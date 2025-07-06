@@ -120,6 +120,8 @@ export const useLocalStoragePersistence = () => {
       saveState(newState);
       return newState;
     });
+    
+    return newRecord;
   }, [saveState]);
 
   const updatePaymentRecord = useCallback((id: string, updates: Partial<PaymentRecord>) => {

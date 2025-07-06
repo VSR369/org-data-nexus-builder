@@ -154,7 +154,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     
     try {
       // Add payment record
-      addPaymentRecord({
+      const paymentRecord = addPaymentRecord({
         type: 'membership',
         amount: fee.amount,
         currency: fee.currency,
@@ -164,12 +164,15 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update membership status
+      // Update payment record to completed
+      updatePaymentRecord(paymentRecord.id, { status: 'completed' });
+      
+      // Update membership status to paid
       updateMembershipStatus('member_paid');
       
       toast({
         title: "Payment Successful",
-        description: "Your annual membership has been activated!"
+        description: "Your annual membership has been activated! You can now see member pricing for engagement models."
       });
     } catch (error) {
       toast({
