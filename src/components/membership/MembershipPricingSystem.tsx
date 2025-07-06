@@ -111,29 +111,73 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     };
   };
 
+  // Map engagement model IDs to display names used in pricing configs
+  const getEngagementModelName = (modelId: string): string => {
+    const modelMap: Record<string, string> = {
+      'marketplace': 'Market Place',
+      'aggregator': 'Aggregator', 
+      'marketplace-aggregator': 'Market Place & Aggregator',
+      'platform-service': 'Platform as a Service'
+    };
+    return modelMap[modelId] || modelId;
+  };
+
   // Get pricing for selected engagement model
   const getEngagementPricing = () => {
     if (!state.selected_engagement_model) return null;
 
+    // Map membership status for pricing lookup
     const membershipStatusForConfig = state.membership_status === 'member_paid' ? 'member' : 'not-a-member';
     
-    const config = pricingConfigs.find(config => 
+    // Get the proper engagement model name for pricing lookup
+    const engagementModelName = getEngagementModelName(state.selected_engagement_model);
+    
+    console.log('🔍 Looking for pricing config:', {
+      country,
+      organizationType, 
+      engagementModel: engagementModelName,
+      membershipStatus: membershipStatusForConfig,
+      selectedModelId: state.selected_engagement_model
+    });
+
+    // First try exact match with country and organization type
+    let config = pricingConfigs.find(config => 
       config.country === country &&
       config.organizationType === organizationType &&
-      config.engagementModel === state.selected_engagement_model &&
+      config.engagementModel === engagementModelName &&
       config.membershipStatus === membershipStatusForConfig
     );
 
     if (!config) {
-      // Try global config
-      return pricingConfigs.find(config => 
-        (!config.country || config.country === 'Global') &&
+      // Try with normalized country names
+      const normalizedCountry = country === 'United States' ? 'IN' : country; // Map to common format
+      config = pricingConfigs.find(config => 
+        config.country === normalizedCountry &&
         config.organizationType === organizationType &&
-        config.engagementModel === state.selected_engagement_model &&
+        config.engagementModel === engagementModelName &&
         config.membershipStatus === membershipStatusForConfig
       );
     }
 
+    if (!config) {
+      // Try global config without country restriction
+      config = pricingConfigs.find(config => 
+        (!config.country || config.country === 'Global' || config.country === 'IN') &&
+        config.organizationType === organizationType &&
+        config.engagementModel === engagementModelName &&
+        config.membershipStatus === membershipStatusForConfig
+      );
+    }
+
+    if (!config) {
+      // Final fallback - any config with matching engagement model and membership status
+      config = pricingConfigs.find(config => 
+        config.engagementModel === engagementModelName &&
+        config.membershipStatus === membershipStatusForConfig
+      );
+    }
+
+    console.log('✅ Found pricing config:', config);
     return config;
   };
 
