@@ -25,11 +25,29 @@ const PricingConfig = () => {
       ForceCustomPricingMode.enableCustomPricingMode();
       ForceCustomPricingMode.logCurrentPricingState();
       
+      // Initialize enhanced pricing system
+      const { EnhancedPricingDataManager } = await import('@/utils/enhancedPricingDataManager');
+      const { PricingDataDiagnostic } = await import('@/utils/pricingDataDiagnostic');
+      
+      // Run comprehensive diagnostics
+      console.log('🔍 Running pricing data diagnostics...');
+      PricingDataDiagnostic.auditAllPricingData();
+      PricingDataDiagnostic.debugEngagementModelMatching();
+      
+      // Perform health check
+      const healthStatus = EnhancedPricingDataManager.performHealthCheck();
+      console.log('🏥 Pricing system health:', healthStatus);
+      
+      if (!healthStatus.healthy) {
+        console.warn('⚠️ Pricing system health issues detected:', healthStatus.issues);
+        console.log('💡 Recommendations:', healthStatus.recommendations);
+      }
+      
       // Load pricing configurations after ensuring custom mode
-      const loadedConfigs = PricingDataManager.getAllConfigurations();
+      const loadedConfigs = EnhancedPricingDataManager.getAllConfigurations();
       setConfigs(loadedConfigs);
       
-      console.log('✅ Custom pricing configurations loaded:', loadedConfigs.length);
+      console.log('✅ Enhanced pricing configurations loaded:', loadedConfigs.length);
       loadedConfigs.forEach((config, index) => {
         console.log(`  ${index + 1}. ${config.engagementModel} (${config.membershipStatus}) - ${config.country}/${config.currency} - Q:${config.quarterlyFee}/H:${config.halfYearlyFee}/A:${config.annualFee}`);
       });
@@ -48,7 +66,18 @@ const PricingConfig = () => {
   useEffect(() => {
     if (configs.length >= 0) {
       console.log('💾 PricingConfig: Saving configurations to persistent storage');
-      PricingDataManager.saveConfigurations(configs);
+      
+      // Use enhanced manager for saving
+      import('@/utils/enhancedPricingDataManager').then(({ EnhancedPricingDataManager }) => {
+        const success = EnhancedPricingDataManager.saveConfigurations(configs);
+        if (!success) {
+          console.warn('⚠️ Enhanced save failed, using fallback');
+          PricingDataManager.saveConfigurations(configs);
+        }
+      }).catch(() => {
+        // Fallback to original save method
+        PricingDataManager.saveConfigurations(configs);
+      });
     }
   }, [configs]);
 

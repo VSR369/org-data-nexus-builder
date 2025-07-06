@@ -32,10 +32,21 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
   currentSelectedModel
 }) => {
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
+    // Step 6: Enhanced Error Handling - Add null checking
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      console.warn('⚠️ formatCurrency: Invalid amount:', amount);
+      return 'Contact for pricing';
+    }
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency || 'USD',
+      }).format(amount);
+    } catch (error) {
+      console.error('❌ formatCurrency error:', error);
+      return `${currency || 'USD'} ${amount}`;
+    }
   };
 
   const isFeeBasedModel = (modelName: string) => {
@@ -45,7 +56,16 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
 
   const getEngagementModelFeePercentage = (pricing: PricingConfig | null) => {
     if (!pricing) return 0;
-    return pricing.engagementModelFee || pricing.quarterlyFee || 0;
+    
+    // Enhanced validation to prevent undefined errors
+    const fee = pricing.engagementModelFee || pricing.quarterlyFee || 0;
+    
+    if (typeof fee !== 'number' || isNaN(fee)) {
+      console.warn('⚠️ getEngagementModelFeePercentage: Invalid fee value:', fee, 'for model:', pricing.engagementModel);
+      return 0;
+    }
+    
+    return fee;
   };
 
   const formatPricing = (amount: number, currency: string = 'USD', modelName: string, pricing: PricingConfig | null = null) => {
@@ -57,7 +77,14 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
   };
 
   const getCurrentPrice = () => {
-    if (!item.pricing || !selectedPricingPlan) return 0;
+    if (!item.pricing || !selectedPricingPlan) {
+      console.warn('⚠️ getCurrentPrice: Missing pricing data or plan:', { 
+        hasPricing: !!item.pricing, 
+        selectedPlan: selectedPricingPlan,
+        modelName: item.model.name 
+      });
+      return 0;
+    }
 
     let basePrice = 0;
     switch (selectedPricingPlan) {
@@ -71,29 +98,57 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
         basePrice = item.pricing.annualFee || 0;
         break;
       default:
+        console.warn('⚠️ getCurrentPrice: Unknown pricing plan:', selectedPricingPlan);
         return 0;
     }
 
+    // Validate base price
+    if (typeof basePrice !== 'number' || isNaN(basePrice)) {
+      console.warn('⚠️ getCurrentPrice: Invalid base price:', basePrice, 'for plan:', selectedPricingPlan);
+      return 0;
+    }
+
     if (membershipStatus === 'active' && item.pricing.discountPercentage) {
-      return basePrice * (1 - item.pricing.discountPercentage / 100);
+      const discountMultiplier = 1 - (item.pricing.discountPercentage / 100);
+      return Math.max(0, basePrice * discountMultiplier);
     }
 
     return basePrice;
   };
 
   const getOriginalPrice = () => {
-    if (!item.pricing || !selectedPricingPlan) return 0;
+    if (!item.pricing || !selectedPricingPlan) {
+      console.warn('⚠️ getOriginalPrice: Missing pricing data or plan:', { 
+        hasPricing: !!item.pricing, 
+        selectedPlan: selectedPricingPlan,
+        modelName: item.model.name 
+      });
+      return 0;
+    }
 
+    let originalPrice = 0;
     switch (selectedPricingPlan) {
       case 'quarterly':
-        return item.pricing.quarterlyFee || 0;
+        originalPrice = item.pricing.quarterlyFee || 0;
+        break;
       case 'halfyearly':
-        return item.pricing.halfYearlyFee || 0;
+        originalPrice = item.pricing.halfYearlyFee || 0;
+        break;
       case 'annual':
-        return item.pricing.annualFee || 0;
+        originalPrice = item.pricing.annualFee || 0;
+        break;
       default:
+        console.warn('⚠️ getOriginalPrice: Unknown pricing plan:', selectedPricingPlan);
         return 0;
     }
+
+    // Validate original price
+    if (typeof originalPrice !== 'number' || isNaN(originalPrice)) {
+      console.warn('⚠️ getOriginalPrice: Invalid original price:', originalPrice, 'for plan:', selectedPricingPlan);
+      return 0;
+    }
+
+    return originalPrice;
   };
 
   const isSelected = selectedModelId === item.model.id;

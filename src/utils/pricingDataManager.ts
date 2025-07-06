@@ -165,92 +165,34 @@ const deletedConfigsManager = new LegacyDataManager<string[]>({
 });
 
 export const getPricingConfigs = (): PricingConfig[] => {
-  console.log('🔍 Getting pricing configurations...');
+  console.log('🔍 Enhanced: Getting pricing configurations...');
   
-  // CHECK FOR CUSTOM-ONLY MODE FIRST
-  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-  if (isCustomMode) {
-    console.log('🎯 Custom-only mode detected, loading ONLY custom pricing configs...');
-    
-    // PRIORITIZE custom_pricing from localStorage (user's custom configurations)
-    const customData = localStorage.getItem('custom_pricing');
-    console.log('📄 Raw custom_pricing data:', customData);
-    if (customData !== null) {
-      try {
-        const parsed = JSON.parse(customData);
-        console.log('🔍 Parsed custom pricing data:', parsed);
-        console.log('🔍 Individual configs:', parsed.map((config: any) => ({
-          id: config.id,
-          engagementModel: config.engagementModel,
-          membershipStatus: config.membershipStatus,
-          country: config.country,
-          currency: config.currency,
-          organizationType: config.organizationType,
-          quarterly: config.quarterlyFee,
-          halfYearly: config.halfYearlyFee,
-          annual: config.annualFee
-        })));
-        if (Array.isArray(parsed)) {
-          console.log('✅ Using CUSTOM pricing configs ONLY:', parsed.length);
-          return parsed; // Return custom data - this is the user's configured data
-        }
-      } catch (error) {
-        console.error('❌ Failed to parse custom pricing data:', error);
-      }
-    }
-    
-    // Only if no custom_pricing exists, check master data manager as fallback
-    try {
-      const configs = pricingDataManager.loadData();
-      console.log('📊 Fallback: Loaded configs from master data manager:', configs?.length || 0);
-      
-      if (Array.isArray(configs) && configs.length > 0) {
-        // Filter out any default configs that might have been stored
-        const customConfigs = configs.filter(config => 
-          config.country !== 'Global' && 
-          config.organizationType !== 'All' && 
-          config.entityType !== 'All'
-        );
-        
-        if (customConfigs.length > 0) {
-          console.log('✅ Using filtered custom configs from master data:', customConfigs.length);
-          return customConfigs;
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error loading from master data manager:', error);
-    }
-    
-    // In custom-only mode, don't fall back to defaults if no custom data
-    console.log('🚫 Custom-only mode: No custom pricing configs found, returning empty array');
-    return [];
-  }
-  
-  // Mixed mode: use existing logic with fallback
   try {
-    const configs = pricingDataManager.loadData();
-    const deletedConfigIds = deletedConfigsManager.loadData();
+    // Dynamic import for enhanced manager
+    const { EnhancedPricingDataManager } = eval('require')('./enhancedPricingDataManager');
+    return EnhancedPricingDataManager.getAllConfigurations();
+  } catch (error) {
+    console.error('❌ Enhanced manager failed, using fallback:', error);
     
-    console.log('🔄 Mixed mode: Loading pricing configurations:', configs?.length || 0);
-    console.log('🗑️ Deleted config IDs:', deletedConfigIds);
-    console.log('📊 All loaded pricing configs:', configs);
-    
-    // If no configs exist and no defaults have been explicitly deleted, initialize with defaults
-    if (!Array.isArray(configs) || configs.length === 0) {
-      if (!deletedConfigIds || deletedConfigIds.length === 0) {
-        console.log('📝 No pricing configs found and none deleted, initializing with defaults');
-        pricingDataManager.saveData(defaultPricingConfigs);
-        return defaultPricingConfigs;
-      } else {
-        console.log('📝 No pricing configs found but some were deleted, returning empty array');
-        return [];
+    // Fallback to original logic
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    if (isCustomMode) {
+      const customData = localStorage.getItem('custom_pricing');
+      if (customData) {
+        try {
+          const parsed = JSON.parse(customData);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse custom pricing data');
+        }
       }
+      return [];
     }
     
-    return configs;
-  } catch (error) {
-    console.error('❌ Error loading pricing configs:', error);
-    return [];
+    const configs = pricingDataManager.loadData();
+    return Array.isArray(configs) ? configs : [];
   }
 };
 
@@ -418,14 +360,8 @@ export class PricingDataManager {
   }
 
   static getPricingForEngagementModel(engagementModel: string): PricingConfig | null {
-    const configs = getPricingConfigs();
-    const foundConfig = configs.find(c => 
-      c.engagementModel === engagementModel ||
-      c.engagementModel?.toLowerCase() === engagementModel.toLowerCase()
-    );
-    
-    console.log(`💰 Looking for pricing config for "${engagementModel}":`, foundConfig ? 'Found' : 'Not found');
-    return foundConfig || null;
+    const { EnhancedPricingDataManager } = eval('require')('./enhancedPricingDataManager');
+    return EnhancedPricingDataManager.getPricingForEngagementModel(engagementModel);
   }
 
   // New method to get pricing by country specifically
