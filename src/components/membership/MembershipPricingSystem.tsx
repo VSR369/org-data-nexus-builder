@@ -184,7 +184,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
     if (!config) {
       // Try with normalized country names
-      const normalizedCountry = country === 'United States' ? 'IN' : country; // Map to common format
+      const normalizedCountry = country === 'United States' ? 'IN' : country;
       config = pricingConfigs.find(config => 
         config.country === normalizedCountry &&
         config.organizationType === organizationType &&
@@ -211,7 +211,28 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       );
     }
 
-    console.log('✅ Found pricing config:', config);
+    // If still no config found, try to find ANY config for this engagement model
+    // and create a non-member version (without discount)
+    if (!config) {
+      console.log('⚠️ No config found for membership status, looking for base config...');
+      const baseConfig = pricingConfigs.find(config => 
+        config.engagementModel === engagementModelName &&
+        (config.country === country || config.country === 'IN' || !config.country) &&
+        (config.organizationType === organizationType || !config.organizationType)
+      );
+      
+      if (baseConfig) {
+        console.log('✅ Using base config without member discount:', baseConfig);
+        // Create a version without member discount for non-members
+        config = {
+          ...baseConfig,
+          membershipStatus: membershipStatusForConfig,
+          discountPercentage: 0 // No discount for non-members
+        };
+      }
+    }
+
+    console.log('✅ Final pricing config:', config);
     return config;
   };
 
@@ -277,7 +298,9 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setEngagementPaymentLoading(true);
     
     try {
-      const amount = pricing[`${state.selected_frequency}Fee` as keyof PricingConfig] as number;
+      // Fix frequency key mapping for proper data lookup
+      const feeKey = state.selected_frequency === 'half-yearly' ? 'halfYearlyFee' : `${state.selected_frequency}Fee` as keyof PricingConfig;
+      const amount = pricing[feeKey] as number;
       
       // Add payment record
       addPaymentRecord({
@@ -528,7 +551,8 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                 >
                   <div className="space-y-3">
                     {['quarterly', 'half-yearly', 'annual'].map((frequency) => {
-                      const feeKey = `${frequency}Fee` as keyof PricingConfig;
+                      // Fix frequency key mapping for proper data lookup
+                      const feeKey = frequency === 'half-yearly' ? 'halfYearlyFee' : `${frequency}Fee` as keyof PricingConfig;
                       const amount = engagementPricing[feeKey] as number;
                       
                       return (
