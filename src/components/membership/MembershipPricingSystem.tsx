@@ -216,7 +216,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   };
 
   // Format currency display
-  const formatCurrency = (amount: number, currency: string = 'INR'): string => {
+  const formatCurrency = (amount: number | undefined, currency: string = 'INR'): string => {
+    // Handle undefined or null amounts
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      console.warn('⚠️ formatCurrency: Invalid amount:', amount);
+      return 'Contact for pricing';
+    }
+    
     if (currency === 'INR') {
       return `₹${amount.toLocaleString()}`;
     }
