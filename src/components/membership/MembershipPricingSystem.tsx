@@ -71,21 +71,26 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           fullObject: c
         })));
         
-        // Force initialization if no configs loaded
-        if (!configs || configs.length === 0) {
-          console.log('🔧 No pricing configs found, checking storage mode...');
+        // Force initialization if no configs loaded or configs have undefined values
+        if (!configs || configs.length === 0 || configs.some(c => !c.quarterlyFee && !c.halfYearlyFee && !c.annualFee)) {
+          console.log('🔧 No valid pricing configs found, forcing default data load...');
           const currentMode = localStorage.getItem('master_data_mode');
           console.log('📋 Current master data mode:', currentMode);
           
-          // If in custom-only mode with no data, temporarily switch to mixed mode to get defaults
-          if (currentMode === 'custom_only') {
-            console.log('⚠️ Custom-only mode detected with no data, temporarily loading defaults...');
-            localStorage.setItem('master_data_mode', 'mixed');
-            const defaultConfigs = PricingDataManager.getAllConfigurations();
-            localStorage.setItem('master_data_mode', 'custom_only'); // Restore mode
-            setPricingConfigs(defaultConfigs);
-            console.log('✅ Loaded default pricing configs:', defaultConfigs.length);
-          }
+          // Temporarily force mixed mode to get defaults
+          console.log('⚠️ Loading default pricing configurations...');
+          localStorage.setItem('master_data_mode', 'mixed');
+          
+          // Clear any existing invalid data
+          localStorage.removeItem('master_data_pricing_configs');
+          localStorage.removeItem('custom_pricing');
+          
+          const defaultConfigs = PricingDataManager.getAllConfigurations();
+          localStorage.setItem('master_data_mode', currentMode || 'custom_only'); // Restore mode
+          
+          setPricingConfigs(defaultConfigs);
+          console.log('✅ Loaded default pricing configs:', defaultConfigs.length);
+          console.log('🔍 Default config sample:', defaultConfigs[0]);
         }
 
         // Load membership fees
