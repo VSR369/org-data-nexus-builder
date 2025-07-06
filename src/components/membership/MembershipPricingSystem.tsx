@@ -58,6 +58,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         const configs = PricingDataManager.getAllConfigurations();
         setPricingConfigs(configs);
         console.log('✅ Loaded pricing configs:', configs.length);
+        console.log('📊 Raw pricing configs:', configs);
         console.log('📊 Pricing configs details:', configs.map(c => ({
           id: c.id,
           country: c.country,
@@ -66,8 +67,26 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           membershipStatus: c.membershipStatus,
           quarterly: c.quarterlyFee,
           halfYearly: c.halfYearlyFee,
-          annual: c.annualFee
+          annual: c.annualFee,
+          fullObject: c
         })));
+        
+        // Force initialization if no configs loaded
+        if (!configs || configs.length === 0) {
+          console.log('🔧 No pricing configs found, checking storage mode...');
+          const currentMode = localStorage.getItem('master_data_mode');
+          console.log('📋 Current master data mode:', currentMode);
+          
+          // If in custom-only mode with no data, temporarily switch to mixed mode to get defaults
+          if (currentMode === 'custom_only') {
+            console.log('⚠️ Custom-only mode detected with no data, temporarily loading defaults...');
+            localStorage.setItem('master_data_mode', 'mixed');
+            const defaultConfigs = PricingDataManager.getAllConfigurations();
+            localStorage.setItem('master_data_mode', 'custom_only'); // Restore mode
+            setPricingConfigs(defaultConfigs);
+            console.log('✅ Loaded default pricing configs:', defaultConfigs.length);
+          }
+        }
 
         // Load membership fees
         const fees = MembershipFeeFixer.getMembershipFees().filter(fee => 
