@@ -156,12 +156,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     return modelMap[modelId] || modelId;
   };
 
-  // Get pricing for selected engagement model
+  // Get pricing for selected engagement model with proper discount handling
   const getEngagementPricing = () => {
     if (!state.selected_engagement_model) return null;
 
-    // Map membership status for pricing lookup
-    const membershipStatusForConfig = state.membership_status === 'member_paid' ? 'member' : 'not-a-member';
+    // Check if membership payment is actually paid
+    const isMembershipPaid = state.membership_status === 'member_paid';
+    const membershipStatusForConfig = isMembershipPaid ? 'member' : 'not-a-member';
     
     // Get the proper engagement model name for pricing lookup
     const engagementModelName = getEngagementModelName(state.selected_engagement_model);
@@ -171,72 +172,98 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       organizationType, 
       engagementModel: engagementModelName,
       membershipStatus: membershipStatusForConfig,
+      membershipPaid: isMembershipPaid,
       selectedModelId: state.selected_engagement_model
     });
 
-    // First try exact match with country and organization type
-    let config = pricingConfigs.find(config => 
+    // First find the base config for this engagement model
+    let baseConfig = pricingConfigs.find(config => 
       config.country === country &&
       config.organizationType === organizationType &&
-      config.engagementModel === engagementModelName &&
-      config.membershipStatus === membershipStatusForConfig
+      config.engagementModel === engagementModelName
     );
 
-    if (!config) {
+    if (!baseConfig) {
       // Try with normalized country names
       const normalizedCountry = country === 'United States' ? 'IN' : country;
-      config = pricingConfigs.find(config => 
+      baseConfig = pricingConfigs.find(config => 
         config.country === normalizedCountry &&
         config.organizationType === organizationType &&
-        config.engagementModel === engagementModelName &&
-        config.membershipStatus === membershipStatusForConfig
+        config.engagementModel === engagementModelName
       );
     }
 
-    if (!config) {
+    if (!baseConfig) {
       // Try global config without country restriction
-      config = pricingConfigs.find(config => 
+      baseConfig = pricingConfigs.find(config => 
         (!config.country || config.country === 'Global' || config.country === 'IN') &&
         config.organizationType === organizationType &&
-        config.engagementModel === engagementModelName &&
-        config.membershipStatus === membershipStatusForConfig
+        config.engagementModel === engagementModelName
       );
     }
 
-    if (!config) {
-      // Final fallback - any config with matching engagement model and membership status
-      config = pricingConfigs.find(config => 
-        config.engagementModel === engagementModelName &&
-        config.membershipStatus === membershipStatusForConfig
+    if (!baseConfig) {
+      // Final fallback - any config with matching engagement model
+      baseConfig = pricingConfigs.find(config => 
+        config.engagementModel === engagementModelName
       );
     }
 
-    // If still no config found, try to find ANY config for this engagement model
-    // and create a non-member version (without discount)
-    if (!config) {
-      console.log('⚠️ No config found for membership status, looking for base config...');
-      const baseConfig = pricingConfigs.find(config => 
-        config.engagementModel === engagementModelName &&
-        (config.country === country || config.country === 'IN' || !config.country) &&
-        (config.organizationType === organizationType || !config.organizationType)
-      );
-      
-      if (baseConfig) {
-        console.log('✅ Using base config without member discount:', baseConfig);
-        // Create a version without member discount for non-members
-        config = {
-          ...baseConfig,
-          membershipStatus: membershipStatusForConfig,
-          discountPercentage: 0 // No discount for non-members
-        };
-      }
+    if (!baseConfig) {
+      console.log('❌ No base config found for engagement model:', engagementModelName);
+      return null;
     }
 
-    console.log('✅ Final pricing config:', config);
-    return config;
+    // Create the final config based on membership payment status
+    let finalConfig;
+    if (isMembershipPaid) {
+      // Membership is paid - apply member pricing with discount
+      finalConfig = {
+        ...baseConfig,
+        membershipStatus: 'member',
+        // Keep the discount percentage from base config for members
+        discountPercentage: baseConfig.discountPercentage || 0
+      };
+      console.log('✅ Using member pricing with discount:', finalConfig.discountPercentage + '%');
+    } else {
+      // Membership not paid - use regular pricing without discount
+      finalConfig = {
+        ...baseConfig,
+        membershipStatus: 'not-a-member',
+        discountPercentage: 0 // No discount for non-members
+      };
+      console.log('✅ Using regular pricing without discount');
+    }
+
+    console.log('✅ Final pricing config:', finalConfig);
+    return finalConfig;
   };
 
-  // Format currency display
+  // Calculate discounted price for members
+  const calculateDiscountedPrice = (baseAmount: number, discountPercentage: number): number => {
+    if (!discountPercentage || discountPercentage === 0) return baseAmount;
+    return Math.round(baseAmount * (1 - discountPercentage / 100));
+  };
+
+  // Get display amount with proper discount application
+  const getDisplayAmount = (frequency: string, pricing: PricingConfig): { amount: number; originalAmount?: number; discountApplied: boolean } => {
+    const feeKey = frequency === 'half-yearly' ? 'halfYearlyFee' : `${frequency}Fee` as keyof PricingConfig;
+    const baseAmount = pricing[feeKey] as number;
+    
+    if (state.membership_status === 'member_paid' && pricing.discountPercentage) {
+      const discountedAmount = calculateDiscountedPrice(baseAmount, pricing.discountPercentage);
+      return {
+        amount: discountedAmount,
+        originalAmount: baseAmount,
+        discountApplied: true
+      };
+    }
+    
+    return {
+      amount: baseAmount,
+      discountApplied: false
+    };
+  };
   const formatCurrency = (amount: number | undefined, currency: string = 'INR'): string => {
     // Handle undefined or null amounts
     if (amount === undefined || amount === null || isNaN(amount)) {
@@ -298,14 +325,14 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setEngagementPaymentLoading(true);
     
     try {
-      // Fix frequency key mapping for proper data lookup
-      const feeKey = state.selected_frequency === 'half-yearly' ? 'halfYearlyFee' : `${state.selected_frequency}Fee` as keyof PricingConfig;
-      const amount = pricing[feeKey] as number;
+      // Get the actual display amount (which includes discount calculation)
+      const displayInfo = getDisplayAmount(state.selected_frequency, pricing);
+      const paymentAmount = displayInfo.amount; // Use the calculated amount (discounted if applicable)
       
       // Add payment record
       addPaymentRecord({
         type: 'engagement',
-        amount,
+        amount: paymentAmount,
         currency: pricing.currency || 'INR',
         status: 'pending'
       });
@@ -315,7 +342,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       
       toast({
         title: "Payment Successful",
-        description: `Your ${state.selected_engagement_model} plan has been activated!`
+        description: `Your ${state.selected_engagement_model} plan has been activated!${displayInfo.discountApplied ? ' (Member discount applied)' : ''}`
       });
     } catch (error) {
       toast({
@@ -551,9 +578,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                 >
                   <div className="space-y-3">
                     {['quarterly', 'half-yearly', 'annual'].map((frequency) => {
-                      // Fix frequency key mapping for proper data lookup
-                      const feeKey = frequency === 'half-yearly' ? 'halfYearlyFee' : `${frequency}Fee` as keyof PricingConfig;
-                      const amount = engagementPricing[feeKey] as number;
+                      const displayInfo = getDisplayAmount(frequency, engagementPricing);
                       
                       return (
                         <Label key={frequency} htmlFor={frequency} className="cursor-pointer">
@@ -564,12 +589,27 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                               <RadioGroupItem value={frequency} id={frequency} />
                               <span className="capitalize">{frequency.replace('-', ' ')}</span>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right space-y-1">
                               <div className="font-bold">
-                                {isPaaSModel 
-                                  ? formatCurrency(amount, engagementPricing.currency)
-                                  : `${amount}%`
-                                }
+                                {isPaaSModel ? (
+                                  <div className="space-y-1">
+                                    <div className="text-green-600">
+                                      {formatCurrency(displayInfo.amount, engagementPricing.currency)}
+                                    </div>
+                                    {displayInfo.discountApplied && displayInfo.originalAmount && (
+                                      <div className="text-xs text-gray-500 line-through">
+                                        {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
+                                      </div>
+                                    )}
+                                    {displayInfo.discountApplied && (
+                                      <div className="text-xs text-green-600 font-medium">
+                                        {engagementPricing.discountPercentage}% member discount
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  `${displayInfo.amount}%`
+                                )}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {isPaaSModel ? frequency.replace('-', ' ') : 'of solution fee'}
