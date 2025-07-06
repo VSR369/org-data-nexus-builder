@@ -250,49 +250,60 @@ export const getPricingConfigs = (): PricingConfig[] => {
 };
 
 export const savePricingConfigs = (configs: PricingConfig[]): void => {
-  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+  // Use the protection system for all saves
+  const { PricingDataProtection } = require('./pricingDataProtection');
   
-  if (isCustomMode) {
-    console.log('💾 Custom-only mode: Saving pricing configs to custom_pricing:', configs.length);
-    localStorage.setItem('custom_pricing', JSON.stringify(configs));
+  console.log('🛡️ Using protected save for pricing configurations');
+  const success = PricingDataProtection.safeSave(configs, 'user_configuration');
+  
+  if (!success) {
+    console.error('❌ Protected save failed, attempting fallback save');
     
-    // Validation: Read back to ensure it was saved correctly
-    const readBack = localStorage.getItem('custom_pricing');
-    if (readBack !== null) {
-      try {
-        const parsed = JSON.parse(readBack);
-        if (Array.isArray(parsed) && parsed.length === configs.length) {
-          console.log('✅ Custom pricing configs save validated successfully');
-        } else {
-          console.error('❌ Custom pricing configs save validation failed - length mismatch');
-        }
-      } catch (error) {
-        console.error('❌ Custom pricing configs save validation failed - parse error:', error);
-      }
+    // Fallback to original logic if protection fails
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    
+    if (isCustomMode) {
+      console.log('💾 Fallback: Custom-only mode save');
+      localStorage.setItem('custom_pricing', JSON.stringify(configs));
     } else {
-      console.error('❌ Custom pricing configs save validation failed - null readback');
+      console.log('💾 Fallback: Mixed mode save');
+      pricingDataManager.saveData(configs);
     }
-  } else {
-    console.log('💾 Mixed mode: Saving pricing configs to master_data_pricing_configs:', configs.length);
-    pricingDataManager.saveData(configs);
   }
 };
 
 export const savePricingConfig = (config: PricingConfig): void => {
+  console.log(`🛡️ Protected save for single config: ${config.engagementModel} (${config.membershipStatus})`);
+  
   const configs = getPricingConfigs();
   const existingIndex = configs.findIndex(c => c.id === config.id);
   
   if (existingIndex >= 0) {
     configs[existingIndex] = config;
+    console.log('✏️ Updated existing configuration');
   } else {
     configs.push(config);
+    console.log('➕ Added new configuration');
   }
   
   savePricingConfigs(configs);
 };
 
 export const deletePricingConfig = (id: string): void => {
+  const { PricingDataProtection } = require('./pricingDataProtection');
+  
+  console.log(`🛡️ Protected delete for config: ${id}`);
+  
+  // Create backup before deletion
+  PricingDataProtection.createBackup('before_delete');
+  
   const configs = getPricingConfigs();
+  const configToDelete = configs.find(c => c.id === id);
+  
+  if (configToDelete) {
+    console.log(`🗑️ Deleting config: ${configToDelete.engagementModel} (${configToDelete.membershipStatus})`);
+  }
+  
   const filteredConfigs = configs.filter(c => c.id !== id);
   
   const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
@@ -303,7 +314,7 @@ export const deletePricingConfig = (id: string): void => {
     if (!deletedConfigIds.includes(id)) {
       deletedConfigIds.push(id);
       deletedConfigsManager.saveData(deletedConfigIds);
-      console.log('🗑️ Marked config as deleted:', id);
+      console.log('🗑️ Marked config as deleted in mixed mode:', id);
     }
   }
   
