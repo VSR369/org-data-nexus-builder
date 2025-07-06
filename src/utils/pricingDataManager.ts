@@ -1,6 +1,7 @@
 
 import { LegacyDataManager } from './core/DataManager';
 import { PricingConfig } from '@/types/pricing';
+import { PricingDataProtection } from './pricingDataProtection';
 
 // Default pricing configurations to ensure we have data for all engagement models
 const defaultPricingConfigs: PricingConfig[] = [
@@ -251,7 +252,6 @@ export const getPricingConfigs = (): PricingConfig[] => {
 
 export const savePricingConfigs = (configs: PricingConfig[]): void => {
   // Use the protection system for all saves
-  const { PricingDataProtection } = require('./pricingDataProtection');
   
   console.log('🛡️ Using protected save for pricing configurations');
   const success = PricingDataProtection.safeSave(configs, 'user_configuration');
@@ -290,7 +290,6 @@ export const savePricingConfig = (config: PricingConfig): void => {
 };
 
 export const deletePricingConfig = (id: string): void => {
-  const { PricingDataProtection } = require('./pricingDataProtection');
   
   console.log(`🛡️ Protected delete for config: ${id}`);
   
