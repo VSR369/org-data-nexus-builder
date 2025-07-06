@@ -58,6 +58,16 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         const configs = PricingDataManager.getAllConfigurations();
         setPricingConfigs(configs);
         console.log('✅ Loaded pricing configs:', configs.length);
+        console.log('📊 Pricing configs details:', configs.map(c => ({
+          id: c.id,
+          country: c.country,
+          orgType: c.organizationType,
+          engagementModel: c.engagementModel,
+          membershipStatus: c.membershipStatus,
+          quarterly: c.quarterlyFee,
+          halfYearly: c.halfYearlyFee,
+          annual: c.annualFee
+        })));
 
         // Load membership fees
         const fees = MembershipFeeFixer.getMembershipFees().filter(fee => 
@@ -530,10 +540,22 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                         Processing...
                       </>
                     ) : (
-                      `Activate ${state.selected_engagement_model}`
+                      `Activate ${getEngagementModelName(state.selected_engagement_model)}`
                     )}
                   </Button>
                 )}
+              </div>
+            ) : state.selected_engagement_model ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-sm text-muted-foreground">Loading pricing for {getEngagementModelName(state.selected_engagement_model)}...</p>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <div>Selected Model ID: {state.selected_engagement_model}</div>
+                  <div>Mapped Name: {getEngagementModelName(state.selected_engagement_model)}</div>
+                  <div>Membership Status: {state.membership_status === 'member_paid' ? 'member' : 'not-a-member'}</div>
+                  <div>Pricing Configs Available: {pricingConfigs.length}</div>
+                  <div>Organization Type: {organizationType}</div>
+                  <div>Country: {country}</div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
