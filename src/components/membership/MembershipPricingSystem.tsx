@@ -402,10 +402,22 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                 </Button>
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">
+              <div className="text-center py-8 space-y-3">
+                <p className="text-sm text-muted-foreground">
                   {state.membership_status === 'member_paid' ? 'Membership already paid' : 'Select Annual membership to pay'}
                 </p>
+                {state.membership_status === 'member_paid' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => updateMembershipStatus('inactive')}
+                  >
+                    Reset Payment Status
+                  </Button>
+                )}
+                <div className="text-xs text-gray-400 mt-2">
+                  Debug: Status = {state.membership_status}, Type = {state.membership_type}
+                </div>
               </div>
             )}
           </CardContent>
