@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Loader2, Users, Code, Headphones, Server, CreditCard, Wallet } from "lucide-react";
 import { useLocalStoragePersistence } from '@/hooks/useLocalStoragePersistence';
 import { PricingDataManager } from '@/utils/pricingDataManager';
@@ -315,6 +316,19 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     } finally {
       setMembershipPaymentLoading(false);
     }
+  };
+
+  // Get currently paid engagement model from payment records
+  const getPaidEngagementModel = () => {
+    if (!state.payment_records) return null;
+    
+    const paidEngagement = state.payment_records.find(record => 
+      record.type === 'engagement' && record.status === 'completed'
+    );
+    
+    // For now, we'll check if there's any completed engagement payment
+    // In a real system, you'd store the engagement model ID in the payment record
+    return paidEngagement ? 'existing' : null;
   };
 
   // Handle engagement model payment
@@ -712,24 +726,62 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                       })()}
                     </div>
                     
-                    <Button 
-                      className="w-full" 
-                      size="lg"
-                      onClick={handleEngagementPayment}
-                      disabled={engagementPaymentLoading}
-                    >
-                      {engagementPaymentLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Processing Payment...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Pay & Activate {getEngagementModelName(state.selected_engagement_model)}
-                        </>
-                      )}
-                    </Button>
+                    {getPaidEngagementModel() ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            className="w-full" 
+                            size="lg"
+                            disabled={engagementPaymentLoading}
+                          >
+                            {engagementPaymentLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Processing Payment...
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Pay & Activate {getEngagementModelName(state.selected_engagement_model)}
+                              </>
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Change Engagement Model?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              You have already subscribed to an engagement model. Do you want to subscribe to a new engagement model: <strong>{getEngagementModelName(state.selected_engagement_model)}</strong>?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleEngagementPayment}>
+                              Yes, Subscribe to New Model
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <Button 
+                        className="w-full" 
+                        size="lg"
+                        onClick={handleEngagementPayment}
+                        disabled={engagementPaymentLoading}
+                      >
+                        {engagementPaymentLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Processing Payment...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Pay & Activate {getEngagementModelName(state.selected_engagement_model)}
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
