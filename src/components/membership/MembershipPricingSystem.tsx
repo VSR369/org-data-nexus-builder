@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Users, Code, Headphones, Server } from "lucide-react";
+import { Loader2, Users, Code, Headphones, Server, CreditCard, Wallet } from "lucide-react";
 import { useLocalStoragePersistence } from '@/hooks/useLocalStoragePersistence';
 import { PricingDataManager } from '@/utils/pricingDataManager';
 import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
+import { engagementModelsDataManager } from '@/components/master-data/engagement-models/engagementModelsDataManager';
 import { PricingConfig } from '@/types/pricing';
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,6 +45,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
+  const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
   const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
   const { toast } = useToast();
@@ -65,6 +67,17 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         );
         setMembershipFees(fees);
         console.log('✅ Loaded membership fees:', fees.length);
+
+        // Load engagement models from master data
+        const loadedEngagementModels = engagementModelsDataManager.loadData();
+        const modelsWithIcons: EngagementModel[] = loadedEngagementModels.map(model => ({
+          id: model.id,
+          name: model.name,
+          description: model.description || `${model.name} services`,
+          icon: getEngagementModelIcon(model.name)
+        }));
+        setEngagementModels(modelsWithIcons);
+        console.log('✅ Loaded engagement models:', modelsWithIcons.length);
       } catch (error) {
         console.error('❌ Error loading master data:', error);
         toast({
@@ -78,33 +91,15 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     loadMasterData();
   }, [country, organizationType, entityType, toast]);
 
-  // Engagement models with icons
-  const engagementModels: EngagementModel[] = [
-    {
-      id: 'Consulting',
-      name: 'Consulting',
-      description: 'Expert consultation and advisory services',
-      icon: <Users className="w-5 h-5" />
-    },
-    {
-      id: 'Development',
-      name: 'Development',
-      description: 'Custom development and implementation services',
-      icon: <Code className="w-5 h-5" />
-    },
-    {
-      id: 'Support',
-      name: 'Support',
-      description: 'Technical support and maintenance services',
-      icon: <Headphones className="w-5 h-5" />
-    },
-    {
-      id: 'Platform as a Service',
-      name: 'Platform as a Service',
-      description: 'Complete platform infrastructure and services',
-      icon: <Server className="w-5 h-5" />
-    }
-  ];
+  // Get icon for engagement model
+  const getEngagementModelIcon = (modelName: string): React.ReactNode => {
+    const name = modelName.toLowerCase();
+    if (name.includes('consulting')) return <Users className="w-5 h-5" />;
+    if (name.includes('development')) return <Code className="w-5 h-5" />;
+    if (name.includes('support')) return <Headphones className="w-5 h-5" />;
+    if (name.includes('platform') || name.includes('paas')) return <Server className="w-5 h-5" />;
+    return <Users className="w-5 h-5" />;
+  };
 
   // Get membership fee for annual plan
   const getAnnualMembershipFee = () => {
@@ -159,7 +154,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     
     try {
       // Add payment record
-      const paymentId = addPaymentRecord({
+      addPaymentRecord({
         type: 'membership',
         amount: fee.amount,
         currency: fee.currency,
@@ -169,8 +164,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update payment status and membership
-      updatePaymentRecord(paymentId as any, { status: 'completed' });
+      // Update membership status
       updateMembershipStatus('member_paid');
       
       toast({
@@ -199,7 +193,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       const amount = pricing[`${state.selected_frequency}Fee` as keyof PricingConfig] as number;
       
       // Add payment record
-      const paymentId = addPaymentRecord({
+      addPaymentRecord({
         type: 'engagement',
         amount,
         currency: pricing.currency || 'INR',
@@ -208,9 +202,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update payment status
-      updatePaymentRecord(paymentId as any, { status: 'completed' });
       
       toast({
         title: "Payment Successful",
@@ -246,7 +237,8 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
   const annualFee = getAnnualMembershipFee();
   const engagementPricing = getEngagementPricing();
-  const isPaaSModel = state.selected_engagement_model === 'Platform as a Service';
+  const isPaaSModel = state.selected_engagement_model?.toLowerCase().includes('platform') || 
+                     state.selected_engagement_model?.toLowerCase().includes('paas');
 
   return (
     <div className="space-y-6">
@@ -264,10 +256,10 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
               <div className="flex items-center gap-2">
                 <Badge variant={state.membership_status === 'member_paid' ? 'default' : 'secondary'}>
                   {state.membership_status === 'member_paid' ? 'Premium Member' : 
-                   state.membership_status === 'active' ? 'Active' : 'Basic'}
+                   state.membership_type === 'not-a-member' ? 'Not a Member' : 'Basic'}
                 </Badge>
                 {state.membership_type && (
-                  <Badge variant="outline">{state.membership_type} Plan</Badge>
+                  <Badge variant="outline">{state.membership_type === 'annual' ? 'Annual Plan' : 'Not a Member'}</Badge>
                 )}
               </div>
               {state.selected_engagement_model && (
@@ -281,7 +273,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Membership Plans */}
         <Card>
           <CardHeader>
@@ -296,12 +288,12 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
               onValueChange={(value) => updateMembershipType(value as any)}
             >
               <div className="space-y-4">
-                <Label htmlFor="monthly" className="cursor-pointer">
+                <Label htmlFor="not-a-member" className="cursor-pointer">
                   <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent">
-                    <RadioGroupItem value="monthly" id="monthly" />
+                    <RadioGroupItem value="not-a-member" id="not-a-member" />
                     <div>
-                      <div className="font-medium">Monthly</div>
-                      <div className="text-sm text-muted-foreground">Basic access - Month to month</div>
+                      <div className="font-medium">Not a Member</div>
+                      <div className="text-sm text-muted-foreground">Standard rates apply</div>
                     </div>
                   </div>
                 </Label>
@@ -310,8 +302,8 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                   <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent">
                     <RadioGroupItem value="annual" id="annual" />
                     <div className="flex-1">
-                      <div className="font-medium">Annual</div>
-                      <div className="text-sm text-muted-foreground">Premium membership - 12 months</div>
+                      <div className="font-medium">Annual Membership</div>
+                      <div className="text-sm text-muted-foreground">Get member pricing benefits</div>
                       {annualFee && (
                         <div className="text-lg font-bold text-primary">
                           {formatCurrency(annualFee.amount, annualFee.currency)}
@@ -322,23 +314,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
                 </Label>
               </div>
             </RadioGroup>
-
-            {state.membership_type === 'annual' && state.membership_status !== 'member_paid' && (
-              <Button 
-                className="w-full mt-4" 
-                onClick={handleMembershipPayment}
-                disabled={membershipPaymentLoading || !annualFee}
-              >
-                {membershipPaymentLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  `Pay ${annualFee ? formatCurrency(annualFee.amount, annualFee.currency) : ''}`
-                )}
-              </Button>
-            )}
           </CardContent>
         </Card>
 
@@ -386,12 +361,59 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           </CardContent>
         </Card>
 
-        {/* Pricing & Payment */}
+        {/* Membership Payment */}
+        <Card className={state.membership_type === 'annual' && state.membership_status !== 'member_paid' ? '' : 'opacity-50'}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Membership Payment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {state.membership_type === 'annual' && state.membership_status !== 'member_paid' ? (
+              <div className="space-y-4">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-lg font-bold mb-2">Annual Membership</div>
+                  {annualFee && (
+                    <div className="text-2xl font-bold text-primary">
+                      {formatCurrency(annualFee.amount, annualFee.currency)}
+                    </div>
+                  )}
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Unlock member pricing for all engagement models
+                  </div>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleMembershipPayment}
+                  disabled={membershipPaymentLoading || !annualFee}
+                >
+                  {membershipPaymentLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    `Pay Membership Fee`
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">
+                  {state.membership_status === 'member_paid' ? 'Membership already paid' : 'Select Annual membership to pay'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Engagement Payment */}
         <Card className={state.selected_engagement_model ? '' : 'opacity-50'}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full" />
-              Pricing & Payment
+              <Wallet className="w-5 h-5" />
+              Engagement Payment
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface PersistentState {
   membership_status: 'inactive' | 'active' | 'member_paid';
-  membership_type: 'monthly' | 'annual' | null;
+  membership_type: 'not-a-member' | 'annual' | null;
   selected_engagement_model: string | null;
   selected_frequency: 'quarterly' | 'half-yearly' | 'annual' | null;
   payment_records: PaymentRecord[];
