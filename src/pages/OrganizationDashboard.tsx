@@ -19,7 +19,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useCompleteUserData } from '@/hooks/useCompleteUserData';
-import MembershipEngagementDashboard from '@/components/dashboard/MembershipEngagementDashboard';
+import MembershipPricingSystem from '@/components/membership/MembershipPricingSystem';
 import '@/utils/cleanupMembershipEngagementStorage';
 
 interface OrganizationSession {
@@ -374,11 +374,10 @@ const OrganizationDashboard = () => {
 
         {/* Membership and Engagement Dashboard */}
         <div className="space-y-6">
-          <MembershipEngagementDashboard
+          <MembershipPricingSystem
             organizationType={completeUserData?.organizationType || sessionData.organizationType || 'Technology'}
             entityType={completeUserData?.entityType || sessionData.entityType}
             country={completeUserData?.country || sessionData.country}
-            membershipStatus="not-a-member"
           />
         </div>
 
