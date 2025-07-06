@@ -170,6 +170,29 @@ export const getPricingConfigs = (): PricingConfig[] => {
   const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
   if (isCustomMode) {
     console.log('🎯 Custom-only mode detected, loading custom pricing configs...');
+    
+    // Try loading from the actual master data configurations first
+    try {
+      const configs = pricingDataManager.loadData();
+      console.log('📊 Loaded configs from master data manager:', configs?.length || 0);
+      console.log('🔍 Individual master data configs:', configs?.map((config: any) => ({
+        id: config.id,
+        engagementModel: config.engagementModel,
+        membershipStatus: config.membershipStatus,
+        quarterly: config.quarterlyFee,
+        halfYearly: config.halfYearlyFee,
+        annual: config.annualFee
+      })));
+      
+      if (Array.isArray(configs) && configs.length > 0) {
+        console.log('✅ Using master data pricing configs:', configs.length);
+        return configs;
+      }
+    } catch (error) {
+      console.error('❌ Error loading from master data manager:', error);
+    }
+    
+    // Fallback to custom_pricing from localStorage
     const customData = localStorage.getItem('custom_pricing');
     console.log('📄 Raw custom_pricing data:', customData);
     if (customData !== null) {
