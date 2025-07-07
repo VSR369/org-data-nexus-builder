@@ -22,6 +22,7 @@ import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
 import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
 import CustomDataManager from "./master-data/CustomDataManager";
 import DataProtectionPanel from "./master-data/DataProtectionPanel";
+import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -77,6 +78,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <AdminCreationDiagnostic />;
       case 'data-protection':
         return <DataProtectionPanel />;
+      case 'solution-seekers-validation':
+        return <SeekingOrgValidationDashboard />;
       default:
         return <CustomDataManager />;
     }

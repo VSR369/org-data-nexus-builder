@@ -179,6 +179,11 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         title: "Payment Successful",
         description: `Your ${getEngagementModelName(state.selected_engagement_model || '')} plan has been activated!${displayInfo.discountApplied ? ' (Member discount applied)' : ''}`
       });
+
+      // Navigate to validation dashboard after successful payment
+      setTimeout(() => {
+        window.location.href = '/master-data?section=solution-seekers-validation';
+      }, 2000);
       
     } catch (error) {
       console.error('❌ Engagement payment error:', error);
