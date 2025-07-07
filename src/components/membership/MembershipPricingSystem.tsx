@@ -12,7 +12,8 @@ import { EngagementPaymentCard } from './EngagementPaymentCard';
 import { 
   getEngagementPricing, 
   getEngagementModelName,
-  getDisplayAmount 
+  getDisplayAmount,
+  getAnnualMembershipFee
 } from '@/utils/membershipPricingUtils';
 import { useToast } from "@/hooks/use-toast";
 
