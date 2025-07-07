@@ -83,19 +83,18 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     }
   };
 
-  // Load seekers data
+  // Load seekers data from actual storage
   const refreshSeekers = () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Load from localStorage or generate sample data
-      const membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
-      const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
-      
       const seekersData: SeekerDetails[] = [];
       
-      // If we have organization data, create a seeker record from it
+      // Load current organization from registration data
+      const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+      const membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
+      
       if (orgData.organizationName) {
         seekersData.push({
           id: 'current-org',
@@ -103,39 +102,45 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           organizationType: orgData.organizationType || 'solution-seeker',
           entityType: orgData.entityType || 'organization',
           approvalStatus: 'approved',
-          membershipStatus: membershipState.membership_status === 'member_paid' ? 'active' : 'inactive',
+          membershipStatus: membershipState.membership_status === 'member_paid' ? 'active' : 
+                           membershipState.membership_status === 'inactive' ? 'inactive' : 'not-member',
           hasAdministrator: true,
           country: orgData.country || 'IN'
         });
       }
-      
-      // Add some sample data for demonstration
-      seekersData.push(
-        {
-          id: 'seeker-1',
-          organizationName: 'Innovation Labs',
-          organizationType: 'solution-seeker',
-          entityType: 'organization',
-          approvalStatus: 'pending',
-          membershipStatus: 'inactive',
-          hasAdministrator: false,
-          country: 'IN'
-        },
-        {
-          id: 'seeker-2',
-          organizationName: 'Digital Solutions Inc.',
-          organizationType: 'solution-seeker',
-          entityType: 'organization',
-          approvalStatus: 'approved',
-          membershipStatus: 'active',
-          hasAdministrator: true,
-          country: 'IN'
+
+      // Load all registered users and extract organization data
+      try {
+        const registeredUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        if (Array.isArray(registeredUsers)) {
+          registeredUsers.forEach((user, index) => {
+            if (user.organizationName && user.organizationName !== orgData.organizationName) {
+              seekersData.push({
+                id: `user-${index}`,
+                organizationName: user.organizationName,
+                organizationType: user.organizationType || 'solution-seeker',
+                entityType: user.entityType || 'organization',
+                approvalStatus: 'approved',
+                membershipStatus: 'inactive',
+                hasAdministrator: true,
+                country: user.country || 'IN'
+              });
+            }
+          });
         }
-      );
+      } catch (userError) {
+        console.log('No registered users found or error loading users:', userError);
+      }
+
+      // If no data found, show empty state message
+      if (seekersData.length === 0) {
+        console.log('No seeking organization data found in localStorage');
+      }
       
       setSeekers(seekersData);
+      console.log(`✅ Loaded ${seekersData.length} seeking organizations for validation`);
     } catch (err) {
-      setError('Failed to load seeker data');
+      setError('Failed to load seeking organization data');
       console.error('Error loading seekers:', err);
     } finally {
       setLoading(false);
