@@ -29,16 +29,26 @@ const safeRender = (value: any): string => {
   return String(value);
 };
 
-// Helper function to get industry segment name from ID
+// Helper function to get industry segment name from registration data
 const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
   if (!industrySegmentValue) return '';
   
-  // If it's already a string name, return it
+  // If it's already a string name, return it directly
   if (typeof industrySegmentValue === 'string' && !industrySegmentValue.startsWith('is_')) {
     return industrySegmentValue;
   }
   
-  // Try to load industry segments from master data
+  // Try to get from registration data first (most accurate)
+  try {
+    const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+    if (orgData.industrySegment && typeof orgData.industrySegment === 'string') {
+      return orgData.industrySegment;
+    }
+  } catch (error) {
+    console.error('Error loading registration data for industry segment:', error);
+  }
+  
+  // Try to load industry segments from master data as fallback
   try {
     const savedData = localStorage.getItem('master_data_industry_segments');
     if (savedData) {
@@ -61,64 +71,81 @@ const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
 };
 
 const loadEngagementPricingDetails = (seeker: SeekerDetails) => {
-  // Try to get membership/pricing data from localStorage
-  const membershipKeys = [
-    `membership_${seeker.userId}`,
-    `membership_${seeker.organizationId}`,
-    `${seeker.organizationName}_membership`,
-    'selected_membership_plan',
-    'completed_membership_payment'
+  // Get membership pricing system state (main source of truth)
+  const membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
+  
+  // Get registration data
+  const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+  
+  // Get payment records from the state
+  const paymentRecords = membershipState.payment_records || [];
+  
+  // Find membership payment
+  const membershipPayment = paymentRecords.find((record: any) => 
+    record.type === 'membership' && record.status === 'completed'
+  );
+  
+  // Find engagement payment
+  const engagementPayment = paymentRecords.find((record: any) => 
+    record.type === 'engagement' && record.status === 'completed'
+  );
+  
+  const membershipData = {
+    status: membershipState.membership_status || 'inactive',
+    type: membershipState.membership_type || 'not-a-member',
+    selectedPlan: membershipState.membership_type,
+    paymentStatus: membershipPayment ? 'paid' : 'unpaid',
+    paymentAmount: membershipPayment?.amount || 0,
+    paymentCurrency: membershipPayment?.currency || 'INR',
+    paidAt: membershipPayment?.timestamp || null
+  };
+  
+  const pricingData = {
+    engagementModel: membershipState.selected_engagement_model || null,
+    selectedFrequency: membershipState.selected_frequency || null,
+    paymentStatus: engagementPayment ? 'paid' : 'unpaid',
+    paymentAmount: engagementPayment?.amount || 0,
+    paymentCurrency: engagementPayment?.currency || 'INR',
+    paidAt: engagementPayment?.timestamp || null
+  };
+  
+  // Check if administrator exists
+  const adminExists = checkAdministratorExists(seeker);
+  
+  console.log('🎯 Loaded payment details:', { membershipData, pricingData, adminExists });
+  
+  return { membershipData, pricingData, adminExists };
+};
+
+const checkAdministratorExists = (seeker: SeekerDetails) => {
+  // Check various possible keys for administrator data
+  const adminKeys = [
+    `admin_${seeker.userId}`,
+    `admin_${seeker.organizationId}`,
+    `${seeker.organizationName}_admin`,
+    'seeking_org_admin',
+    'organization_administrator'
   ];
-
-  const pricingKeys = [
-    `pricing_${seeker.userId}`,
-    `selected_pricing_${seeker.organizationId}`,
-    'selected_engagement_model',
-    'engagement_model_selection'
-  ];
-
-  let membershipData = null;
-  let pricingData = null;
-
-  // Check for membership data
-  for (const key of membershipKeys) {
+  
+  for (const key of adminKeys) {
     const stored = localStorage.getItem(key);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus || parsed.selectedPlan)) {
-          membershipData = parsed;
-          console.log('🎯 Found membership data for key:', key, parsed);
-          break;
+        if (parsed && (parsed.isCreated || parsed.adminId || parsed.adminEmail)) {
+          return true;
         }
       } catch (e) {
         // Continue checking other keys
       }
     }
   }
-
-  // Check for pricing data
-  for (const key of pricingKeys) {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency || parsed.pricing)) {
-          pricingData = parsed;
-          console.log('🎯 Found pricing data for key:', key, parsed);
-          break;
-        }
-      } catch (e) {
-        // Continue checking other keys
-      }
-    }
-  }
-
-  return { membershipData, pricingData };
+  
+  return false;
 };
 
 const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers, processing }) => {
-  const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
+  const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
   
   console.log('👁️ ViewDetailsDialog rendering for seeker:', seeker.organizationName, 'Approval Status:', seeker.approvalStatus);
   
@@ -186,29 +213,65 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
           </div>
         </div>
 
-        {/* Membership & Pricing Details */}
-        {(membershipData || pricingData) && (
-          <div>
-            <h4 className="font-semibold text-sm text-gray-700 mb-2">Engagement & Pricing</h4>
-            <div className="bg-blue-50 p-3 rounded text-sm space-y-2">
-              {membershipData && (
-                <div className="space-y-1">
-                  <div><span className="font-medium">Membership Status:</span> {safeRender(membershipData.status)}</div>
-                  {membershipData.selectedPlan && <div><span className="font-medium">Plan:</span> {safeRender(membershipData.selectedPlan)}</div>}
-                  {membershipData.paidAt && <div><span className="font-medium">Paid At:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>}
+        {/* Membership & Payment Details */}
+        <div className="space-y-4">
+          {/* Membership Details */}
+          {membershipData && (
+            <div>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Membership Details</h4>
+              <div className="bg-green-50 p-3 rounded text-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Membership Status:</span>
+                  <Badge variant={membershipData.status === 'member_paid' ? 'default' : 'secondary'}>
+                    {membershipData.status === 'member_paid' ? 'Premium Member' : 'Not a Member'}
+                  </Badge>
                 </div>
-              )}
-              {pricingData && (
-                <div className="space-y-1">
-                  {pricingData.engagementModel && <div><span className="font-medium">Engagement Model:</span> {safeRender(pricingData.engagementModel)}</div>}
-                  {pricingData.currency && pricingData.amount && (
-                    <div><span className="font-medium">Pricing:</span> {safeRender(pricingData.currency)} {safeRender(pricingData.amount)}</div>
-                  )}
+                {membershipData.selectedPlan && (
+                  <div><span className="font-medium">Plan:</span> {safeRender(membershipData.selectedPlan)}</div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Payment Status:</span>
+                  <Badge variant={membershipData.paymentStatus === 'paid' ? 'default' : 'destructive'}>
+                    {membershipData.paymentStatus}
+                  </Badge>
                 </div>
-              )}
+                {membershipData.paymentStatus === 'paid' && membershipData.paymentAmount > 0 && (
+                  <div><span className="font-medium">Amount Paid:</span> {membershipData.paymentCurrency} {membershipData.paymentAmount}</div>
+                )}
+                {membershipData.paidAt && (
+                  <div><span className="font-medium">Paid On:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Engagement Model Details */}
+          {pricingData && (
+            <div>
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">Engagement Model Details</h4>
+              <div className="bg-blue-50 p-3 rounded text-sm space-y-2">
+                {pricingData.engagementModel && (
+                  <div><span className="font-medium">Engagement Model:</span> {safeRender(pricingData.engagementModel)}</div>
+                )}
+                {pricingData.selectedFrequency && (
+                  <div><span className="font-medium">Billing Frequency:</span> {safeRender(pricingData.selectedFrequency)}</div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Payment Status:</span>
+                  <Badge variant={pricingData.paymentStatus === 'paid' ? 'default' : 'destructive'}>
+                    {pricingData.paymentStatus}
+                  </Badge>
+                </div>
+                {pricingData.paymentStatus === 'paid' && pricingData.paymentAmount > 0 && (
+                  <div><span className="font-medium">Amount Paid:</span> {pricingData.paymentCurrency} {pricingData.paymentAmount}</div>
+                )}
+                {pricingData.paidAt && (
+                  <div><span className="font-medium">Paid On:</span> {new Date(pricingData.paidAt).toLocaleDateString()}</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Approval Actions */}
         <div className="flex justify-between items-center pt-4 border-t">
@@ -277,7 +340,7 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
                 ) : (
                   <UserPlus className="h-4 w-4 mr-1" />
                 )}
-                {processing.processingAdmin === seeker.id ? 'Processing...' : (seeker.hasAdministrator ? 'Edit Administrator' : 'Create Administrator')}
+                {processing.processingAdmin === seeker.id ? 'Processing...' : (adminExists ? 'Edit Administrator' : 'Create Administrator')}
               </Button>
             )}
           </div>
