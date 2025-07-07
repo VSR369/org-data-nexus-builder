@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog } from "@/components/ui/dialog";
 import { 
   Building2, 
   Users, 
@@ -16,6 +17,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/membershipPricingUtils';
+import ViewDetailsDialog from './ViewDetailsDialog';
+import type { SeekerDetails } from './types';
 
 interface ComprehensiveOrgData {
   organizationDetails: any;
@@ -25,23 +28,18 @@ interface ComprehensiveOrgData {
   paymentHistory: any[];
 }
 
-interface SeekerDetails {
-  id: string;
-  organizationName: string;
-  organizationType: string;
-  entityType: string;
-  approvalStatus: 'pending' | 'approved' | 'rejected';
-  membershipStatus?: 'active' | 'inactive' | 'not-member';
-  hasAdministrator?: boolean;
-  country?: string;
-}
-
 const SeekingOrgValidationDashboard: React.FC = () => {
   const [seekers, setSeekers] = useState<SeekerDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [comprehensiveData, setComprehensiveData] = useState<ComprehensiveOrgData | null>(null);
+  const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [processing, setProcessing] = useState({
+    processingApproval: null as string | null,
+    processingAdmin: null as string | null
+  });
 
   // Load comprehensive organization data
   const loadComprehensiveOrgData = (orgId: string) => {
@@ -98,14 +96,29 @@ const SeekingOrgValidationDashboard: React.FC = () => {
       if (orgData.organizationName) {
         seekersData.push({
           id: 'current-org',
+          userId: orgData.userId || `user_${Date.now()}`,
+          password: '***', // Don't store actual password
           organizationName: orgData.organizationName,
           organizationType: orgData.organizationType || 'solution-seeker',
           entityType: orgData.entityType || 'organization',
+          country: orgData.country || 'IN',
+          email: orgData.email || orgData.contactEmail || '',
+          contactPersonName: orgData.contactPersonName || '',
+          industrySegment: orgData.industrySegment || '',
+          organizationId: orgData.organizationId || `org_${Date.now()}`,
+          registrationTimestamp: orgData.registrationTimestamp || new Date().toISOString(),
+          lastLoginTimestamp: orgData.lastLoginTimestamp,
+          version: orgData.version || 1,
+          createdAt: orgData.createdAt || new Date().toISOString(),
+          updatedAt: orgData.updatedAt || new Date().toISOString(),
           approvalStatus: 'approved',
           membershipStatus: membershipState.membership_status === 'member_paid' ? 'active' : 
                            membershipState.membership_status === 'inactive' ? 'inactive' : 'not-member',
           hasAdministrator: true,
-          country: orgData.country || 'IN'
+          selectedPlan: membershipState.membership_type,
+          selectedEngagementModel: membershipState.selected_engagement_model,
+          membershipActivationDate: membershipState.activationDate,
+          paymentStatus: membershipState.membership_status
         });
       }
 
@@ -116,14 +129,29 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           registeredUsers.forEach((user, index) => {
             if (user.organizationName && user.organizationName !== orgData.organizationName) {
               seekersData.push({
-                id: `user-${index}`,
+                id: user.id || `user-${index}`,
+                userId: user.userId || `user_${index}`,
+                password: '***',
                 organizationName: user.organizationName,
                 organizationType: user.organizationType || 'solution-seeker',
                 entityType: user.entityType || 'organization',
+                country: user.country || 'IN',
+                email: user.email || '',
+                contactPersonName: user.contactPersonName || '',
+                industrySegment: user.industrySegment || '',
+                organizationId: user.organizationId || `org_${index}`,
+                registrationTimestamp: user.registrationTimestamp || new Date().toISOString(),
+                lastLoginTimestamp: user.lastLoginTimestamp,
+                version: user.version || 1,
+                createdAt: user.createdAt || new Date().toISOString(),
+                updatedAt: user.updatedAt || new Date().toISOString(),
                 approvalStatus: 'approved',
-                membershipStatus: 'inactive',
+                membershipStatus: user.membershipStatus || 'inactive',
                 hasAdministrator: true,
-                country: user.country || 'IN'
+                selectedPlan: user.selectedPlan,
+                selectedEngagementModel: user.selectedEngagementModel,
+                membershipActivationDate: user.membershipActivationDate,
+                paymentStatus: user.paymentStatus
               });
             }
           });
@@ -145,6 +173,77 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Approval handlers
+  const handleApproval = async (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => {
+    setProcessing(prev => ({ ...prev, processingApproval: seekerId }));
+    
+    try {
+      // Update the seeker's approval status
+      setSeekers(prevSeekers => 
+        prevSeekers.map(seeker => 
+          seeker.id === seekerId 
+            ? { ...seeker, approvalStatus: status }
+            : seeker
+        )
+      );
+      
+      console.log(`✅ ${status === 'approved' ? 'Approved' : 'Rejected'} seeker:`, seekerId, reason);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+    } catch (error) {
+      console.error('Error updating approval status:', error);
+    } finally {
+      setProcessing(prev => ({ ...prev, processingApproval: null }));
+    }
+  };
+
+  const handleReject = (seeker: SeekerDetails) => {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason) {
+      handleApproval(seeker.id, 'rejected', reason);
+    }
+  };
+
+  const handleReapprove = (seeker: SeekerDetails) => {
+    handleApproval(seeker.id, 'approved');
+  };
+
+  const handleCreateAdmin = async (seeker: SeekerDetails) => {
+    setProcessing(prev => ({ ...prev, processingAdmin: seeker.id }));
+    
+    try {
+      console.log(`Creating administrator for: ${seeker.organizationName}`);
+      
+      // Simulate admin creation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update seeker to have administrator
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.id === seeker.id 
+            ? { ...s, hasAdministrator: true }
+            : s
+        )
+      );
+      
+      console.log(`✅ Administrator created for: ${seeker.organizationName}`);
+      
+    } catch (error) {
+      console.error('Error creating administrator:', error);
+    } finally {
+      setProcessing(prev => ({ ...prev, processingAdmin: null }));
+    }
+  };
+
+  const approvalHandlers = {
+    onApproval: handleApproval,
+    onReject: handleReject,
+    onReapprove: handleReapprove,
+    onCreateAdmin: handleCreateAdmin
   };
 
   const downloadSeekersData = () => {
@@ -256,8 +355,8 @@ const SeekingOrgValidationDashboard: React.FC = () => {
                       size="sm" 
                       className="w-full"
                       onClick={() => {
-                        setSelectedOrg(seeker.id);
-                        loadComprehensiveOrgData(seeker.id);
+                        setSelectedSeeker(seeker);
+                        setDialogOpen(true);
                       }}
                     >
                       <Eye className="h-4 w-4 mr-2" />
@@ -292,6 +391,17 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           <ValidationCenter seekers={seekers} />
         </TabsContent>
       </Tabs>
+
+      {/* View Details Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {selectedSeeker && (
+          <ViewDetailsDialog 
+            seeker={selectedSeeker}
+            handlers={approvalHandlers}
+            processing={processing}
+          />
+        )}
+      </Dialog>
     </div>
   );
 };
