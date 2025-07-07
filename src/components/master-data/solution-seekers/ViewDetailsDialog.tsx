@@ -145,34 +145,46 @@ const checkAdministratorExists = (seeker: SeekerDetails) => {
 };
 
 const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers, processing }) => {
-  const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
+  const [currentSeeker, setCurrentSeeker] = React.useState(seeker);
+  const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(currentSeeker);
   
-  console.log('👁️ ViewDetailsDialog rendering for seeker:', seeker.organizationName, 'Approval Status:', seeker.approvalStatus);
+  // Update local seeker state when prop changes
+  React.useEffect(() => {
+    setCurrentSeeker(seeker);
+  }, [seeker]);
+  
+  console.log('👁️ ViewDetailsDialog rendering for seeker:', currentSeeker.organizationName, 'Approval Status:', currentSeeker.approvalStatus);
   
   const handleApprovalWithConfirmation = async (status: 'approved' | 'rejected') => {
     // Prevent double-clicks during processing
-    if (processing.processingApproval === seeker.id) {
-      console.log('⏳ Already processing approval for seeker:', seeker.organizationName);
+    if (processing.processingApproval === currentSeeker.id) {
+      console.log('⏳ Already processing approval for seeker:', currentSeeker.organizationName);
       return;
     }
 
     // Show confirmation dialog for approval only
     if (status === 'approved') {
       const confirmed = window.confirm(
-        `Are you sure you want to approve ${seeker.organizationName}?\n\nThis will allow them to create an administrator account.`
+        `Are you sure you want to approve ${currentSeeker.organizationName}?\n\nThis will allow them to create an administrator account.`
       );
       
       if (!confirmed) {
-        console.log('❌ User cancelled approval action for:', seeker.organizationName);
+        console.log('❌ User cancelled approval action for:', currentSeeker.organizationName);
         return;
       }
       
-      await handlers.onApproval(seeker.id, status);
+      await handlers.onApproval(currentSeeker.id, status);
+      
+      // Update local state immediately after approval
+      setCurrentSeeker(prev => ({
+        ...prev,
+        approvalStatus: status
+      }));
     }
   };
   
   return (
-    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
@@ -280,36 +292,36 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Approval Status:</span>
             <Badge variant={
-              seeker.approvalStatus === 'approved' ? 'default' : 
-              seeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'
+              currentSeeker.approvalStatus === 'approved' ? 'default' : 
+              currentSeeker.approvalStatus === 'rejected' ? 'destructive' : 'secondary'
             }>
-              {seeker.approvalStatus}
+              {currentSeeker.approvalStatus}
             </Badge>
           </div>
           
           <div className="flex gap-2">
-            {seeker.approvalStatus === 'pending' && (
+            {currentSeeker.approvalStatus === 'pending' && (
               <>
                 <Button 
                   size="sm" 
                   variant="outline" 
                   className="text-green-600 border-green-600 hover:bg-green-50"
                   onClick={() => handleApprovalWithConfirmation('approved')}
-                  disabled={processing.processingApproval === seeker.id}
+                  disabled={processing.processingApproval === currentSeeker.id}
                 >
-                  {processing.processingApproval === seeker.id ? (
+                  {processing.processingApproval === currentSeeker.id ? (
                     <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
                   ) : (
                     <UserCheck className="h-4 w-4 mr-1" />
                   )}
-                  {processing.processingApproval === seeker.id ? 'Processing...' : 'Approve'}
+                  {processing.processingApproval === currentSeeker.id ? 'Processing...' : 'Approve'}
                 </Button>
                 <Button 
                   size="sm" 
                   variant="outline" 
                   className="text-red-600 border-red-600 hover:bg-red-50"
-                  onClick={() => handlers.onReject(seeker)}
-                  disabled={processing.processingApproval === seeker.id}
+                  onClick={() => handlers.onReject(currentSeeker)}
+                  disabled={processing.processingApproval === currentSeeker.id}
                 >
                   <UserX className="h-4 w-4 mr-1" />
                   Reject
@@ -317,49 +329,49 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
               </>
             )}
             
-            {seeker.approvalStatus === 'rejected' && (
+            {currentSeeker.approvalStatus === 'rejected' && (
               <Button 
                 size="sm" 
                 variant="outline" 
                 className="text-orange-600 border-orange-600 hover:bg-orange-50"
-                onClick={() => handlers.onReapprove(seeker)}
-                disabled={processing.processingApproval === seeker.id}
+                onClick={() => handlers.onReapprove(currentSeeker)}
+                disabled={processing.processingApproval === currentSeeker.id}
               >
                 <RotateCcw className="h-4 w-4 mr-1" />
                 Reapprove
               </Button>
             )}
             
-            {seeker.approvalStatus === 'approved' && !adminExists && (
+            {currentSeeker.approvalStatus === 'approved' && !adminExists && (
               <Button 
                 size="sm" 
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => handlers.onCreateAdmin(seeker)}
-                disabled={processing.processingAdmin === seeker.id}
+                onClick={() => handlers.onCreateAdmin(currentSeeker)}
+                disabled={processing.processingAdmin === currentSeeker.id}
               >
-                {processing.processingAdmin === seeker.id ? (
+                {processing.processingAdmin === currentSeeker.id ? (
                   <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
                   <UserPlus className="h-4 w-4 mr-1" />
                 )}
-                {processing.processingAdmin === seeker.id ? 'Processing...' : 'Create Administrator'}
+                {processing.processingAdmin === currentSeeker.id ? 'Processing...' : 'Create Administrator'}
               </Button>
             )}
             
-            {seeker.approvalStatus === 'approved' && adminExists && (
+            {currentSeeker.approvalStatus === 'approved' && adminExists && (
               <Button 
                 size="sm" 
                 variant="outline"
                 className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-                onClick={() => handlers.onCreateAdmin(seeker)}
-                disabled={processing.processingAdmin === seeker.id}
+                onClick={() => handlers.onCreateAdmin(currentSeeker)}
+                disabled={processing.processingAdmin === currentSeeker.id}
               >
-                {processing.processingAdmin === seeker.id ? (
+                {processing.processingAdmin === currentSeeker.id ? (
                   <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
                   <UserCheck className="h-4 w-4 mr-1" />
                 )}
-                {processing.processingAdmin === seeker.id ? 'Processing...' : 'Edit Administrator'}
+                {processing.processingAdmin === currentSeeker.id ? 'Processing...' : 'Edit Administrator'}
               </Button>
             )}
           </div>
