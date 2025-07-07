@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog } from "@/components/ui/dialog";
+import RejectionDialog from '../RejectionDialog';
 import { 
   Building2, 
   Users, 
@@ -19,6 +20,7 @@ import {
 import { formatCurrency } from '@/utils/membershipPricingUtils';
 import ViewDetailsDialog from './ViewDetailsDialog';
 import type { SeekerDetails } from './types';
+import { approvalStatusService } from '@/services/ApprovalStatusService';
 
 interface ComprehensiveOrgData {
   organizationDetails: any;
@@ -94,8 +96,18 @@ const SeekingOrgValidationDashboard: React.FC = () => {
       const membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
       
       if (orgData.organizationName) {
+        const orgId = orgData.organizationId || `org_${Date.now()}`;
+        const seekerId = 'current-org';
+        
+        // Check for existing approval status
+        const existingApproval = approvalStatusService.getApprovalStatus(seekerId);
+        const approvalStatus = existingApproval?.status || 'pending';
+        
+        // Check if administrator exists
+        const adminExists = approvalStatusService.getAdministrator(seekerId) !== null;
+        
         seekersData.push({
-          id: 'current-org',
+          id: seekerId,
           userId: orgData.userId || `user_${Date.now()}`,
           password: '***', // Don't store actual password
           organizationName: orgData.organizationName,
@@ -105,16 +117,16 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           email: orgData.email || orgData.contactEmail || '',
           contactPersonName: orgData.contactPersonName || '',
           industrySegment: orgData.industrySegment || '',
-          organizationId: orgData.organizationId || `org_${Date.now()}`,
+          organizationId: orgId,
           registrationTimestamp: orgData.registrationTimestamp || new Date().toISOString(),
           lastLoginTimestamp: orgData.lastLoginTimestamp,
           version: orgData.version || 1,
           createdAt: orgData.createdAt || new Date().toISOString(),
           updatedAt: orgData.updatedAt || new Date().toISOString(),
-          approvalStatus: 'approved',
+          approvalStatus: approvalStatus,
           membershipStatus: membershipState.membership_status === 'member_paid' ? 'active' : 
                            membershipState.membership_status === 'inactive' ? 'inactive' : 'not-member',
-          hasAdministrator: true,
+          hasAdministrator: adminExists,
           selectedPlan: membershipState.membership_type,
           selectedEngagementModel: membershipState.selected_engagement_model,
           membershipActivationDate: membershipState.activationDate,
@@ -145,9 +157,9 @@ const SeekingOrgValidationDashboard: React.FC = () => {
                 version: user.version || 1,
                 createdAt: user.createdAt || new Date().toISOString(),
                 updatedAt: user.updatedAt || new Date().toISOString(),
-                approvalStatus: 'approved',
+                approvalStatus: 'pending',
                 membershipStatus: user.membershipStatus || 'inactive',
-                hasAdministrator: true,
+                hasAdministrator: false,
                 selectedPlan: user.selectedPlan,
                 selectedEngagementModel: user.selectedEngagementModel,
                 membershipActivationDate: user.membershipActivationDate,
@@ -180,7 +192,18 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     setProcessing(prev => ({ ...prev, processingApproval: seekerId }));
     
     try {
-      // Update the seeker's approval status
+      // Save to ApprovalStatusService
+      const success = await approvalStatusService.saveApprovalStatus({
+        seekerId,
+        status,
+        reason
+      });
+      
+      if (success && documents && documents.length > 0) {
+        await approvalStatusService.saveDocuments(seekerId, documents);
+      }
+      
+      // Update the seeker's approval status in UI
       setSeekers(prevSeekers => 
         prevSeekers.map(seeker => 
           seeker.id === seekerId 
@@ -201,11 +224,18 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     }
   };
 
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [selectedSeekerForRejection, setSelectedSeekerForRejection] = useState<SeekerDetails | null>(null);
+
   const handleReject = (seeker: SeekerDetails) => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (reason) {
-      handleApproval(seeker.id, 'rejected', reason);
-    }
+    setSelectedSeekerForRejection(seeker);
+    setRejectionDialogOpen(true);
+  };
+
+  const handleRejectionStatusChange = (seekerId: string, status: 'approved' | 'rejected', reason: string, documents?: File[]) => {
+    handleApproval(seekerId, status, reason, documents);
+    setRejectionDialogOpen(false);
+    setSelectedSeekerForRejection(null);
   };
 
   const handleReapprove = (seeker: SeekerDetails) => {
@@ -218,19 +248,33 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     try {
       console.log(`Creating administrator for: ${seeker.organizationName}`);
       
-      // Simulate admin creation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create admin record
+      const adminRecord = {
+        id: `admin_${seeker.id}_${Date.now()}`, 
+        sourceSeekerId: seeker.id,
+        adminId: `admin_${seeker.organizationId}`,
+        adminName: `${seeker.organizationName} Administrator`,
+        adminEmail: seeker.email,
+        createdAt: new Date().toISOString()
+      };
       
-      // Update seeker to have administrator
-      setSeekers(prevSeekers => 
-        prevSeekers.map(s => 
-          s.id === seeker.id 
-            ? { ...s, hasAdministrator: true }
-            : s
-        )
-      );
+      // Save to ApprovalStatusService
+      const success = await approvalStatusService.saveAdministrator(adminRecord);
       
-      console.log(`✅ Administrator created for: ${seeker.organizationName}`);
+      if (success) {
+        // Update seeker to have administrator
+        setSeekers(prevSeekers => 
+          prevSeekers.map(s => 
+            s.id === seeker.id 
+              ? { ...s, hasAdministrator: true }
+              : s
+          )
+        );
+        
+        console.log(`✅ Administrator created for: ${seeker.organizationName}`);
+      } else {
+        throw new Error('Failed to save administrator record');
+      }
       
     } catch (error) {
       console.error('Error creating administrator:', error);
@@ -402,6 +446,16 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           />
         )}
       </Dialog>
+
+      {/* Rejection Dialog */}
+      {selectedSeekerForRejection && (
+        <RejectionDialog
+          open={rejectionDialogOpen}
+          onOpenChange={setRejectionDialogOpen}
+          seeker={selectedSeekerForRejection}
+          onStatusChange={handleRejectionStatusChange}
+        />
+      )}
     </div>
   );
 };

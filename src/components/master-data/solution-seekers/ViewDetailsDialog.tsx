@@ -156,17 +156,19 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
       return;
     }
 
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      `Are you sure you want to ${status === 'approved' ? 'approve' : 'reject'} ${seeker.organizationName}?\n\nThis action will be saved and synchronized across all sessions.`
-    );
-    
-    if (!confirmed) {
-      console.log('❌ User cancelled approval action for:', seeker.organizationName);
-      return;
+    // Show confirmation dialog for approval only
+    if (status === 'approved') {
+      const confirmed = window.confirm(
+        `Are you sure you want to approve ${seeker.organizationName}?\n\nThis will allow them to create an administrator account.`
+      );
+      
+      if (!confirmed) {
+        console.log('❌ User cancelled approval action for:', seeker.organizationName);
+        return;
+      }
+      
+      await handlers.onApproval(seeker.id, status);
     }
-
-    await handlers.onApproval(seeker.id, status);
   };
   
   return (
@@ -328,7 +330,7 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
               </Button>
             )}
             
-            {seeker.approvalStatus === 'approved' && (
+            {seeker.approvalStatus === 'approved' && !adminExists && (
               <Button 
                 size="sm" 
                 className="bg-blue-600 hover:bg-blue-700"
@@ -340,7 +342,24 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
                 ) : (
                   <UserPlus className="h-4 w-4 mr-1" />
                 )}
-                {processing.processingAdmin === seeker.id ? 'Processing...' : (adminExists ? 'Edit Administrator' : 'Create Administrator')}
+                {processing.processingAdmin === seeker.id ? 'Processing...' : 'Create Administrator'}
+              </Button>
+            )}
+            
+            {seeker.approvalStatus === 'approved' && adminExists && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                onClick={() => handlers.onCreateAdmin(seeker)}
+                disabled={processing.processingAdmin === seeker.id}
+              >
+                {processing.processingAdmin === seeker.id ? (
+                  <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <UserCheck className="h-4 w-4 mr-1" />
+                )}
+                {processing.processingAdmin === seeker.id ? 'Processing...' : 'Edit Administrator'}
               </Button>
             )}
           </div>
