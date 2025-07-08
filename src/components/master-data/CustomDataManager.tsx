@@ -28,6 +28,8 @@ const CustomDataManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<CustomDataReport | null>(null);
   const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customDataDetails, setCustomDataDetails] = useState<Record<string, any>>({});
+  const [showDetailedView, setShowDetailedView] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,12 +40,76 @@ const CustomDataManager: React.FC = () => {
     setReport(currentReport);
     setIsCustomMode(customOnlyMode);
     
+    // Load custom data details if in custom mode
+    if (customOnlyMode) {
+      loadCustomDataDetails();
+    }
+    
     console.log('📋 Custom Data Manager Status:', {
       hasReport: !!currentReport,
       isCustomMode: customOnlyMode,
       totalConfigurations: currentReport?.totalCustomConfigurations || 0
     });
   }, []);
+
+  const loadCustomDataDetails = () => {
+    console.log('📖 Loading detailed custom data...');
+    const customData = CustomDataExtractor.loadCustomOnlyData();
+    setCustomDataDetails(customData);
+    
+    // Also check individual category data that might be stored directly
+    const categories = ['currencies', 'countries', 'industrySegments', 'organizationTypes', 'entityTypes', 'departments', 'domainGroups'];
+    const additionalData: Record<string, any> = {};
+    
+    categories.forEach(category => {
+      const data = CustomDataExtractor.getCustomDataForCategory(category);
+      if (data) {
+        additionalData[category] = data;
+      }
+    });
+    
+    const combinedData = { ...customData, ...additionalData };
+    setCustomDataDetails(combinedData);
+    
+    console.log('📊 Loaded custom data details:', combinedData);
+  };
+
+  const handleViewDetailedCustomData = () => {
+    if (!showDetailedView) {
+      loadCustomDataDetails();
+    }
+    setShowDetailedView(!showDetailedView);
+  };
+
+  const formatCustomDataValue = (data: any): string => {
+    if (Array.isArray(data)) {
+      return `Array with ${data.length} items`;
+    } else if (typeof data === 'object' && data !== null) {
+      return `Object with ${Object.keys(data).length} properties`;
+    } else {
+      return String(data);
+    }
+  };
+
+  const renderCustomDataItem = (item: any, index: number) => {
+    if (typeof item === 'object' && item !== null) {
+      return (
+        <div key={index} className="bg-gray-50 p-3 rounded border">
+          {Object.entries(item).map(([key, value]) => (
+            <div key={key} className="flex justify-between text-sm">
+              <span className="font-medium text-gray-600">{key}:</span>
+              <span className="text-gray-800">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div key={index} className="bg-gray-50 p-2 rounded text-sm">
+        {String(item)}
+      </div>
+    );
+  };
 
   const checkServiceStatus = (category: string, serviceName: string) => {
     const isCustomMode = CustomDataExtractor.isCustomOnlyMode();
@@ -522,6 +588,15 @@ const CustomDataManager: React.FC = () => {
             </Button>
             
             <Button 
+              onClick={handleViewDetailedCustomData}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {showDetailedView ? "Hide" : "View"} Detailed Custom Data
+            </Button>
+            
+            <Button 
               onClick={handleDebugDataStatus}
               variant="outline"
               className="flex items-center gap-2"
@@ -552,6 +627,67 @@ const CustomDataManager: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Detailed Custom Data View */}
+      {showDetailedView && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Detailed Custom Data
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(customDataDetails).length > 0 ? (
+              <div className="space-y-6">
+                {Object.entries(customDataDetails).map(([category, data]) => (
+                  <div key={category} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-lg capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}</h4>
+                      <Badge variant="secondary">
+                        {formatCustomDataValue(data)}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {Array.isArray(data) ? (
+                        data.map((item, index) => renderCustomDataItem(item, index))
+                      ) : data && typeof data === 'object' ? (
+                        <div className="bg-gray-50 p-3 rounded border">
+                          {data.industrySegments && Array.isArray(data.industrySegments) ? (
+                            // Special handling for industry segments
+                            data.industrySegments.map((item: any, index: number) => renderCustomDataItem(item, index))
+                          ) : (
+                            Object.entries(data).map(([key, value]) => (
+                              <div key={key} className="flex justify-between text-sm border-b pb-1 mb-1 last:border-b-0">
+                                <span className="font-medium text-gray-600">{key}:</span>
+                                <span className="text-gray-800 max-w-xs truncate">
+                                  {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-600">
+                          {String(data)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No custom data found. {isCustomMode ? "This might indicate an issue with data loading." : "Please switch to custom-only mode first."}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Instructions */}
       <Card>
