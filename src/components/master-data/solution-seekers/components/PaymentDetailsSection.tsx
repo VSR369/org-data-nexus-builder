@@ -58,11 +58,7 @@ const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershi
               </Badge>
             </div>
             {pricingData.paymentStatus === 'paid' && pricingData.paymentAmount > 0 && (
-              <div><span className="font-medium">Amount Paid:</span> {
-                isPaaSModel(pricingData.engagementModel || '') 
-                  ? `${pricingData.paymentCurrency} ${pricingData.paymentAmount}`
-                  : `${pricingData.paymentAmount}%`
-              }</div>
+              <div><span className="font-medium">Amount Paid:</span> {pricingData.paymentCurrency} {pricingData.paymentAmount}</div>
             )}
             {pricingData.paidAt && (
               <div><span className="font-medium">Paid On:</span> {new Date(pricingData.paidAt).toLocaleDateString()}</div>
