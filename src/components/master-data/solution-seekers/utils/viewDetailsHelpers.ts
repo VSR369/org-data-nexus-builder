@@ -139,6 +139,30 @@ export const loadEngagementPricingDetails = (seeker: any) => {
     storageKeys
   });
   
+  // DEBUG: Search all localStorage for potential payment data
+  console.log('🔍 DEBUG: Searching all localStorage for payment data...');
+  const allKeys = Object.keys(localStorage);
+  const membershipKeys = allKeys.filter(key => key.includes('membership_pricing_system_state'));
+  console.log('📋 All membership state keys found:', membershipKeys);
+  
+  membershipKeys.forEach(key => {
+    try {
+      const data = localStorage.getItem(key);
+      if (data) {
+        const parsed = JSON.parse(data);
+        console.log(`🔑 ${key}:`, {
+          organization_id: parsed.organization_id,
+          organization_name: parsed.organization_name,
+          payment_records_count: parsed.payment_records?.length || 0,
+          membership_status: parsed.membership_status,
+          last_updated: parsed.last_updated
+        });
+      }
+    } catch (e) {
+      console.log(`❌ Failed to parse ${key}`);
+    }
+  });
+  
   let membershipState: any = {};
   let usedStorageKey = '';
   let dataSource = 'none';
@@ -163,7 +187,45 @@ export const loadEngagementPricingDetails = (seeker: any) => {
     }
   }
   
-  // ONLY fallback to global state if no organization-specific data found AND seeker matches current registration
+  // Enhanced fallback: Search all membership keys for payment data matching this organization
+  if (!membershipState.last_updated) {
+    console.log('🔍 No direct match found, searching all membership keys for payment data...');
+    
+    // Search all membership keys for payment records that might belong to this organization
+    for (const key of membershipKeys) {
+      try {
+        const data = localStorage.getItem(key);
+        if (data) {
+          const parsed = JSON.parse(data);
+          
+          // Check if this data has payment records that might belong to our organization
+          if (parsed.payment_records && Array.isArray(parsed.payment_records)) {
+            const orgPayments = parsed.payment_records.filter((record: any) => {
+              return record.organizationId === identifiers.organizationId ||
+                     record.organizationName === identifiers.organizationName ||
+                     record.organizationEmail === identifiers.email ||
+                     record.organizationName?.toLowerCase() === identifiers.organizationName?.toLowerCase();
+            });
+            
+            if (orgPayments.length > 0) {
+              console.log(`✅ Found payment data for ${identifiers.organizationName} in ${key}:`, orgPayments);
+              membershipState = {
+                ...parsed,
+                payment_records: orgPayments // Only use payments for this organization
+              };
+              usedStorageKey = key;
+              dataSource = 'cross-key-search';
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`❌ Failed to parse ${key} during cross-key search:`, e);
+      }
+    }
+  }
+  
+  // Fallback to global state for current organization
   if (!membershipState.last_updated) {
     const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
     
