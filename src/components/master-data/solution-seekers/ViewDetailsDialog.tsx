@@ -53,7 +53,7 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
   };
   
   return (
-    <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-y-auto m-4">
+    <DialogContent className="max-w-6xl w-[98vw] max-h-[95vh] overflow-y-auto p-4">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
