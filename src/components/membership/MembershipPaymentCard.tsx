@@ -46,7 +46,7 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
     );
   }
 
-  // Handle "Not a Member" submission
+  // Handle "Not a Member" submission - Only show preference message, no upgrade option
   if (submittedMembershipType === 'not-a-member') {
     return (
       <Card>
@@ -57,51 +57,13 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="text-lg font-semibold mb-2 text-yellow-800">
-                You have preferred not to be a member
-              </div>
-              <div className="text-sm text-yellow-700">
-                Standard rates will apply to all engagement models
-              </div>
+          <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="text-lg font-semibold mb-2 text-yellow-800">
+              You have preferred not to be a member
             </div>
-            
-            {membershipStatus !== 'member_paid' && (
-              <div className="space-y-3">
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">
-                    Change your mind? Upgrade to Annual Membership
-                  </div>
-                  {annualFee ? (
-                    <div className="text-2xl font-bold text-primary">
-                      {formatCurrency(annualFee.amount, annualFee.currency)}
-                    </div>
-                  ) : (
-                    <div className="text-2xl font-bold text-red-600">
-                      Fee not loaded from master data
-                    </div>
-                  )}
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Pay this fee to become a member and unlock member pricing
-                  </div>
-                </div>
-                <Button 
-                  className="w-full" 
-                  onClick={onMembershipPayment}
-                  disabled={membershipPaymentLoading || !annualFee}
-                >
-                  {membershipPaymentLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Processing...
-                    </>
-                  ) : (
-                    `Upgrade to Membership${annualFee ? ` - ${formatCurrency(annualFee.amount, annualFee.currency)}` : ''}`
-                  )}
-                </Button>
-              </div>
-            )}
+            <div className="text-sm text-yellow-700">
+              Standard rates will apply to all engagement models
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -110,6 +72,7 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
 
   // Handle "Annual Membership" submission
   if (submittedMembershipType === 'annual') {
+    // If already paid, show confirmation
     if (membershipStatus === 'member_paid') {
       return (
         <Card>
@@ -120,8 +83,8 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 space-y-3">
-              <div className="text-green-600 font-semibold">
+            <div className="text-center py-8">
+              <div className="text-green-600 font-semibold mb-2">
                 ✅ Annual Membership Already Active
               </div>
               <p className="text-sm text-muted-foreground">
@@ -133,6 +96,7 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
       );
     }
 
+    // Show payment form for annual membership
     return (
       <Card>
         <CardHeader>
@@ -181,7 +145,7 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
     );
   }
 
-  // Fallback
+  // Default state - no selection submitted yet
   return (
     <Card className="opacity-50">
       <CardHeader>
@@ -193,7 +157,7 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
       <CardContent>
         <div className="text-center py-8">
           <p className="text-sm text-muted-foreground">
-            Please select a membership option
+            Please select and submit a membership plan first
           </p>
         </div>
       </CardContent>
