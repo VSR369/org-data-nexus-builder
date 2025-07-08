@@ -109,6 +109,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   );
   const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
+  const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
   const { toast } = useToast();
 
 
@@ -328,6 +329,9 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           membershipType={state.membership_type}
           membershipFees={membershipFees}
           onMembershipTypeChange={(value) => updateMembershipType(value as any)}
+          onMembershipSubmit={(selectedType) => {
+            setSubmittedMembershipType(selectedType);
+          }}
         />
 
         <EngagementModelSelection
@@ -342,6 +346,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           membershipStatus={state.membership_status}
           membershipFees={membershipFees}
           membershipPaymentLoading={membershipPaymentLoading}
+          submittedMembershipType={submittedMembershipType}
           onMembershipPayment={handleMembershipPayment}
           onResetPaymentStatus={() => updateMembershipStatus('inactive')}
         />
