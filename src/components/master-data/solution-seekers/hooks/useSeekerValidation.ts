@@ -61,10 +61,12 @@ export const useSeekerValidation = () => {
     }
   };
 
-  // Load seekers data from actual storage
+  // Enhanced seekers loading with data verification
   const refreshSeekers = () => {
     setLoading(true);
     setError(null);
+    
+    console.log('🔄 Starting seekers refresh with data verification...');
     
     // Check if migration is needed and perform it
     if (isMigrationNeeded()) {
@@ -84,13 +86,34 @@ export const useSeekerValidation = () => {
       const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
       const orgId = orgData.organizationId || `org_${Date.now()}`;
       
-      // Load organization-specific membership state
+      // Enhanced organization-specific data loading with verification
       const orgSpecificKey = `membership_pricing_system_state_${orgId}`;
       let membershipState = JSON.parse(localStorage.getItem(orgSpecificKey) || '{}');
       
-      // Fallback to global state if organization-specific doesn't exist
+      // Verify data belongs to this organization
+      if (membershipState.organization_id && membershipState.organization_id !== orgId) {
+        console.warn(`⚠️ Organization ID mismatch in stored data: stored=${membershipState.organization_id}, expected=${orgId}`);
+        membershipState = {}; // Reset to empty state if mismatch
+      }
+      
+      // Smart fallback strategy - only for current organization
       if (!membershipState.last_updated) {
-        membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
+        // Check if this is the currently registered organization
+        if (orgData.organizationName && orgData.organizationId === orgId) {
+          const globalState = localStorage.getItem('membership_pricing_system_state');
+          if (globalState) {
+            try {
+              const parsed = JSON.parse(globalState);
+              // Only use global state if it doesn't have organization-specific markers
+              if (!parsed.organization_id || parsed.organization_id === orgId) {
+                membershipState = parsed;
+                console.log(`⚠️ Using global state for current organization: ${orgData.organizationName}`);
+              }
+            } catch (e) {
+              console.error('❌ Failed to parse global state:', e);
+            }
+          }
+        }
       }
       
       if (orgData.organizationName) {

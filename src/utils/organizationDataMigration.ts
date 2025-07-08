@@ -127,18 +127,104 @@ export const isMigrationNeeded = (): boolean => {
   }
 };
 
-// Function to get organization-specific data
-export const getOrganizationSpecificData = (organizationId: string) => {
-  const orgSpecificKey = `membership_pricing_system_state_${organizationId}`;
-  const orgSpecificData = localStorage.getItem(orgSpecificKey);
+// Enhanced organization data storage with proper validation
+export const saveOrganizationSpecificData = (organizationId: string, organizationName: string, data: any) => {
+  try {
+    const enhancedData = {
+      ...data,
+      organization_id: organizationId,
+      organization_name: organizationName,
+      last_updated: new Date().toISOString(),
+      version: (data.version || 0) + 1
+    };
+    
+    // Ensure payment records have organization identifiers
+    if (enhancedData.payment_records) {
+      enhancedData.payment_records = enhancedData.payment_records.map((record: any) => ({
+        ...record,
+        organizationId: organizationId,
+        organizationName: organizationName,
+        organizationEmail: record.organizationEmail || data.organization_email
+      }));
+    }
+    
+    const storageKey = `membership_pricing_system_state_${organizationId}`;
+    localStorage.setItem(storageKey, JSON.stringify(enhancedData));
+    
+    console.log(`✅ Saved organization-specific data for: ${organizationName}`, {
+      organizationId,
+      storageKey,
+      dataVersion: enhancedData.version
+    });
+    
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to save organization data for ${organizationName}:`, error);
+    return false;
+  }
+};
+
+// Function to get organization-specific data with multiple fallback strategies
+export const getOrganizationSpecificData = (organizationId: string, organizationName?: string, email?: string) => {
+  // Try multiple storage key strategies
+  const possibleKeys = [
+    `membership_pricing_system_state_${organizationId}`,
+    organizationName ? `membership_pricing_system_state_${organizationName.replace(/\s+/g, '_')}` : null,
+    email ? `membership_pricing_system_state_${email}` : null
+  ].filter(Boolean);
   
-  if (orgSpecificData) {
-    try {
-      return JSON.parse(orgSpecificData);
-    } catch {
-      return null;
+  for (const key of possibleKeys) {
+    const orgSpecificData = localStorage.getItem(key as string);
+    if (orgSpecificData) {
+      try {
+        const parsed = JSON.parse(orgSpecificData);
+        // Validate data integrity
+        if (parsed.organization_id === organizationId || 
+            parsed.organization_name === organizationName ||
+            parsed.last_updated) {
+          console.log(`✅ Found organization data with key: ${key}`);
+          return parsed;
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to parse organization data from key: ${key}`, error);
+      }
     }
   }
   
+  console.log(`📭 No organization-specific data found for: ${organizationName || organizationId}`);
   return null;
+};
+
+// Function to verify data consistency across storage
+export const verifyOrganizationDataConsistency = (organizationId: string, organizationName: string) => {
+  const data = getOrganizationSpecificData(organizationId, organizationName);
+  if (!data) return { consistent: false, issues: ['No data found'] };
+  
+  const issues: string[] = [];
+  
+  // Check organization identifiers
+  if (data.organization_id !== organizationId) {
+    issues.push(`Organization ID mismatch: stored=${data.organization_id}, expected=${organizationId}`);
+  }
+  
+  if (data.organization_name !== organizationName) {
+    issues.push(`Organization name mismatch: stored=${data.organization_name}, expected=${organizationName}`);
+  }
+  
+  // Check payment records consistency
+  if (data.payment_records) {
+    const inconsistentRecords = data.payment_records.filter((record: any) => 
+      record.organizationId && record.organizationId !== organizationId
+    );
+    
+    if (inconsistentRecords.length > 0) {
+      issues.push(`${inconsistentRecords.length} payment records have mismatched organization IDs`);
+    }
+  }
+  
+  return {
+    consistent: issues.length === 0,
+    issues,
+    data
+  };
 };

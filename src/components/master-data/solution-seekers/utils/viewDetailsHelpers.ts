@@ -91,38 +91,155 @@ export const checkAdministratorExists = (seeker: any) => {
   return false;
 };
 
+// Unified organization identifier resolution
+const resolveOrganizationIdentifiers = (seeker: any) => {
+  const identifiers = {
+    organizationId: seeker.organizationId || seeker.userId || seeker.id,
+    organizationName: seeker.organizationName,
+    email: seeker.email,
+    contactEmail: seeker.contactEmail
+  };
+  
+  console.log('🔍 Resolving organization identifiers:', identifiers);
+  return identifiers;
+};
+
+// Enhanced data validation for organization match
+const validateOrganizationData = (data: any, seeker: any) => {
+  if (!data || !data.organization_id) return false;
+  
+  const seekerIds = resolveOrganizationIdentifiers(seeker);
+  
+  // Check if data belongs to this organization
+  return data.organization_id === seekerIds.organizationId ||
+         data.organization_name === seekerIds.organizationName ||
+         data.organization_email === seekerIds.email;
+};
+
+// Smart storage key generation with fallback strategies
+const generateStorageKeys = (seeker: any) => {
+  const identifiers = resolveOrganizationIdentifiers(seeker);
+  
+  return [
+    `membership_pricing_system_state_${identifiers.organizationId}`,
+    `membership_pricing_system_state_${identifiers.organizationName?.replace(/\s+/g, '_')}`,
+    `membership_pricing_system_state_${identifiers.email}`,
+    `membership_pricing_system_state_${seeker.userId}`,
+    `membership_pricing_system_state_${seeker.id}`
+  ].filter(Boolean);
+};
+
 // Helper function to load engagement pricing details for a specific organization
 export const loadEngagementPricingDetails = (seeker: any) => {
-  const organizationId = seeker.organizationId || seeker.userId;
+  const identifiers = resolveOrganizationIdentifiers(seeker);
+  const storageKeys = generateStorageKeys(seeker);
   
-  // Try organization-specific storage first
-  const orgSpecificKey = `membership_pricing_system_state_${organizationId}`;
-  let membershipState = JSON.parse(localStorage.getItem(orgSpecificKey) || '{}');
+  console.log(`🎯 Loading engagement pricing for organization: ${identifiers.organizationName}`, {
+    identifiers,
+    storageKeys
+  });
   
-  // Fallback to global state if organization-specific doesn't exist
-  if (!membershipState.last_updated) {
-    membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
+  let membershipState: any = {};
+  let usedStorageKey = '';
+  let dataSource = 'none';
+  
+  // Try organization-specific storage keys in priority order
+  for (const key of storageKeys) {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Validate this data belongs to the organization
+        if (validateOrganizationData(parsed, seeker) || parsed.last_updated) {
+          membershipState = parsed;
+          usedStorageKey = key;
+          dataSource = 'organization-specific';
+          console.log(`✅ Found organization-specific data with key: ${key}`);
+          break;
+        }
+      } catch (e) {
+        console.warn(`❌ Failed to parse data from key: ${key}`, e);
+      }
+    }
   }
   
-  // Get registration data
-  const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+  // ONLY fallback to global state if no organization-specific data found AND seeker matches current registration
+  if (!membershipState.last_updated) {
+    const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+    
+    // Check if this seeker is the currently registered organization
+    const isCurrentOrg = orgData.organizationName === identifiers.organizationName ||
+                        orgData.organizationId === identifiers.organizationId ||
+                        orgData.email === identifiers.email;
+    
+    if (isCurrentOrg) {
+      const globalState = localStorage.getItem('membership_pricing_system_state');
+      if (globalState) {
+        try {
+          membershipState = JSON.parse(globalState);
+          dataSource = 'global-fallback';
+          usedStorageKey = 'membership_pricing_system_state';
+          console.log(`⚠️ Using global state as fallback for current organization: ${identifiers.organizationName}`);
+        } catch (e) {
+          console.error('❌ Failed to parse global state:', e);
+        }
+      }
+    }
+  }
+  
+  // If still no data, return empty state with clear indication
+  if (!membershipState.last_updated && dataSource === 'none') {
+    console.log(`📭 No membership data found for organization: ${identifiers.organizationName}`);
+    return {
+      membershipData: {
+        status: 'inactive',
+        type: 'not-a-member',
+        selectedPlan: null,
+        paymentStatus: 'unpaid',
+        paymentAmount: 0,
+        paymentCurrency: 'INR',
+        paidAt: null,
+        dataSource: 'no-data'
+      },
+      pricingData: {
+        engagementModel: null,
+        selectedFrequency: null,
+        paymentStatus: 'unpaid',
+        paymentAmount: 0,
+        paymentCurrency: 'INR',
+        paidAt: null,
+        pricingStructure: 'currency',
+        dataSource: 'no-data'
+      },
+      adminExists: checkAdministratorExists(seeker),
+      dataSource: 'no-data'
+    };
+  }
   
   // Get payment records from the state
   const paymentRecords = membershipState.payment_records || [];
   
-  // Find membership payment for this organization
-  const membershipPayment = paymentRecords.find((record: any) => 
-    record.type === 'membership' && 
-    record.status === 'completed' &&
-    (record.organizationId === organizationId || !record.organizationId)
-  );
+  // Find membership payment for this organization with strict matching
+  const membershipPayment = paymentRecords.find((record: any) => {
+    if (record.type !== 'membership' || record.status !== 'completed') return false;
+    
+    // Strict organization matching
+    return record.organizationId === identifiers.organizationId ||
+           record.organizationName === identifiers.organizationName ||
+           record.organizationEmail === identifiers.email ||
+           (!record.organizationId && dataSource === 'global-fallback'); // Only allow unspecified org for global fallback
+  });
   
-  // Find engagement payment for this organization
-  const engagementPayment = paymentRecords.find((record: any) => 
-    record.type === 'engagement' && 
-    record.status === 'completed' &&
-    (record.organizationId === organizationId || !record.organizationId)
-  );
+  // Find engagement payment for this organization with strict matching
+  const engagementPayment = paymentRecords.find((record: any) => {
+    if (record.type !== 'engagement' || record.status !== 'completed') return false;
+    
+    // Strict organization matching
+    return record.organizationId === identifiers.organizationId ||
+           record.organizationName === identifiers.organizationName ||
+           record.organizationEmail === identifiers.email ||
+           (!record.organizationId && dataSource === 'global-fallback'); // Only allow unspecified org for global fallback
+  });
   
   const membershipData = {
     status: membershipState.membership_status || 'inactive',
@@ -131,7 +248,8 @@ export const loadEngagementPricingDetails = (seeker: any) => {
     paymentStatus: membershipPayment ? 'paid' : 'unpaid',
     paymentAmount: membershipPayment?.amount || 0,
     paymentCurrency: membershipPayment?.currency || 'INR',
-    paidAt: membershipPayment?.timestamp || null
+    paidAt: membershipPayment?.timestamp || null,
+    dataSource
   };
   
   // Enhanced pricing data with engagement model details
@@ -142,18 +260,23 @@ export const loadEngagementPricingDetails = (seeker: any) => {
     paymentAmount: engagementPayment?.amount || 0,
     paymentCurrency: engagementPayment?.currency || 'INR',
     paidAt: engagementPayment?.timestamp || null,
-    pricingStructure: engagementPayment?.pricingStructure || 'currency'
+    pricingStructure: engagementPayment?.pricingStructure || 'currency',
+    dataSource
   };
   
   // Check if administrator exists
   const adminExists = checkAdministratorExists(seeker);
   
-  console.log(`🎯 Loaded payment details for org ${organizationId}:`, { 
+  console.log(`🎯 Loaded payment details for org ${identifiers.organizationName}:`, { 
     membershipData, 
     pricingData, 
     adminExists,
-    usedOrgSpecific: !!localStorage.getItem(orgSpecificKey)
+    usedStorageKey,
+    dataSource,
+    foundMembershipPayment: !!membershipPayment,
+    foundEngagementPayment: !!engagementPayment,
+    totalPaymentRecords: paymentRecords.length
   });
   
-  return { membershipData, pricingData, adminExists };
+  return { membershipData, pricingData, adminExists, dataSource };
 };

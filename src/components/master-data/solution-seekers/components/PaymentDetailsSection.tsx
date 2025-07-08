@@ -39,8 +39,21 @@ const getPricingDisplay = (pricingData: any) => {
 };
 
 const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershipData, pricingData, isMobile }) => {
+  // Show data source for debugging if not production
+  const showDataSource = membershipData?.dataSource || pricingData?.dataSource;
+  
   return (
     <div className={`${isMobile ? "space-y-3" : "space-y-4"}`}>
+      {/* Data Source Indicator (for debugging) */}
+      {showDataSource && showDataSource !== 'organization-specific' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs">
+          <span className="font-medium text-yellow-700">Data Source:</span> {showDataSource}
+          {showDataSource === 'no-data' && (
+            <span className="text-yellow-600 ml-2">No organization-specific data found</span>
+          )}
+        </div>
+      )}
+      
       {/* Membership Details */}
       {membershipData && (
         <div>
