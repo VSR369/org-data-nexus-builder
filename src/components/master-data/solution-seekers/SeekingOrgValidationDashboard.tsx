@@ -16,6 +16,7 @@ import {
 import ViewDetailsDialog from './ViewDetailsDialog';
 import ComprehensiveOrgView from './components/ComprehensiveOrgView';
 import ValidationCenter from './components/ValidationCenter';
+import SeekerCard from './SeekerCard';
 import type { SeekerDetails } from './types';
 import { useSeekerValidation } from './hooks/useSeekerValidation';
 
@@ -164,40 +165,12 @@ const SeekingOrgValidationDashboard: React.FC = () => {
         <TabsContent value="organizations" className="space-y-4">
           <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6`}>
             {seekers.map(seeker => (
-              <Card key={seeker.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className={`${isMobile ? "p-3" : "p-4"}`}>
-                  <div className={`space-y-${isMobile ? "2" : "3"}`}>
-                    <div className={`flex items-center ${isMobile ? "flex-col gap-2" : "justify-between"}`}>
-                      <div className={isMobile ? "text-center" : ""}>
-                        <h4 className={`font-medium ${isMobile ? "text-sm" : ""}`}>{seeker.organizationName}</h4>
-                        <p className={`text-sm text-muted-foreground ${isMobile ? "text-xs" : ""}`}>{seeker.organizationType}</p>
-                      </div>
-                      <Badge variant={seeker.approvalStatus === 'approved' ? 'default' : 'secondary'}>
-                        {seeker.approvalStatus}
-                      </Badge>
-                    </div>
-                    
-                    <div className={`flex items-center gap-2 text-sm ${isMobile ? "justify-center flex-wrap" : ""}`}>
-                      <Badge variant="outline" className={isMobile ? "text-xs" : ""}>{seeker.entityType}</Badge>
-                      <Badge variant={seeker.membershipStatus === 'active' ? 'default' : 'secondary'} className={isMobile ? "text-xs" : ""}>
-                        {seeker.membershipStatus || 'inactive'}
-                      </Badge>
-                    </div>
-
-                    <Button 
-                      size={isMobile ? "default" : "sm"}
-                      className={`w-full ${isMobile ? "min-h-[44px]" : ""}`}
-                      onClick={() => {
-                        setSelectedSeeker(seeker);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <SeekerCard 
+                key={seeker.id}
+                seeker={seeker}
+                handlers={approvalHandlers}
+                processing={processing}
+              />
             ))}
           </div>
         </TabsContent>
