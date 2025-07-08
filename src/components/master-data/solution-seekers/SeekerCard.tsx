@@ -139,6 +139,75 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
           {seeker.approvalStatus}
         </Badge>
       </CardHeader>
+      
+      {/* Enhanced Status Display Section - As shown in the image */}
+      {(membershipData?.paymentStatus === 'paid' || pricingData?.engagementModel) && (
+        <div className="px-6 pb-3">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {/* Membership Status */}
+              {membershipData?.paymentStatus === 'paid' && (
+                <>
+                  <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
+                    Premium Member
+                  </Badge>
+                  <Badge variant="outline" className="border-blue-200">
+                    {membershipData.type === 'annual' ? 'Annual Plan' : membershipData.type || 'Member'}
+                  </Badge>
+                  {membershipData.paymentAmount > 0 && (
+                    <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
+                      Paid: {membershipData.paymentCurrency} {membershipData.paymentAmount}
+                    </Badge>
+                  )}
+                </>
+              )}
+              
+              {/* Non-member status */}
+              {membershipData?.paymentStatus !== 'paid' && (
+                <Badge variant="secondary">
+                  Not a Member
+                </Badge>
+              )}
+            </div>
+            
+            {/* Engagement Model Details */}
+            {pricingData?.engagementModel && (
+              <div className="text-sm space-y-1">
+                <div className="font-medium text-primary">
+                  Engagement Model: {pricingData.engagementModel}
+                  {pricingData.selectedFrequency && (
+                    <span className="text-muted-foreground"> ({pricingData.selectedFrequency})</span>
+                  )}
+                </div>
+                {pricingData.paymentStatus === 'paid' && pricingData.paymentAmount > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
+                      ✅ Paid: {pricingData.paymentCurrency} {pricingData.paymentAmount}
+                    </Badge>
+                    {pricingData.paidAt && (
+                      <Badge variant="outline" className="text-xs">
+                        {new Date(pricingData.paidAt).toLocaleDateString()}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                {pricingData.paymentStatus !== 'paid' && (
+                  <Badge variant="destructive" className="text-xs">
+                    ❌ Payment Pending
+                  </Badge>
+                )}
+              </div>
+            )}
+            
+            {!pricingData?.engagementModel && (
+              <div className="text-sm text-red-600 italic">
+                No engagement model selected
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <CardContent className="space-y-3">
         <div className="text-sm text-gray-600 space-y-2">
           <div className="flex items-center gap-2">
