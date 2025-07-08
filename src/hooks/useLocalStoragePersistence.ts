@@ -21,6 +21,7 @@ interface PaymentRecord {
   billingFrequency?: 'quarterly' | 'half-yearly' | 'annual';
   pricingStructure?: 'percentage' | 'currency';
   organizationId?: string;
+  organizationName?: string;
 }
 
 const DEFAULT_STATE: PersistentState = {
@@ -122,7 +123,7 @@ export const useLocalStoragePersistence = (organizationId?: string) => {
       ...record,
       id: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
-      organizationId: organizationId || 'global'
+      organizationId: record.organizationId || organizationId || 'global'
     };
     
     setState(prev => {

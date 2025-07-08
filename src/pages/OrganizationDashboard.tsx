@@ -378,6 +378,8 @@ const OrganizationDashboard = () => {
             organizationType={completeUserData?.organizationType || sessionData.organizationType || 'Technology'}
             entityType={completeUserData?.entityType || sessionData.entityType}
             country={completeUserData?.country || sessionData.country}
+            organizationId={completeUserData?.organizationId || sessionData.organizationId}
+            organizationName={completeUserData?.organizationName || sessionData.organizationName}
           />
         </div>
 

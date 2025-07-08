@@ -21,14 +21,75 @@ interface MembershipPricingSystemProps {
   organizationType: string;
   entityType: string;
   country: string;
+  organizationId?: string;
+  organizationName?: string;
 }
 
 
 const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   organizationType,
   entityType,
-  country
+  country,
+  organizationId,
+  organizationName
 }) => {
+  // Get organization ID from props or registration data
+  const getOrganizationId = () => {
+    if (organizationId) return organizationId;
+    
+    try {
+      const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+      return orgData.organizationId || orgData.userId || 'default_org';
+    } catch {
+      return 'default_org';
+    }
+  };
+
+  const currentOrgId = getOrganizationId();
+  
+  // Migrate global data to organization-specific storage if needed
+  React.useEffect(() => {
+    const migrateGlobalData = () => {
+      const globalKey = 'membership_pricing_system_state';
+      const orgSpecificKey = `membership_pricing_system_state_${currentOrgId}`;
+      
+      const globalData = localStorage.getItem(globalKey);
+      const orgSpecificData = localStorage.getItem(orgSpecificKey);
+      
+      // Only migrate if global data exists and org-specific doesn't
+      if (globalData && !orgSpecificData) {
+        try {
+          const parsed = JSON.parse(globalData);
+          const enhancedData = {
+            ...parsed,
+            organization_id: currentOrgId,
+            organization_name: organizationName,
+            last_updated: new Date().toISOString(),
+            migrated_from_global: true
+          };
+          
+          // Enhance payment records with organization details
+          if (enhancedData.payment_records) {
+            enhancedData.payment_records = enhancedData.payment_records.map((record: any) => ({
+              ...record,
+              organizationId: currentOrgId,
+              organizationName: organizationName
+            }));
+          }
+          
+          localStorage.setItem(orgSpecificKey, JSON.stringify(enhancedData));
+          console.log(`✅ Migrated global membership data to organization-specific storage for: ${organizationName}`);
+        } catch (error) {
+          console.error('❌ Failed to migrate global data:', error);
+        }
+      }
+    };
+    
+    if (currentOrgId && organizationName) {
+      migrateGlobalData();
+    }
+  }, [currentOrgId, organizationName]);
+  
   const {
     state,
     loading: stateLoading,
@@ -39,7 +100,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     updateFrequency,
     addPaymentRecord,
     updatePaymentRecord
-  } = useLocalStoragePersistence();
+  } = useLocalStoragePersistence(currentOrgId);
 
   const { pricingConfigs, membershipFees, engagementModels, loading: dataLoading } = useMembershipPricingData(
     organizationType,
@@ -60,12 +121,14 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setMembershipPaymentLoading(true);
     
     try {
-      // Add payment record
+      // Add payment record with organization details
       const paymentRecord = addPaymentRecord({
         type: 'membership',
         amount: fee.amount,
         currency: fee.currency,
-        status: 'pending'
+        status: 'pending',
+        organizationId: currentOrgId,
+        organizationName: organizationName
       });
 
       // Simulate payment processing
@@ -151,12 +214,17 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       // Log comprehensive payment information before processing
       console.log('💳 Starting Engagement Payment:', paymentDetails);
       
-      // Create basic payment record (only supported fields)
+      // Create engagement payment record with organization details
       const paymentRecord = addPaymentRecord({
         type: 'engagement',
         amount: paymentAmount,
         currency: pricing.currency || 'INR',
-        status: 'pending'
+        status: 'pending',
+        organizationId: currentOrgId,
+        organizationName: organizationName,
+        engagementModel: state.selected_engagement_model,
+        billingFrequency: state.selected_frequency,
+        pricingStructure: state.selected_engagement_model?.toLowerCase().includes('marketplace') ? 'percentage' : 'currency'
       });
 
       // Simulate payment processing
