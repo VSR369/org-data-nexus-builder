@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Wallet, CreditCard, Loader2 } from "lucide-react";
 import { PricingConfig } from '@/types/pricing';
 import { 
@@ -156,41 +155,14 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                 </div>
                 
                 {hasPaidEngagement ? (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        className="w-full" 
-                        size="lg"
-                        disabled={engagementPaymentLoading}
-                      >
-                        {engagementPaymentLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Processing Payment...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Pay & Activate {getEngagementModelName(selectedEngagementModel)}
-                          </>
-                        )}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Change Engagement Model?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          You have already subscribed to an engagement model. Do you want to subscribe to a new engagement model: <strong>{getEngagementModelName(selectedEngagementModel)}</strong>?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={onEngagementPayment}>
-                          Yes, Subscribe to New Model
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <div className="text-center py-4">
+                    <div className="text-green-600 font-semibold mb-2">
+                      ✅ Engagement Model Already Active
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      You have already subscribed to an engagement model. Payment is completed and active.
+                    </p>
+                  </div>
                 ) : (
                   <Button 
                     className="w-full" 
