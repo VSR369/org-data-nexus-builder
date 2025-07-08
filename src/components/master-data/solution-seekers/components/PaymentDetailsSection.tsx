@@ -6,6 +6,7 @@ import { PricingDataManager } from '@/utils/pricing/PricingDataManager';
 interface PaymentDetailsSectionProps {
   membershipData: any;
   pricingData: any;
+  isMobile?: boolean;
 }
 
 // Helper function to get the correct pricing display for engagement models
@@ -37,15 +38,15 @@ const getPricingDisplay = (pricingData: any) => {
   return `${pricingData.paymentCurrency} ${pricingData.paymentAmount}`;
 };
 
-const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershipData, pricingData }) => {
+const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershipData, pricingData, isMobile }) => {
   return (
-    <div className="space-y-4">
+    <div className={`${isMobile ? "space-y-3" : "space-y-4"}`}>
       {/* Membership Details */}
       {membershipData && (
         <div>
           <h4 className="font-semibold text-sm text-gray-700 mb-2">Membership Details</h4>
-          <div className="bg-green-50 p-3 rounded text-sm space-y-2">
-            <div className="flex items-center justify-between">
+          <div className={`bg-green-50 p-3 rounded text-sm space-y-2 ${isMobile ? "text-xs" : ""}`}>
+            <div className={`flex items-center ${isMobile ? "flex-col items-start gap-1" : "justify-between"}`}>
               <span className="font-medium">Membership Status:</span>
               <Badge variant={membershipData.status === 'member_paid' ? 'default' : 'secondary'}>
                 {membershipData.status === 'member_paid' ? 'Premium Member' : 'Not a Member'}
@@ -54,7 +55,7 @@ const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershi
             {membershipData.selectedPlan && (
               <div><span className="font-medium">Plan:</span> {safeRender(membershipData.selectedPlan)}</div>
             )}
-            <div className="flex items-center justify-between">
+            <div className={`flex items-center ${isMobile ? "flex-col items-start gap-1" : "justify-between"}`}>
               <span className="font-medium">Payment Status:</span>
               <Badge variant={membershipData.paymentStatus === 'paid' ? 'default' : 'destructive'}>
                 {membershipData.paymentStatus}
@@ -74,14 +75,14 @@ const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershi
       {pricingData && (
         <div>
           <h4 className="font-semibold text-sm text-gray-700 mb-2">Engagement Model Details</h4>
-          <div className="bg-blue-50 p-3 rounded text-sm space-y-2">
+          <div className={`bg-blue-50 p-3 rounded text-sm space-y-2 ${isMobile ? "text-xs" : ""}`}>
             {pricingData.engagementModel && (
               <div><span className="font-medium">Engagement Model:</span> {safeRender(pricingData.engagementModel)}</div>
             )}
             {pricingData.selectedFrequency && (
               <div><span className="font-medium">Billing Frequency:</span> {safeRender(pricingData.selectedFrequency)}</div>
             )}
-            <div className="flex items-center justify-between">
+            <div className={`flex items-center ${isMobile ? "flex-col items-start gap-1" : "justify-between"}`}>
               <span className="font-medium">Payment Status:</span>
               <Badge variant={pricingData.paymentStatus === 'paid' ? 'default' : 'destructive'}>
                 {pricingData.paymentStatus}

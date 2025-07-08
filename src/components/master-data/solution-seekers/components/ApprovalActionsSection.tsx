@@ -10,6 +10,7 @@ interface ApprovalActionsSectionProps {
   processing: ProcessingStates;
   adminExists: boolean;
   onApprovalWithConfirmation: (status: 'approved' | 'rejected') => Promise<void>;
+  isMobile?: boolean;
 }
 
 const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({ 
@@ -17,11 +18,12 @@ const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({
   handlers, 
   processing, 
   adminExists, 
-  onApprovalWithConfirmation 
+  onApprovalWithConfirmation,
+  isMobile 
 }) => {
   return (
-    <div className="flex justify-between items-center pt-4 border-t">
-      <div className="flex items-center gap-2">
+    <div className={`${isMobile ? "space-y-4" : "flex justify-between items-center"} pt-4 border-t`}>
+      <div className={`flex items-center gap-2 ${isMobile ? "justify-center" : ""}`}>
         <span className="text-sm font-medium">Approval Status:</span>
         <Badge variant={
           seeker.approvalStatus === 'approved' ? 'default' : 
@@ -31,13 +33,13 @@ const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({
         </Badge>
       </div>
       
-      <div className="flex gap-2">
+      <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
         {seeker.approvalStatus === 'pending' && (
           <>
             <Button 
-              size="sm" 
+              size={isMobile ? "default" : "sm"}
               variant="outline" 
-              className="text-green-600 border-green-600 hover:bg-green-50"
+              className={`text-green-600 border-green-600 hover:bg-green-50 ${isMobile ? "w-full min-h-[44px]" : ""}`}
               onClick={() => onApprovalWithConfirmation('approved')}
               disabled={processing.processingApproval === seeker.id}
             >
@@ -49,9 +51,9 @@ const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({
               {processing.processingApproval === seeker.id ? 'Processing...' : 'Approve'}
             </Button>
             <Button 
-              size="sm" 
+              size={isMobile ? "default" : "sm"}
               variant="outline" 
-              className="text-red-600 border-red-600 hover:bg-red-50"
+              className={`text-red-600 border-red-600 hover:bg-red-50 ${isMobile ? "w-full min-h-[44px]" : ""}`}
               onClick={() => handlers.onReject(seeker)}
               disabled={processing.processingApproval === seeker.id}
             >
@@ -63,9 +65,9 @@ const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({
         
         {seeker.approvalStatus === 'rejected' && (
           <Button 
-            size="sm" 
+            size={isMobile ? "default" : "sm"}
             variant="outline" 
-            className="text-orange-600 border-orange-600 hover:bg-orange-50"
+            className={`text-orange-600 border-orange-600 hover:bg-orange-50 ${isMobile ? "w-full min-h-[44px]" : ""}`}
             onClick={() => handlers.onReapprove(seeker)}
             disabled={processing.processingApproval === seeker.id}
           >
@@ -76,8 +78,8 @@ const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({
         
         {seeker.approvalStatus === 'approved' && !adminExists && (
           <Button 
-            size="sm" 
-            className="bg-blue-600 hover:bg-blue-700"
+            size={isMobile ? "default" : "sm"}
+            className={`bg-blue-600 hover:bg-blue-700 ${isMobile ? "w-full min-h-[44px]" : ""}`}
             onClick={() => handlers.onCreateAdmin(seeker)}
             disabled={processing.processingAdmin === seeker.id}
           >
@@ -92,9 +94,9 @@ const ApprovalActionsSection: React.FC<ApprovalActionsSectionProps> = ({
         
         {seeker.approvalStatus === 'approved' && adminExists && (
           <Button 
-            size="sm" 
+            size={isMobile ? "default" : "sm"}
             variant="outline"
-            className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+            className={`bg-green-600 hover:bg-green-700 text-white border-green-600 ${isMobile ? "w-full min-h-[44px]" : ""}`}
             onClick={() => handlers.onCreateAdmin(seeker)}
             disabled={processing.processingAdmin === seeker.id}
           >

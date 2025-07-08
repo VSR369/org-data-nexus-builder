@@ -1,6 +1,7 @@
 import React from 'react';
 import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './types';
 import { loadEngagementPricingDetails } from './utils/viewDetailsHelpers';
 import OrganizationInfoSection from './components/OrganizationInfoSection';
@@ -15,6 +16,7 @@ interface ViewDetailsDialogProps {
 
 const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers, processing }) => {
   const [currentSeeker, setCurrentSeeker] = React.useState(seeker);
+  const isMobile = useIsMobile();
   const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(currentSeeker);
   
   // Update local seeker state when prop changes
@@ -53,20 +55,24 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
   };
   
   return (
-    <DialogContent className="max-w-6xl w-[98vw] max-h-[95vh] overflow-y-auto p-4">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          {seeker.organizationName} - Detailed View
+    <DialogContent className={isMobile 
+      ? "w-[95vw] max-h-[85vh] overflow-y-auto p-3 m-2" 
+      : "max-w-6xl w-[90vw] max-h-[85vh] overflow-y-auto p-6"
+    }>
+      <DialogHeader className={isMobile ? "pb-3" : "pb-6"}>
+        <DialogTitle className={`flex items-center gap-2 ${isMobile ? "text-lg" : "text-xl"}`}>
+          <Users className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
+          <span className={isMobile ? "truncate" : ""}>{seeker.organizationName} - Detailed View</span>
         </DialogTitle>
       </DialogHeader>
       
-      <div className="space-y-6">
-        <OrganizationInfoSection seeker={currentSeeker} />
+      <div className={`space-y-${isMobile ? "4" : "6"} pb-4`}>
+        <OrganizationInfoSection seeker={currentSeeker} isMobile={isMobile} />
         
         <PaymentDetailsSection 
           membershipData={membershipData} 
-          pricingData={pricingData} 
+          pricingData={pricingData}
+          isMobile={isMobile}
         />
 
         <ApprovalActionsSection 
@@ -75,6 +81,7 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
           processing={processing}
           adminExists={adminExists}
           onApprovalWithConfirmation={handleApprovalWithConfirmation}
+          isMobile={isMobile}
         />
       </div>
     </DialogContent>

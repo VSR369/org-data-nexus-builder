@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog } from "@/components/ui/dialog";
+import { useIsMobile } from '@/hooks/use-mobile';
 import RejectionDialog from '../RejectionDialog';
 import { 
   Building2, 
@@ -35,6 +36,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
   const [seekers, setSeekers] = useState<SeekerDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [comprehensiveData, setComprehensiveData] = useState<ComprehensiveOrgData | null>(null);
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
@@ -367,19 +369,19 @@ const SeekingOrgValidationDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className={`${isMobile ? "space-y-4" : "flex items-center justify-between"}`}>
         <div>
-          <h1 className="text-2xl font-bold">Solution Seekers Validation Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className={`${isMobile ? "text-xl" : "text-2xl"} font-bold`}>Solution Seekers Validation Dashboard</h1>
+          <p className={`text-muted-foreground mt-1 ${isMobile ? "text-sm" : ""}`}>
             Found {seekers.length} solution seeker{seekers.length !== 1 ? 's' : ''} in the system
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={refreshSeekers} variant="outline">
+        <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
+          <Button onClick={refreshSeekers} variant="outline" className={isMobile ? "w-full" : ""}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={downloadSeekersData} variant="outline">
+          <Button onClick={downloadSeekersData} variant="outline" className={isMobile ? "w-full" : ""}>
             <DollarSign className="h-4 w-4 mr-2" />
             Download Data
           </Button>
@@ -387,38 +389,44 @@ const SeekingOrgValidationDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="organizations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="organizations">Organizations</TabsTrigger>
-          <TabsTrigger value="comprehensive">Comprehensive View</TabsTrigger>
-          <TabsTrigger value="validation">Validation Center</TabsTrigger>
+        <TabsList className={`grid w-full grid-cols-3 ${isMobile ? "text-xs" : ""}`}>
+          <TabsTrigger value="organizations" className={isMobile ? "text-xs px-2" : ""}>
+            {isMobile ? "Orgs" : "Organizations"}
+          </TabsTrigger>
+          <TabsTrigger value="comprehensive" className={isMobile ? "text-xs px-2" : ""}>
+            {isMobile ? "Details" : "Comprehensive View"}
+          </TabsTrigger>
+          <TabsTrigger value="validation" className={isMobile ? "text-xs px-2" : ""}>
+            {isMobile ? "Validation" : "Validation Center"}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="organizations" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6`}>
             {seekers.map(seeker => (
               <Card key={seeker.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{seeker.organizationName}</h4>
-                        <p className="text-sm text-muted-foreground">{seeker.organizationType}</p>
+                <CardContent className={`${isMobile ? "p-3" : "p-4"}`}>
+                  <div className={`space-y-${isMobile ? "2" : "3"}`}>
+                    <div className={`flex items-center ${isMobile ? "flex-col gap-2" : "justify-between"}`}>
+                      <div className={isMobile ? "text-center" : ""}>
+                        <h4 className={`font-medium ${isMobile ? "text-sm" : ""}`}>{seeker.organizationName}</h4>
+                        <p className={`text-sm text-muted-foreground ${isMobile ? "text-xs" : ""}`}>{seeker.organizationType}</p>
                       </div>
                       <Badge variant={seeker.approvalStatus === 'approved' ? 'default' : 'secondary'}>
                         {seeker.approvalStatus}
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="outline">{seeker.entityType}</Badge>
-                      <Badge variant={seeker.membershipStatus === 'active' ? 'default' : 'secondary'}>
+                    <div className={`flex items-center gap-2 text-sm ${isMobile ? "justify-center flex-wrap" : ""}`}>
+                      <Badge variant="outline" className={isMobile ? "text-xs" : ""}>{seeker.entityType}</Badge>
+                      <Badge variant={seeker.membershipStatus === 'active' ? 'default' : 'secondary'} className={isMobile ? "text-xs" : ""}>
                         {seeker.membershipStatus || 'inactive'}
                       </Badge>
                     </div>
 
                     <Button 
-                      size="sm" 
-                      className="w-full"
+                      size={isMobile ? "default" : "sm"}
+                      className={`w-full ${isMobile ? "min-h-[44px]" : ""}`}
                       onClick={() => {
                         setSelectedSeeker(seeker);
                         setDialogOpen(true);
@@ -453,7 +461,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="validation" className="space-y-4">
-          <ValidationCenter seekers={seekers} />
+          <ValidationCenter seekers={seekers} isMobile={isMobile} />
         </TabsContent>
       </Tabs>
 
@@ -606,13 +614,13 @@ const ComprehensiveOrgView: React.FC<{ data: ComprehensiveOrgData | null }> = ({
 };
 
 // Validation Center Component
-const ValidationCenter: React.FC<{ seekers: any[] }> = ({ seekers }) => {
+const ValidationCenter: React.FC<{ seekers: any[]; isMobile?: boolean }> = ({ seekers, isMobile }) => {
   const pendingCount = seekers.filter(s => s.approvalStatus === 'pending').length;
   const approvedCount = seekers.filter(s => s.approvalStatus === 'approved').length;
   const rejectedCount = seekers.filter(s => s.approvalStatus === 'rejected').length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className={`grid ${isMobile ? "grid-cols-1 gap-4" : "grid-cols-1 md:grid-cols-3 gap-6"}`}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-orange-600">
