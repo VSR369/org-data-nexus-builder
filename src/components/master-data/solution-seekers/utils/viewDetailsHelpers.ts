@@ -380,7 +380,7 @@ export const loadEngagementPricingDetails = (seeker: any) => {
     dataSource
   };
   
-  // Enhanced pricing data with engagement model details
+  // Enhanced pricing data with engagement model details from actual payment record
   const pricingData = {
     engagementModel: engagementPayment?.engagementModel || membershipState.selected_engagement_model || null,
     selectedFrequency: engagementPayment?.billingFrequency || membershipState.selected_frequency || null,
