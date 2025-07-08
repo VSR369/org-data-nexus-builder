@@ -66,12 +66,17 @@ const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
 };
 
 const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing }) => {
-  // Debug: Run global payment data debug for the first seeker
+  // Enhanced debugging with comprehensive payment data analysis
   React.useEffect(() => {
-    if (seeker.organizationName === 'Vignan') { // Only run for Vignan organization
-      debugAllPaymentData();
-    }
-  }, [seeker.organizationName]);
+    console.log(`🎯 SeekerCard: Analyzing payment data for ${seeker.organizationName}`);
+    
+    // Run comprehensive debugging for all organizations
+    debugAllPaymentData();
+    
+    // Run specific analysis for this organization
+    const { analyzeOrganizationPaymentData } = require('@/utils/debugPaymentData');
+    analyzeOrganizationPaymentData(seeker.organizationName, seeker.organizationId || seeker.userId);
+  }, [seeker.organizationName, seeker.organizationId, seeker.userId]);
   
   // Use the enhanced data loading from viewDetailsHelpers
   const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
@@ -158,12 +163,22 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
           </div>
         </div>
         
-        {/* Membership & Engagement Payment Details - ALWAYS SHOW */}
+        {/* Enhanced Membership & Engagement Payment Details - ALWAYS SHOW */}
         <div className="mt-4 space-y-3">
-          {/* Debug Info */}
-          <div className="p-2 bg-yellow-50 rounded text-xs text-yellow-700">
-            <strong>DEBUG:</strong> Membership: {membershipData ? 'Found' : 'Not Found'} | 
-            Engagement: {pricingData ? 'Found' : 'Not Found'}
+          {/* Comprehensive Debug Info */}
+          <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="text-xs text-yellow-800 space-y-1">
+              <div className="font-semibold">🔍 DEBUG ANALYSIS</div>
+              <div><strong>Organization:</strong> {seeker.organizationName} ({seeker.organizationId || seeker.userId})</div>
+              <div><strong>Data Sources:</strong> Membership: {membershipData?.dataSource || 'none'} | Engagement: {pricingData?.dataSource || 'none'}</div>
+              <div><strong>Payment Status:</strong> 
+                Member: {membershipData?.paymentStatus === 'paid' ? '✅ PAID' : '❌ UNPAID'} | 
+                Engagement: {pricingData?.paymentStatus === 'paid' ? '✅ PAID' : '❌ UNPAID'}
+              </div>
+              {pricingData?.engagementModel && (
+                <div><strong>Engagement Selected:</strong> {pricingData.engagementModel} ({pricingData.selectedFrequency || 'no frequency'})</div>
+              )}
+            </div>
           </div>
           
           {/* Membership Details */}

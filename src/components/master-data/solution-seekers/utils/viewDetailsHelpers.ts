@@ -91,16 +91,39 @@ export const checkAdministratorExists = (seeker: any) => {
   return false;
 };
 
-// Unified organization identifier resolution
+// Enhanced organization identifier resolution with multiple fallback strategies
 const resolveOrganizationIdentifiers = (seeker: any) => {
+  // Try to get current registration data first (most accurate)
+  let registrationData = null;
+  try {
+    registrationData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
+  } catch (e) {
+    console.warn('Failed to parse registration data:', e);
+  }
+  
+  // Build comprehensive identifier list with fallbacks
   const identifiers = {
+    // Primary identifiers from seeker
     organizationId: seeker.organizationId || seeker.userId || seeker.id,
     organizationName: seeker.organizationName,
-    email: seeker.email,
-    contactEmail: seeker.contactEmail
+    email: seeker.email || seeker.contactEmail,
+    
+    // Registration data identifiers (current session)
+    registrationOrgId: registrationData?.organizationId,
+    registrationUserId: registrationData?.userId,
+    registrationOrgName: registrationData?.organizationName,
+    registrationEmail: registrationData?.email,
+    
+    // Check if this seeker is the currently logged-in organization
+    isCurrentOrg: registrationData && (
+      registrationData.organizationName === seeker.organizationName ||
+      registrationData.organizationId === seeker.organizationId ||
+      registrationData.email === seeker.email ||
+      registrationData.userId === seeker.userId
+    )
   };
   
-  console.log('🔍 Resolving organization identifiers:', identifiers);
+  console.log('🔍 Enhanced organization identifiers:', identifiers);
   return identifiers;
 };
 
@@ -116,17 +139,55 @@ const validateOrganizationData = (data: any, seeker: any) => {
          data.organization_email === seekerIds.email;
 };
 
-// Smart storage key generation with fallback strategies
+// Enhanced storage key generation with comprehensive fallback strategies
 const generateStorageKeys = (seeker: any) => {
   const identifiers = resolveOrganizationIdentifiers(seeker);
   
-  return [
-    `membership_pricing_system_state_${identifiers.organizationId}`,
-    `membership_pricing_system_state_${identifiers.organizationName?.replace(/\s+/g, '_')}`,
-    `membership_pricing_system_state_${identifiers.email}`,
-    `membership_pricing_system_state_${seeker.userId}`,
-    `membership_pricing_system_state_${seeker.id}`
-  ].filter(Boolean);
+  // Build comprehensive list of possible storage keys
+  const keys = new Set<string>();
+  
+  // Organization-specific keys (most likely)
+  if (identifiers.organizationId) {
+    keys.add(`membership_pricing_system_state_${identifiers.organizationId}`);
+  }
+  if (identifiers.organizationName) {
+    keys.add(`membership_pricing_system_state_${identifiers.organizationName.replace(/\s+/g, '_')}`);
+  }
+  if (identifiers.email) {
+    keys.add(`membership_pricing_system_state_${identifiers.email}`);
+  }
+  
+  // Registration data keys (if this is current org)
+  if (identifiers.registrationOrgId) {
+    keys.add(`membership_pricing_system_state_${identifiers.registrationOrgId}`);
+  }
+  if (identifiers.registrationUserId) {
+    keys.add(`membership_pricing_system_state_${identifiers.registrationUserId}`);
+  }
+  if (identifiers.registrationOrgName) {
+    keys.add(`membership_pricing_system_state_${identifiers.registrationOrgName.replace(/\s+/g, '_')}`);
+  }
+  if (identifiers.registrationEmail) {
+    keys.add(`membership_pricing_system_state_${identifiers.registrationEmail}`);
+  }
+  
+  // Fallback keys
+  if (seeker.userId) {
+    keys.add(`membership_pricing_system_state_${seeker.userId}`);
+  }
+  if (seeker.id) {
+    keys.add(`membership_pricing_system_state_${seeker.id}`);
+  }
+  
+  // Global fallback (only if this is the current organization)
+  if (identifiers.isCurrentOrg) {
+    keys.add('membership_pricing_system_state');
+  }
+  
+  const finalKeys = Array.from(keys).filter(Boolean);
+  console.log(`🗝️ Generated ${finalKeys.length} possible storage keys for ${identifiers.organizationName}:`, finalKeys);
+  
+  return finalKeys;
 };
 
 // Helper function to load engagement pricing details for a specific organization
