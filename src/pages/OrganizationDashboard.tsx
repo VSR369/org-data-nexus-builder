@@ -14,11 +14,14 @@ import {
   Phone,
   Globe,
   AlertCircle,
-  Upload
+  Upload,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useCompleteUserData } from '@/hooks/useCompleteUserData';
+import { loadEngagementPricingDetails } from '@/components/master-data/solution-seekers/utils/viewDetailsHelpers';
 import MembershipPricingSystem from '@/components/membership/MembershipPricingSystem';
 import '@/utils/cleanupMembershipEngagementStorage';
 
@@ -43,6 +46,14 @@ const OrganizationDashboard = () => {
 
   // Load complete user data
   const { userData: completeUserData, loading: userDataLoading, error: userDataError } = useCompleteUserData(sessionData?.userId);
+
+  // Load membership and engagement data for status display
+  const membershipEngagementData = sessionData ? loadEngagementPricingDetails({
+    organizationId: sessionData.organizationId || sessionData.userId,
+    organizationName: sessionData.organizationName,
+    email: sessionData.email,
+    userId: sessionData.userId
+  }) : { membershipData: null, pricingData: null, adminExists: false };
 
   useEffect(() => {
     const loadSessionData = () => {
@@ -164,6 +175,85 @@ const OrganizationDashboard = () => {
             Manage your organization's profile and access platform services
           </p>
         </div>
+
+        {/* Membership & Engagement Status Display - As requested in image */}
+        {(membershipEngagementData.membershipData?.paymentStatus === 'paid' || membershipEngagementData.pricingData?.engagementModel || membershipEngagementData.membershipData || membershipEngagementData.pricingData) && (
+          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-blue-600" />
+                Membership & Engagement Status
+              </h3>
+              
+              <div className="bg-white rounded-lg p-4 border border-blue-100">
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {/* Membership Status */}
+                  {membershipEngagementData.membershipData?.paymentStatus === 'paid' ? (
+                    <>
+                      <Badge variant="default" className="bg-blue-600 hover:bg-blue-700 text-white">
+                        Premium Member
+                      </Badge>
+                      <Badge variant="outline" className="border-blue-200 bg-blue-50">
+                        {membershipEngagementData.membershipData.type === 'annual' ? 'Annual Plan' : membershipEngagementData.membershipData.type || 'Member'}
+                      </Badge>
+                      {membershipEngagementData.membershipData.paymentAmount > 0 && (
+                        <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
+                          Paid: {membershipEngagementData.membershipData.paymentCurrency} {membershipEngagementData.membershipData.paymentAmount}
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <Badge variant="secondary">
+                      Not a Member
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Engagement Model Details */}
+                {membershipEngagementData.pricingData?.engagementModel ? (
+                  <div className="space-y-2">
+                    <div className="font-medium text-primary flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Engagement Model: {membershipEngagementData.pricingData.engagementModel}
+                      {membershipEngagementData.pricingData.selectedFrequency && (
+                        <span className="text-muted-foreground font-normal">({membershipEngagementData.pricingData.selectedFrequency})</span>
+                      )}
+                    </div>
+                    {membershipEngagementData.pricingData.paymentStatus === 'paid' && membershipEngagementData.pricingData.paymentAmount > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
+                          ✅ Paid: {membershipEngagementData.pricingData.paymentCurrency} {membershipEngagementData.pricingData.paymentAmount}
+                        </Badge>
+                        {membershipEngagementData.pricingData.paidAt && (
+                          <Badge variant="outline" className="text-xs">
+                            {new Date(membershipEngagementData.pricingData.paidAt).toLocaleDateString()}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {membershipEngagementData.pricingData.paymentStatus !== 'paid' && (
+                      <Badge variant="destructive" className="text-xs">
+                        ❌ Payment Pending
+                      </Badge>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-red-600 italic flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    No engagement model selected - Please select and pay for an engagement model below
+                  </div>
+                )}
+                
+                {/* Debug info for troubleshooting */}
+                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                  <strong>Debug Status:</strong> Membership: {membershipEngagementData.membershipData?.paymentStatus || 'none'} | 
+                  Engagement: {membershipEngagementData.pricingData?.engagementModel || 'none'} | 
+                  Data Source: {membershipEngagementData.membershipData?.dataSource || membershipEngagementData.pricingData?.dataSource || 'none'}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Data Loading Status */}
         {userDataError && (
