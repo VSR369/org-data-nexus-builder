@@ -66,9 +66,13 @@ const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
 };
 
 const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing }) => {
+  // Use the enhanced data loading from viewDetailsHelpers
+  const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
+  
   // Enhanced debugging with comprehensive payment data analysis
   React.useEffect(() => {
     console.log(`🎯 SeekerCard: Analyzing payment data for ${seeker.organizationName}`);
+    console.log('🔍 Current seeker object:', seeker);
     
     // Run comprehensive debugging for all organizations
     debugAllPaymentData();
@@ -76,10 +80,9 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
     // Run specific analysis for this organization
     const { analyzeOrganizationPaymentData } = require('@/utils/debugPaymentData');
     analyzeOrganizationPaymentData(seeker.organizationName, seeker.organizationId || seeker.userId);
-  }, [seeker.organizationName, seeker.organizationId, seeker.userId]);
-  
-  // Use the enhanced data loading from viewDetailsHelpers
-  const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
+    
+    console.log('💳 Payment data loaded:', { membershipData, pricingData });
+  }, [seeker.organizationName, seeker.organizationId, seeker.userId, membershipData, pricingData]);
   
   // Debug: Log the loaded data for this seeker
   console.log(`💳 SeekerCard: Loading payment data for ${seeker.organizationName}:`, {
@@ -141,12 +144,12 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
       </CardHeader>
       
       {/* Enhanced Status Display Section - As shown in the image */}
-      {(membershipData?.paymentStatus === 'paid' || pricingData?.engagementModel) && (
+      {(membershipData?.paymentStatus === 'paid' || pricingData?.engagementModel || membershipData || pricingData) && (
         <div className="px-6 pb-3">
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
             <div className="flex flex-wrap gap-2 mb-2">
-              {/* Membership Status */}
-              {membershipData?.paymentStatus === 'paid' && (
+              {/* Always show some status */}
+              {membershipData?.paymentStatus === 'paid' ? (
                 <>
                   <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
                     Premium Member
@@ -160,10 +163,7 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
                     </Badge>
                   )}
                 </>
-              )}
-              
-              {/* Non-member status */}
-              {membershipData?.paymentStatus !== 'paid' && (
+              ) : (
                 <Badge variant="secondary">
                   Not a Member
                 </Badge>
@@ -171,7 +171,7 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
             </div>
             
             {/* Engagement Model Details */}
-            {pricingData?.engagementModel && (
+            {pricingData?.engagementModel ? (
               <div className="text-sm space-y-1">
                 <div className="font-medium text-primary">
                   Engagement Model: {pricingData.engagementModel}
@@ -197,13 +197,16 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
                   </Badge>
                 )}
               </div>
-            )}
-            
-            {!pricingData?.engagementModel && (
+            ) : (
               <div className="text-sm text-red-600 italic">
                 No engagement model selected
               </div>
             )}
+            
+            {/* Debug info */}
+            <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500">
+              Debug: M-Status: {membershipData?.paymentStatus || 'none'} | E-Model: {pricingData?.engagementModel || 'none'}
+            </div>
           </div>
         </div>
       )}
