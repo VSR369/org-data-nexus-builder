@@ -8,7 +8,7 @@ import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './types'
 import ViewDetailsDialog from './ViewDetailsDialog';
 import { EngagementValidator } from '@/utils/engagementValidator';
 import { loadEngagementPricingDetails } from './utils/viewDetailsHelpers';
-import { debugAllPaymentData } from '@/utils/debugPaymentData';
+import { debugAllPaymentData, analyzeOrganizationPaymentData } from '@/utils/debugPaymentData';
 
 interface SeekerCardProps {
   seeker: SeekerDetails;
@@ -78,7 +78,6 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
     debugAllPaymentData();
     
     // Run specific analysis for this organization
-    const { analyzeOrganizationPaymentData } = require('@/utils/debugPaymentData');
     analyzeOrganizationPaymentData(seeker.organizationName, seeker.organizationId || seeker.userId);
     
     console.log('💳 Payment data loaded:', { membershipData, pricingData });
