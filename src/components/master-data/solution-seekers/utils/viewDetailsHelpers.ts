@@ -353,8 +353,8 @@ export const loadEngagementPricingDetails = (seeker: any) => {
            (!record.organizationId && dataSource === 'global-fallback'); // Only allow unspecified org for global fallback
   });
   
-  // Find engagement payment for this organization with strict matching
-  const engagementPayment = paymentRecords.find((record: any) => {
+  // Find LATEST engagement payment for this organization with strict matching
+  const engagementPayments = paymentRecords.filter((record: any) => {
     if (record.type !== 'engagement' || record.status !== 'completed') return false;
     
     // Strict organization matching
@@ -363,6 +363,11 @@ export const loadEngagementPricingDetails = (seeker: any) => {
            record.organizationEmail === identifiers.email ||
            (!record.organizationId && dataSource === 'global-fallback'); // Only allow unspecified org for global fallback
   });
+  
+  // Get the LATEST engagement payment by timestamp
+  const engagementPayment = engagementPayments.length > 0 
+    ? engagementPayments.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
+    : null;
   
   const membershipData = {
     status: membershipState.membership_status || 'inactive',
