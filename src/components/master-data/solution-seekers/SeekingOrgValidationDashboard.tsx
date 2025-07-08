@@ -239,7 +239,8 @@ const SeekingOrgValidationDashboard: React.FC = () => {
   };
 
   const handleReapprove = (seeker: SeekerDetails) => {
-    handleApproval(seeker.id, 'approved');
+    setSelectedSeekerForRejection(seeker);
+    setRejectionDialogOpen(true);
   };
 
   const handleCreateAdmin = async (seeker: SeekerDetails) => {
