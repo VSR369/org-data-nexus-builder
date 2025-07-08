@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Building2, AlertCircle, Eye, UserPlus, UserCheck, UserX, RefreshCw, CheckCircle, RotateCcw, Lock } from 'lucide-react';
+import { Users, Building2, AlertCircle, Eye, UserPlus, UserCheck, UserX, RefreshCw, CheckCircle, RotateCcw, Lock, CreditCard, DollarSign } from 'lucide-react';
 import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './types';
 import ViewDetailsDialog from './ViewDetailsDialog';
 import { EngagementValidator } from '@/utils/engagementValidator';
+import { loadEngagementPricingDetails } from './utils/viewDetailsHelpers';
 
 interface SeekerCardProps {
   seeker: SeekerDetails;
@@ -63,65 +64,9 @@ const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
   return String(industrySegmentValue);
 };
 
-const loadEngagementPricingDetails = (seeker: SeekerDetails) => {
-  // Try to get membership/pricing data from localStorage
-  const membershipKeys = [
-    `membership_${seeker.userId}`,
-    `membership_${seeker.organizationId}`,
-    `${seeker.organizationName}_membership`,
-    'selected_membership_plan',
-    'completed_membership_payment'
-  ];
-
-  const pricingKeys = [
-    `pricing_${seeker.userId}`,
-    `selected_pricing_${seeker.organizationId}`,
-    'selected_engagement_model',
-    'engagement_model_selection'
-  ];
-
-  let membershipData = null;
-  let pricingData = null;
-
-  // Check for membership data
-  for (const key of membershipKeys) {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed && (parsed.status || parsed.plan || parsed.membershipStatus || parsed.selectedPlan)) {
-          membershipData = parsed;
-          console.log('🎯 Found membership data for key:', key, parsed);
-          break;
-        }
-      } catch (e) {
-        // Continue checking other keys
-      }
-    }
-  }
-
-  // Check for pricing data
-  for (const key of pricingKeys) {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed && (parsed.engagementModel || parsed.selectedModel || parsed.currency || parsed.pricing)) {
-          pricingData = parsed;
-          console.log('🎯 Found pricing data for key:', key, parsed);
-          break;
-        }
-      } catch (e) {
-        // Continue checking other keys
-      }
-    }
-  }
-
-  return { membershipData, pricingData };
-};
-
 const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing }) => {
-  const { membershipData, pricingData } = loadEngagementPricingDetails(seeker);
+  // Use the enhanced data loading from viewDetailsHelpers
+  const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
   
   // Validate engagement details for this seeker
   const engagementValidation = EngagementValidator.validateSeekerEngagement(
@@ -196,31 +141,62 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
           </div>
         </div>
         
-        {/* Engagement/Pricing Model Details */}
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
-          <h4 className="font-medium text-blue-900 mb-2">Engagement & Pricing Details</h4>
-          <div className="space-y-1 text-xs text-blue-800">
-            {engagementValidation.engagementData?.engagementModel && (
-              <div><span className="font-medium">Model:</span> {safeRender(engagementValidation.engagementData.engagementModel)}</div>
-            )}
-            {engagementValidation.engagementData?.selectedModel && (
-              <div><span className="font-medium">Selected Model:</span> {safeRender(engagementValidation.engagementData.selectedModel)}</div>
-            )}
-            {pricingData?.currency && pricingData?.amount && (
-              <div>
-                <span className="font-medium">Pricing:</span> {safeRender(pricingData.currency)} {safeRender(pricingData.amount)} 
-                {pricingData.frequency && ` (${safeRender(pricingData.frequency)})`}
+        {/* Membership & Engagement Payment Details */}
+        <div className="mt-4 space-y-3">
+          {/* Membership Details */}
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 mb-2">
+              <CreditCard className="h-4 w-4 text-green-600" />
+              <h4 className="font-medium text-green-900">Membership Status</h4>
+            </div>
+            <div className="space-y-1 text-xs text-green-800">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Status:</span>
+                <Badge variant={membershipData?.paymentStatus === 'paid' ? 'default' : 'destructive'} className="text-xs">
+                  {membershipData?.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}
+                </Badge>
               </div>
-            )}
-            {membershipData?.selectedPlan && (
-              <div><span className="font-medium">Membership Plan:</span> {safeRender(membershipData.selectedPlan)}</div>
-            )}
-            {membershipData?.paidAt && (
-              <div><span className="font-medium">Payment Date:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
-            )}
-            {!engagementValidation.hasEngagementModel && (
-              <div className="text-red-500 italic">No engagement model selected</div>
-            )}
+              {membershipData?.paymentStatus === 'paid' && membershipData?.paymentAmount > 0 && (
+                <div><span className="font-medium">Amount:</span> {membershipData.paymentCurrency} {membershipData.paymentAmount}</div>
+              )}
+              {membershipData?.paidAt && (
+                <div><span className="font-medium">Paid On:</span> {new Date(membershipData.paidAt).toLocaleDateString()}</div>
+              )}
+              {membershipData?.type && (
+                <div><span className="font-medium">Plan:</span> {safeRender(membershipData.type)}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Engagement Model Details */}
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="h-4 w-4 text-blue-600" />
+              <h4 className="font-medium text-blue-900">Engagement Model</h4>
+            </div>
+            <div className="space-y-1 text-xs text-blue-800">
+              {pricingData?.engagementModel && (
+                <div><span className="font-medium">Model:</span> {safeRender(pricingData.engagementModel)}</div>
+              )}
+              {pricingData?.selectedFrequency && (
+                <div><span className="font-medium">Frequency:</span> {safeRender(pricingData.selectedFrequency)}</div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Payment:</span>
+                <Badge variant={pricingData?.paymentStatus === 'paid' ? 'default' : 'destructive'} className="text-xs">
+                  {pricingData?.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}
+                </Badge>
+              </div>
+              {pricingData?.paymentStatus === 'paid' && pricingData?.paymentAmount > 0 && (
+                <div><span className="font-medium">Amount:</span> {pricingData.paymentCurrency} {pricingData.paymentAmount}</div>
+              )}
+              {pricingData?.paidAt && (
+                <div><span className="font-medium">Paid On:</span> {new Date(pricingData.paidAt).toLocaleDateString()}</div>
+              )}
+              {!pricingData?.engagementModel && (
+                <div className="text-red-500 italic">No engagement model selected</div>
+              )}
+            </div>
           </div>
         </div>
         
