@@ -22,9 +22,14 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
   onResetPaymentStatus
 }) => {
   const annualFee = getAnnualMembershipFee(membershipFees);
-
+  
+  // Show payment option when:
+  // 1. User selects "Annual Membership" OR "Not a Member" (so they can upgrade)
+  // 2. AND they haven't already paid for membership
+  const shouldShowPayment = (membershipType === 'annual' || membershipType === 'not-a-member') && membershipStatus !== 'member_paid';
+  
   return (
-    <Card className={membershipType === 'annual' && membershipStatus !== 'member_paid' ? '' : 'opacity-50'}>
+    <Card className={shouldShowPayment ? '' : 'opacity-50'}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="w-5 h-5" />
@@ -32,17 +37,29 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {membershipType === 'annual' && membershipStatus !== 'member_paid' ? (
+        {shouldShowPayment ? (
           <div className="space-y-4">
             <div className="text-center p-4 bg-muted rounded-lg">
-              <div className="text-lg font-bold mb-2">Annual Membership</div>
-              {annualFee && (
+              <div className="text-lg font-bold mb-2">
+                {membershipType === 'not-a-member' ? 'Upgrade to Annual Membership' : 'Annual Membership'}
+              </div>
+              {annualFee ? (
                 <div className="text-2xl font-bold text-primary">
                   {formatCurrency(annualFee.amount, annualFee.currency)}
                 </div>
+              ) : (
+                <div className="text-2xl font-bold text-red-600">
+                  Fee not loaded from master data
+                </div>
               )}
               <div className="text-sm text-muted-foreground mt-2">
-                Unlock member pricing for all engagement models
+                {membershipType === 'not-a-member' 
+                  ? 'Pay this fee to become a member and unlock member pricing for all engagement models'
+                  : 'Unlock member pricing for all engagement models'
+                }
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Amount from master data: {annualFee ? `${annualFee.currency} ${annualFee.amount}` : 'Not loaded'}
               </div>
             </div>
             <Button 
@@ -56,14 +73,14 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
                   Processing...
                 </>
               ) : (
-                `Pay Membership Fee`
+                `Pay Membership Fee${annualFee ? ` - ${formatCurrency(annualFee.amount, annualFee.currency)}` : ''}`
               )}
             </Button>
           </div>
         ) : (
           <div className="text-center py-8 space-y-3">
             <p className="text-sm text-muted-foreground">
-              {membershipStatus === 'member_paid' ? 'Membership already paid' : 'Select Annual membership to pay'}
+              {membershipStatus === 'member_paid' ? 'Membership already paid' : 'Select a membership option to pay'}
             </p>
             {membershipStatus === 'member_paid' && (
               <Button 
