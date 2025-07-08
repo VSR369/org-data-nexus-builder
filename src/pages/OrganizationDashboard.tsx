@@ -222,10 +222,10 @@ const OrganizationDashboard = () => {
                     {membershipEngagementData.pricingData.paymentStatus === 'paid' && membershipEngagementData.pricingData.paymentAmount > 0 && (
                       <div className="flex gap-2 flex-wrap">
                         <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
-                          ✅ Paid: {membershipEngagementData.pricingData.engagementModel?.toLowerCase().includes('marketplace') 
-                            ? `${membershipEngagementData.pricingData.paymentAmount}% of solution fee`
-                            : `${membershipEngagementData.pricingData.paymentCurrency} ${membershipEngagementData.pricingData.paymentAmount}`
-                          }
+                           ✅ Paid: {membershipEngagementData.pricingData.engagementModel?.toLowerCase().includes('marketplace') 
+                             ? `${Number(membershipEngagementData.pricingData.paymentAmount).toFixed(2)}% of solution fee`
+                             : `${membershipEngagementData.pricingData.paymentCurrency} ${membershipEngagementData.pricingData.paymentAmount}`
+                           }
                         </Badge>
                         {membershipEngagementData.pricingData.paidAt && (
                           <Badge variant="outline" className="text-xs">
