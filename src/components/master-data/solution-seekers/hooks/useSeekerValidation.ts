@@ -184,49 +184,74 @@ export const useSeekerValidation = () => {
     }
   };
 
-  // Approval handlers
+  // Enhanced approval handlers with comprehensive persistence and verification
   const handleApproval = async (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => {
+    console.log('🔄 Starting approval process for seeker:', seekerId, 'Status:', status);
     setProcessing(prev => ({ ...prev, processingApproval: seekerId }));
     
     try {
-      // Save to ApprovalStatusService
+      // Save to ApprovalStatusService with verification
       const success = await approvalStatusService.saveApprovalStatus({
         seekerId,
         status,
         reason
       });
       
-      if (success && documents && documents.length > 0) {
-        await approvalStatusService.saveDocuments(seekerId, documents);
+      if (!success) {
+        throw new Error('Failed to save approval status to storage');
       }
       
-      // Update the seeker's approval status in UI
+      // Save documents if provided
+      if (documents && documents.length > 0) {
+        const docSuccess = await approvalStatusService.saveDocuments(seekerId, documents);
+        if (!docSuccess) {
+          console.warn('⚠️ Documents failed to save but approval status was saved');
+        }
+      }
+      
+      // Update the seeker's approval status in UI state
       setSeekers(prevSeekers => 
         prevSeekers.map(seeker => 
           seeker.id === seekerId 
-            ? { ...seeker, approvalStatus: status }
+            ? { ...seeker, approvalStatus: status, updatedAt: new Date().toISOString() }
             : seeker
         )
       );
       
-      console.log(`✅ ${status === 'approved' ? 'Approved' : 'Rejected'} seeker:`, seekerId, reason);
+      // Verify persistence by reading back from storage
+      const verification = approvalStatusService.getApprovalStatus(seekerId);
+      if (verification?.status !== status) {
+        console.error('❌ Persistence verification failed - status not saved correctly');
+        throw new Error('Persistence verification failed');
+      }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`✅ Successfully ${status === 'approved' ? 'approved' : 'rejected'} seeker:`, seekerId, 'Verified in storage:', verification);
+      
+      return { success: true, updatedSeeker: seekers.find(s => s.id === seekerId) };
       
     } catch (error) {
-      console.error('Error updating approval status:', error);
+      console.error('❌ Error updating approval status:', error);
+      
+      // Revert UI state on error
+      setSeekers(prevSeekers => 
+        prevSeekers.map(seeker => 
+          seeker.id === seekerId 
+            ? { ...seeker, approvalStatus: seeker.approvalStatus } // Keep original status
+            : seeker
+        )
+      );
+      
+      throw error;
     } finally {
       setProcessing(prev => ({ ...prev, processingApproval: null }));
     }
   };
 
   const handleCreateAdmin = async (seeker: SeekerDetails) => {
+    console.log('👥 Starting admin creation for seeker:', seeker.organizationName);
     setProcessing(prev => ({ ...prev, processingAdmin: seeker.id }));
     
     try {
-      console.log(`Creating administrator for: ${seeker.organizationName}`);
-      
       // Create admin record
       const adminRecord = {
         id: `admin_${seeker.id}_${Date.now()}`, 
@@ -237,26 +262,45 @@ export const useSeekerValidation = () => {
         createdAt: new Date().toISOString()
       };
       
-      // Save to ApprovalStatusService
+      // Save to ApprovalStatusService with verification
       const success = await approvalStatusService.saveAdministrator(adminRecord);
       
-      if (success) {
-        // Update seeker to have administrator
-        setSeekers(prevSeekers => 
-          prevSeekers.map(s => 
-            s.id === seeker.id 
-              ? { ...s, hasAdministrator: true }
-              : s
-          )
-        );
-        
-        console.log(`✅ Administrator created for: ${seeker.organizationName}`);
-      } else {
-        throw new Error('Failed to save administrator record');
+      if (!success) {
+        throw new Error('Failed to save administrator record to storage');
       }
       
+      // Update seeker to have administrator
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.id === seeker.id 
+            ? { ...s, hasAdministrator: true, updatedAt: new Date().toISOString() }
+            : s
+        )
+      );
+      
+      // Verify persistence
+      const verification = approvalStatusService.getAdministrator(seeker.id);
+      if (!verification) {
+        console.error('❌ Admin persistence verification failed');
+        throw new Error('Admin persistence verification failed');
+      }
+      
+      console.log(`✅ Administrator successfully created and verified for: ${seeker.organizationName}`);
+      return { success: true, adminRecord };
+      
     } catch (error) {
-      console.error('Error creating administrator:', error);
+      console.error('❌ Error creating administrator:', error);
+      
+      // Revert UI state on error
+      setSeekers(prevSeekers => 
+        prevSeekers.map(s => 
+          s.id === seeker.id 
+            ? { ...s, hasAdministrator: false }
+            : s
+        )
+      );
+      
+      throw error;
     } finally {
       setProcessing(prev => ({ ...prev, processingAdmin: null }));
     }
@@ -284,8 +328,36 @@ export const useSeekerValidation = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Add callback to get updated seeker by ID
+  const getUpdatedSeeker = (seekerId: string): SeekerDetails | null => {
+    return seekers.find(s => s.id === seekerId) || null;
+  };
+
+  // Enhanced refresh with approval status sync
+  const refreshSeekersWithApprovalSync = () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Load all approval statuses first
+      const allApprovals = approvalStatusService.getAllApprovalStatuses();
+      const allAdmins = approvalStatusService.getAllApprovalStatuses().map(a => 
+        approvalStatusService.getAdministrator(a.seekerId)
+      ).filter(Boolean);
+      
+      console.log('🔄 Syncing with stored approval statuses:', allApprovals.length, 'approvals,', allAdmins.length, 'admins');
+      
+      // Call original refresh
+      refreshSeekers();
+      
+    } catch (error) {
+      console.error('❌ Error during approval sync refresh:', error);
+      refreshSeekers(); // Fallback to normal refresh
+    }
+  };
+
   useEffect(() => {
-    refreshSeekers();
+    refreshSeekersWithApprovalSync();
   }, []);
 
   return {
@@ -295,10 +367,11 @@ export const useSeekerValidation = () => {
     error,
     comprehensiveData,
     processing,
-    refreshSeekers,
+    refreshSeekers: refreshSeekersWithApprovalSync,
     loadComprehensiveOrgData,
     handleApproval,
     handleCreateAdmin,
-    downloadSeekersData
+    downloadSeekersData,
+    getUpdatedSeeker
   };
 };

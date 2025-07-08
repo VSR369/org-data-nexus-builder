@@ -8,10 +8,10 @@ export interface SeekerDetails extends UserRecord {
 }
 
 export interface ApprovalHandlers {
-  onApproval: (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => Promise<void>;
+  onApproval: (seekerId: string, status: 'approved' | 'rejected', reason?: string, documents?: File[]) => Promise<any>;
   onReject: (seeker: SeekerDetails) => void;
   onReapprove: (seeker: SeekerDetails) => void;
-  onCreateAdmin: (seeker: SeekerDetails) => void;
+  onCreateAdmin: (seeker: SeekerDetails) => Promise<any>;
 }
 
 export interface ProcessingStates {

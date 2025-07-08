@@ -36,8 +36,35 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     loadComprehensiveOrgData,
     handleApproval,
     handleCreateAdmin,
-    downloadSeekersData
+    downloadSeekersData,
+    getUpdatedSeeker
   } = useSeekerValidation();
+
+  // Handle seeker updates from the dialog
+  const handleSeekerUpdate = (updatedSeeker: SeekerDetails) => {
+    console.log('🔄 Dashboard: Received seeker update from dialog:', updatedSeeker.organizationName, updatedSeeker.approvalStatus);
+    
+    // Update the selected seeker
+    setSelectedSeeker(updatedSeeker);
+    
+    // Update the seekers array
+    setSeekers(prevSeekers => 
+      prevSeekers.map(seeker => 
+        seeker.id === updatedSeeker.id ? updatedSeeker : seeker
+      )
+    );
+  };
+
+  // Auto-sync selected seeker when seekers array changes
+  React.useEffect(() => {
+    if (selectedSeeker && dialogOpen) {
+      const updatedSeeker = getUpdatedSeeker(selectedSeeker.id);
+      if (updatedSeeker && updatedSeeker.approvalStatus !== selectedSeeker.approvalStatus) {
+        console.log('🔄 Dashboard: Auto-syncing selected seeker with updated data');
+        setSelectedSeeker(updatedSeeker);
+      }
+    }
+  }, [seekers, selectedSeeker, dialogOpen, getUpdatedSeeker]);
 
 
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
@@ -48,10 +75,14 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     setRejectionDialogOpen(true);
   };
 
-  const handleRejectionStatusChange = (seekerId: string, status: 'approved' | 'rejected', reason: string, documents?: File[]) => {
-    handleApproval(seekerId, status, reason, documents);
-    setRejectionDialogOpen(false);
-    setSelectedSeekerForRejection(null);
+  const handleRejectionStatusChange = async (seekerId: string, status: 'approved' | 'rejected', reason: string, documents?: File[]) => {
+    try {
+      await handleApproval(seekerId, status, reason, documents);
+      setRejectionDialogOpen(false);
+      setSelectedSeekerForRejection(null);
+    } catch (error) {
+      console.error('Error in rejection status change:', error);
+    }
   };
 
   const handleReapprove = (seeker: SeekerDetails) => {
@@ -201,6 +232,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
             seeker={selectedSeeker}
             handlers={approvalHandlers}
             processing={processing}
+            onSeekerUpdate={handleSeekerUpdate}
           />
         )}
       </Dialog>

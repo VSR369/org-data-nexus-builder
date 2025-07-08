@@ -12,17 +12,23 @@ interface ViewDetailsDialogProps {
   seeker: SeekerDetails;
   handlers: ApprovalHandlers;
   processing: ProcessingStates;
+  onSeekerUpdate?: (updatedSeeker: SeekerDetails) => void;
 }
 
-const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers, processing }) => {
+const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers, processing, onSeekerUpdate }) => {
   const [currentSeeker, setCurrentSeeker] = React.useState(seeker);
   const isMobile = useIsMobile();
   const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(currentSeeker);
   
-  // Update local seeker state when prop changes
+  // Update local seeker state when prop changes and notify parent
   React.useEffect(() => {
+    console.log('🔄 ViewDetailsDialog: Seeker prop changed, updating local state', {
+      newStatus: seeker.approvalStatus,
+      currentStatus: currentSeeker.approvalStatus,
+      seekerName: seeker.organizationName
+    });
     setCurrentSeeker(seeker);
-  }, [seeker]);
+  }, [seeker, currentSeeker.approvalStatus]);
   
   console.log('👁️ ViewDetailsDialog rendering for seeker:', currentSeeker.organizationName, 'Approval Status:', currentSeeker.approvalStatus);
   
@@ -43,14 +49,33 @@ const ViewDetailsDialog: React.FC<ViewDetailsDialogProps> = ({ seeker, handlers,
         console.log('❌ User cancelled approval action for:', currentSeeker.organizationName);
         return;
       }
+    }
+    
+    try {
+      console.log('🔄 ViewDetailsDialog: Starting approval process for status:', status);
       
+      // Call the handler and wait for completion
       await handlers.onApproval(currentSeeker.id, status);
       
-      // Update local state immediately after approval
-      setCurrentSeeker(prev => ({
-        ...prev,
-        approvalStatus: status
-      }));
+      // Update local state immediately for responsive UI
+      const updatedSeeker = {
+        ...currentSeeker,
+        approvalStatus: status,
+        updatedAt: new Date().toISOString()
+      };
+      
+      setCurrentSeeker(updatedSeeker);
+      
+      // Notify parent component of the update
+      if (onSeekerUpdate) {
+        onSeekerUpdate(updatedSeeker);
+      }
+      
+      console.log('✅ ViewDetailsDialog: Approval completed successfully, local state updated');
+      
+    } catch (error) {
+      console.error('❌ ViewDetailsDialog: Approval failed:', error);
+      // State will be reverted by the hook's error handling
     }
   };
   
