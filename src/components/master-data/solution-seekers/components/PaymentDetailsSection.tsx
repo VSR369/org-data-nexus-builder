@@ -1,11 +1,41 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { safeRender, isPaaSModel } from '../utils/viewDetailsHelpers';
+import { PricingDataManager } from '@/utils/pricing/PricingDataManager';
 
 interface PaymentDetailsSectionProps {
   membershipData: any;
   pricingData: any;
 }
+
+// Helper function to get the correct pricing display for engagement models
+const getPricingDisplay = (pricingData: any) => {
+  if (!pricingData || pricingData.paymentStatus !== 'paid' || !pricingData.paymentAmount) {
+    return null;
+  }
+
+  // Use pricingStructure from payment record if available
+  if (pricingData.pricingStructure === 'percentage') {
+    return `${pricingData.paymentAmount}%`;
+  }
+  
+  // For marketplace model, check if it should be percentage based on pricing config
+  if (pricingData.engagementModel === 'marketplace') {
+    // Try to get the pricing config for this engagement model
+    const pricingConfig = PricingDataManager.getConfigurationByOrgTypeAndEngagement(
+      'solution-seeker', 
+      'marketplace'
+    );
+    
+    // If config shows percentage-based pricing (marketplace fee)
+    if (pricingConfig && pricingConfig.generalConfig?.marketPlaceFee) {
+      return `${pricingData.paymentAmount}%`;
+    }
+  }
+  
+  // Default to currency display
+  return `${pricingData.paymentCurrency} ${pricingData.paymentAmount}`;
+};
 
 const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershipData, pricingData }) => {
   return (
@@ -58,7 +88,7 @@ const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershi
               </Badge>
             </div>
             {pricingData.paymentStatus === 'paid' && pricingData.paymentAmount > 0 && (
-              <div><span className="font-medium">Amount Paid:</span> {pricingData.paymentCurrency} {pricingData.paymentAmount}</div>
+              <div><span className="font-medium">Amount Paid:</span> {getPricingDisplay(pricingData)}</div>
             )}
             {pricingData.paidAt && (
               <div><span className="font-medium">Paid On:</span> {new Date(pricingData.paidAt).toLocaleDateString()}</div>

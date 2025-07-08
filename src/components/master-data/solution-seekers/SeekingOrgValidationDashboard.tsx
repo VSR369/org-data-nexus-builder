@@ -21,6 +21,7 @@ import { formatCurrency } from '@/utils/membershipPricingUtils';
 import ViewDetailsDialog from './ViewDetailsDialog';
 import type { SeekerDetails } from './types';
 import { approvalStatusService } from '@/services/ApprovalStatusService';
+import { migrateToOrganizationSpecificStorage, isMigrationNeeded } from '@/utils/organizationDataMigration';
 
 interface ComprehensiveOrgData {
   organizationDetails: any;
@@ -88,15 +89,34 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     
+    // Check if migration is needed and perform it
+    if (isMigrationNeeded()) {
+      console.log('🔄 Migration needed, performing data migration...');
+      const migrationResult = migrateToOrganizationSpecificStorage();
+      if (migrationResult.success) {
+        console.log('✅ Migration successful:', migrationResult.migratedOrganizations);
+      } else {
+        console.error('❌ Migration failed:', migrationResult.errors);
+      }
+    }
+    
     try {
       const seekersData: SeekerDetails[] = [];
       
       // Load current organization from registration data
       const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
-      const membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
+      const orgId = orgData.organizationId || `org_${Date.now()}`;
+      
+      // Load organization-specific membership state
+      const orgSpecificKey = `membership_pricing_system_state_${orgId}`;
+      let membershipState = JSON.parse(localStorage.getItem(orgSpecificKey) || '{}');
+      
+      // Fallback to global state if organization-specific doesn't exist
+      if (!membershipState.last_updated) {
+        membershipState = JSON.parse(localStorage.getItem('membership_pricing_system_state') || '{}');
+      }
       
       if (orgData.organizationName) {
-        const orgId = orgData.organizationId || `org_${Date.now()}`;
         const seekerId = 'current-org';
         
         // Check for existing approval status

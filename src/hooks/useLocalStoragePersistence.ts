@@ -16,6 +16,11 @@ interface PaymentRecord {
   currency: string;
   timestamp: string;
   status: 'pending' | 'completed' | 'failed';
+  // Enhanced fields for engagement model details
+  engagementModel?: string;
+  billingFrequency?: 'quarterly' | 'half-yearly' | 'annual';
+  pricingStructure?: 'percentage' | 'currency';
+  organizationId?: string;
 }
 
 const DEFAULT_STATE: PersistentState = {
@@ -29,7 +34,12 @@ const DEFAULT_STATE: PersistentState = {
 
 const STORAGE_KEY = 'membership_pricing_system_state';
 
-export const useLocalStoragePersistence = () => {
+// Get organization-specific storage key
+const getStorageKey = (organizationId?: string) => {
+  return organizationId ? `${STORAGE_KEY}_${organizationId}` : STORAGE_KEY;
+};
+
+export const useLocalStoragePersistence = (organizationId?: string) => {
   const [state, setState] = useState<PersistentState>(DEFAULT_STATE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +48,11 @@ export const useLocalStoragePersistence = () => {
   // Load state from localStorage
   const loadState = useCallback((): PersistentState => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const storageKey = getStorageKey(organizationId);
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        console.log('📤 Loaded persistent state:', parsed);
+        console.log(`📤 Loaded persistent state for ${organizationId || 'global'}:`, parsed);
         return { ...DEFAULT_STATE, ...parsed };
       }
     } catch (err) {
@@ -49,7 +60,7 @@ export const useLocalStoragePersistence = () => {
       setError('Failed to load saved data');
     }
     return DEFAULT_STATE;
-  }, []);
+  }, [organizationId]);
 
   // Save state to localStorage with debouncing
   const saveState = useCallback((newState: PersistentState) => {
@@ -65,8 +76,9 @@ export const useLocalStoragePersistence = () => {
           ...newState,
           last_updated: new Date().toISOString()
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-        console.log('💾 Saved persistent state:', stateToSave);
+        const storageKey = getStorageKey(organizationId);
+        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+        console.log(`💾 Saved persistent state for ${organizationId || 'global'}:`, stateToSave);
         setError(null);
       } catch (err) {
         console.error('❌ Error saving persistent state:', err);
@@ -77,7 +89,7 @@ export const useLocalStoragePersistence = () => {
         }
       }
     }, 300);
-  }, []);
+  }, [organizationId]);
 
   // Update state and persist
   const updateState = useCallback((updates: Partial<PersistentState>) => {
@@ -109,7 +121,8 @@ export const useLocalStoragePersistence = () => {
     const newRecord: PaymentRecord = {
       ...record,
       id: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      organizationId: organizationId || 'global'
     };
     
     setState(prev => {
@@ -122,7 +135,7 @@ export const useLocalStoragePersistence = () => {
     });
     
     return newRecord;
-  }, [saveState]);
+  }, [saveState, organizationId]);
 
   const updatePaymentRecord = useCallback((id: string, updates: Partial<PaymentRecord>) => {
     setState(prev => {
@@ -139,10 +152,11 @@ export const useLocalStoragePersistence = () => {
 
   // Clear all data
   const clearState = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    const storageKey = getStorageKey(organizationId);
+    localStorage.removeItem(storageKey);
     setState(DEFAULT_STATE);
-    console.log('🗑️ Cleared persistent state');
-  }, []);
+    console.log(`🗑️ Cleared persistent state for ${organizationId || 'global'}`);
+  }, [organizationId]);
 
   // Initialize on mount
   useEffect(() => {
@@ -154,11 +168,12 @@ export const useLocalStoragePersistence = () => {
   // Listen for storage changes across tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
+      const storageKey = getStorageKey(organizationId);
+      if (e.key === storageKey && e.newValue) {
         try {
           const newState = JSON.parse(e.newValue);
           setState(newState);
-          console.log('🔄 Updated state from another tab:', newState);
+          console.log(`🔄 Updated state from another tab for ${organizationId || 'global'}:`, newState);
         } catch (err) {
           console.error('❌ Error processing storage change:', err);
         }
@@ -167,7 +182,7 @@ export const useLocalStoragePersistence = () => {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [organizationId]);
 
   // Save pending changes before unload
   useEffect(() => {
@@ -176,7 +191,8 @@ export const useLocalStoragePersistence = () => {
         clearTimeout(saveTimeoutRef.current);
         // Force immediate save
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          const storageKey = getStorageKey(organizationId);
+          localStorage.setItem(storageKey, JSON.stringify({
             ...state,
             last_updated: new Date().toISOString()
           }));
@@ -188,7 +204,7 @@ export const useLocalStoragePersistence = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [state]);
+  }, [state, organizationId]);
 
   return {
     state,
