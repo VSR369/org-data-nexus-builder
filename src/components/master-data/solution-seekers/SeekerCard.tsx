@@ -8,6 +8,7 @@ import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './types'
 import ViewDetailsDialog from './ViewDetailsDialog';
 import { EngagementValidator } from '@/utils/engagementValidator';
 import { loadEngagementPricingDetails } from './utils/viewDetailsHelpers';
+import { debugAllPaymentData } from '@/utils/debugPaymentData';
 
 interface SeekerCardProps {
   seeker: SeekerDetails;
@@ -65,8 +66,24 @@ const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
 };
 
 const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing }) => {
+  // Debug: Run global payment data debug for the first seeker
+  React.useEffect(() => {
+    if (seeker.organizationName === 'Vignan') { // Only run for Vignan organization
+      debugAllPaymentData();
+    }
+  }, [seeker.organizationName]);
+  
   // Use the enhanced data loading from viewDetailsHelpers
   const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
+  
+  // Debug: Log the loaded data for this seeker
+  console.log(`💳 SeekerCard: Loading payment data for ${seeker.organizationName}:`, {
+    membershipData,
+    pricingData,
+    hasData: !!(membershipData?.paymentStatus || pricingData?.paymentStatus),
+    membershipStatus: membershipData?.paymentStatus,
+    pricingStatus: pricingData?.paymentStatus
+  });
   
   // Validate engagement details for this seeker
   const engagementValidation = EngagementValidator.validateSeekerEngagement(
@@ -141,8 +158,14 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
           </div>
         </div>
         
-        {/* Membership & Engagement Payment Details */}
+        {/* Membership & Engagement Payment Details - ALWAYS SHOW */}
         <div className="mt-4 space-y-3">
+          {/* Debug Info */}
+          <div className="p-2 bg-yellow-50 rounded text-xs text-yellow-700">
+            <strong>DEBUG:</strong> Membership: {membershipData ? 'Found' : 'Not Found'} | 
+            Engagement: {pricingData ? 'Found' : 'Not Found'}
+          </div>
+          
           {/* Membership Details */}
           <div className="p-3 bg-green-50 rounded-lg border border-green-200">
             <div className="flex items-center gap-2 mb-2">
@@ -164,6 +187,9 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
               )}
               {membershipData?.type && (
                 <div><span className="font-medium">Plan:</span> {safeRender(membershipData.type)}</div>
+              )}
+              {!membershipData && (
+                <div className="text-gray-500 italic">No membership data found</div>
               )}
             </div>
           </div>
