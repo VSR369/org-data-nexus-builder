@@ -7,6 +7,7 @@ import { PricingDataManager } from '@/utils/pricingDataManager';
 import { PricingConfig } from '@/types/pricing';
 import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
 import { DynamicPricingSection } from '@/components/engagement/DynamicPricingSection';
+import { getEngagementPricing } from '@/utils/membershipPricingUtils';
 
 interface MembershipEngagementDashboardProps {
   organizationType: string;
@@ -235,207 +236,23 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   ];
 
-  // Get platform fee percentage for marketplace models
-  const getPlatformFeePercentage = (): { fee: number; currency: string; configName: string } => {
-    if (!selectedEngagementModel || !selectedMembershipPlan) {
-      return { fee: 0, currency: 'INR', configName: 'Select Engagement Model & Plan' };
-    }
 
-    const getMembershipStatusForConfig = (plan: string): string => {
-      if (plan === 'not-member') return 'not-a-member';
-      if (plan === 'annual') return 'member';
-      return 'member';
-    };
-    
-    const membershipStatusForConfig = getMembershipStatusForConfig(selectedMembershipPlan);
-    const allConfigs = PricingDataManager.getAllConfigurations();
-    
-    const engagementPricing = allConfigs.find(config => 
-      normalizeCountryName(config.country || '') === normalizeCountryName(country) &&
-      (config.organizationType === organizationType || config.organizationType === 'All') &&
-      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-      config.membershipStatus === membershipStatusForConfig
-    );
-
-    const fallbackConfig = !engagementPricing ? allConfigs.find(config =>
-      (!config.country || config.country === 'Global' || config.country === 'All') &&
-      (config.organizationType === organizationType || config.organizationType === 'All') &&
-      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-      config.membershipStatus === membershipStatusForConfig
-    ) : null;
-
-    const finalConfig = engagementPricing || fallbackConfig;
-
-    if (!finalConfig) {
-      console.log(`⚠️ No platform fee found for engagement model: ${selectedEngagementModel} with membership status: ${membershipStatusForConfig}`);
-      return { fee: 0, currency: 'INR', configName: 'Data not available' };
-    }
-
-    const platformFeePercentage = finalConfig.platformFeePercentage || 0;
-    
-    console.log(`💰 Platform fee for ${selectedEngagementModel} (${membershipStatusForConfig}):`, {
-      platformFeePercentage,
-      membershipStatus: membershipStatusForConfig,
-      config: finalConfig.configName
-    });
-    
-    return { 
-      fee: platformFeePercentage,
-      currency: finalConfig.currency || 'INR',
-      configName: `${finalConfig.configName || selectedEngagementModel} (${membershipStatusForConfig})`
-    };
-  };
-
-  // Get frequency pricing for Platform as a Service models only
-  const getFrequencyPricing = (): { quarterly: number; halfYearly: number; annual: number; currency: string; configName: string } => {
-    if (!selectedEngagementModel || !selectedMembershipPlan) {
-      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'Select Engagement Model & Plan' };
-    }
-
-    const getMembershipStatusForConfig = (plan: string): string => {
-      if (plan === 'not-member') return 'not-a-member';
-      if (plan === 'annual') return 'member';
-      return 'member';
-    };
-    
-    const membershipStatusForConfig = getMembershipStatusForConfig(selectedMembershipPlan);
-    const allConfigs = PricingDataManager.getAllConfigurations();
-    
-    const engagementPricing = allConfigs.find(config => 
-      normalizeCountryName(config.country || '') === normalizeCountryName(country) &&
-      (config.organizationType === organizationType || config.organizationType === 'All') &&
-      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-      config.membershipStatus === membershipStatusForConfig
-    );
-
-    const fallbackConfig = !engagementPricing ? allConfigs.find(config =>
-      (!config.country || config.country === 'Global' || config.country === 'All') &&
-      (config.organizationType === organizationType || config.organizationType === 'All') &&
-      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-      config.membershipStatus === membershipStatusForConfig
-    ) : null;
-
-    const finalConfig = engagementPricing || fallbackConfig;
-
-    if (!finalConfig) {
-      console.log(`⚠️ No frequency pricing found for engagement model: ${selectedEngagementModel} with membership status: ${membershipStatusForConfig}`);
-      return { quarterly: 0, halfYearly: 0, annual: 0, currency: 'INR', configName: 'Data not available' };
-    }
-
-    const quarterlyPrice = finalConfig.quarterlyFee || 0;
-    const halfYearlyPrice = finalConfig.halfYearlyFee || 0;
-    const annualPrice = finalConfig.annualFee || 0;
-    
-    console.log(`💰 Frequency pricing for ${selectedEngagementModel} (${membershipStatusForConfig}):`, {
-      quarterly: quarterlyPrice,
-      halfYearly: halfYearlyPrice,
-      annual: annualPrice,
-      membershipStatus: membershipStatusForConfig,
-      config: finalConfig.configName
-    });
-    
-    return { 
-      quarterly: quarterlyPrice,
-      halfYearly: halfYearlyPrice,
-      annual: annualPrice,
-      currency: finalConfig.currency || 'INR',
-      configName: `${finalConfig.configName || selectedEngagementModel} (${membershipStatusForConfig})`
-    };
-  };
-
-  // Helper function to normalize country names (needed for pricing lookup)
-  const normalizeCountryName = (country: string): string => {
-    if (!country) return '';
-    const normalizedCountry = country.trim();
-    if (['India', 'IN', 'IND'].includes(normalizedCountry)) return 'India';
-    if (['UAE', 'AE', 'United Arab Emirates'].includes(normalizedCountry)) return 'United Arab Emirates';
-    if (['USA', 'US', 'United States', 'United States of America'].includes(normalizedCountry)) return 'United States of America';
-    return normalizedCountry;
-  };
-
-  // Get pricing configuration for the selected engagement model
+  // Get pricing configuration using the simplified pricing utility
   const getPricingConfig = (): PricingConfig | null => {
     if (!selectedEngagementModel || !selectedMembershipPlan) {
-      console.log('⚠️ Missing engagement model or membership plan');
       return null;
     }
 
-    const getMembershipStatusForConfig = (plan: string): string => {
-      if (plan === 'not-member') return 'not-a-member';
-      if (plan === 'annual') return 'member';
-      return 'member';
-    };
-    
-    const membershipStatusForConfig = getMembershipStatusForConfig(selectedMembershipPlan);
-    const allConfigs = PricingDataManager.getAllConfigurations();
-    
-    console.log('🔍 Looking for pricing config with criteria:', {
+    const membershipStatusForPricing = selectedMembershipPlan === 'annual' ? 'member_paid' : 'not-member';
+    const pricingConfigs = PricingDataManager.getAllConfigurations();
+
+    return getEngagementPricing(
       selectedEngagementModel,
-      membershipStatusForConfig,
+      membershipStatusForPricing,
+      pricingConfigs,
       country,
-      organizationType,
-      entityType,
-      totalConfigs: allConfigs.length
-    });
-    
-    console.log('📋 Available configs:', allConfigs.map(c => ({
-      id: c.id,
-      engagementModel: c.engagementModel,
-      membershipStatus: c.membershipStatus,
-      country: c.country,
-      organizationType: c.organizationType,
-      entityType: c.entityType
-    })));
-    
-    // First try: exact match with current criteria
-    let engagementPricing = allConfigs.find(config => 
-      normalizeCountryName(config.country || '') === normalizeCountryName(country) &&
-      (config.organizationType === organizationType || config.organizationType === 'All') &&
-      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-      config.membershipStatus === membershipStatusForConfig
+      organizationType
     );
-    
-    // Second try: match without country restriction
-    if (!engagementPricing) {
-      engagementPricing = allConfigs.find(config =>
-        (!config.country || config.country === 'Global' || config.country === 'All' || normalizeCountryName(config.country || '') === normalizeCountryName(country)) &&
-        (config.organizationType === organizationType || config.organizationType === 'All') &&
-        (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-        config.membershipStatus === membershipStatusForConfig
-      );
-    }
-    
-    // Third try: match without organization type restriction
-    if (!engagementPricing) {
-      engagementPricing = allConfigs.find(config =>
-        (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
-        config.membershipStatus === membershipStatusForConfig
-      );
-    }
-    
-    // Fourth try: match only engagement model (ignore membership status)
-    if (!engagementPricing) {
-      engagementPricing = allConfigs.find(config =>
-        (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase())
-      );
-    }
-
-    if (engagementPricing) {
-      console.log('✅ Found pricing config:', {
-        id: engagementPricing.id,
-        configName: engagementPricing.configName,
-        engagementModel: engagementPricing.engagementModel,
-        membershipStatus: engagementPricing.membershipStatus,
-        platformFeePercentage: engagementPricing.platformFeePercentage,
-        quarterlyFee: engagementPricing.quarterlyFee,
-        halfYearlyFee: engagementPricing.halfYearlyFee,
-        annualFee: engagementPricing.annualFee
-      });
-    } else {
-      console.log('❌ No pricing config found for engagement model:', selectedEngagementModel);
-    }
-
-    return engagementPricing || null;
   };
 
   return (

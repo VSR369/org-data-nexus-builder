@@ -37,66 +37,60 @@ export const getEngagementPricing = (
     selectedModelId: selectedEngagementModel
   });
 
-  // First find the base config for this engagement model
-  let baseConfig = pricingConfigs.find(config => 
+  console.log('📋 Available configs:', pricingConfigs.map(c => ({
+    id: c.id,
+    engagementModel: c.engagementModel,
+    country: c.country,
+    organizationType: c.organizationType,
+    membershipStatus: c.membershipStatus
+  })));
+
+  // Simple direct lookup - exact match first
+  let matchingConfig = pricingConfigs.find(config => 
+    config.engagementModel === engagementModelName &&
     config.country === country &&
-    config.organizationType === organizationType &&
-    config.engagementModel === engagementModelName
+    config.organizationType === organizationType
   );
 
-  if (!baseConfig) {
-    // Try with normalized country names
-    const normalizedCountry = country === 'United States' ? 'IN' : country;
-    baseConfig = pricingConfigs.find(config => 
-      config.country === normalizedCountry &&
-      config.organizationType === organizationType &&
+  // If no exact match, try global/fallback configs
+  if (!matchingConfig) {
+    matchingConfig = pricingConfigs.find(config => 
+      config.engagementModel === engagementModelName &&
+      (!config.country || config.country === 'Global' || config.country === 'All') &&
+      (config.organizationType === organizationType || config.organizationType === 'All')
+    );
+  }
+
+  // Final fallback - just match engagement model
+  if (!matchingConfig) {
+    matchingConfig = pricingConfigs.find(config => 
       config.engagementModel === engagementModelName
     );
   }
 
-  if (!baseConfig) {
-    // Try global config without country restriction
-    baseConfig = pricingConfigs.find(config => 
-      (!config.country || config.country === 'Global' || config.country === 'IN') &&
-      config.organizationType === organizationType &&
-      config.engagementModel === engagementModelName
-    );
-  }
-
-  if (!baseConfig) {
-    // Final fallback - any config with matching engagement model
-    baseConfig = pricingConfigs.find(config => 
-      config.engagementModel === engagementModelName
-    );
-  }
-
-  if (!baseConfig) {
-    console.log('❌ No base config found for engagement model:', engagementModelName);
+  if (!matchingConfig) {
+    console.log('❌ No pricing config found for engagement model:', engagementModelName);
     return null;
   }
 
-  // Create the final config based on membership payment status
-  let finalConfig;
-  if (isMembershipPaid) {
-    // Membership is paid - apply member pricing with discount
-    finalConfig = {
-      ...baseConfig,
-      membershipStatus: 'member',
-      // Keep the discount percentage from base config for members
-      discountPercentage: baseConfig.discountPercentage || 0
-    };
-    console.log('✅ Using member pricing with discount:', finalConfig.discountPercentage + '%');
-  } else {
-    // Membership not paid - use regular pricing without discount
-    finalConfig = {
-      ...baseConfig,
-      membershipStatus: 'not-a-member',
-      discountPercentage: 0 // No discount for non-members
-    };
-    console.log('✅ Using regular pricing without discount');
-  }
+  // Apply proper membership status and discount
+  const finalConfig: PricingConfig = {
+    ...matchingConfig,
+    membershipStatus: membershipStatusForConfig as 'member' | 'not-a-member',
+    discountPercentage: isMembershipPaid ? (matchingConfig.discountPercentage || 0) : 0
+  };
 
-  console.log('✅ Final pricing config:', finalConfig);
+  console.log('✅ Final pricing config found:', {
+    id: finalConfig.id,
+    engagementModel: finalConfig.engagementModel,
+    membershipStatus: finalConfig.membershipStatus,
+    discountPercentage: finalConfig.discountPercentage,
+    platformFeePercentage: finalConfig.platformFeePercentage,
+    quarterlyFee: finalConfig.quarterlyFee,
+    halfYearlyFee: finalConfig.halfYearlyFee,
+    annualFee: finalConfig.annualFee
+  });
+
   return finalConfig;
 };
 
