@@ -297,8 +297,8 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                       min="0"
                       step="0.1"
                       max="100"
-                      value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
-                      onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
+                      value={currentConfig.platformFeePercentage !== undefined ? currentConfig.platformFeePercentage.toString() : ''}
+                      onChange={(e) => handleInputChange('platformFeePercentage', e.target.value)}
                       placeholder="15"
                     />
                     <p className="text-sm text-muted-foreground mt-1">

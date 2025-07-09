@@ -46,6 +46,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       quarterlyFee: currentConfig.quarterlyFee,
       halfYearlyFee: currentConfig.halfYearlyFee,
       annualFee: currentConfig.annualFee,
+      platformFeePercentage: currentConfig.platformFeePercentage,
       membershipStatus: currentConfig.membershipStatus!,
       discountPercentage: currentConfig.membershipStatus === 'member' ? currentConfig.discountPercentage! : undefined,
       internalPaasPricing: currentConfig.internalPaasPricing || [],
