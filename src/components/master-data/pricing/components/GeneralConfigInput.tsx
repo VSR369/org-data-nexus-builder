@@ -248,6 +248,9 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 onChange={(e) => handleInputChange('discountPercentage', e.target.value)}
                 placeholder="0"
               />
+              <p className="text-sm text-muted-foreground mt-1">
+                Discount applied to base rates to calculate member pricing
+              </p>
             </div>
           </div>
         )}
@@ -290,7 +293,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 // Single Platform Fee for Marketplace-based models
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="platformFee">Platform Fee (%) *</Label>
+                    <Label htmlFor="platformFee">Platform Fee (%) - Base Rate (Not-a-Member) *</Label>
                     <Input
                       id="platformFee"
                       type="number"
@@ -302,7 +305,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                       placeholder="15"
                     />
                     <p className="text-sm text-muted-foreground mt-1">
-                      Single platform fee percentage applicable to solution fee
+                      Base platform fee percentage for not-a-member. Member rates auto-calculated with discount.
                     </p>
                   </div>
                 </div>
@@ -311,7 +314,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="quarterlyFee">
-                      Quarterly Fee {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
+                      Quarterly Fee - Base Rate (Not-a-Member) {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
                     </Label>
                     <Input
                       id="quarterlyFee"
@@ -326,7 +329,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
 
                   <div>
                     <Label htmlFor="halfYearlyFee">
-                      Half Yearly Fee {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
+                      Half Yearly Fee - Base Rate (Not-a-Member) {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
                     </Label>
                     <Input
                       id="halfYearlyFee"
@@ -341,7 +344,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
 
                   <div>
                     <Label htmlFor="annualFee">
-                      Annual Fee {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
+                      Annual Fee - Base Rate (Not-a-Member) {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
                     </Label>
                     <Input
                       id="annualFee"

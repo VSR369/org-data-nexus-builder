@@ -35,9 +35,14 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       return;
     }
 
-    // Create configuration to save
-    const configToSave = {
-      id: currentConfig.id || Date.now().toString(),
+    const baseConfigId = currentConfig.id || Date.now().toString();
+    const timestamp = new Date().toISOString().split('T')[0];
+    const configsToSave: PricingConfig[] = [];
+
+    // Always create the Not-a-Member base configuration
+    const notMemberConfig = {
+      id: `${baseConfigId}-base`,
+      configId: `${baseConfigId}-base`,
       country: currentConfig.country!,
       currency: currentConfig.currency || '',
       organizationType: currentConfig.organizationType!,
@@ -47,21 +52,40 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       halfYearlyFee: currentConfig.halfYearlyFee,
       annualFee: currentConfig.annualFee,
       platformFeePercentage: currentConfig.platformFeePercentage,
-      membershipStatus: currentConfig.membershipStatus!,
-      discountPercentage: currentConfig.membershipStatus === 'member' ? currentConfig.discountPercentage! : undefined,
+      membershipStatus: 'not-a-member' as const,
+      discountPercentage: undefined,
       internalPaasPricing: currentConfig.internalPaasPricing || [],
       version: (currentConfig.version || 0) + 1,
-      createdAt: currentConfig.createdAt || new Date().toISOString().split('T')[0],
+      createdAt: timestamp,
     } as PricingConfig;
 
-    console.log('✅ Configuration to save:', configToSave);
+    configsToSave.push(notMemberConfig);
+
+    // If user selected member status with discount, create member configuration
+    if (currentConfig.membershipStatus === 'member' && currentConfig.discountPercentage) {
+      const discountMultiplier = (1 - currentConfig.discountPercentage / 100);
+      
+      const memberConfig = {
+        ...notMemberConfig,
+        id: `${baseConfigId}-member`,
+        configId: `${baseConfigId}-member`,
+        membershipStatus: 'member' as const,
+        discountPercentage: currentConfig.discountPercentage,
+        // Apply discount to all relevant fees
+        quarterlyFee: currentConfig.quarterlyFee ? Math.round(currentConfig.quarterlyFee * discountMultiplier * 100) / 100 : undefined,
+        halfYearlyFee: currentConfig.halfYearlyFee ? Math.round(currentConfig.halfYearlyFee * discountMultiplier * 100) / 100 : undefined,
+        annualFee: currentConfig.annualFee ? Math.round(currentConfig.annualFee * discountMultiplier * 100) / 100 : undefined,
+        platformFeePercentage: currentConfig.platformFeePercentage ? Math.round(currentConfig.platformFeePercentage * discountMultiplier * 10) / 10 : undefined,
+      } as PricingConfig;
+
+      configsToSave.push(memberConfig);
+    }
+
+    console.log('✅ Configurations to save:', configsToSave);
 
     try {
       // Update configs state first
-      const updatedConfigs = currentConfig.id 
-        ? configs.map(config => config.id === currentConfig.id ? configToSave : config)
-        : [...configs, configToSave];
-      
+      const updatedConfigs = [...configs, ...configsToSave];
       setConfigs(updatedConfigs);
 
       // Save to Supabase with better error handling
@@ -73,7 +97,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
 
       toast({
         title: "Success",
-        description: "Configuration saved to database successfully.",
+        description: `${configsToSave.length} configuration(s) saved to database successfully.`,
       });
 
       console.log('✅ Configuration saved to Supabase successfully');
