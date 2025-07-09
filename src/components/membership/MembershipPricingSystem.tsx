@@ -141,7 +141,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
         <MembershipPlanSelection
           membershipType={state.membership_type}
           membershipStatus={state.membership_status}
@@ -159,7 +159,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           onEngagementModelChange={updateEngagementModel}
         />
 
-        <div className="text-center p-4">
+        <div className="text-center p-4 lg:col-span-2 xl:col-span-1">
           <p className="text-muted-foreground">
             Membership payment functionality will be implemented in the next phase
           </p>
