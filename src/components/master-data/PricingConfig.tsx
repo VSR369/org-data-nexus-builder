@@ -21,36 +21,27 @@ const PricingConfig = () => {
     
     // Force custom pricing mode to ensure user's custom data is preserved
     const initializeCustomMode = async () => {
-      const { ForceCustomPricingMode } = await import('@/utils/forceCustomPricingMode');
-      ForceCustomPricingMode.enableCustomPricingMode();
-      ForceCustomPricingMode.logCurrentPricingState();
+      // Initialize our Supabase-integrated pricing system
+      const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
       
-      // Initialize enhanced pricing system
-      const { EnhancedPricingDataManager } = await import('@/utils/enhancedPricingDataManager');
-      const { PricingDataDiagnostic } = await import('@/utils/pricingDataDiagnostic');
-      
-      // Run comprehensive diagnostics
-      console.log('🔍 Running pricing data diagnostics...');
-      PricingDataDiagnostic.auditAllPricingData();
-      PricingDataDiagnostic.debugEngagementModelMatching();
-      
-      // Perform health check
-      const healthStatus = EnhancedPricingDataManager.performHealthCheck();
-      console.log('🏥 Pricing system health:', healthStatus);
-      
-      if (!healthStatus.healthy) {
-        console.warn('⚠️ Pricing system health issues detected:', healthStatus.issues);
-        console.log('💡 Recommendations:', healthStatus.recommendations);
+      try {
+        console.log('🔍 Loading pricing configurations from database...');
+        const loadedConfigs = await getPricingConfigsAsync();
+        setConfigs(loadedConfigs);
+        console.log('✅ Database pricing configurations loaded:', loadedConfigs.length);
+      } catch (error) {
+        console.error('❌ Failed to load from database, using defaults:', error);
+        // Fallback to enhanced manager
+        try {
+          const { EnhancedPricingDataManager } = await import('@/utils/enhancedPricingDataManager');
+          const fallbackConfigs = EnhancedPricingDataManager.getAllConfigurations();
+          setConfigs(fallbackConfigs);
+          console.log('✅ Fallback pricing configurations loaded:', fallbackConfigs.length);
+        } catch (fallbackError) {
+          console.error('❌ All loading methods failed:', fallbackError);
+          setConfigs([]);
+        }
       }
-      
-      // Load pricing configurations after ensuring custom mode
-      const loadedConfigs = EnhancedPricingDataManager.getAllConfigurations();
-      setConfigs(loadedConfigs);
-      
-      console.log('✅ Enhanced pricing configurations loaded:', loadedConfigs.length);
-      loadedConfigs.forEach((config, index) => {
-        console.log(`  ${index + 1}. ${config.engagementModel} (${config.membershipStatus}) - ${config.country}/${config.currency} - Q:${config.quarterlyFee}/H:${config.halfYearlyFee}/A:${config.annualFee}`);
-      });
     };
     
     initializeCustomMode().catch(console.error);
@@ -64,16 +55,16 @@ const PricingConfig = () => {
 
   // Save configurations whenever they change
   useEffect(() => {
-    if (configs.length >= 0) {
+    if (configs.length > 0) { // Only save when there are actual configs
       console.log('💾 PricingConfig: Saving configurations to persistent storage');
       
-      // Use enhanced manager for saving
-      import('@/utils/enhancedPricingDataManager').then(({ EnhancedPricingDataManager }) => {
-        const success = EnhancedPricingDataManager.saveConfigurations(configs);
-        if (!success) {
-          console.warn('⚠️ Enhanced save failed, using fallback');
-          PricingDataManager.saveConfigurations(configs);
-        }
+      // Use our new Supabase-integrated save directly
+      import('@/utils/pricing/pricingCore').then(({ savePricingConfigsAsync }) => {
+        savePricingConfigsAsync(configs).catch(error => {
+          console.error('❌ Failed to save to database:', error);
+          // Fallback to localStorage
+          localStorage.setItem('custom_pricingConfigs', JSON.stringify(configs));
+        });
       }).catch(() => {
         // Fallback to original save method
         PricingDataManager.saveConfigurations(configs);
