@@ -190,20 +190,49 @@ export const savePricingConfig = (config: PricingConfig): void => {
 };
 
 /**
- * Delete pricing configuration
+ * Delete pricing configuration permanently from Supabase
+ */
+export const deletePricingConfigFromDatabase = async (configId: string): Promise<void> => {
+  console.log(`🗑️ Permanently deleting config from database: ${configId}`);
+  
+  try {
+    const { error } = await supabase
+      .from('pricing_configs')
+      .delete()
+      .eq('config_id', configId);
+
+    if (error) {
+      console.error('❌ Error deleting from Supabase:', error);
+      throw error;
+    }
+
+    console.log('✅ Configuration permanently deleted from database');
+    
+    // Also remove from localStorage
+    const localConfigs = JSON.parse(localStorage.getItem(CUSTOM_PRICING_CONFIGS_KEY) || '[]');
+    const filteredConfigs = localConfigs.filter((c: PricingConfig) => c.id !== configId);
+    localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(filteredConfigs));
+    
+  } catch (error) {
+    console.error('❌ Error in permanent delete operation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete pricing configuration (backward compatibility)
  */
 export const deletePricingConfig = (id: string): void => {
   console.log(`🗑️ Deleting config: ${id}`);
   
   const configs = getPricingConfigs();
-  const configToDelete = configs.find(c => c.id === id);
-  
-  if (configToDelete) {
-    console.log(`🗑️ Deleting config: ${configToDelete.engagementModel} (${configToDelete.membershipStatus})`);
-  }
-  
   const filteredConfigs = configs.filter(c => c.id !== id);
   savePricingConfigs(filteredConfigs);
+  
+  // Also trigger permanent database deletion
+  deletePricingConfigFromDatabase(id).catch(error => {
+    console.error('⚠️ Background database deletion failed:', error);
+  });
 };
 
 /**

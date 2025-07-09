@@ -93,23 +93,26 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
 
   const handleDelete = async (configId: string) => {
     try {
+      // Delete from database permanently
+      const { deletePricingConfigFromDatabase } = await import('@/utils/pricing/pricingCore');
+      await deletePricingConfigFromDatabase(configId);
+      
+      // Update local state
       const updatedConfigs = configs.filter(config => config.id !== configId);
       setConfigs(updatedConfigs);
-
-      // Delete from Supabase asynchronously
-      const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
-      await savePricingConfigsAsync(updatedConfigs);
       
       toast({
         title: "Success",
-        description: "Configuration deleted from database successfully.",
+        description: "Configuration permanently deleted from database.",
       });
+      
+      console.log('✅ Configuration permanently deleted');
     } catch (error) {
-      console.error('❌ Failed to delete from Supabase:', error);
+      console.error('❌ Failed to permanently delete from database:', error);
       
       toast({
-        title: "Warning", 
-        description: "Configuration deleted locally but may not be persistent.",
+        title: "Error",
+        description: "Failed to delete configuration permanently. Please try again.",
         variant: "destructive",
       });
     }
