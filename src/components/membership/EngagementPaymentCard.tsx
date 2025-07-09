@@ -109,7 +109,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
             {selectedFrequency && (
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">Payment Summary</div>
+                  <div className="text-sm font-medium mb-2">Summary of Selected Engagement Model</div>
                   {(() => {
                     const displayInfo = getDisplayAmount(selectedFrequency, engagementPricing, membershipStatus);
                     return (
