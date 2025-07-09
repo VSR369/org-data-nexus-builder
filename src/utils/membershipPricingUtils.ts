@@ -1,13 +1,19 @@
 import { PricingConfig } from '@/types/pricing';
 
-// Map engagement model IDs to display names used in pricing configs
+// Map engagement model IDs to display names used in pricing configs (match master data exactly)
 export const getEngagementModelName = (modelId: string): string => {
   const modelMap: Record<string, string> = {
     'marketplace': 'Market Place',
     'aggregator': 'Aggregator', 
     'marketplace-aggregator': 'Market Place & Aggregator',
-    'platform-service': 'Platform as a Service'
+    'platform-service': 'Platform as a Service',
+    // Handle exact matches from master data
+    'Market Place': 'Market Place',
+    'Aggregator': 'Aggregator',
+    'Market Place & Aggregator': 'Market Place & Aggregator',
+    'Platform as a Service': 'Platform as a Service'
   };
+  
   return modelMap[modelId] || modelId;
 };
 
@@ -34,7 +40,8 @@ export const getEngagementPricing = (
     engagementModel: engagementModelName,
     membershipStatus: membershipStatusForConfig,
     membershipPaid: isMembershipPaid,
-    selectedModelId: selectedEngagementModel
+    selectedModelId: selectedEngagementModel,
+    allAvailableEngagementModels: [...new Set(pricingConfigs.map(c => c.engagementModel))]
   });
 
   console.log('📋 Available configs:', pricingConfigs.map(c => ({
@@ -52,13 +59,16 @@ export const getEngagementPricing = (
     config.organizationType === organizationType
   );
 
+  console.log('🎯 First attempt - exact match result:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+
   // If no exact match, try global/fallback configs
   if (!matchingConfig) {
     matchingConfig = pricingConfigs.find(config => 
       config.engagementModel === engagementModelName &&
-      (!config.country || config.country === 'Global' || config.country === 'All') &&
+      (!config.country || config.country === 'Global' || config.country === 'All' || config.country === country) &&
       (config.organizationType === organizationType || config.organizationType === 'All')
     );
+    console.log('🎯 Second attempt - with fallbacks result:', matchingConfig ? 'FOUND' : 'NOT FOUND');
   }
 
   // Final fallback - just match engagement model
@@ -66,6 +76,7 @@ export const getEngagementPricing = (
     matchingConfig = pricingConfigs.find(config => 
       config.engagementModel === engagementModelName
     );
+    console.log('🎯 Final attempt - engagement model only result:', matchingConfig ? 'FOUND' : 'NOT FOUND');
   }
 
   if (!matchingConfig) {
