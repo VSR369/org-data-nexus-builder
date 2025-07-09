@@ -19,9 +19,15 @@ export interface PricingConfig {
   entityType?: string;
   engagementModel: string;
   engagementModelFee?: number;
+  
+  // Platform fee for marketplace-based models (percentage)
+  platformFeePercentage?: number;
+  
+  // Subscription fees for PaaS models (currency amounts)
   quarterlyFee?: number;
   halfYearlyFee?: number;
   annualFee?: number;
+  
   membershipStatus?: 'member' | 'not-a-member';
   discountPercentage?: number;
   generalConfig?: {

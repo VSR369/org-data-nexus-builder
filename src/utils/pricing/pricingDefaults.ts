@@ -12,9 +12,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
     entityType: 'Commercial',
     engagementModel: 'Market Place',
     membershipStatus: 'member',
-    quarterlyFee: 12, // 12% for Members
-    halfYearlyFee: 20, // 20% for Members  
-    annualFee: 32, // 32% for Members
+    platformFeePercentage: 12, // 12% for Members
     discountPercentage: 20,
     internalPaasPricing: [],
     version: 1,
@@ -30,9 +28,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
     entityType: 'Commercial',
     engagementModel: 'Market Place',
     membershipStatus: 'not-a-member',
-    quarterlyFee: 15, // 15% for Not a Member
-    halfYearlyFee: 25, // 25% for Not a Member
-    annualFee: 40, // 40% for Not a Member
+    platformFeePercentage: 15, // 15% for Not a Member
     discountPercentage: 0,
     internalPaasPricing: [],
     version: 1,
@@ -48,9 +44,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
     entityType: 'Commercial',
     engagementModel: 'Aggregator',
     membershipStatus: 'member',
-    quarterlyFee: 10, // 10% for Members
-    halfYearlyFee: 18, // 18% for Members
-    annualFee: 28, // 28% for Members
+    platformFeePercentage: 10, // 10% for Members
     discountPercentage: 20,
     internalPaasPricing: [],
     version: 1,
@@ -66,9 +60,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
     entityType: 'Commercial',
     engagementModel: 'Aggregator',
     membershipStatus: 'not-a-member',
-    quarterlyFee: 13, // 13% for Not a Member
-    halfYearlyFee: 22, // 22% for Not a Member
-    annualFee: 35, // 35% for Not a Member
+    platformFeePercentage: 13, // 13% for Not a Member
     discountPercentage: 0,
     internalPaasPricing: [],
     version: 1,
@@ -84,9 +76,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
     entityType: 'Commercial',
     engagementModel: 'Market Place & Aggregator',
     membershipStatus: 'member',
-    quarterlyFee: 15, // 15% for Members
-    halfYearlyFee: 25, // 25% for Members
-    annualFee: 40, // 40% for Members
+    platformFeePercentage: 15, // 15% for Members
     discountPercentage: 20,
     internalPaasPricing: [],
     version: 1,
@@ -102,9 +92,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
     entityType: 'Commercial',
     engagementModel: 'Market Place & Aggregator',
     membershipStatus: 'not-a-member',
-    quarterlyFee: 18, // 18% for Not a Member
-    halfYearlyFee: 30, // 30% for Not a Member
-    annualFee: 45, // 45% for Not a Member
+    platformFeePercentage: 18, // 18% for Not a Member
     discountPercentage: 0,
     internalPaasPricing: [],
     version: 1,

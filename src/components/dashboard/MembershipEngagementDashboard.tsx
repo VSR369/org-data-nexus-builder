@@ -292,22 +292,22 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       membershipStatus: finalConfig.membershipStatus
     });
     
-    // For fee-based engagement models (Market Place, Aggregator, etc.), use percentage pricing
+    // For fee-based engagement models (Market Place, Aggregator, etc.), use platform fee percentage
     const isFeeBasedModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(selectedEngagementModel);
     
     if (isFeeBasedModel) {
+      const platformFeePercentage = finalConfig.platformFeePercentage || 0;
+      
       console.log(`💰 ${membershipStatusForConfig.toUpperCase()} pricing for ${selectedEngagementModel}:`, {
-        quarterly: finalConfig.quarterlyFee || 0,
-        halfYearly: finalConfig.halfYearlyFee || 0,
-        annual: finalConfig.annualFee || 0,
+        platformFeePercentage,
         membershipStatus: membershipStatusForConfig,
         config: finalConfig.configName
       });
       
       return { 
-        quarterly: finalConfig.quarterlyFee || 0,
-        halfYearly: finalConfig.halfYearlyFee || 0,
-        annual: finalConfig.annualFee || 0,
+        quarterly: platformFeePercentage,
+        halfYearly: platformFeePercentage,
+        annual: platformFeePercentage,
         currency: finalConfig.currency || 'INR',
         configName: `${finalConfig.configName || selectedEngagementModel} (${membershipStatusForConfig})`,
         isPercentage: true
@@ -570,7 +570,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               selectedPricingPlan={selectedPricingPlan}
               onPricingPlanChange={handlePricingPlanChange}
               pricingConfig={getPricingConfig()}
-              membershipStatus={membershipStatus}
+              membershipStatus={membershipStatus === 'active' ? 'member' : 'not-a-member'}
               onSelectPlatformFee={handleSelectPlatformFee}
               isSubmitted={isSubmitted}
             />

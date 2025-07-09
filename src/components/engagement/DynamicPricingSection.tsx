@@ -11,7 +11,7 @@ interface DynamicPricingSectionProps {
   selectedPricingPlan?: string;
   onPricingPlanChange: (plan: string) => void;
   pricingConfig: PricingConfig | null;
-  membershipStatus: 'active' | 'inactive' | 'not-a-member';
+  membershipStatus: 'member' | 'not-a-member';
   onSelectPlatformFee: () => void;
   isSubmitted?: boolean;
 }
@@ -45,13 +45,13 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
   // Get platform fee percentage from master data
   const getPlatformFeePercentage = () => {
     if (!pricingConfig) return 0;
-    return pricingConfig.engagementModelFee || pricingConfig.quarterlyFee || 0;
+    return pricingConfig.platformFeePercentage || 0;
   };
 
   // Get discounted platform fee percentage
   const getDiscountedPlatformFee = () => {
     const baseFee = getPlatformFeePercentage();
-    if (membershipStatus === 'active' && pricingConfig?.discountPercentage) {
+    if (membershipStatus === 'member' && pricingConfig?.discountPercentage) {
       return baseFee * (1 - pricingConfig.discountPercentage / 100);
     }
     return baseFee;
@@ -75,7 +75,7 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
   // Get discounted price for subscription
   const getDiscountedSubscriptionPrice = (frequency: string) => {
     const basePrice = getFrequencyPrice(frequency);
-    if (membershipStatus === 'active' && pricingConfig?.discountPercentage) {
+    if (membershipStatus === 'member' && pricingConfig?.discountPercentage) {
       return basePrice * (1 - pricingConfig.discountPercentage / 100);
     }
     return basePrice;
@@ -104,7 +104,7 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
   if (isMarketplaceBased(engagementModelName)) {
     const platformFee = getPlatformFeePercentage();
     const discountedFee = getDiscountedPlatformFee();
-    const hasDiscount = membershipStatus === 'active' && pricingConfig?.discountPercentage && discountedFee < platformFee;
+    const hasDiscount = membershipStatus === 'member' && pricingConfig?.discountPercentage && discountedFee < platformFee;
 
     return (
       <Card className="shadow-lg">
@@ -186,7 +186,7 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
                 {frequencies.map((frequency) => {
                   const basePrice = getFrequencyPrice(frequency);
                   const discountedPrice = getDiscountedSubscriptionPrice(frequency);
-                  const hasDiscount = membershipStatus === 'active' && pricingConfig?.discountPercentage && discountedPrice < basePrice;
+                  const hasDiscount = membershipStatus === 'member' && pricingConfig?.discountPercentage && discountedPrice < basePrice;
                   
                   if (basePrice <= 0) return null;
 
@@ -233,10 +233,10 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
                 })}
               </div>
 
-              {membershipStatus === 'active' && pricingConfig?.discountPercentage && (
+              {membershipStatus === 'member' && pricingConfig?.discountPercentage && (
                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="text-sm text-green-800 text-center">
-                    🎉 You're saving {pricingConfig.discountPercentage}% with your active membership!
+                    🎉 You're saving {pricingConfig.discountPercentage}% with your membership!
                   </div>
                 </div>
               )}
