@@ -1,17 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Wallet, CreditCard, Loader2 } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { PricingConfig } from '@/types/pricing';
-import { 
-  getEngagementModelName, 
-  getDisplayAmount, 
-  formatCurrency, 
-  isPaaSModel,
-  isMarketplaceModel 
-} from '@/utils/membershipPricingUtils';
+import { isPaaSModel, isMarketplaceModel } from '@/utils/membershipPricingUtils';
+import { FrequencySelector } from './engagement/FrequencySelector';
+import { PlatformFeeDisplay } from './engagement/PlatformFeeDisplay';
+import { EngagementSummary } from './engagement/EngagementSummary';
+import { PaymentButton } from './engagement/PaymentButton';
+import { LoadingState } from './engagement/LoadingState';
 
 interface EngagementPaymentCardProps {
   selectedEngagementModel: string;
@@ -67,186 +63,46 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
 
             {/* Show frequency options only for PaaS models */}
             {isPaaS ? (
-              <RadioGroup 
-                value={selectedFrequency || ''} 
-                onValueChange={onFrequencyChange}
-              >
-                <div className="space-y-3">
-                  {['quarterly', 'half-yearly', 'annual'].map((frequency) => {
-                    const displayInfo = getDisplayAmount(frequency, engagementPricing, membershipStatus);
-                    
-                    return (
-                      <Label key={frequency} htmlFor={frequency} className="cursor-pointer">
-                        <div className={`flex items-center justify-between p-3 border rounded-lg hover:bg-accent ${
-                          selectedFrequency === frequency ? 'border-primary bg-primary/5' : ''
-                        }`}>
-                          <div className="flex items-center space-x-3">
-                            <RadioGroupItem value={frequency} id={frequency} />
-                            <span className="capitalize">{frequency.replace('-', ' ')}</span>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="font-bold">
-                              <div className="space-y-1">
-                                <div className="text-green-600">
-                                  {formatCurrency(displayInfo.amount, engagementPricing.currency)}
-                                </div>
-                                {displayInfo.discountApplied && displayInfo.originalAmount && (
-                                  <div className="text-xs text-gray-500 line-through">
-                                    {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
-                                  </div>
-                                )}
-                                {displayInfo.discountApplied && (
-                                  <div className="text-xs text-green-600 font-medium">
-                                    {engagementPricing.discountPercentage}% member discount
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {frequency.replace('-', ' ')}
-                            </div>
-                          </div>
-                        </div>
-                      </Label>
-                    );
-                  })}
-                </div>
-              </RadioGroup>
+              <FrequencySelector
+                selectedFrequency={selectedFrequency}
+                engagementPricing={engagementPricing}
+                membershipStatus={membershipStatus}
+                onFrequencyChange={onFrequencyChange}
+              />
             ) : isMarketplace ? (
               /* Show single platform fee option for Marketplace models */
-              <div className="space-y-3">
-                <div 
-                  className="flex items-center justify-between p-3 border rounded-lg bg-primary/5 border-primary cursor-pointer"
-                  onClick={() => onFrequencyChange('platform-fee')}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-white"></div>
-                    </div>
-                    <span>Platform Fee</span>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <div className="font-bold text-green-600">
-                      {engagementPricing.platformFeePercentage || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      of solution fee
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PlatformFeeDisplay
+                engagementPricing={engagementPricing}
+                onFrequencyChange={onFrequencyChange}
+              />
             ) : null}
 
             {selectedFrequency && (
               <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">Summary of Selected Engagement Model</div>
-                  {(() => {
-                    if (isMarketplace) {
-                      return (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Engagement Model:</span>
-                            <span className="font-medium">{getEngagementModelName(selectedEngagementModel)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Pricing Structure:</span>
-                            <span className="font-medium">Platform Fee</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">Platform Fee:</span>
-                            <span className="font-bold text-lg text-green-600">
-                              {engagementPricing.platformFeePercentage || 0}% of solution fee
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      const displayInfo = getDisplayAmount(selectedFrequency, engagementPricing, membershipStatus);
-                      return (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Engagement Model:</span>
-                            <span className="font-medium">{getEngagementModelName(selectedEngagementModel)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Billing Frequency:</span>
-                            <span className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</span>
-                          </div>
-                          {displayInfo.discountApplied && displayInfo.originalAmount && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm">Original Price:</span>
-                              <span className="text-gray-500 line-through">
-                                {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">
-                              {displayInfo.discountApplied ? 'Discounted Price:' : 'Total Amount:'}
-                            </span>
-                            <span className="font-bold text-lg text-green-600">
-                              {formatCurrency(displayInfo.amount, engagementPricing.currency)}
-                            </span>
-                          </div>
-                          {displayInfo.discountApplied && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-green-600">Member Discount:</span>
-                              <span className="text-green-600 font-medium">
-                                -{engagementPricing.discountPercentage}%
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
+                <EngagementSummary
+                  selectedEngagementModel={selectedEngagementModel}
+                  selectedFrequency={selectedFrequency}
+                  engagementPricing={engagementPricing}
+                  membershipStatus={membershipStatus}
+                />
                 
-                {hasPaidEngagement ? (
-                  <div className="text-center py-4">
-                    <div className="text-green-600 font-semibold mb-2">
-                      ✅ Engagement Model Already Active
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      You have already subscribed to an engagement model.
-                    </p>
-                  </div>
-                ) : (
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={onEngagementPayment}
-                    disabled={engagementPaymentLoading}
-                  >
-                    {engagementPaymentLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Processing Payment...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Pay & Activate {getEngagementModelName(selectedEngagementModel)}
-                      </>
-                    )}
-                  </Button>
-                )}
+                <PaymentButton
+                  selectedEngagementModel={selectedEngagementModel}
+                  hasPaidEngagement={hasPaidEngagement}
+                  engagementPaymentLoading={engagementPaymentLoading}
+                  onEngagementPayment={onEngagementPayment}
+                />
               </div>
             )}
           </div>
         ) : selectedEngagementModel ? (
-          <div className="text-center py-8 space-y-3">
-            <p className="text-sm text-muted-foreground">Loading pricing for {getEngagementModelName(selectedEngagementModel)}...</p>
-            <div className="text-xs text-gray-400 space-y-1">
-              <div>Selected Model ID: {selectedEngagementModel}</div>
-              <div>Mapped Name: {getEngagementModelName(selectedEngagementModel)}</div>
-              <div>Membership Status: {membershipStatus === 'member_paid' ? 'member' : 'not-a-member'}</div>
-              <div>Pricing Configs Available: {pricingConfigs.length}</div>
-              <div>Organization Type: {organizationType}</div>
-              <div>Country: {country}</div>
-            </div>
-          </div>
+          <LoadingState
+            selectedEngagementModel={selectedEngagementModel}
+            membershipStatus={membershipStatus}
+            pricingConfigs={pricingConfigs}
+            organizationType={organizationType}
+            country={country}
+          />
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <p className="text-sm">Select an engagement model to view pricing</p>
