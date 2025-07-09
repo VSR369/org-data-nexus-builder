@@ -25,22 +25,22 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
 
   // Check if engagement model is Platform as a Service (PaaS)
   const isPaaSModel = (engagementModel: string) => {
-    return engagementModel.toLowerCase().includes('platform as a service') || 
-           engagementModel.toLowerCase().includes('paas');
+    return engagementModel === 'Platform as a Service';
   };
 
   // Check if engagement model uses single platform fee (non-PaaS models)
   const isMarketplaceBasedModel = (engagementModel: string) => {
-    const modelLower = engagementModel?.toLowerCase() || '';
-    return modelLower.includes('marketplace') || modelLower.includes('aggregator');
+    return engagementModel === 'Market Place' || 
+           engagementModel === 'Market Place & Aggregator' || 
+           engagementModel === 'Aggregator';
   };
 
   // Format fee display based on engagement model
   const formatFeeDisplay = (fee: number, currency: string, engagementModel: string) => {
-    if (isPaaSModel(engagementModel)) {
-      return `${currency} ${fee.toLocaleString()}`;
+    if (isMarketplaceBasedModel(engagementModel)) {
+      return `${fee}%`;
     }
-    return `${fee}%`;
+    return `${currency} ${fee.toLocaleString()}`;
   };
 
   if (configs.length === 0) {
@@ -77,7 +77,8 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                 <TableHead>Membership Status</TableHead>
                 <TableHead>Discount (%)</TableHead>
                 {/* Conditional headers based on engagement model type */}
-                <TableHead>Platform Fee</TableHead>
+                {hasMarketplaceConfigs && <TableHead>Platform Fee</TableHead>}
+                {hasPaaSConfigs && <TableHead>Quarterly Fee</TableHead>}
                 {hasPaaSConfigs && <TableHead>Half Yearly Fee</TableHead>}
                 {hasPaaSConfigs && <TableHead>Annual Fee</TableHead>}
                 <TableHead>Created</TableHead>
@@ -114,14 +115,21 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       </TableCell>
                       <TableCell>{discount}%</TableCell>
                       
-                      {/* Platform Fee Column */}
-                      <TableCell>
-                        {config.quarterlyFee !== undefined ? 
-                          formatFeeDisplay(calculateDiscountedPrice(config.quarterlyFee, discount), config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
-                      
-                      {/* Conditional frequency columns for PaaS */}
+                      {/* Conditional pricing columns based on engagement model type */}
+                      {hasMarketplaceConfigs && (
+                        <TableCell>
+                          {isMarketplaceBased && config.quarterlyFee !== undefined ? 
+                            formatFeeDisplay(calculateDiscountedPrice(config.quarterlyFee, discount), config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.quarterlyFee !== undefined ? 
+                            formatFeeDisplay(calculateDiscountedPrice(config.quarterlyFee, discount), config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
                       {hasPaaSConfigs && (
                         <TableCell>
                           {isPaaS && config.halfYearlyFee !== undefined ? 
@@ -178,14 +186,21 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       </TableCell>
                       <TableCell>-</TableCell>
                       
-                      {/* Platform Fee Column */}
-                      <TableCell>
-                        {config.quarterlyFee !== undefined ? 
-                          formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
-                      
-                      {/* Conditional frequency columns for PaaS */}
+                      {/* Conditional pricing columns based on engagement model type */}
+                      {hasMarketplaceConfigs && (
+                        <TableCell>
+                          {isMarketplaceBased && config.quarterlyFee !== undefined ? 
+                            formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.quarterlyFee !== undefined ? 
+                            formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
                       {hasPaaSConfigs && (
                         <TableCell>
                           {isPaaS && config.halfYearlyFee !== undefined ? 
@@ -244,14 +259,21 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       </TableCell>
                       <TableCell>-</TableCell>
                       
-                      {/* Platform Fee Column */}
-                      <TableCell>
-                        {config.quarterlyFee !== undefined ? 
-                          formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
-                      
-                      {/* Conditional frequency columns for PaaS */}
+                      {/* Conditional pricing columns based on engagement model type */}
+                      {hasMarketplaceConfigs && (
+                        <TableCell>
+                          {isMarketplaceBased && config.quarterlyFee !== undefined ? 
+                            formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.quarterlyFee !== undefined ? 
+                            formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
                       {hasPaaSConfigs && (
                         <TableCell>
                           {isPaaS && config.halfYearlyFee !== undefined ? 

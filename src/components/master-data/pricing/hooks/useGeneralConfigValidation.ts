@@ -55,10 +55,19 @@ export const useGeneralConfigValidation = () => {
     const hasHalfYearlyFee = config.halfYearlyFee !== undefined && config.halfYearlyFee > 0;
     const hasAnnualFee = config.annualFee !== undefined && config.annualFee > 0;
 
+    // Check if this is a marketplace-based model
+    const isMarketplaceBasedModel = config.engagementModel === 'Market Place' || 
+                                  config.engagementModel === 'Market Place & Aggregator' || 
+                                  config.engagementModel === 'Aggregator';
+
     if (!hasQuarterlyFee && !hasHalfYearlyFee && !hasAnnualFee) {
+      const errorMessage = isMarketplaceBasedModel 
+        ? "Please provide the platform fee percentage." 
+        : "Please provide at least one engagement model fee (quarterly, half yearly, or annual).";
+      
       toast({
         title: "Validation Error",
-        description: "Please provide at least one engagement model fee (quarterly, half yearly, or annual).",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;

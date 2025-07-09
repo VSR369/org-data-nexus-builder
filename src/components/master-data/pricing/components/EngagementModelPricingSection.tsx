@@ -27,14 +27,14 @@ const EngagementModelPricingSection: React.FC<EngagementModelPricingSectionProps
 
   // Check if engagement model is Platform as a Service (PaaS)
   const isPaaSModel = (engagementModel: string) => {
-    return engagementModel?.toLowerCase().includes('platform as a service') || 
-           engagementModel?.toLowerCase().includes('paas');
+    return engagementModel === 'Platform as a Service';
   };
 
   // Check if engagement model uses single platform fee (non-PaaS models)
   const isMarketplaceBasedModel = (engagementModel: string) => {
-    const modelLower = engagementModel?.toLowerCase() || '';
-    return modelLower.includes('marketplace') || modelLower.includes('aggregator');
+    return engagementModel === 'Market Place' || 
+           engagementModel === 'Market Place & Aggregator' || 
+           engagementModel === 'Aggregator';
   };
 
   const isCurrentModelPaaS = isPaaSModel(currentConfig.engagementModel || '');
