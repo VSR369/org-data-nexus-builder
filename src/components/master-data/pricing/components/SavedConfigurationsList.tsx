@@ -118,8 +118,8 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       {/* Conditional pricing columns based on engagement model type */}
                       {hasMarketplaceConfigs && (
                         <TableCell>
-                          {isMarketplaceBased && config.quarterlyFee !== undefined ? 
-                            formatFeeDisplay(calculateDiscountedPrice(config.quarterlyFee, discount), config.currency, config.engagementModel) : 
+                          {isMarketplaceBased && config.platformFeePercentage !== undefined ? 
+                            formatFeeDisplay(calculateDiscountedPrice(config.platformFeePercentage, discount), config.currency, config.engagementModel) : 
                             '-'}
                         </TableCell>
                       )}
@@ -189,8 +189,8 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       {/* Conditional pricing columns based on engagement model type */}
                       {hasMarketplaceConfigs && (
                         <TableCell>
-                          {isMarketplaceBased && config.quarterlyFee !== undefined ? 
-                            formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                          {isMarketplaceBased && config.platformFeePercentage !== undefined ? 
+                            formatFeeDisplay(config.platformFeePercentage, config.currency, config.engagementModel) : 
                             '-'}
                         </TableCell>
                       )}
@@ -262,8 +262,8 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       {/* Conditional pricing columns based on engagement model type */}
                       {hasMarketplaceConfigs && (
                         <TableCell>
-                          {isMarketplaceBased && config.quarterlyFee !== undefined ? 
-                            formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                          {isMarketplaceBased && config.platformFeePercentage !== undefined ? 
+                            formatFeeDisplay(config.platformFeePercentage, config.currency, config.engagementModel) : 
                             '-'}
                         </TableCell>
                       )}
