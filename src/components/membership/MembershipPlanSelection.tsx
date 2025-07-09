@@ -29,6 +29,9 @@ export const MembershipPlanSelection: React.FC<MembershipPlanSelectionProps> = (
   const handleSubmit = () => {
     if (selectedType) {
       onMembershipSubmit(selectedType);
+    } else {
+      // This should not happen due to the conditional rendering, but add for safety
+      alert('Please select a membership option before submitting.');
     }
   };
 

@@ -46,7 +46,7 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
     );
   }
 
-  // Handle "Not a Member" submission - Only show preference message, no upgrade option
+  // Handle "Not a Member" submission - Show warning message with upgrade option
   if (submittedMembershipType === 'not-a-member') {
     return (
       <Card>
@@ -58,11 +58,11 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
         </CardHeader>
         <CardContent>
           <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="text-lg font-semibold mb-2 text-yellow-800">
-              You have preferred not to be a member
+            <div className="text-lg font-semibold mb-3 text-yellow-800">
+              ⚠️ You have selected not to be a member. You will miss the discounts.
             </div>
             <div className="text-sm text-yellow-700">
-              Standard rates will apply to all engagement models
+              Pay annual membership and avail discounts while getting solutions using CoInnovator platform.
             </div>
           </div>
         </CardContent>
@@ -107,6 +107,14 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Success message for selecting annual membership */}
+            <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="text-lg font-semibold mb-2 text-green-800">
+                ✅ You have selected to be a member. Thank you, you will avail discounts.
+              </div>
+            </div>
+            
+            {/* Payment details */}
             <div className="text-center p-4 bg-muted rounded-lg">
               <div className="text-lg font-bold mb-2">Annual Membership</div>
               {annualFee ? (
@@ -125,6 +133,8 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
                 Amount from master data: {annualFee ? `${annualFee.currency} ${annualFee.amount}` : 'Not loaded'}
               </div>
             </div>
+            
+            {/* Payment button */}
             <Button 
               className="w-full" 
               onClick={onMembershipPayment}
