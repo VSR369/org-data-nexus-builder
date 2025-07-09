@@ -35,14 +35,15 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       return;
     }
 
-    const baseConfigId = currentConfig.id || Date.now().toString();
+    // Generate unique base ID using timestamp + random suffix to avoid duplicates
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const timestamp = new Date().toISOString().split('T')[0];
     const configsToSave: PricingConfig[] = [];
 
     // Always create the Not-a-Member base configuration
     const notMemberConfig = {
-      id: `${baseConfigId}-base`,
-      configId: `${baseConfigId}-base`,
+      id: `${uniqueId}-base`,
+      configId: `${uniqueId}-base`,
       country: currentConfig.country!,
       currency: currentConfig.currency || '',
       organizationType: currentConfig.organizationType!,
@@ -67,8 +68,8 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       
       const memberConfig = {
         ...notMemberConfig,
-        id: `${baseConfigId}-member`,
-        configId: `${baseConfigId}-member`,
+        id: `${uniqueId}-member`,
+        configId: `${uniqueId}-member`,
         membershipStatus: 'member' as const,
         discountPercentage: currentConfig.discountPercentage,
         // Apply discount to all relevant fees
@@ -84,16 +85,20 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     console.log('✅ Configurations to save:', configsToSave);
 
     try {
-      // Update configs state first
-      const updatedConfigs = [...configs, ...configsToSave];
-      setConfigs(updatedConfigs);
-
-      // Save to Supabase with better error handling
+      // Save to Supabase first to check for conflicts
       const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
       
       console.log('🔄 Attempting to save to database...');
-      await savePricingConfigsAsync(updatedConfigs);
+      
+      // Get current configs from database to avoid conflicts
+      const currentDbConfigs = [...configs];
+      const allConfigs = [...currentDbConfigs, ...configsToSave];
+      
+      await savePricingConfigsAsync(allConfigs);
       console.log('✅ Successfully saved to database');
+      
+      // Update local state only after successful database save
+      setConfigs(allConfigs);
 
       toast({
         title: "Success",
@@ -114,7 +119,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       
       toast({
         title: "Database Error",
-        description: `Failed to save to database: ${errorMessage}. Data saved locally only.`,
+        description: `Failed to save to database: ${errorMessage}. Please try again.`,
         variant: "destructive",
       });
       
