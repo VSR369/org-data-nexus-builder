@@ -139,21 +139,23 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                     <TableCell>
                       <div className="flex gap-2">
                         {config.membershipStatus !== 'member' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEdit(config)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onEdit(config)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onDelete(config.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDelete(config.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
