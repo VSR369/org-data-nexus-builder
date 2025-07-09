@@ -61,12 +61,26 @@ export const useSeekerValidation = () => {
     }
   };
 
-  // Enhanced seekers loading with data verification
+  // Helper function to check if organization has completed engagement selection
+  const hasCompletedEngagementSelection = (membershipState: any, organizationName: string) => {
+    const hasEngagementModel = membershipState.selected_engagement_model && membershipState.selected_engagement_model.trim() !== '';
+    const hasFrequency = membershipState.selected_frequency && membershipState.selected_frequency.trim() !== '';
+    
+    if (!hasEngagementModel || !hasFrequency) {
+      console.log(`🚫 Filtering out "${organizationName}" - Missing: ${!hasEngagementModel ? 'engagement model' : ''} ${!hasFrequency ? 'frequency' : ''}`);
+      return false;
+    }
+    
+    console.log(`✅ "${organizationName}" has completed engagement selection - Model: ${membershipState.selected_engagement_model}, Frequency: ${membershipState.selected_frequency}`);
+    return true;
+  };
+
+  // Enhanced seekers loading with data verification and engagement model filtering
   const refreshSeekers = () => {
     setLoading(true);
     setError(null);
     
-    console.log('🔄 Starting seekers refresh with data verification...');
+    console.log('🔄 Starting seekers refresh with engagement model filtering...');
     
     // Check if migration is needed and perform it
     if (isMigrationNeeded()) {
@@ -117,74 +131,98 @@ export const useSeekerValidation = () => {
       }
       
       if (orgData.organizationName) {
-        const seekerId = 'current-org';
-        
-        // Check for existing approval status
-        const existingApproval = approvalStatusService.getApprovalStatus(seekerId);
-        const approvalStatus = existingApproval?.status || 'pending';
-        
-        // Check if administrator exists
-        const adminExists = approvalStatusService.getAdministrator(seekerId) !== null;
-        
-        seekersData.push({
-          id: seekerId,
-          userId: orgData.userId || `user_${Date.now()}`,
-          password: '***', // Don't store actual password
-          organizationName: orgData.organizationName,
-          organizationType: orgData.organizationType || 'solution-seeker',
-          entityType: orgData.entityType || 'organization',
-          country: orgData.country || 'IN',
-          email: orgData.email || orgData.contactEmail || '',
-          contactPersonName: orgData.contactPersonName || '',
-          industrySegment: orgData.industrySegment || '',
-          organizationId: orgId,
-          registrationTimestamp: orgData.registrationTimestamp || new Date().toISOString(),
-          lastLoginTimestamp: orgData.lastLoginTimestamp,
-          version: orgData.version || 1,
-          createdAt: orgData.createdAt || new Date().toISOString(),
-          updatedAt: orgData.updatedAt || new Date().toISOString(),
-          approvalStatus: approvalStatus,
-          membershipStatus: membershipState.membership_status === 'member_paid' ? 'active' : 
-                           membershipState.membership_status === 'inactive' ? 'inactive' : 'not-member',
-          hasAdministrator: adminExists,
-          selectedPlan: membershipState.membership_type,
-          selectedEngagementModel: membershipState.selected_engagement_model,
-          membershipActivationDate: membershipState.activationDate,
-          paymentStatus: membershipState.membership_status
-        });
+        // Apply engagement model filtering for current organization
+        if (!hasCompletedEngagementSelection(membershipState, orgData.organizationName)) {
+          console.log(`🚫 Current organization "${orgData.organizationName}" filtered out - incomplete engagement selection`);
+        } else {
+          const seekerId = 'current-org';
+          
+          // Check for existing approval status
+          const existingApproval = approvalStatusService.getApprovalStatus(seekerId);
+          const approvalStatus = existingApproval?.status || 'pending';
+          
+          // Check if administrator exists
+          const adminExists = approvalStatusService.getAdministrator(seekerId) !== null;
+          
+          seekersData.push({
+            id: seekerId,
+            userId: orgData.userId || `user_${Date.now()}`,
+            password: '***', // Don't store actual password
+            organizationName: orgData.organizationName,
+            organizationType: orgData.organizationType || 'solution-seeker',
+            entityType: orgData.entityType || 'organization',
+            country: orgData.country || 'IN',
+            email: orgData.email || orgData.contactEmail || '',
+            contactPersonName: orgData.contactPersonName || '',
+            industrySegment: orgData.industrySegment || '',
+            organizationId: orgId,
+            registrationTimestamp: orgData.registrationTimestamp || new Date().toISOString(),
+            lastLoginTimestamp: orgData.lastLoginTimestamp,
+            version: orgData.version || 1,
+            createdAt: orgData.createdAt || new Date().toISOString(),
+            updatedAt: orgData.updatedAt || new Date().toISOString(),
+            approvalStatus: approvalStatus,
+            membershipStatus: membershipState.membership_status === 'member_paid' ? 'active' : 
+                             membershipState.membership_status === 'inactive' ? 'inactive' : 'not-member',
+            hasAdministrator: adminExists,
+            selectedPlan: membershipState.membership_type,
+            selectedEngagementModel: membershipState.selected_engagement_model,
+            membershipActivationDate: membershipState.activationDate,
+            paymentStatus: membershipState.membership_status
+          });
+        }
       }
 
-      // Load all registered users and extract organization data
+      // Load all registered users and extract organization data with engagement filtering
       try {
         const registeredUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
         if (Array.isArray(registeredUsers)) {
           registeredUsers.forEach((user, index) => {
             if (user.organizationName && user.organizationName !== orgData.organizationName) {
-              seekersData.push({
-                id: user.id || `user-${index}`,
-                userId: user.userId || `user_${index}`,
-                password: '***',
-                organizationName: user.organizationName,
-                organizationType: user.organizationType || 'solution-seeker',
-                entityType: user.entityType || 'organization',
-                country: user.country || 'IN',
-                email: user.email || '',
-                contactPersonName: user.contactPersonName || '',
-                industrySegment: user.industrySegment || '',
-                organizationId: user.organizationId || `org_${index}`,
-                registrationTimestamp: user.registrationTimestamp || new Date().toISOString(),
-                lastLoginTimestamp: user.lastLoginTimestamp,
-                version: user.version || 1,
-                createdAt: user.createdAt || new Date().toISOString(),
-                updatedAt: user.updatedAt || new Date().toISOString(),
-                approvalStatus: 'pending',
-                membershipStatus: user.membershipStatus || 'inactive',
-                hasAdministrator: false,
-                selectedPlan: user.selectedPlan,
-                selectedEngagementModel: user.selectedEngagementModel,
-                membershipActivationDate: user.membershipActivationDate,
-                paymentStatus: user.paymentStatus
-              });
+              // Check if registered user has completed engagement selection
+              // First try to load organization-specific membership state for this user
+              const userOrgId = user.organizationId || `org_${index}`;
+              const userMembershipKey = `membership_pricing_system_state_${userOrgId}`;
+              let userMembershipState = JSON.parse(localStorage.getItem(userMembershipKey) || '{}');
+              
+              // If no org-specific data, check if user object has engagement data
+              if (!userMembershipState.selected_engagement_model && !userMembershipState.selected_frequency) {
+                userMembershipState = {
+                  selected_engagement_model: user.selectedEngagementModel,
+                  selected_frequency: user.selectedFrequency
+                };
+              }
+              
+              // Apply filtering for registered users
+              if (!hasCompletedEngagementSelection(userMembershipState, user.organizationName)) {
+                console.log(`🚫 Registered user "${user.organizationName}" filtered out - incomplete engagement selection`);
+              } else {
+                seekersData.push({
+                  id: user.id || `user-${index}`,
+                  userId: user.userId || `user_${index}`,
+                  password: '***',
+                  organizationName: user.organizationName,
+                  organizationType: user.organizationType || 'solution-seeker',
+                  entityType: user.entityType || 'organization',
+                  country: user.country || 'IN',
+                  email: user.email || '',
+                  contactPersonName: user.contactPersonName || '',
+                  industrySegment: user.industrySegment || '',
+                  organizationId: userOrgId,
+                  registrationTimestamp: user.registrationTimestamp || new Date().toISOString(),
+                  lastLoginTimestamp: user.lastLoginTimestamp,
+                  version: user.version || 1,
+                  createdAt: user.createdAt || new Date().toISOString(),
+                  updatedAt: user.updatedAt || new Date().toISOString(),
+                  approvalStatus: 'pending',
+                  membershipStatus: user.membershipStatus || 'inactive',
+                  hasAdministrator: false,
+                  selectedPlan: user.selectedPlan,
+                  selectedEngagementModel: userMembershipState.selected_engagement_model || user.selectedEngagementModel,
+                  membershipActivationDate: user.membershipActivationDate,
+                  paymentStatus: user.paymentStatus
+                });
+              }
             }
           });
         }
@@ -192,13 +230,14 @@ export const useSeekerValidation = () => {
         console.log('No registered users found or error loading users:', userError);
       }
 
-      // If no data found, show empty state message
+      // Enhanced summary with filtering information
       if (seekersData.length === 0) {
-        console.log('No seeking organization data found in localStorage');
+        console.log('No seeking organizations found with completed engagement model selection');
+      } else {
+        console.log(`✅ Loaded ${seekersData.length} seeking organizations with completed engagement selection for validation`);
       }
       
       setSeekers(seekersData);
-      console.log(`✅ Loaded ${seekersData.length} seeking organizations for validation`);
     } catch (err) {
       setError('Failed to load seeking organization data');
       console.error('Error loading seekers:', err);
