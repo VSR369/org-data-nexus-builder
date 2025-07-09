@@ -63,23 +63,54 @@ const OrganizationDashboard = () => {
           const parsedSession = JSON.parse(session);
           setSessionData(parsedSession);
           console.log('✅ Organization session loaded:', parsedSession);
-        } else {
-          // Temporary: Create demo session data for testing
-          const demoSession = {
-            userId: 'demo-user-123',
-            organizationName: 'Demo Organization',
-            entityType: 'Corporation',
-            country: 'United States',
-            contactPersonName: 'John Demo',
-            email: 'demo@example.com',
-            organizationType: 'Technology',
-            industrySegment: 'Software',
-            organizationId: 'ORG-DEMO-001',
-            loginTimestamp: new Date().toISOString()
-          };
-          setSessionData(demoSession);
-          console.log('🔧 Demo session created for testing');
-        }
+         } else {
+           // Temporary: Create demo session data for testing
+           const demoSession = {
+             userId: 'demo-user-123',
+             organizationName: 'Demo Organization',
+             entityType: 'Corporation',
+             country: 'United States',
+             contactPersonName: 'John Demo',
+             email: 'demo@example.com',
+             organizationType: 'Technology',
+             industrySegment: 'Software',
+             organizationId: 'ORG-DEMO-001',
+             loginTimestamp: new Date().toISOString()
+           };
+           
+           // Also create corresponding demo user data for complete data loading
+           const demoUserData = {
+             userId: 'demo-user-123',
+             organizationName: 'Demo Organization',
+             organizationId: 'ORG-DEMO-001',
+             organizationType: 'Technology',
+             entityType: 'Corporation',
+             industrySegment: 'Software',
+             contactPersonName: 'John Demo',
+             email: 'demo@example.com',
+             countryCode: '+1',
+             phoneNumber: '555-0123',
+             country: 'United States',
+             address: '123 Demo Street, Demo City, Demo State 12345',
+             website: 'https://demo-organization.com',
+             registrationTimestamp: new Date().toISOString(),
+             loginTimestamp: new Date().toISOString()
+           };
+           
+           // Store demo user data in localStorage for complete data loading
+           const existingUsers = localStorage.getItem('registered_users');
+           const users = existingUsers ? JSON.parse(existingUsers) : [];
+           const userExists = users.find((user: any) => user.userId === demoUserData.userId);
+           
+           if (!userExists) {
+             users.push(demoUserData);
+             localStorage.setItem('registered_users', JSON.stringify(users));
+             console.log('💾 Demo user data stored in localStorage');
+           }
+           
+           setSessionData(demoSession);
+           console.log('🔧 Demo session created for testing');
+         }
       } catch (error) {
         console.error('Error loading session:', error);
       } finally {
@@ -99,12 +130,23 @@ const OrganizationDashboard = () => {
     navigate('/');
   };
 
+  console.log('🔍 OrganizationDashboard Debug:', {
+    isLoading,
+    userDataLoading,
+    sessionData: sessionData ? 'exists' : 'null',
+    completeUserData: completeUserData ? 'exists' : 'null',
+    userDataError
+  });
+
   if (isLoading || userDataLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <Building2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading organization details...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Loading State: {isLoading ? 'Session' : ''} {userDataLoading ? 'UserData' : ''}
+          </p>
         </div>
       </div>
     );
