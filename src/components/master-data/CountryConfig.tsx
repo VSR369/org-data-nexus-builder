@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Globe, RotateCcw } from 'lucide-react';
 import { toast } from "sonner";
-import { countriesDataManager } from '@/utils/sharedDataManagers';
+import { fetchData, postData, putData, deleteData } from '../../utils/apiClient';
 
 interface Country {
-  id: string;
+  id?: string;
   name: string;
   code: string;
   region?: string;
@@ -20,45 +20,56 @@ const CountryConfig = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
 
-  // Load data from shared manager
+  // Load data from API
   useEffect(() => {
-    try {
-      const sharedCountries = countriesDataManager.loadData();
-      console.log('🌍 CountryConfig - Loaded countries from shared manager:', sharedCountries);
-      
-      if (Array.isArray(sharedCountries) && sharedCountries.length > 0) {
-        setCountries(sharedCountries);
-      } else {
-        // Initialize with the three required countries - ensuring UAE is shown as full name
-        const defaultCountries = [
-          { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-          { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-          { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
-        ];
-        setCountries(defaultCountries);
-        countriesDataManager.saveData(defaultCountries);
-      }
-    } catch (error) {
-      console.error('❌ Error loading countries:', error);
-      const defaultCountries = [
-        { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-        { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-        { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
-      ];
-      setCountries(defaultCountries);
-      countriesDataManager.saveData(defaultCountries);
-    }
+    fetchCountries();
   }, []);
 
-  // Save countries to shared manager whenever countries change
-  useEffect(() => {
-    if (countries.length > 0) {
-      countriesDataManager.saveData(countries);
-      console.log('💾 CountryConfig - Saved countries to shared manager:', countries);
+  const fetchCountries = async () => {
+    try {
+      const countriesData = await fetchData('countries');
+      console.log("Countres", countriesData);
+      setCountries(countriesData.data.map((country: any) => ({
+        id: country._id,
+        name: country.name,
+        code: country.code,
+        region: country.region,
+      })) ?? []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      const defaultCountries = [];
+      setCountries(defaultCountries);
     }
-  }, [countries]);
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const saveCountriesData = async (countries: Country) => {
+    try {
+      await postData('countries', countries);
+      console.log('💾 CountryConfig - Saved countries to API:', countries);
+    } catch (error) {
+      console.error('❌ Error saving countries to API:', error);
+    }
+  };
+
+  const updateCountriesData = async (countries: Country, id: string) => {
+    try {
+      console.log("Update country data", countries, id);
+      await putData('countries', countries, id);
+      console.log('💾 CountryConfig - Saved countries to API:', countries);
+      await fetchCountries();
+    } catch (error) {
+      console.error('❌ Error saving countries to API:', error);
+    }
+  };
+
+  // Save countries to API whenever countries change
+  // useEffect(() => {
+  //   if (countries.length > 0) {
+  //     saveCountriesData(countries);
+  //   }
+  // }, [countries]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('🔄 HandleSubmit called with:', { currentCountry, isEditing });
@@ -69,11 +80,13 @@ const CountryConfig = () => {
     }
 
     // Check for duplicate country codes (only if not editing the same country)
-    const duplicateCode = countries.find(country => 
+    const duplicateCode = countries.length > 0 && countries.find(country => 
       country.code.toUpperCase() === currentCountry.code!.toUpperCase() && 
       country.id !== currentCountry.id
     );
 
+    console.log("Duplicate code check", duplicateCode);
+    
     if (duplicateCode) {
       toast.error("A country with this code already exists.");
       return;
@@ -92,19 +105,23 @@ const CountryConfig = () => {
         item.id === currentCountry.id ? updatedCountry : item
       ));
       
+      console.log("Update country data", updatedCountry, updatedCountry.id);
+
+      await updateCountriesData(updatedCountry, updatedCountry.id);
+
       console.log('✅ Updated country:', updatedCountry);
       
       toast.success("Country updated successfully!");
     } else {
       // Add new country
       const newCountry: Country = {
-        id: Date.now().toString(),
         name: currentCountry.name,
         code: currentCountry.code.toUpperCase(),
         region: currentCountry.region || ''
       };
       
       setCountries(prev => [...prev, newCountry]);
+      await saveCountriesData(newCountry);
       
       console.log('✅ Added new country:', newCountry);
       
@@ -122,26 +139,22 @@ const CountryConfig = () => {
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setCountries(prev => prev.filter(item => item.id !== id));
-    toast.success("Country deleted successfully!");
+    
+    // Delete country from API
+    try {
+      await deleteData('countries', id);
+      toast.success("Country deleted successfully!");
+    } catch (error) {
+      console.error('Error deleting country:', error);
+      toast.error("Failed to delete country");
+    }
   };
 
   const resetForm = () => {
     setCurrentCountry({});
     setIsEditing(false);
-  };
-
-  const handleResetToDefault = () => {
-    const defaultCountries = [
-      { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-      { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-      { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
-    ];
-    setCountries(defaultCountries);
-    setCurrentCountry({});
-    setIsEditing(false);
-    toast.success("Countries reset to default values (India, USA, United Arab Emirates).");
   };
 
   return (
@@ -153,15 +166,6 @@ const CountryConfig = () => {
               <Globe className="w-5 h-5" />
               {isEditing ? 'Edit Country' : 'Add New Country'}
             </CardTitle>
-            <Button
-              onClick={handleResetToDefault}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset to Default
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -219,7 +223,7 @@ const CountryConfig = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {countries.map((country) => (
+            {countries.length > 0 && countries.map((country) => (
               <div key={country.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Badge variant="outline">{country.code}</Badge>
