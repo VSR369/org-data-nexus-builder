@@ -72,31 +72,8 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
 
   // Handle "Annual Membership" submission
   if (submittedMembershipType === 'annual') {
-    // If already paid, show confirmation
-    if (membershipStatus === 'member_paid') {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              Membership Payment
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <div className="text-green-600 font-semibold mb-2">
-                ✅ Annual Membership Already Active
-              </div>
-              <p className="text-sm text-muted-foreground">
-                You are already a premium member with member pricing benefits
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    // Show payment form for annual membership
+    // Always show payment form when user submits selection
+    // "Already Active" state will be handled by parent component after payment completion
     return (
       <Card>
         <CardHeader>
