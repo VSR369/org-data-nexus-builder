@@ -13,18 +13,29 @@ export class ConfigurationValidator {
       return null;
     }
     
-    // Validate pricing values
-    const hasValidPricing = (
-      typeof config.quarterlyFee === 'number' && config.quarterlyFee >= 0
-    ) || (
-      typeof config.halfYearlyFee === 'number' && config.halfYearlyFee >= 0  
-    ) || (
-      typeof config.annualFee === 'number' && config.annualFee >= 0
-    );
+    // Check if this is a marketplace model
+    const isMarketplaceModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
     
-    if (!hasValidPricing) {
-      console.warn('⚠️ Enhanced: Invalid configuration - no valid pricing data:', config);
-      return null;
+    if (isMarketplaceModel) {
+      // Validate platform fee percentage for marketplace models
+      if (typeof config.platformFeePercentage !== 'number' || config.platformFeePercentage <= 0) {
+        console.warn('⚠️ Enhanced: Invalid marketplace configuration - missing platform fee percentage:', config);
+        return null;
+      }
+    } else {
+      // Validate pricing values for PaaS models
+      const hasValidPricing = (
+        typeof config.quarterlyFee === 'number' && config.quarterlyFee >= 0
+      ) || (
+        typeof config.halfYearlyFee === 'number' && config.halfYearlyFee >= 0  
+      ) || (
+        typeof config.annualFee === 'number' && config.annualFee >= 0
+      );
+      
+      if (!hasValidPricing) {
+        console.warn('⚠️ Enhanced: Invalid PaaS configuration - no valid pricing data:', config);
+        return null;
+      }
     }
     
     // Sanitize undefined values to prevent runtime errors
@@ -33,7 +44,8 @@ export class ConfigurationValidator {
       quarterlyFee: config.quarterlyFee || 0,
       halfYearlyFee: config.halfYearlyFee || 0,
       annualFee: config.annualFee || 0,
-      discountPercentage: config.discountPercentage || 0
+      discountPercentage: config.discountPercentage || 0,
+      platformFeePercentage: config.platformFeePercentage || 0
     };
   }
 
@@ -56,12 +68,21 @@ export class ConfigurationValidator {
       if (!config.engagementModel) errors.push(`Config ${index}: Missing engagement model`);
       if (!config.organizationType) errors.push(`Config ${index}: Missing organization type`);
       
-      // Check that at least one pricing value is valid
-      const hasValidPricing = [config.quarterlyFee, config.halfYearlyFee, config.annualFee]
-        .some(fee => typeof fee === 'number' && fee >= 0);
+      const isMarketplaceModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
       
-      if (!hasValidPricing) {
-        errors.push(`Config ${index}: No valid pricing data`);
+      if (isMarketplaceModel) {
+        // Validate platform fee percentage for marketplace models
+        if (typeof config.platformFeePercentage !== 'number' || config.platformFeePercentage <= 0) {
+          errors.push(`Config ${index}: Missing or invalid platform fee percentage`);
+        }
+      } else {
+        // Check that at least one pricing value is valid for PaaS models
+        const hasValidPricing = [config.quarterlyFee, config.halfYearlyFee, config.annualFee]
+          .some(fee => typeof fee === 'number' && fee >= 0);
+        
+        if (!hasValidPricing) {
+          errors.push(`Config ${index}: No valid pricing data`);
+        }
       }
     });
     

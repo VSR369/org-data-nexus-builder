@@ -53,10 +53,15 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
 
   // Auto-select platform fee for marketplace models
   React.useEffect(() => {
-    if (isMarketplace && !selectedFrequency) {
+    if (isMarketplace && selectedFrequency !== 'platform-fee') {
       onFrequencyChange('platform-fee');
     }
   }, [isMarketplace, selectedFrequency, onFrequencyChange]);
+
+  // Prevent invalid states for marketplace models
+  if (isMarketplace && selectedFrequency && selectedFrequency !== 'platform-fee') {
+    onFrequencyChange('platform-fee');
+  }
 
   return (
     <Card className={selectedEngagementModel ? '' : 'opacity-50'}>

@@ -166,10 +166,12 @@ export const isPaaSModel = (selectedEngagementModel: string | null): boolean => 
 };
 
 export const isMarketplaceModel = (engagementModel: string): boolean => {
-  return engagementModel === 'market-place' || 
+  return engagementModel === 'marketplace' || 
+         engagementModel === 'market-place' || 
          engagementModel === 'Market Place' ||
          engagementModel === 'aggregator' ||
          engagementModel === 'Aggregator' ||
+         engagementModel === 'marketplace-aggregator' ||
          engagementModel === 'market-place-aggregator' ||
          engagementModel === 'Market Place & Aggregator';
 };

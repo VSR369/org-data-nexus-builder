@@ -16,9 +16,22 @@ export class ValidationService {
       if (!config.id) errors.push(`Config ${index}: Missing ID`);
       if (!config.engagementModel) errors.push(`Config ${index}: Missing engagement model`);
       if (!config.organizationType) errors.push(`Config ${index}: Missing organization type`);
-      if (typeof config.quarterlyFee !== 'number') errors.push(`Config ${index}: Invalid quarterly fee`);
-      if (typeof config.halfYearlyFee !== 'number') errors.push(`Config ${index}: Invalid half-yearly fee`);
-      if (typeof config.annualFee !== 'number') errors.push(`Config ${index}: Invalid annual fee`);
+      
+      const isMarketplaceModel = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
+      
+      if (isMarketplaceModel) {
+        // Validate platform fee percentage for marketplace models
+        if (typeof config.platformFeePercentage !== 'number' || config.platformFeePercentage <= 0) {
+          errors.push(`Config ${index}: Missing or invalid platform fee percentage`);
+        }
+      } else {
+        // Validate frequency fees for PaaS models
+        const hasValidFee = [config.quarterlyFee, config.halfYearlyFee, config.annualFee]
+          .some(fee => typeof fee === 'number' && fee >= 0);
+        if (!hasValidFee) {
+          errors.push(`Config ${index}: No valid frequency fees for PaaS model`);
+        }
+      }
     });
     
     return { isValid: errors.length === 0, errors };
