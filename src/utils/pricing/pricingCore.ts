@@ -126,8 +126,9 @@ export async function savePricingConfigsAsync(configs: PricingConfig[]): Promise
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
-    if (deleteError) {
+    if (deleteError && deleteError.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is OK
       console.error('❌ Error deleting existing configs:', deleteError);
+      throw new Error(`Delete failed: ${deleteError.message}`);
     }
 
     if (dbConfigs.length > 0) {
@@ -137,20 +138,24 @@ export async function savePricingConfigsAsync(configs: PricingConfig[]): Promise
 
       if (insertError) {
         console.error('❌ Error inserting configs to Supabase:', insertError);
-        throw insertError;
+        throw new Error(`Insert failed: ${insertError.message}`);
       }
     }
 
     console.log('✅ Configurations saved to Supabase successfully');
     
-    // Also save to localStorage as backup
+    // Also save to localStorage as backup only after Supabase success
     localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
     
-  } catch (error) {
-    console.error('❌ Error saving to Supabase, falling back to localStorage:', error);
-    // Fallback to localStorage only
+  } catch (error: any) {
+    console.error('❌ Error saving to Supabase:', error);
+    
+    // Save to localStorage as fallback
     localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
-    throw error; // Re-throw to let caller know about the Supabase failure
+    console.log('💾 Saved to localStorage as fallback');
+    
+    // Re-throw the error so the UI can handle it
+    throw new Error(error.message || 'Failed to save to database');
   }
 }
 

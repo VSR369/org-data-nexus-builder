@@ -56,16 +56,19 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     console.log('✅ Configuration to save:', configToSave);
 
     try {
-      // Update configs state
+      // Update configs state first
       const updatedConfigs = currentConfig.id 
         ? configs.map(config => config.id === currentConfig.id ? configToSave : config)
         : [...configs, configToSave];
       
       setConfigs(updatedConfigs);
 
-      // Save to Supabase asynchronously
+      // Save to Supabase with better error handling
       const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+      
+      console.log('🔄 Attempting to save to database...');
       await savePricingConfigsAsync(updatedConfigs);
+      console.log('✅ Successfully saved to database');
 
       toast({
         title: "Success",
@@ -73,18 +76,25 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       });
 
       console.log('✅ Configuration saved to Supabase successfully');
-    } catch (error) {
-      console.error('❌ Failed to save to Supabase:', error);
+      
+      // Clear form after successful save
+      setCurrentConfig({});
+      
+    } catch (error: any) {
+      console.error('❌ Database save failed:', error);
+      
+      // Check if it's a specific Supabase error
+      const errorMessage = error?.message || error?.error?.message || 'Unknown error';
+      console.error('❌ Error details:', errorMessage);
       
       toast({
-        title: "Warning",
-        description: "Configuration saved locally but may not be persistent. Please try again.",
+        title: "Database Error",
+        description: `Failed to save to database: ${errorMessage}. Data saved locally only.`,
         variant: "destructive",
       });
+      
+      // Don't clear form on error so user can retry
     }
-
-    // Clear form after saving
-    setCurrentConfig({});
   };
 
   const handleEdit = (config: PricingConfig) => {
