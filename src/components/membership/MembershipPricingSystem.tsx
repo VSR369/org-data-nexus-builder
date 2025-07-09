@@ -48,7 +48,55 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
   const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
+  const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
+  const [paymentDate, setPaymentDate] = useState<string | undefined>(undefined);
+  const [membershipAmount, setMembershipAmount] = useState<number | undefined>(undefined);
   const { toast } = useToast();
+
+  // Membership payment handler
+  const handleMembershipPayment = async () => {
+    if (!submittedMembershipType) return;
+    
+    setMembershipPaymentLoading(true);
+    
+    try {
+      // Get the annual membership fee
+      const annualFee = getAnnualMembershipFee(membershipFees);
+      
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update payment status
+      const currentDate = new Date().toISOString();
+      setPaymentDate(currentDate);
+      setMembershipAmount(annualFee?.amount || 0);
+      
+      // Update membership status to paid
+      updateMembershipStatus('member_paid');
+      
+      toast({
+        title: "Payment Successful",
+        description: `Your ${submittedMembershipType} membership has been activated!`
+      });
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: "There was an error processing your payment. Please try again."
+      });
+    } finally {
+      setMembershipPaymentLoading(false);
+    }
+  };
+
+  // Reset payment status
+  const onResetPaymentStatus = () => {
+    setPaymentDate(undefined);
+    setMembershipAmount(undefined);
+    updateMembershipStatus('inactive');
+    setSubmittedMembershipType(null);
+  };
 
   // Simple engagement payment handler
   const handleEngagementPayment = async () => {
@@ -158,11 +206,17 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           onEngagementModelChange={updateEngagementModel}
         />
 
-        <div className="text-center p-4 lg:col-span-2 xl:col-span-1">
-          <p className="text-muted-foreground">
-            Membership payment functionality will be implemented in the next phase
-          </p>
-        </div>
+        <MembershipPaymentCard
+          membershipType={state.membership_type}
+          membershipStatus={state.membership_status}
+          membershipFees={membershipFees}
+          membershipPaymentLoading={membershipPaymentLoading}
+          submittedMembershipType={submittedMembershipType}
+          paymentDate={paymentDate}
+          membershipAmount={membershipAmount}
+          onMembershipPayment={handleMembershipPayment}
+          onResetPaymentStatus={onResetPaymentStatus}
+        />
 
         <EngagementPaymentCard
           selectedEngagementModel={state.selected_engagement_model}
