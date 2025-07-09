@@ -29,6 +29,12 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
            engagementModel.toLowerCase().includes('paas');
   };
 
+  // Check if engagement model uses single platform fee (non-PaaS models)
+  const isMarketplaceBasedModel = (engagementModel: string) => {
+    const modelLower = engagementModel?.toLowerCase() || '';
+    return modelLower.includes('marketplace') || modelLower.includes('aggregator');
+  };
+
   // Format fee display based on engagement model
   const formatFeeDisplay = (fee: number, currency: string, engagementModel: string) => {
     if (isPaaSModel(engagementModel)) {
@@ -49,6 +55,10 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
     );
   }
 
+  // Determine if we have any marketplace-based configurations
+  const hasMarketplaceConfigs = configs.some(config => isMarketplaceBasedModel(config.engagementModel));
+  const hasPaaSConfigs = configs.some(config => isPaaSModel(config.engagementModel));
+
   return (
     <Card>
       <CardHeader>
@@ -66,9 +76,10 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                 <TableHead>Engagement Model</TableHead>
                 <TableHead>Membership Status</TableHead>
                 <TableHead>Discount (%)</TableHead>
-                <TableHead>Quarterly Fee</TableHead>
-                <TableHead>Half Yearly Fee</TableHead>
-                <TableHead>Annual Fee</TableHead>
+                {/* Conditional headers based on engagement model type */}
+                <TableHead>Platform Fee</TableHead>
+                {hasPaaSConfigs && <TableHead>Half Yearly Fee</TableHead>}
+                {hasPaaSConfigs && <TableHead>Annual Fee</TableHead>}
                 <TableHead>Created</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
@@ -78,6 +89,7 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                 const discount = config.discountPercentage || 0;
                 const hasDiscount = config.membershipStatus === 'member' && discount > 0;
                 const isPaaS = isPaaSModel(config.engagementModel);
+                const isMarketplaceBased = isMarketplaceBasedModel(config.engagementModel);
 
                 // Generate rows based on membership status and discount
                 const rows = [];
@@ -101,21 +113,30 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                         <Badge variant="default">Member</Badge>
                       </TableCell>
                       <TableCell>{discount}%</TableCell>
+                      
+                      {/* Platform Fee Column */}
                       <TableCell>
                         {config.quarterlyFee !== undefined ? 
                           formatFeeDisplay(calculateDiscountedPrice(config.quarterlyFee, discount), config.currency, config.engagementModel) : 
                           '-'}
                       </TableCell>
-                      <TableCell>
-                        {config.halfYearlyFee !== undefined ? 
-                          formatFeeDisplay(calculateDiscountedPrice(config.halfYearlyFee, discount), config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
-                      <TableCell>
-                        {config.annualFee !== undefined ? 
-                          formatFeeDisplay(calculateDiscountedPrice(config.annualFee, discount), config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
+                      
+                      {/* Conditional frequency columns for PaaS */}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.halfYearlyFee !== undefined ? 
+                            formatFeeDisplay(calculateDiscountedPrice(config.halfYearlyFee, discount), config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.annualFee !== undefined ? 
+                            formatFeeDisplay(calculateDiscountedPrice(config.annualFee, discount), config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      
                       <TableCell>{config.createdAt}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -156,21 +177,30 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                         <Badge variant="secondary">Not a Member</Badge>
                       </TableCell>
                       <TableCell>-</TableCell>
+                      
+                      {/* Platform Fee Column */}
                       <TableCell>
                         {config.quarterlyFee !== undefined ? 
                           formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
                           '-'}
                       </TableCell>
-                      <TableCell>
-                        {config.halfYearlyFee !== undefined ? 
-                          formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
-                      <TableCell>
-                        {config.annualFee !== undefined ? 
-                          formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
+                      
+                      {/* Conditional frequency columns for PaaS */}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.halfYearlyFee !== undefined ? 
+                            formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.annualFee !== undefined ? 
+                            formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      
                       <TableCell>{config.createdAt}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -213,21 +243,30 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                         </Badge>
                       </TableCell>
                       <TableCell>-</TableCell>
+                      
+                      {/* Platform Fee Column */}
                       <TableCell>
                         {config.quarterlyFee !== undefined ? 
                           formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
                           '-'}
                       </TableCell>
-                      <TableCell>
-                        {config.halfYearlyFee !== undefined ? 
-                          formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
-                      <TableCell>
-                        {config.annualFee !== undefined ? 
-                          formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
-                          '-'}
-                      </TableCell>
+                      
+                      {/* Conditional frequency columns for PaaS */}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.halfYearlyFee !== undefined ? 
+                            formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      {hasPaaSConfigs && (
+                        <TableCell>
+                          {isPaaS && config.annualFee !== undefined ? 
+                            formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
+                            '-'}
+                        </TableCell>
+                      )}
+                      
                       <TableCell>{config.createdAt}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
