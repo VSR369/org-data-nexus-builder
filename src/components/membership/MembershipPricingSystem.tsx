@@ -107,6 +107,11 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     entityType,
     country
   );
+
+  console.log('🎯 MembershipPricingSystem - Pricing configs received:', {
+    count: pricingConfigs.length,
+    configs: pricingConfigs.map(c => ({ id: c.id, engagementModel: c.engagementModel }))
+  });
   const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
@@ -296,6 +301,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     country,
     organizationType
   );
+
+  console.log('🎯 Final engagement pricing result:', {
+    selectedModel: state.selected_engagement_model,
+    membershipStatus: state.membership_status,
+    configsCount: pricingConfigs.length,
+    pricingResult: engagementPricing ? 'FOUND' : 'NULL'
+  });
 
   return (
     <div className="space-y-6">

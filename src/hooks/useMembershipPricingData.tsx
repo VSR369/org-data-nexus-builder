@@ -31,8 +31,17 @@ export const useMembershipPricingData = (
         
         // Load pricing configurations
         const configs = PricingDataManager.getAllConfigurations();
+        console.log('🔍 Raw configs from PricingDataManager:', configs);
+        console.log('🔍 Config details:', configs.map(c => ({
+          id: c.id,
+          engagementModel: c.engagementModel,
+          country: c.country,
+          organizationType: c.organizationType,
+          membershipStatus: c.membershipStatus
+        })));
+        
         setPricingConfigs(configs);
-        console.log('✅ Loaded pricing configs:', configs.length);
+        console.log('✅ Set pricing configs in state:', configs.length);
         
         // Force initialization if no configs loaded or configs have undefined values
         if (!configs || configs.length === 0 || configs.some(c => !c.quarterlyFee && !c.halfYearlyFee && !c.annualFee)) {
