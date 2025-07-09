@@ -160,7 +160,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                       ✅ Engagement Model Already Active
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      You have already subscribed to an engagement model. Payment is completed and active.
+                      You have already subscribed to an engagement model.
                     </p>
                   </div>
                 ) : (
