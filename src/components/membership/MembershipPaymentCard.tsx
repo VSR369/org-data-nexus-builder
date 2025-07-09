@@ -10,6 +10,8 @@ interface MembershipPaymentCardProps {
   membershipFees: any[];
   membershipPaymentLoading: boolean;
   submittedMembershipType: string | null;
+  paymentDate?: string;
+  membershipAmount?: number;
   onMembershipPayment: () => void;
   onResetPaymentStatus: () => void;
 }
@@ -20,6 +22,8 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
   membershipFees,
   membershipPaymentLoading,
   submittedMembershipType,
+  paymentDate,
+  membershipAmount,
   onMembershipPayment,
   onResetPaymentStatus
 }) => {
@@ -72,6 +76,59 @@ export const MembershipPaymentCard: React.FC<MembershipPaymentCardProps> = ({
 
   // Handle "Annual Membership" submission
   if (submittedMembershipType === 'annual') {
+    // If payment is completed, show summary details
+    if (membershipStatus === 'member_paid' && paymentDate) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Membership Payment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-lg font-semibold mb-2 text-green-800">
+                  ✅ Payment Completed Successfully
+                </div>
+              </div>
+              
+              <div className="space-y-3 p-4 bg-muted rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Membership:</span>
+                  <span className="text-primary font-semibold">Annual</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Fee Paid:</span>
+                  <span className="text-green-600 font-semibold">
+                    {annualFee ? formatCurrency(annualFee.amount, annualFee.currency) : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Membership Status:</span>
+                  <span className="text-green-600 font-semibold">Paid</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Payment Date:</span>
+                  <span className="font-semibold">
+                    {paymentDate ? new Date(paymentDate).toLocaleDateString() : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Membership Amount:</span>
+                  <span className="text-primary font-semibold">
+                    {membershipAmount ? formatCurrency(membershipAmount, annualFee?.currency || 'USD') : 
+                     (annualFee ? formatCurrency(annualFee.amount, annualFee.currency) : 'N/A')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     // Always show payment form when user submits selection
     // "Already Active" state will be handled by parent component after payment completion
     return (

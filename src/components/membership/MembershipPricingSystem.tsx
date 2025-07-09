@@ -110,6 +110,8 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
+  const [paymentDate, setPaymentDate] = useState<string | null>(null);
+  const [membershipAmount, setMembershipAmount] = useState<number | null>(null);
   const { toast } = useToast();
 
 
@@ -140,6 +142,10 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       
       // Update membership status to paid
       updateMembershipStatus('member_paid');
+      
+      // Set payment date and amount for display
+      setPaymentDate(new Date().toISOString());
+      setMembershipAmount(fee.amount);
       
       toast({
         title: "Payment Successful",
@@ -347,6 +353,8 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           membershipFees={membershipFees}
           membershipPaymentLoading={membershipPaymentLoading}
           submittedMembershipType={submittedMembershipType}
+          paymentDate={paymentDate || undefined}
+          membershipAmount={membershipAmount || undefined}
           onMembershipPayment={handleMembershipPayment}
           onResetPaymentStatus={() => updateMembershipStatus('inactive')}
         />
