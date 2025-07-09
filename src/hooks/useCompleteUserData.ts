@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { userDataManager } from '@/utils/storage/UserDataManager';
+import { getIndustrySegmentDisplayName } from '@/components/master-data/solution-seekers/utils/viewDetailsHelpers';
 
 interface CompleteUserData {
   // Basic Info
@@ -34,53 +35,6 @@ interface CompleteUserData {
   loginTimestamp?: string;
 }
 
-// Helper function to resolve industry segment ID to name
-const resolveIndustrySegment = (industrySegmentValue: string | undefined) => {
-  if (!industrySegmentValue) return undefined;
-  
-  // If it's already a name (not a numeric ID), return it
-  if (isNaN(Number(industrySegmentValue))) {
-    return industrySegmentValue;
-  }
-  
-  // If it's an ID, look up the name from master data
-  try {
-    const masterDataKey = 'master_data_industry_segments';
-    const savedData = localStorage.getItem(masterDataKey);
-    if (savedData) {
-      const industryData = JSON.parse(savedData);
-      const segments = industryData.industrySegments || industryData;
-      
-      if (Array.isArray(segments)) {
-        const foundSegment = segments.find(segment => 
-          segment.id === industrySegmentValue || 
-          segment.industrySegment === industrySegmentValue
-        );
-        
-        if (foundSegment) {
-          console.log('✅ Resolved industry segment:', foundSegment.industrySegment);
-          return foundSegment.industrySegment;
-        }
-      }
-    }
-    
-    // Fallback: check if the ID corresponds to a known industry
-    const industryMap: { [key: string]: string } = {
-      '1751657884057': 'Life sciences',
-      // Add other mappings as needed
-    };
-    
-    if (industryMap[industrySegmentValue]) {
-      console.log('✅ Mapped industry segment:', industryMap[industrySegmentValue]);
-      return industryMap[industrySegmentValue];
-    }
-    
-  } catch (error) {
-    console.error('❌ Error resolving industry segment:', error);
-  }
-  
-  return `Industry ID: ${industrySegmentValue}`;
-};
 
 export const useCompleteUserData = (userId?: string) => {
   const [userData, setUserData] = useState<CompleteUserData | null>(null);
@@ -132,7 +86,7 @@ export const useCompleteUserData = (userId?: string) => {
 
         if (foundUser) {
           // Resolve industry segment ID to actual name
-          const resolvedIndustrySegment = resolveIndustrySegment(foundUser.industrySegment);
+          const resolvedIndustrySegment = getIndustrySegmentDisplayName(foundUser.industrySegment);
           
           const processedUserData = {
             ...foundUser,
