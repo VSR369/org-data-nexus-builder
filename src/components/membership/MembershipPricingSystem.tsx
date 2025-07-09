@@ -25,7 +25,6 @@ interface MembershipPricingSystemProps {
   organizationName?: string;
 }
 
-
 const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   organizationType,
   entityType,
@@ -108,20 +107,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     organizationType
   );
 
-  console.log('🔍 MembershipPricingSystem Debug:', {
-    organizationType,
-    entityType,
-    country,
-    organizationId,
-    organizationName,
-    state,
-    pricingConfigs: pricingConfigs?.length || 0,
-    engagementModels: engagementModels?.length || 0,
-    membershipFees: membershipFees?.length || 0,
-    engagementPricing: engagementPricing ? 'FOUND' : 'NULL',
-    dataLoading
-  });
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -130,34 +115,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         <p className="text-muted-foreground">Select your membership plan and engagement model</p>
       </div>
 
-      
-      {/* Debug Info Card - Visible */}
-      <Card className="bg-yellow-50 border-yellow-200">
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-2">🔍 Debug Information</h3>
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div>
-              <strong>Organization:</strong> {organizationName}<br/>
-              <strong>Type:</strong> {organizationType}<br/>
-              <strong>Country:</strong> {country}<br/>
-              <strong>Entity:</strong> {entityType}
-            </div>
-            <div>
-              <strong>Selected Model:</strong> {state.selected_engagement_model || 'None'}<br/>
-              <strong>Selected Frequency:</strong> {state.selected_frequency || 'None'}<br/>
-              <strong>Membership Status:</strong> {state.membership_status}<br/>
-              <strong>Data Loading:</strong> {dataLoading ? 'Yes' : 'No'}
-            </div>
-          </div>
-          <div className="mt-2 pt-2 border-t border-yellow-300">
-            <strong>Pricing Configs:</strong> {pricingConfigs?.length || 0} found<br/>
-            <strong>Engagement Models:</strong> {engagementModels?.length || 0} found<br/>
-            <strong>Engagement Pricing:</strong> {engagementPricing ? 'Found' : 'Not Found'}<br/>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Status Card */}
+      {/* Current Status */}
       {(state.membership_status !== 'inactive' || state.selected_engagement_model) && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4">

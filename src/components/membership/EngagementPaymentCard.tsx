@@ -34,28 +34,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   onFrequencyChange,
   onEngagementPayment
 }) => {
-  // Debug logging for data flow
-  console.log('🔍 EngagementPaymentCard - RENDERING:', {
-    selectedEngagementModel,
-    selectedFrequency,
-    membershipStatus,
-    engagementPricing: engagementPricing ? 'FOUND' : 'NULL',
-    pricingConfigs: pricingConfigs?.length || 0
-  });
-  
   const isPaaS = isPaaSModel(selectedEngagementModel);
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
-  
-  console.log('🔍 EngagementPaymentCard - Model Types:', { isPaaS, isMarketplace });
-  
-  if (engagementPricing) {
-    console.log('🔍 EngagementPaymentCard - Pricing Details:', {
-      platformFeePercentage: engagementPricing.platformFeePercentage,
-      quarterlyFee: engagementPricing.quarterlyFee,
-      halfYearlyFee: engagementPricing.halfYearlyFee,
-      annualFee: engagementPricing.annualFee
-    });
-  }
 
   // Auto-select platform fee for marketplace models
   React.useEffect(() => {

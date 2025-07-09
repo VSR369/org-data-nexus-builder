@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompleteUserData } from '@/hooks/useCompleteUserData';
 import { loadEngagementPricingDetails } from '@/components/master-data/solution-seekers/utils/viewDetailsHelpers';
 import MembershipPricingSystem from '@/components/membership/MembershipPricingSystem';
-import '@/utils/cleanupMembershipEngagementStorage';
+// import '@/utils/cleanupMembershipEngagementStorage';
 
 interface OrganizationSession {
   userId: string;
