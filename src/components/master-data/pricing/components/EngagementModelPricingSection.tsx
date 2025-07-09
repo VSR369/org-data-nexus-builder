@@ -82,26 +82,20 @@ const EngagementModelPricingSection: React.FC<EngagementModelPricingSectionProps
         </div>
       </div>
 
-      {/* Conditional Fee Input Sections */}
+      {/* Conditional Fee Display/Input Sections */}
       {isCurrentModelMarketplaceBased ? (
-        // Single Platform Fee for Marketplace-based models
+        // Display pricing from Master Data for Marketplace-based models
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="platformFee">
-              Platform Fee (%) *
-            </Label>
-            <Input
-              id="platformFee"
-              type="number"
-              min="0"
-              step="0.1"
-              max="100"
-              value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
-              onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
-              placeholder="15"
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              Single platform fee percentage applicable to solution fee
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium text-gray-800 mb-2">Platform Fee Configuration</h4>
+            <p className="text-sm text-gray-600 mb-2">
+              Pricing for this engagement model is managed in Master Data.
+            </p>
+            <div className="text-lg font-semibold text-blue-600">
+              {currentConfig.engagementModel} - Pull from Master Data
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Configure engagement model pricing in Master Data section
             </p>
           </div>
         </div>
