@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { PricingDataManager } from '@/utils/pricingDataManager';
 import { PricingConfig } from '@/types/pricing';
 import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
+import { DynamicPricingSection } from '@/components/engagement/DynamicPricingSection';
 
 interface MembershipEngagementDashboardProps {
   organizationType: string;
@@ -39,6 +40,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   // State for selections
   const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<string>('');
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string>('');
+  const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
@@ -49,9 +52,11 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   useEffect(() => {
     const savedMembershipPlan = localStorage.getItem('selectedMembershipPlan');
     const savedEngagementModel = localStorage.getItem('selectedEngagementModel');
+    const savedPricingPlan = localStorage.getItem('selectedPricingPlan');
 
     if (savedMembershipPlan) setSelectedMembershipPlan(savedMembershipPlan);
     if (savedEngagementModel) setSelectedEngagementModel(savedEngagementModel);
+    if (savedPricingPlan) setSelectedPricingPlan(savedPricingPlan);
 
     // Load all pricing configurations for this country/organization/entity type
     const allConfigs = PricingDataManager.getAllConfigurations();
@@ -107,8 +112,11 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       // Deselect if clicking on already selected plan
       setSelectedMembershipPlan('');
       setSelectedEngagementModel(''); // Clear engagement model when deselecting membership
+      setSelectedPricingPlan(''); // Clear pricing plan when deselecting membership
+      setIsSubmitted(false);
       localStorage.removeItem('selectedMembershipPlan');
       localStorage.removeItem('selectedEngagementModel');
+      localStorage.removeItem('selectedPricingPlan');
       console.log('🔄 Deselected membership plan');
     } else {
       setSelectedMembershipPlan(value);
@@ -121,12 +129,31 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     if (selectedEngagementModel === value) {
       // Deselect if clicking on already selected model
       setSelectedEngagementModel('');
+      setSelectedPricingPlan(''); // Clear pricing plan when deselecting model
+      setIsSubmitted(false);
       localStorage.removeItem('selectedEngagementModel');
+      localStorage.removeItem('selectedPricingPlan');
       console.log('🔄 Deselected engagement model');
     } else {
       setSelectedEngagementModel(value);
+      setSelectedPricingPlan(''); // Clear pricing plan when changing model
+      setIsSubmitted(false);
+      localStorage.removeItem('selectedPricingPlan');
       console.log('✅ Selected engagement model:', value);
     }
+  };
+
+  // Handle pricing plan selection
+  const handlePricingPlanChange = (plan: string) => {
+    setSelectedPricingPlan(plan);
+    localStorage.setItem('selectedPricingPlan', plan);
+    console.log('✅ Selected pricing plan:', plan);
+  };
+
+  // Handle platform/subscription fee selection
+  const handleSelectPlatformFee = () => {
+    setIsSubmitted(true);
+    console.log('✅ Platform/Subscription fee selected');
   };
 
   // Calculate price based on membership status and apply discounts
@@ -320,6 +347,36 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     return normalizedCountry;
   };
 
+  // Get pricing configuration for the selected engagement model
+  const getPricingConfig = (): PricingConfig | null => {
+    if (!selectedEngagementModel || !selectedMembershipPlan) return null;
+
+    const getMembershipStatusForConfig = (plan: string): string => {
+      if (plan === 'not-member') return 'not-a-member';
+      if (plan === 'annual') return 'member';
+      return 'member';
+    };
+    
+    const membershipStatusForConfig = getMembershipStatusForConfig(selectedMembershipPlan);
+    const allConfigs = PricingDataManager.getAllConfigurations();
+    
+    const engagementPricing = allConfigs.find(config => 
+      normalizeCountryName(config.country || '') === normalizeCountryName(country) &&
+      (config.organizationType === organizationType || config.organizationType === 'All') &&
+      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
+      config.membershipStatus === membershipStatusForConfig
+    );
+
+    const fallbackConfig = !engagementPricing ? allConfigs.find(config =>
+      (!config.country || config.country === 'Global' || config.country === 'All') &&
+      (config.organizationType === organizationType || config.organizationType === 'All') &&
+      (config.engagementModel === selectedEngagementModel || config.engagementModel?.toLowerCase() === selectedEngagementModel.toLowerCase()) &&
+      config.membershipStatus === membershipStatusForConfig
+    ) : null;
+
+    return engagementPricing || fallbackConfig || null;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -504,122 +561,21 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           </CardContent>
         </Card>
 
-        {/* Column 4: Model Pricing */}
-        <Card className="h-fit">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-              Model Pricing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedEngagementModel ? (
-              <div className="space-y-4">
-                {(() => {
-                  const pricing = getAllFrequencyPricing();
-                  
-                  // Check if data is not available
-                  if (pricing.configName === 'Data not available') {
-                    return (
-                      <div className="text-center py-8">
-                        <div className="text-sm text-gray-500 mb-2">
-                          {pricing.configName}
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          Please configure pricing for this engagement model and membership status
-                        </p>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <>
-                      {/* Configuration Info */}
-                      <div className="text-sm text-center p-2 bg-gray-50 rounded mb-4">
-                        {pricing.configName}
-                      </div>
-                      
-                      {/* All Frequency Pricing Display */}
-                      <div className="space-y-3">
-                        {/* Quarterly */}
-                        <Card className={`border-2 transition-all ${
-                          selectedMembershipPlan === 'quarterly' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200'
-                        }`}>
-                          <CardContent className="p-4 text-center">
-                            <div className="text-sm text-gray-600 mb-1">Quarterly</div>
-                            <div className="text-2xl font-bold">
-                              {pricing.isPercentage 
-                                ? `${pricing.quarterly}%` 
-                                : formatCurrency(pricing.quarterly, pricing.currency)
-                              }
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {pricing.isPercentage ? 'of Solution Fee' : '3 months'}
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Half-Yearly */}
-                        <Card className={`border-2 transition-all ${
-                          selectedMembershipPlan === 'half-yearly' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200'
-                        }`}>
-                          <CardContent className="p-4 text-center">
-                            <div className="text-sm text-gray-600 mb-1">Half-Yearly</div>
-                            <div className="text-2xl font-bold">
-                              {pricing.isPercentage 
-                                ? `${pricing.halfYearly}%` 
-                                : formatCurrency(pricing.halfYearly, pricing.currency)
-                              }
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {pricing.isPercentage ? 'of Solution Fee' : '6 months'}
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Annual */}
-                        <Card className={`border-2 transition-all ${
-                          selectedMembershipPlan === 'annual' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200'
-                        }`}>
-                          <CardContent className="p-4 text-center">
-                            <div className="text-sm text-gray-600 mb-1">Annual</div>
-                            <div className="text-2xl font-bold">
-                              {pricing.isPercentage 
-                                ? `${pricing.annual}%` 
-                                : formatCurrency(pricing.annual, pricing.currency)
-                              }
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {pricing.isPercentage ? 'of Solution Fee' : '12 months'}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {membershipStatus === 'active' && (
-                        <div className="text-xs text-center mt-2 p-2 bg-green-50 text-green-700 rounded">
-                          Member Discount Applied
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">
-                  Select an engagement model to view pricing
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Column 4: Dynamic Pricing Section */}
+        <div className="space-y-4">
+          {selectedEngagementModel && (
+            <DynamicPricingSection
+              selectedEngagementModel={selectedEngagementModel}
+              engagementModelName={selectedEngagementModel}
+              selectedPricingPlan={selectedPricingPlan}
+              onPricingPlanChange={handlePricingPlanChange}
+              pricingConfig={getPricingConfig()}
+              membershipStatus={membershipStatus}
+              onSelectPlatformFee={handleSelectPlatformFee}
+              isSubmitted={isSubmitted}
+            />
+          )}
+        </div>
       </div>
 
       {/* Status Bar */}
@@ -638,6 +594,18 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                   <div>
                     <span className="font-medium">Current Selection of Engagement Model:</span>
                     <span className="ml-2 text-green-700">{selectedEngagementModel}</span>
+                  </div>
+                )}
+                {selectedPricingPlan && (
+                  <div>
+                    <span className="font-medium">Selected Pricing Plan:</span>
+                    <span className="ml-2 text-green-700">{selectedPricingPlan.charAt(0).toUpperCase() + selectedPricingPlan.slice(1)}</span>
+                  </div>
+                )}
+                {isSubmitted && (
+                  <div>
+                    <span className="font-medium text-green-800">Status:</span>
+                    <span className="ml-2 text-green-700">Platform Fee Selected ✓</span>
                   </div>
                 )}
               </div>
