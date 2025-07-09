@@ -52,35 +52,61 @@ export const getEngagementPricing = (
     membershipStatus: c.membershipStatus
   })));
 
-  // Simple direct lookup - exact match first
+  // First try to find exact match with membership status
   let matchingConfig = pricingConfigs.find(config => 
     config.engagementModel === engagementModelName &&
     config.country === country &&
-    config.organizationType === organizationType
+    config.organizationType === organizationType &&
+    config.membershipStatus === membershipStatusForConfig
   );
 
-  console.log('🎯 First attempt - exact match result:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+  console.log('🎯 First attempt - exact match with membership status:', matchingConfig ? 'FOUND' : 'NOT FOUND');
 
-  // If no exact match, try global/fallback configs
+  // If no exact match, try with fallback countries but keep membership status
   if (!matchingConfig) {
     matchingConfig = pricingConfigs.find(config => 
       config.engagementModel === engagementModelName &&
       (!config.country || config.country === 'Global' || config.country === 'All' || config.country === country) &&
-      (config.organizationType === organizationType || config.organizationType === 'All')
+      (config.organizationType === organizationType || config.organizationType === 'All') &&
+      config.membershipStatus === membershipStatusForConfig
     );
-    console.log('🎯 Second attempt - with fallbacks result:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+    console.log('🎯 Second attempt - with fallbacks but specific membership status:', matchingConfig ? 'FOUND' : 'NOT FOUND');
   }
 
-  // Final fallback - just match engagement model
+  // If still no match, try without membership status constraint (for backward compatibility)
   if (!matchingConfig) {
     matchingConfig = pricingConfigs.find(config => 
-      config.engagementModel === engagementModelName
+      config.engagementModel === engagementModelName &&
+      config.country === country &&
+      config.organizationType === organizationType
     );
-    console.log('🎯 Final attempt - engagement model only result:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+    console.log('🎯 Third attempt - exact match without membership status:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+  }
+
+  // Final fallback - just match engagement model and prefer not-a-member for non-members
+  if (!matchingConfig) {
+    // For non-members, prefer not-a-member configs
+    if (membershipStatusForConfig === 'not-a-member') {
+      matchingConfig = pricingConfigs.find(config => 
+        config.engagementModel === engagementModelName &&
+        config.membershipStatus === 'not-a-member'
+      );
+      console.log('🎯 Fourth attempt - engagement model with not-a-member preference:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+    }
+    
+    // If still no match, try any config for this engagement model
+    if (!matchingConfig) {
+      matchingConfig = pricingConfigs.find(config => 
+        config.engagementModel === engagementModelName
+      );
+      console.log('🎯 Final attempt - engagement model only:', matchingConfig ? 'FOUND' : 'NOT FOUND');
+    }
   }
 
   if (!matchingConfig) {
     console.log('❌ No pricing config found for engagement model:', engagementModelName);
+    console.log('❌ Available engagement models:', [...new Set(pricingConfigs.map(c => c.engagementModel))]);
+    console.log('❌ Available membership statuses:', [...new Set(pricingConfigs.map(c => c.membershipStatus))]);
     return null;
   }
 
@@ -140,13 +166,20 @@ export const formatCurrency = (amount: number | undefined, currency: string = 'I
   // Handle undefined or null amounts
   if (amount === undefined || amount === null || isNaN(amount)) {
     console.warn('⚠️ formatCurrency: Invalid amount:', amount);
-    return 'Contact for pricing';
+    return 'Please configure pricing';
+  }
+  
+  // Ensure amount is a valid number
+  const validAmount = Number(amount);
+  if (isNaN(validAmount) || validAmount < 0) {
+    console.warn('⚠️ formatCurrency: Invalid amount after conversion:', validAmount);
+    return 'Please configure pricing';
   }
   
   if (currency === 'INR') {
-    return `₹${amount.toLocaleString()}`;
+    return `₹${validAmount.toLocaleString()}`;
   }
-  return `${currency} ${amount}`;
+  return `${currency} ${validAmount.toLocaleString()}`;
 };
 
 // Get annual membership fee
@@ -174,4 +207,46 @@ export const isMarketplaceModel = (engagementModel: string): boolean => {
          engagementModel === 'marketplace-aggregator' ||
          engagementModel === 'market-place-aggregator' ||
          engagementModel === 'Market Place & Aggregator';
+};
+
+// Diagnostic function to check pricing configurations
+export const debugPricingConfigurations = (pricingConfigs: PricingConfig[]): void => {
+  console.log('🔍 === PRICING CONFIGURATIONS DEBUG ===');
+  console.log('📊 Total configurations:', pricingConfigs.length);
+  
+  // Group by engagement model
+  const byEngagementModel = pricingConfigs.reduce((acc, config) => {
+    if (!acc[config.engagementModel]) {
+      acc[config.engagementModel] = [];
+    }
+    acc[config.engagementModel].push(config);
+    return acc;
+  }, {} as Record<string, PricingConfig[]>);
+  
+  console.log('📋 By Engagement Model:');
+  Object.entries(byEngagementModel).forEach(([model, configs]) => {
+    console.log(`  ${model}: ${configs.length} configs`);
+    configs.forEach(config => {
+      console.log(`    - ${config.membershipStatus} (${config.country}, ${config.organizationType})`);
+      if (config.quarterlyFee) console.log(`      Quarterly: ${config.quarterlyFee}, Half-yearly: ${config.halfYearlyFee}, Annual: ${config.annualFee}`);
+      if (config.platformFeePercentage) console.log(`      Platform Fee: ${config.platformFeePercentage}%`);
+    });
+  });
+  
+  // Check for missing not-a-member configs
+  const engagementModels = [...new Set(pricingConfigs.map(c => c.engagementModel))];
+  const missingNotMemberConfigs = engagementModels.filter(model => {
+    return !pricingConfigs.some(config => 
+      config.engagementModel === model && 
+      config.membershipStatus === 'not-a-member'
+    );
+  });
+  
+  if (missingNotMemberConfigs.length > 0) {
+    console.warn('⚠️ Missing "not-a-member" configurations for:', missingNotMemberConfigs);
+  } else {
+    console.log('✅ All engagement models have "not-a-member" configurations');
+  }
+  
+  console.log('🔍 === END PRICING CONFIGURATIONS DEBUG ===');
 };

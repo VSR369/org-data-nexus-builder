@@ -21,22 +21,41 @@ const PricingConfig = () => {
     
     // Force custom pricing mode to ensure user's custom data is preserved
     const initializeCustomMode = async () => {
-      // Initialize our Supabase-integrated pricing system
-      const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
-      
       try {
+        // First try to load from Supabase-integrated pricing system
+        const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
         console.log('🔍 Loading pricing configurations from database...');
         const loadedConfigs = await getPricingConfigsAsync();
-        setConfigs(loadedConfigs);
-        console.log('✅ Database pricing configurations loaded:', loadedConfigs.length);
+        
+        if (loadedConfigs.length === 0) {
+          // If no configs found, initialize with defaults
+          console.log('📋 No existing configs found, initializing with defaults...');
+          const { defaultPricingConfigs } = await import('@/utils/pricing/pricingDefaults');
+          const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+          await savePricingConfigsAsync(defaultPricingConfigs);
+          setConfigs(defaultPricingConfigs);
+          console.log('✅ Default pricing configurations initialized:', defaultPricingConfigs.length);
+        } else {
+          setConfigs(loadedConfigs);
+          console.log('✅ Database pricing configurations loaded:', loadedConfigs.length);
+        }
+        
+        // Debug the loaded configurations
+        const { debugPricingConfigurations } = await import('@/utils/membershipPricingUtils');
+        debugPricingConfigurations(loadedConfigs.length > 0 ? loadedConfigs : (await import('@/utils/pricing/pricingDefaults')).defaultPricingConfigs);
+        
       } catch (error) {
         console.error('❌ Failed to load from database, using defaults:', error);
-        // Fallback to enhanced manager
         try {
-          const { EnhancedPricingDataManager } = await import('@/utils/enhancedPricingDataManager');
-          const fallbackConfigs = EnhancedPricingDataManager.getAllConfigurations();
-          setConfigs(fallbackConfigs);
-          console.log('✅ Fallback pricing configurations loaded:', fallbackConfigs.length);
+          // Enhanced fallback with proper initialization
+          const { defaultPricingConfigs } = await import('@/utils/pricing/pricingDefaults');
+          setConfigs(defaultPricingConfigs);
+          console.log('✅ Fallback pricing configurations loaded:', defaultPricingConfigs.length);
+          
+          // Debug the fallback configurations
+          const { debugPricingConfigurations } = await import('@/utils/membershipPricingUtils');
+          debugPricingConfigurations(defaultPricingConfigs);
+          
         } catch (fallbackError) {
           console.error('❌ All loading methods failed:', fallbackError);
           setConfigs([]);
