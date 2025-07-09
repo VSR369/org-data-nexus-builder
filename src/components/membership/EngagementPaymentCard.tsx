@@ -36,8 +36,20 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   onFrequencyChange,
   onEngagementPayment
 }) => {
+  // Debug logging for data flow
+  console.log('🔍 EngagementPaymentCard - selectedEngagementModel:', selectedEngagementModel);
+  console.log('🔍 EngagementPaymentCard - engagementPricing:', engagementPricing);
+  console.log('🔍 EngagementPaymentCard - selectedFrequency:', selectedFrequency);
+  
   const isPaaS = isPaaSModel(selectedEngagementModel);
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
+  
+  console.log('🔍 EngagementPaymentCard - isPaaS:', isPaaS);
+  console.log('🔍 EngagementPaymentCard - isMarketplace:', isMarketplace);
+  
+  if (engagementPricing) {
+    console.log('🔍 EngagementPaymentCard - platformFeePercentage:', engagementPricing.platformFeePercentage);
+  }
 
   // Auto-select platform fee for marketplace models
   React.useEffect(() => {

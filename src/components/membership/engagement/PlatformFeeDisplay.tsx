@@ -10,6 +10,10 @@ export const PlatformFeeDisplay: React.FC<PlatformFeeDisplayProps> = ({
   engagementPricing,
   onFrequencyChange
 }) => {
+  // Debug logging for platform fee display
+  console.log('🔍 PlatformFeeDisplay - engagementPricing:', engagementPricing);
+  console.log('🔍 PlatformFeeDisplay - platformFeePercentage:', engagementPricing.platformFeePercentage);
+  
   return (
     <div className="space-y-3">
       <div 

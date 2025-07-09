@@ -21,6 +21,13 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
   membershipStatus
 }) => {
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
+  
+  // Debug logging for engagement summary
+  console.log('🔍 EngagementSummary - selectedEngagementModel:', selectedEngagementModel);
+  console.log('🔍 EngagementSummary - selectedFrequency:', selectedFrequency);
+  console.log('🔍 EngagementSummary - engagementPricing:', engagementPricing);
+  console.log('🔍 EngagementSummary - isMarketplace:', isMarketplace);
+  console.log('🔍 EngagementSummary - platformFeePercentage:', engagementPricing.platformFeePercentage);
 
   return (
     <div className="p-4 bg-muted rounded-lg">
