@@ -6,7 +6,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'marketplace-member-config',
     configName: 'Market Place Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -22,7 +22,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'marketplace-not-member-config',
     configName: 'Market Place Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -38,7 +38,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'aggregator-member-config',
     configName: 'Aggregator Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -54,7 +54,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'aggregator-not-member-config',
     configName: 'Aggregator Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -70,7 +70,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'marketplace-aggregator-member-config',
     configName: 'Market Place & Aggregator Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -86,7 +86,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'marketplace-aggregator-not-member-config',
     configName: 'Market Place & Aggregator Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -102,7 +102,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'platform-service-member-config',
     configName: 'Platform as a Service Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',
@@ -120,7 +120,7 @@ export const defaultPricingConfigs: PricingConfig[] = [
   {
     id: 'platform-service-not-member-config',
     configName: 'Platform as a Service Configuration',
-    country: 'IN',
+    country: 'India',
     currency: 'INR',
     organizationType: 'MSME',
     entityType: 'Commercial',

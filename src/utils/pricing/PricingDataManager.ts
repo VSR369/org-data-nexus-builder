@@ -5,7 +5,28 @@ import { normalizeCountryName } from './pricingUtils';
 
 export class PricingDataManager {
   static getAllConfigurations(): PricingConfig[] {
-    return getPricingConfigs();
+    const configs = getPricingConfigs();
+    
+    // Clean up data: ensure marketplace models only have platformFeePercentage
+    // and PaaS models only have frequency fees
+    return configs.map(config => {
+      const isMarketplace = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
+      const isPaaS = config.engagementModel === 'Platform as a Service';
+      
+      if (isMarketplace) {
+        // Remove frequency fields from marketplace models
+        const { quarterlyFee, halfYearlyFee, annualFee, ...cleanConfig } = config;
+        return cleanConfig;
+      }
+      
+      if (isPaaS) {
+        // Remove platformFeePercentage from PaaS models
+        const { platformFeePercentage, ...cleanConfig } = config;
+        return cleanConfig;
+      }
+      
+      return config;
+    });
   }
 
   static saveConfigurations(configs: PricingConfig[]): void {
