@@ -1,77 +1,179 @@
-// Core Pricing Operations
+// Core Pricing Operations with Supabase Integration
 import { PricingConfig } from '@/types/pricing';
-import { LegacyDataManager } from '../core/DataManager';
-import { PricingDataProtection } from '../pricingDataProtection';
+import { supabase } from '@/integrations/supabase/client';
 import { defaultPricingConfigs } from './pricingDefaults';
 
-const pricingDataManager = new LegacyDataManager<PricingConfig[]>({
-  key: 'master_data_pricing_configs',
-  defaultData: [],
-  version: 4 // Increment version to respect user deletions
+// Enhanced configuration storage key for localStorage backup
+const CUSTOM_PRICING_CONFIGS_KEY = 'custom_pricingConfigs';
+const DELETED_CONFIGS_KEY = 'pricing_deleted_configs';
+
+// Database mapping functions
+const mapConfigToDatabase = (config: PricingConfig) => ({
+  config_id: config.id,
+  country: config.country,
+  currency: config.currency || '',
+  organization_type: config.organizationType,
+  entity_type: config.entityType,
+  engagement_model: config.engagementModel,
+  quarterly_fee: config.quarterlyFee || null,
+  half_yearly_fee: config.halfYearlyFee || null,
+  annual_fee: config.annualFee || null,
+  platform_fee_percentage: config.platformFeePercentage || null,
+  membership_status: config.membershipStatus,
+  discount_percentage: config.discountPercentage || null,
+  internal_paas_pricing: JSON.parse(JSON.stringify(config.internalPaasPricing || [])),
+  version: config.version || 1
 });
 
-// Track deleted configurations to prevent auto-recreation
-const deletedConfigsManager = new LegacyDataManager<string[]>({
-  key: 'master_data_pricing_deleted_configs',
-  defaultData: [],
-  version: 1
+const mapDatabaseToConfig = (dbRow: any): PricingConfig => ({
+  id: dbRow.config_id,
+  country: dbRow.country,
+  currency: dbRow.currency,
+  organizationType: dbRow.organization_type,
+  entityType: dbRow.entity_type,
+  engagementModel: dbRow.engagement_model,
+  quarterlyFee: dbRow.quarterly_fee,
+  halfYearlyFee: dbRow.half_yearly_fee,
+  annualFee: dbRow.annual_fee,
+  platformFeePercentage: dbRow.platform_fee_percentage,
+  membershipStatus: dbRow.membership_status,
+  discountPercentage: dbRow.discount_percentage,
+  internalPaasPricing: dbRow.internal_paas_pricing || [],
+  version: dbRow.version || 1,
+  createdAt: dbRow.created_at ? new Date(dbRow.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
 });
 
-export const getPricingConfigs = (): PricingConfig[] => {
-  console.log('🔍 Enhanced: Getting pricing configurations...');
+/**
+ * Get all pricing configurations with Supabase integration
+ */
+export async function getPricingConfigsAsync(): Promise<PricingConfig[]> {
+  console.log('🔍 Getting pricing configurations from Supabase...');
   
   try {
-    // Dynamic import for enhanced manager
-    const { EnhancedPricingDataManager } = eval('require')('../enhancedPricingDataManager');
-    return EnhancedPricingDataManager.getAllConfigurations();
+    const { data, error } = await supabase
+      .from('pricing_configs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Supabase error:', error);
+      throw error;
+    }
+
+    if (data && data.length > 0) {
+      const configs = data.map(mapDatabaseToConfig);
+      console.log('✅ Loaded from Supabase:', configs.length);
+      
+      // Also save to localStorage as backup
+      localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
+      return configs;
+    }
   } catch (error) {
-    console.error('❌ Enhanced manager failed, using fallback:', error);
-    
-    // Fallback to original logic
-    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-    if (isCustomMode) {
-      const customData = localStorage.getItem('custom_pricing');
-      if (customData) {
-        try {
-          const parsed = JSON.parse(customData);
-          if (Array.isArray(parsed)) {
-            return parsed;
-          }
-        } catch (parseError) {
-          console.error('❌ Failed to parse custom pricing data');
-        }
-      }
-      return [];
-    }
-    
-    const configs = pricingDataManager.loadData();
-    return Array.isArray(configs) ? configs : [];
+    console.error('❌ Error loading from Supabase:', error);
   }
-};
 
-export const savePricingConfigs = (configs: PricingConfig[]): void => {
-  // Use the protection system for all saves
-  console.log('🛡️ Using protected save for pricing configurations');
-  const success = PricingDataProtection.safeSave(configs, 'user_configuration');
+  // Fallback to localStorage
+  console.log('🔄 Falling back to localStorage...');
+  const localConfigs = JSON.parse(localStorage.getItem(CUSTOM_PRICING_CONFIGS_KEY) || '[]');
+  if (localConfigs.length > 0) {
+    console.log('✅ Loaded from localStorage:', localConfigs.length);
+    return localConfigs;
+  }
+
+  // Final fallback to defaults
+  console.log('📋 Using default configurations as final fallback');
+  return defaultPricingConfigs;
+}
+
+/**
+ * Synchronous version for backward compatibility
+ */
+export const getPricingConfigs = (): PricingConfig[] => {
+  console.log('🔍 Getting pricing configurations (sync)...');
   
-  if (!success) {
-    console.error('❌ Protected save failed, attempting fallback save');
-    
-    // Fallback to original logic if protection fails
-    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-    
-    if (isCustomMode) {
-      console.log('💾 Fallback: Custom-only mode save');
-      localStorage.setItem('custom_pricing', JSON.stringify(configs));
-    } else {
-      console.log('💾 Fallback: Mixed mode save');
-      pricingDataManager.saveData(configs);
-    }
+  // Try localStorage first for immediate response
+  const localConfigs = JSON.parse(localStorage.getItem(CUSTOM_PRICING_CONFIGS_KEY) || '[]');
+  if (localConfigs.length > 0) {
+    console.log('✅ Loaded from localStorage (sync):', localConfigs.length);
+    return localConfigs;
   }
+
+  // If no local data, trigger async load and return defaults for now
+  getPricingConfigsAsync().then(configs => {
+    console.log('🔄 Async load completed, configs will be available on next call');
+  }).catch(error => {
+    console.error('❌ Async load failed:', error);
+  });
+
+  // Return defaults for immediate use
+  console.log('📋 Using default configurations for immediate response');
+  return defaultPricingConfigs;
 };
 
+/**
+ * Save pricing configurations to Supabase with localStorage backup
+ */
+export async function savePricingConfigsAsync(configs: PricingConfig[]): Promise<void> {
+  console.log('💾 Saving pricing configurations to Supabase:', configs.length);
+  
+  try {
+    // Save to Supabase
+    const dbConfigs = configs.map(mapConfigToDatabase);
+    
+    // Delete existing configs and insert new ones (replace all)
+    const { error: deleteError } = await supabase
+      .from('pricing_configs')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+    if (deleteError) {
+      console.error('❌ Error deleting existing configs:', deleteError);
+    }
+
+    if (dbConfigs.length > 0) {
+      const { error: insertError } = await supabase
+        .from('pricing_configs')
+        .insert(dbConfigs);
+
+      if (insertError) {
+        console.error('❌ Error inserting configs to Supabase:', insertError);
+        throw insertError;
+      }
+    }
+
+    console.log('✅ Configurations saved to Supabase successfully');
+    
+    // Also save to localStorage as backup
+    localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
+    
+  } catch (error) {
+    console.error('❌ Error saving to Supabase, falling back to localStorage:', error);
+    // Fallback to localStorage only
+    localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
+    throw error; // Re-throw to let caller know about the Supabase failure
+  }
+}
+
+/**
+ * Save pricing configurations (backward compatibility)
+ */
+export const savePricingConfigs = (configs: PricingConfig[]): void => {
+  console.log('💾 Saving pricing configurations (sync):', configs.length);
+  
+  // Save to localStorage immediately for sync operation
+  localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
+  
+  // Also trigger async save to Supabase in background
+  savePricingConfigsAsync(configs).catch(error => {
+    console.error('⚠️ Background Supabase save failed:', error);
+  });
+};
+
+/**
+ * Save single pricing configuration
+ */
 export const savePricingConfig = (config: PricingConfig): void => {
-  console.log(`🛡️ Protected save for single config: ${config.engagementModel} (${config.membershipStatus})`);
+  console.log(`💾 Saving single config: ${config.engagementModel} (${config.membershipStatus})`);
   
   const configs = getPricingConfigs();
   const existingIndex = configs.findIndex(c => c.id === config.id);
@@ -87,11 +189,11 @@ export const savePricingConfig = (config: PricingConfig): void => {
   savePricingConfigs(configs);
 };
 
+/**
+ * Delete pricing configuration
+ */
 export const deletePricingConfig = (id: string): void => {
-  console.log(`🛡️ Protected delete for config: ${id}`);
-  
-  // Create backup before deletion
-  PricingDataProtection.createBackup('before_delete');
+  console.log(`🗑️ Deleting config: ${id}`);
   
   const configs = getPricingConfigs();
   const configToDelete = configs.find(c => c.id === id);
@@ -101,24 +203,25 @@ export const deletePricingConfig = (id: string): void => {
   }
   
   const filteredConfigs = configs.filter(c => c.id !== id);
-  
-  const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-  
-  if (!isCustomMode) {
-    // Track deleted configuration ID to prevent auto-recreation in mixed mode
-    const deletedConfigIds = deletedConfigsManager.loadData();
-    if (!deletedConfigIds.includes(id)) {
-      deletedConfigIds.push(id);
-      deletedConfigsManager.saveData(deletedConfigIds);
-      console.log('🗑️ Marked config as deleted in mixed mode:', id);
-    }
-  }
-  
   savePricingConfigs(filteredConfigs);
+};
+
+/**
+ * Initialize pricing configurations from Supabase on app load
+ */
+export const initializePricingConfigs = async (): Promise<void> => {
+  console.log('🎯 Initializing pricing configurations...');
+  
+  try {
+    const configs = await getPricingConfigsAsync();
+    console.log('✅ Pricing configurations initialized:', configs.length);
+  } catch (error) {
+    console.error('❌ Failed to initialize pricing configurations:', error);
+  }
 };
 
 // Reset deleted configurations tracking (for admin use)
 export const resetDeletedConfigsTracking = (): void => {
-  deletedConfigsManager.saveData([]);
+  localStorage.removeItem(DELETED_CONFIGS_KEY);
   console.log('🔄 Reset deleted configurations tracking');
 };

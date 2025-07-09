@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pricing_configs: {
+        Row: {
+          annual_fee: number | null
+          config_id: string
+          country: string
+          created_at: string | null
+          currency: string | null
+          discount_percentage: number | null
+          engagement_model: string
+          entity_type: string
+          half_yearly_fee: number | null
+          id: string
+          internal_paas_pricing: Json | null
+          membership_status: string
+          organization_type: string
+          platform_fee_percentage: number | null
+          quarterly_fee: number | null
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          annual_fee?: number | null
+          config_id: string
+          country: string
+          created_at?: string | null
+          currency?: string | null
+          discount_percentage?: number | null
+          engagement_model: string
+          entity_type: string
+          half_yearly_fee?: number | null
+          id?: string
+          internal_paas_pricing?: Json | null
+          membership_status: string
+          organization_type: string
+          platform_fee_percentage?: number | null
+          quarterly_fee?: number | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          annual_fee?: number | null
+          config_id?: string
+          country?: string
+          created_at?: string | null
+          currency?: string | null
+          discount_percentage?: number | null
+          engagement_model?: string
+          entity_type?: string
+          half_yearly_fee?: number | null
+          id?: string
+          internal_paas_pricing?: Json | null
+          membership_status?: string
+          organization_type?: string
+          platform_fee_percentage?: number | null
+          quarterly_fee?: number | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

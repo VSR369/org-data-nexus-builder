@@ -24,7 +24,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
   const { toast } = useToast();
   const { validateConfig, checkForDuplicates } = useGeneralConfigValidation();
 
-  const handleSaveConfig = () => {
+  const handleSaveConfig = async () => {
     // Validate configuration
     if (!validateConfig(currentConfig)) {
       return;
@@ -55,21 +55,33 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
 
     console.log('✅ Configuration to save:', configToSave);
 
-    // Update configs state
-    if (currentConfig.id) {
-      // Update existing
-      setConfigs(prev => prev.map(config => 
-        config.id === currentConfig.id ? configToSave : config
-      ));
-    } else {
-      // Add new
-      setConfigs(prev => [...prev, configToSave]);
-    }
+    try {
+      // Update configs state
+      const updatedConfigs = currentConfig.id 
+        ? configs.map(config => config.id === currentConfig.id ? configToSave : config)
+        : [...configs, configToSave];
+      
+      setConfigs(updatedConfigs);
 
-    toast({
-      title: "Success",
-      description: "General configuration saved successfully.",
-    });
+      // Save to Supabase asynchronously
+      const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+      await savePricingConfigsAsync(updatedConfigs);
+
+      toast({
+        title: "Success",
+        description: "Configuration saved to database successfully.",
+      });
+
+      console.log('✅ Configuration saved to Supabase successfully');
+    } catch (error) {
+      console.error('❌ Failed to save to Supabase:', error);
+      
+      toast({
+        title: "Warning",
+        description: "Configuration saved locally but may not be persistent. Please try again.",
+        variant: "destructive",
+      });
+    }
 
     // Clear form after saving
     setCurrentConfig({});
@@ -79,12 +91,28 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     setCurrentConfig(config);
   };
 
-  const handleDelete = (configId: string) => {
-    setConfigs(prev => prev.filter(config => config.id !== configId));
-    toast({
-      title: "Success",
-      description: "Configuration deleted successfully.",
-    });
+  const handleDelete = async (configId: string) => {
+    try {
+      const updatedConfigs = configs.filter(config => config.id !== configId);
+      setConfigs(updatedConfigs);
+
+      // Delete from Supabase asynchronously
+      const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+      await savePricingConfigsAsync(updatedConfigs);
+      
+      toast({
+        title: "Success",
+        description: "Configuration deleted from database successfully.",
+      });
+    } catch (error) {
+      console.error('❌ Failed to delete from Supabase:', error);
+      
+      toast({
+        title: "Warning", 
+        description: "Configuration deleted locally but may not be persistent.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClear = () => {

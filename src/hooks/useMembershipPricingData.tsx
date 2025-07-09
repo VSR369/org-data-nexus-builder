@@ -25,20 +25,14 @@ export const useMembershipPricingData = (
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadMasterData = () => {
+    const loadMasterData = async () => {
       try {
         setLoading(true);
         
-        // Load pricing configurations
-        const configs = PricingDataManager.getAllConfigurations();
-        console.log('🔍 Raw configs from PricingDataManager:', configs);
-        console.log('🔍 Config details:', configs.map(c => ({
-          id: c.id,
-          engagementModel: c.engagementModel,
-          country: c.country,
-          organizationType: c.organizationType,
-          membershipStatus: c.membershipStatus
-        })));
+        // Load pricing configurations from Supabase
+        const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+        const configs = await getPricingConfigsAsync();
+        console.log('🔍 Raw configs from Supabase:', configs.length);
         
         setPricingConfigs(configs);
         console.log('✅ Set pricing configs in state:', configs.length);
