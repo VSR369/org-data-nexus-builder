@@ -18,7 +18,6 @@ interface EngagementPaymentCardProps {
   country: string;
   pricingConfigs: PricingConfig[];
   engagementPaymentLoading: boolean;
-  hasPaidEngagement: boolean;
   onFrequencyChange: (value: string) => void;
   onEngagementPayment: () => void;
 }
@@ -32,7 +31,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   country,
   pricingConfigs,
   engagementPaymentLoading,
-  hasPaidEngagement,
   onFrequencyChange,
   onEngagementPayment
 }) => {
@@ -103,12 +101,11 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                   membershipStatus={membershipStatus}
                 />
                 
-                <PaymentButton
-                  selectedEngagementModel={selectedEngagementModel}
-                  hasPaidEngagement={hasPaidEngagement}
-                  engagementPaymentLoading={engagementPaymentLoading}
-                  onEngagementPayment={onEngagementPayment}
-                />
+            <PaymentButton
+              selectedEngagementModel={selectedEngagementModel}
+              engagementPaymentLoading={engagementPaymentLoading}
+              onEngagementPayment={onEngagementPayment}
+            />
               </div>
             )}
           </div>

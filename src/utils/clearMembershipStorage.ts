@@ -8,12 +8,20 @@ export const clearAllMembershipData = () => {
     'master_data_entity_types'
   ];
   
-  keysToRemove.forEach(key => {
+  // Also clear all payment-related keys
+  const allKeys = Object.keys(localStorage);
+  const paymentKeys = allKeys.filter(key => 
+    key.includes('membership_pricing_system_state') ||
+    key.includes('payment_records') ||
+    key.includes('engagement_payment')
+  );
+  
+  [...keysToRemove, ...paymentKeys].forEach(key => {
     localStorage.removeItem(key);
     console.log(`🧹 Cleared localStorage key: ${key}`);
   });
   
-  console.log('✅ All membership data cleared from localStorage');
+  console.log('✅ All membership and payment data cleared from localStorage');
 };
 
 // Auto-clear on import to ensure clean state

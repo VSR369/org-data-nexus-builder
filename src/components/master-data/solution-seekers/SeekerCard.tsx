@@ -8,7 +8,7 @@ import type { SeekerDetails, ApprovalHandlers, ProcessingStates } from './types'
 import ViewDetailsDialog from './ViewDetailsDialog';
 import { EngagementValidator } from '@/utils/engagementValidator';
 import { loadEngagementPricingDetails } from './utils/viewDetailsHelpers';
-import { debugAllPaymentData, analyzeOrganizationPaymentData } from '@/utils/debugPaymentData';
+// Payment debugging functionality removed - clean implementation
 
 interface SeekerCardProps {
   seeker: SeekerDetails;
@@ -69,17 +69,10 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
   // Use the enhanced data loading from viewDetailsHelpers
   const { membershipData, pricingData, adminExists } = loadEngagementPricingDetails(seeker);
   
-  // Enhanced debugging with comprehensive payment data analysis
+  // Payment functionality removed - clean implementation
   React.useEffect(() => {
-    console.log(`🎯 SeekerCard: Analyzing payment data for ${seeker.organizationName}`);
+    console.log(`🎯 SeekerCard: Loading data for ${seeker.organizationName}`);
     console.log('🔍 Current seeker object:', seeker);
-    
-    // Run comprehensive debugging for all organizations
-    debugAllPaymentData();
-    
-    // Run specific analysis for this organization
-    analyzeOrganizationPaymentData(seeker.organizationName, seeker.organizationId || seeker.userId);
-    
     console.log('💳 Payment data loaded:', { membershipData, pricingData });
   }, [seeker.organizationName, seeker.organizationId, seeker.userId, membershipData, pricingData]);
   

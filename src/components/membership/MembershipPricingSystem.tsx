@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { useLocalStoragePersistence } from '@/hooks/useLocalStoragePersistence';
+import { useSimpleEngagementState } from '@/hooks/useSimpleEngagementState';
 import { useMembershipPricingData } from '@/hooks/useMembershipPricingData';
 import { MembershipPlanSelection } from './MembershipPlanSelection';
 import { EngagementModelSelection } from './EngagementModelSelection';
@@ -33,74 +33,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   organizationId,
   organizationName
 }) => {
-  // Get organization ID from props or registration data
-  const getOrganizationId = () => {
-    if (organizationId) return organizationId;
-    
-    try {
-      const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
-      return orgData.organizationId || orgData.userId || 'default_org';
-    } catch {
-      return 'default_org';
-    }
-  };
-
-  const currentOrgId = getOrganizationId();
-  
-  // Migrate global data to organization-specific storage if needed
-  React.useEffect(() => {
-    const migrateGlobalData = () => {
-      const globalKey = 'membership_pricing_system_state';
-      const orgSpecificKey = `membership_pricing_system_state_${currentOrgId}`;
-      
-      const globalData = localStorage.getItem(globalKey);
-      const orgSpecificData = localStorage.getItem(orgSpecificKey);
-      
-      // Only migrate if global data exists and org-specific doesn't
-      if (globalData && !orgSpecificData) {
-        try {
-          const parsed = JSON.parse(globalData);
-          const enhancedData = {
-            ...parsed,
-            organization_id: currentOrgId,
-            organization_name: organizationName,
-            last_updated: new Date().toISOString(),
-            migrated_from_global: true
-          };
-          
-          // Enhance payment records with organization details
-          if (enhancedData.payment_records) {
-            enhancedData.payment_records = enhancedData.payment_records.map((record: any) => ({
-              ...record,
-              organizationId: currentOrgId,
-              organizationName: organizationName
-            }));
-          }
-          
-          localStorage.setItem(orgSpecificKey, JSON.stringify(enhancedData));
-          console.log(`✅ Migrated global membership data to organization-specific storage for: ${organizationName}`);
-        } catch (error) {
-          console.error('❌ Failed to migrate global data:', error);
-        }
-      }
-    };
-    
-    if (currentOrgId && organizationName) {
-      migrateGlobalData();
-    }
-  }, [currentOrgId, organizationName]);
-  
   const {
     state,
-    loading: stateLoading,
-    error: stateError,
     updateMembershipStatus,
     updateMembershipType,
     updateEngagementModel,
-    updateFrequency,
-    addPaymentRecord,
-    updatePaymentRecord
-  } = useLocalStoragePersistence(currentOrgId);
+    updateFrequency
+  } = useSimpleEngagementState();
 
   const { pricingConfigs, membershipFees, engagementModels, loading: dataLoading } = useMembershipPricingData(
     organizationType,
@@ -108,79 +47,11 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     country
   );
 
-  console.log('🎯 MembershipPricingSystem - Pricing configs received:', {
-    count: pricingConfigs.length,
-    configs: pricingConfigs.map(c => ({ id: c.id, engagementModel: c.engagementModel }))
-  });
-  const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
-  const [paymentDate, setPaymentDate] = useState<string | null>(null);
-  const [membershipAmount, setMembershipAmount] = useState<number | null>(null);
   const { toast } = useToast();
 
-
-
-  // Handle membership payment
-  const handleMembershipPayment = async () => {
-    const fee = getAnnualMembershipFee(membershipFees);
-    if (!fee) return;
-
-    setMembershipPaymentLoading(true);
-    
-    try {
-      // Add payment record with organization details
-      const paymentRecord = addPaymentRecord({
-        type: 'membership',
-        amount: fee.amount,
-        currency: fee.currency,
-        status: 'pending',
-        organizationId: currentOrgId,
-        organizationName: organizationName
-      });
-
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update payment record to completed
-      updatePaymentRecord(paymentRecord.id, { status: 'completed' });
-      
-      // Update membership status to paid
-      updateMembershipStatus('member_paid');
-      
-      // Set payment date and amount for display
-      setPaymentDate(new Date().toISOString());
-      setMembershipAmount(fee.amount);
-      
-      toast({
-        title: "Payment Successful",
-        description: "Your annual membership has been activated! You can now see member pricing for engagement models."
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Payment Failed",
-        description: "There was an error processing your payment. Please try again."
-      });
-    } finally {
-      setMembershipPaymentLoading(false);
-    }
-  };
-
-  // Get currently paid engagement model from payment records
-  const getPaidEngagementModel = () => {
-    if (!state.payment_records) return null;
-    
-    const paidEngagement = state.payment_records.find(record => 
-      record.type === 'engagement' && record.status === 'completed'
-    );
-    
-    // For now, we'll check if there's any completed engagement payment
-    // In a real system, you'd store the engagement model ID in the payment record
-    return paidEngagement ? 'existing' : null;
-  };
-
-  // Handle engagement model payment
+  // Simple engagement payment handler
   const handleEngagementPayment = async () => {
     const pricing = getEngagementPricing(
       state.selected_engagement_model,
@@ -194,66 +65,10 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setEngagementPaymentLoading(true);
     
     try {
-      // Get the actual display amount (which includes discount calculation)
       const displayInfo = getDisplayAmount(state.selected_frequency, pricing, state.membership_status);
-      const paymentAmount = displayInfo.amount; // Use the calculated amount (discounted if applicable)
       
-      // Create comprehensive payment information for logging
-      const paymentDetails = {
-        engagementModel: state.selected_engagement_model,
-        engagementModelName: getEngagementModelName(state.selected_engagement_model || ''),
-        billingFrequency: state.selected_frequency,
-        amount: paymentAmount,
-        currency: pricing.currency || 'INR',
-        originalAmount: displayInfo.originalAmount,
-        discountApplied: displayInfo.discountApplied,
-        discountPercentage: displayInfo.discountApplied ? pricing.discountPercentage : 0,
-        membershipStatus: state.membership_status,
-        organizationType: organizationType,
-        entityType: entityType,
-        country: country,
-        isPaaSModel: state.selected_engagement_model?.toLowerCase().includes('platform') || 
-                     state.selected_engagement_model?.toLowerCase().includes('paas'),
-        pricingConfig: {
-          id: pricing.id,
-          quarterlyFee: pricing.quarterlyFee,
-          halfYearlyFee: pricing.halfYearlyFee,
-          annualFee: pricing.annualFee
-        },
-        timestamp: new Date().toISOString()
-      };
-      
-      // Log comprehensive payment information before processing
-      console.log('💳 Starting Engagement Payment:', paymentDetails);
-      
-      // Create engagement payment record with organization details
-      const paymentRecord = addPaymentRecord({
-        type: 'engagement',
-        amount: paymentAmount,
-        currency: pricing.currency || 'INR',
-        status: 'pending',
-        organizationId: currentOrgId,
-        organizationName: organizationName,
-        engagementModel: state.selected_engagement_model,
-        billingFrequency: state.selected_frequency,
-        pricingStructure: state.selected_engagement_model?.toLowerCase().includes('marketplace') ? 'percentage' : 'currency'
-      });
-
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update payment record to completed
-      updatePaymentRecord(paymentRecord.id, { 
-        status: 'completed'
-      });
-      
-      // Log successful payment completion with all details
-      console.log('✅ Engagement Payment Completed Successfully:', {
-        ...paymentDetails,
-        paymentId: paymentRecord.id,
-        completedAt: new Date().toISOString(),
-        paymentMethod: 'simulated'
-      });
       
       toast({
         title: "Payment Successful",
@@ -266,7 +81,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       }, 2000);
       
     } catch (error) {
-      console.error('❌ Engagement payment error:', error);
       toast({
         variant: "destructive",
         title: "Payment Failed",
@@ -277,20 +91,12 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     }
   };
 
-  if (stateLoading || dataLoading) {
+  if (dataLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-6 w-6 animate-spin mr-2" />
         <span>Loading your preferences...</span>
       </div>
-    );
-  }
-
-  if (stateError) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{stateError}</AlertDescription>
-      </Alert>
     );
   }
 
@@ -301,13 +107,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     country,
     organizationType
   );
-
-  console.log('🎯 Final engagement pricing result:', {
-    selectedModel: state.selected_engagement_model,
-    membershipStatus: state.membership_status,
-    configsCount: pricingConfigs.length,
-    pricingResult: engagementPricing ? 'FOUND' : 'NULL'
-  });
 
   return (
     <div className="space-y-6">
@@ -360,17 +159,11 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           onEngagementModelChange={updateEngagementModel}
         />
 
-        <MembershipPaymentCard
-          membershipType={state.membership_type}
-          membershipStatus={state.membership_status}
-          membershipFees={membershipFees}
-          membershipPaymentLoading={membershipPaymentLoading}
-          submittedMembershipType={submittedMembershipType}
-          paymentDate={paymentDate || undefined}
-          membershipAmount={membershipAmount || undefined}
-          onMembershipPayment={handleMembershipPayment}
-          onResetPaymentStatus={() => updateMembershipStatus('inactive')}
-        />
+        <div className="text-center p-4">
+          <p className="text-muted-foreground">
+            Membership payment functionality will be implemented in the next phase
+          </p>
+        </div>
 
         <EngagementPaymentCard
           selectedEngagementModel={state.selected_engagement_model}
@@ -381,7 +174,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           country={country}
           pricingConfigs={pricingConfigs}
           engagementPaymentLoading={engagementPaymentLoading}
-          hasPaidEngagement={getPaidEngagementModel() !== null}
           onFrequencyChange={(value) => updateFrequency(value as any)}
           onEngagementPayment={handleEngagementPayment}
         />

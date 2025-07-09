@@ -5,30 +5,15 @@ import { getEngagementModelName } from '@/utils/membershipPricingUtils';
 
 interface PaymentButtonProps {
   selectedEngagementModel: string;
-  hasPaidEngagement: boolean;
   engagementPaymentLoading: boolean;
   onEngagementPayment: () => void;
 }
 
 export const PaymentButton: React.FC<PaymentButtonProps> = ({
   selectedEngagementModel,
-  hasPaidEngagement,
   engagementPaymentLoading,
   onEngagementPayment
 }) => {
-  if (hasPaidEngagement) {
-    return (
-      <div className="text-center py-4">
-        <div className="text-green-600 font-semibold mb-2">
-          ✅ Engagement Model Already Active
-        </div>
-        <p className="text-sm text-muted-foreground">
-          You have already subscribed to an engagement model.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <Button 
       className="w-full" 
