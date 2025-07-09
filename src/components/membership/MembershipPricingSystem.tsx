@@ -333,6 +333,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <MembershipPlanSelection
           membershipType={state.membership_type}
+          membershipStatus={state.membership_status}
           membershipFees={membershipFees}
           onMembershipTypeChange={(value) => updateMembershipType(value as any)}
           onMembershipSubmit={(selectedType) => {
