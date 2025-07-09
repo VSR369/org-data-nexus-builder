@@ -164,3 +164,12 @@ export const isPaaSModel = (selectedEngagementModel: string | null): boolean => 
   return selectedEngagementModel?.toLowerCase().includes('platform') || 
          selectedEngagementModel?.toLowerCase().includes('paas') || false;
 };
+
+export const isMarketplaceModel = (engagementModel: string): boolean => {
+  return engagementModel === 'market-place' || 
+         engagementModel === 'Market Place' ||
+         engagementModel === 'aggregator' ||
+         engagementModel === 'Aggregator' ||
+         engagementModel === 'market-place-aggregator' ||
+         engagementModel === 'Market Place & Aggregator';
+};

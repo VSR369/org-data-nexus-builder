@@ -9,7 +9,8 @@ import {
   getEngagementModelName, 
   getDisplayAmount, 
   formatCurrency, 
-  isPaaSModel 
+  isPaaSModel,
+  isMarketplaceModel 
 } from '@/utils/membershipPricingUtils';
 
 interface EngagementPaymentCardProps {
@@ -40,6 +41,14 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   onEngagementPayment
 }) => {
   const isPaaS = isPaaSModel(selectedEngagementModel);
+  const isMarketplace = isMarketplaceModel(selectedEngagementModel);
+
+  // Auto-select platform fee for marketplace models
+  React.useEffect(() => {
+    if (isMarketplace && !selectedFrequency) {
+      onFrequencyChange('platform-fee');
+    }
+  }, [isMarketplace, selectedFrequency, onFrequencyChange]);
 
   return (
     <Card className={selectedEngagementModel ? '' : 'opacity-50'}>
@@ -56,26 +65,27 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
               {membershipStatus === 'member_paid' ? 'Member Pricing' : 'Standard Pricing'}
             </div>
 
-            <RadioGroup 
-              value={selectedFrequency || ''} 
-              onValueChange={onFrequencyChange}
-            >
-              <div className="space-y-3">
-                {['quarterly', 'half-yearly', 'annual'].map((frequency) => {
-                  const displayInfo = getDisplayAmount(frequency, engagementPricing, membershipStatus);
-                  
-                  return (
-                    <Label key={frequency} htmlFor={frequency} className="cursor-pointer">
-                      <div className={`flex items-center justify-between p-3 border rounded-lg hover:bg-accent ${
-                        selectedFrequency === frequency ? 'border-primary bg-primary/5' : ''
-                      }`}>
-                        <div className="flex items-center space-x-3">
-                          <RadioGroupItem value={frequency} id={frequency} />
-                          <span className="capitalize">{frequency.replace('-', ' ')}</span>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <div className="font-bold">
-                            {isPaaS ? (
+            {/* Show frequency options only for PaaS models */}
+            {isPaaS ? (
+              <RadioGroup 
+                value={selectedFrequency || ''} 
+                onValueChange={onFrequencyChange}
+              >
+                <div className="space-y-3">
+                  {['quarterly', 'half-yearly', 'annual'].map((frequency) => {
+                    const displayInfo = getDisplayAmount(frequency, engagementPricing, membershipStatus);
+                    
+                    return (
+                      <Label key={frequency} htmlFor={frequency} className="cursor-pointer">
+                        <div className={`flex items-center justify-between p-3 border rounded-lg hover:bg-accent ${
+                          selectedFrequency === frequency ? 'border-primary bg-primary/5' : ''
+                        }`}>
+                          <div className="flex items-center space-x-3">
+                            <RadioGroupItem value={frequency} id={frequency} />
+                            <span className="capitalize">{frequency.replace('-', ' ')}</span>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="font-bold">
                               <div className="space-y-1">
                                 <div className="text-green-600">
                                   {formatCurrency(displayInfo.amount, engagementPricing.currency)}
@@ -91,66 +101,105 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                                   </div>
                                 )}
                               </div>
-                            ) : (
-                              `${displayInfo.amount}%`
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {isPaaS ? frequency.replace('-', ' ') : 'of solution fee'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {frequency.replace('-', ' ')}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Label>
-                  );
-                })}
+                      </Label>
+                    );
+                  })}
+                </div>
+              </RadioGroup>
+            ) : isMarketplace ? (
+              /* Show single platform fee option for Marketplace models */
+              <div className="space-y-3">
+                <div 
+                  className="flex items-center justify-between p-3 border rounded-lg bg-primary/5 border-primary cursor-pointer"
+                  onClick={() => onFrequencyChange('platform-fee')}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    </div>
+                    <span>Platform Fee</span>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className="font-bold text-green-600">
+                      {engagementPricing.platformFeePercentage || 0}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      of solution fee
+                    </div>
+                  </div>
+                </div>
               </div>
-            </RadioGroup>
+            ) : null}
 
             {selectedFrequency && (
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-sm font-medium mb-2">Summary of Selected Engagement Model</div>
                   {(() => {
-                    const displayInfo = getDisplayAmount(selectedFrequency, engagementPricing, membershipStatus);
-                    return (
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Engagement Model:</span>
-                          <span className="font-medium">{getEngagementModelName(selectedEngagementModel)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Billing Frequency:</span>
-                          <span className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</span>
-                        </div>
-                        {displayInfo.discountApplied && displayInfo.originalAmount && (
+                    if (isMarketplace) {
+                      return (
+                        <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm">Original Price:</span>
-                            <span className="text-gray-500 line-through">
-                              {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
+                            <span className="text-sm">Engagement Model:</span>
+                            <span className="font-medium">{getEngagementModelName(selectedEngagementModel)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Pricing Structure:</span>
+                            <span className="font-medium">Platform Fee</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Platform Fee:</span>
+                            <span className="font-bold text-lg text-green-600">
+                              {engagementPricing.platformFeePercentage || 0}% of solution fee
                             </span>
                           </div>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">
-                            {displayInfo.discountApplied ? 'Discounted Price:' : 'Total Amount:'}
-                          </span>
-                          <span className="font-bold text-lg text-green-600">
-                            {isPaaS 
-                              ? formatCurrency(displayInfo.amount, engagementPricing.currency)
-                              : `${displayInfo.amount}% of solution fee`
-                            }
-                          </span>
                         </div>
-                        {displayInfo.discountApplied && (
+                      );
+                    } else {
+                      const displayInfo = getDisplayAmount(selectedFrequency, engagementPricing, membershipStatus);
+                      return (
+                        <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-green-600">Member Discount:</span>
-                            <span className="text-green-600 font-medium">
-                              -{engagementPricing.discountPercentage}%
+                            <span className="text-sm">Engagement Model:</span>
+                            <span className="font-medium">{getEngagementModelName(selectedEngagementModel)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Billing Frequency:</span>
+                            <span className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</span>
+                          </div>
+                          {displayInfo.discountApplied && displayInfo.originalAmount && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Original Price:</span>
+                              <span className="text-gray-500 line-through">
+                                {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">
+                              {displayInfo.discountApplied ? 'Discounted Price:' : 'Total Amount:'}
+                            </span>
+                            <span className="font-bold text-lg text-green-600">
+                              {formatCurrency(displayInfo.amount, engagementPricing.currency)}
                             </span>
                           </div>
-                        )}
-                      </div>
-                    );
+                          {displayInfo.discountApplied && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-green-600">Member Discount:</span>
+                              <span className="text-green-600 font-medium">
+                                -{engagementPricing.discountPercentage}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
                   })()}
                 </div>
                 
