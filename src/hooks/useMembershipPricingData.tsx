@@ -37,8 +37,18 @@ export const useMembershipPricingData = (
         setPricingConfigs(configs);
         console.log('✅ Set pricing configs in state:', configs.length);
         
-        // Force initialization if no configs loaded or configs have undefined values
-        if (!configs || configs.length === 0 || configs.some(c => !c.quarterlyFee && !c.halfYearlyFee && !c.annualFee)) {
+        // Force initialization if no configs loaded or configs have invalid values
+        // Marketplace models should have platformFeePercentage, PaaS models should have at least one fee field
+        const isValidConfig = (c: any) => {
+          const isMarketplace = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(c.engagementModel);
+          if (isMarketplace) {
+            return c.platformFeePercentage !== null && c.platformFeePercentage !== undefined;
+          } else {
+            return c.quarterlyFee || c.halfYearlyFee || c.annualFee;
+          }
+        };
+        
+        if (!configs || configs.length === 0 || configs.some(c => !isValidConfig(c))) {
           console.log('🔧 No valid pricing configs found, forcing default data load...');
           const currentMode = localStorage.getItem('master_data_mode');
           
