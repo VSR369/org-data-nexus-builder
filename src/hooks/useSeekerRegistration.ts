@@ -2,8 +2,17 @@
 import { useState } from 'react';
 import { FormData } from '@/types/seekerRegistration';
 import { generateOrganizationId } from '@/utils/seekerUserStorage';
+import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
 
 export const useSeekerRegistration = () => {
+  const {
+    countries,
+    industrySegments,
+    organizationTypes,
+    entityTypes,
+    isLoading: masterDataLoading
+  } = useSeekerMasterData();
+
   const [formData, setFormData] = useState<FormData>({
     industrySegment: '',
     organizationName: '',
@@ -70,20 +79,34 @@ export const useSeekerRegistration = () => {
     return newErrors;
   };
 
-  const submitRegistration = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
+    
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
     console.log('Submitting seeker registration with data:', { ...formData, password: '[REDACTED]' });
-    // Implementation will be handled by the main SignUpForm component
+    // Implementation will be handled by the main form component
     return { success: true };
   };
+
+  const requiresRegistrationDocuments = ['Non-Profit Organization', 'Society', 'Trust'].includes(formData.entityType);
 
   return {
     formData,
     errors,
-    setErrors,
+    countries,
+    industrySegments,
+    organizationTypes,
+    entityTypes,
+    requiresRegistrationDocuments,
     handleInputChange,
     handleFileUpload,
     handleFileRemove,
-    validateForm,
-    submitRegistration
+    handleSubmit
   };
 };
