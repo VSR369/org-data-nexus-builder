@@ -152,7 +152,7 @@ const Index = () => {
               organizationType={profile.organization_type}
               entityType={profile.entity_type}
               country={profile.country}
-              organizationId={profile.organization_id || undefined}
+              organizationId={profile.custom_user_id}
               organizationName={profile.organization_name}
             />
           </div>
