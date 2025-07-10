@@ -114,7 +114,41 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
             </div>
           );
         } else {
-          const displayInfo = getDisplayAmount(selectedFrequency, engagementPricing, membershipStatus);
+          // Platform as a Service (PaaS) models - subscription fees
+          const isMembershipPaid = membershipStatus === 'member_paid';
+          const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+            selectedEngagementModel,
+            pricingConfigs,
+            country,
+            organizationType
+          );
+
+          // Get fee amounts based on frequency
+          const feeKey = selectedFrequency === 'half-yearly' ? 'halfYearlyFee' : `${selectedFrequency}Fee` as keyof PricingConfig;
+          
+          // Use non-member config as the original fee, member config for discounted fee
+          const originalAmount = (nonMemberConfig?.[feeKey] as number) || (engagementPricing[feeKey] as number) || 0;
+          const memberAmount = (memberConfig?.[feeKey] as number) || 0;
+          const discountPercentage = memberConfig?.discountPercentage || 0;
+          
+          // Calculate discounted amount properly: original amount - (original amount × discount percentage)
+          const calculatedDiscountedAmount = originalAmount * (1 - discountPercentage / 100);
+          
+          const hasDiscount = isMembershipPaid && discountPercentage > 0 && originalAmount > 0;
+          const displayedAmount = hasDiscount ? calculatedDiscountedAmount : originalAmount;
+
+          console.log('🔍 PaaS Fee Calculation:', {
+            selectedFrequency,
+            feeKey,
+            isMembershipPaid,
+            originalAmount,
+            memberAmount,
+            discountPercentage,
+            calculatedDiscountedAmount,
+            hasDiscount,
+            displayedAmount
+          });
+
           return (
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -125,27 +159,27 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
                 <span className="text-sm">Billing Frequency:</span>
                 <span className="font-medium capitalize">{selectedFrequency.replace('-', ' ')}</span>
               </div>
-              {displayInfo.discountApplied && displayInfo.originalAmount && (
+              {hasDiscount && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Original Price:</span>
                   <span className="text-gray-500 line-through">
-                    {formatCurrency(displayInfo.originalAmount, engagementPricing.currency)}
+                    {formatCurrency(originalAmount, engagementPricing.currency)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">
-                  {displayInfo.discountApplied ? 'Discounted Price:' : 'Total Amount:'}
+                  {hasDiscount ? 'Discounted Price:' : 'Total Amount:'}
                 </span>
-                <span className="font-bold text-lg text-green-600">
-                  {formatCurrency(displayInfo.amount, engagementPricing.currency)}
+                <span className={`font-bold text-lg ${hasDiscount ? 'text-green-600' : ''}`}>
+                  {formatCurrency(displayedAmount, engagementPricing.currency)}
                 </span>
               </div>
-              {displayInfo.discountApplied && (
+              {hasDiscount && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-green-600">Member Discount:</span>
                   <span className="text-green-600 font-medium">
-                    -{engagementPricing.discountPercentage}%
+                    -{discountPercentage}%
                   </span>
                 </div>
               )}
