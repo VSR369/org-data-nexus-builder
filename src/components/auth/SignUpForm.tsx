@@ -5,90 +5,143 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Upload, Eye, EyeOff, X } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
+import { useSeekerValidation } from '@/hooks/useSeekerValidation';
+import { generateOrganizationId } from '@/utils/seekerUserStorage';
+
+interface FormData {
+  // Organization Information
+  industrySegment: string;
+  organizationName: string;
+  organizationId: string;
+  organizationType: string;
+  entityType: string;
+  
+  // Documents
+  registrationDocuments: File[];
+  companyProfile: File[];
+  companyLogo: File[];
+  
+  // Contact & Location
+  website: string;
+  country: string;
+  address: string;
+  
+  // Contact Person Details
+  contactPersonName: string;
+  email: string;
+  countryCode: string;
+  phoneNumber: string;
+  
+  // Authentication
+  userId: string;
+  password: string;
+  confirmPassword: string;
+}
 
 const SignUpForm = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
+  const { signUp } = useSupabaseAuth();
+  const { validateForm } = useSeekerValidation();
+  const {
+    countries,
+    industrySegments,
+    organizationTypes,
+    entityTypes,
+    isLoading: masterDataLoading
+  } = useSeekerMasterData();
+
+  const [formData, setFormData] = useState<FormData>({
+    industrySegment: '',
     organizationName: '',
-    contactPersonName: '',
+    organizationId: generateOrganizationId(),
     organizationType: '',
     entityType: '',
+    registrationDocuments: [],
+    companyProfile: [],
+    companyLogo: [],
+    website: '',
     country: '',
-    industrySegment: '',
     address: '',
+    contactPersonName: '',
+    email: '',
+    countryCode: '',
     phoneNumber: '',
-    website: ''
+    userId: '',
+    password: '',
+    confirmPassword: ''
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { signUp } = useSupabaseAuth();
+  // Calculate progress
+  const totalFields = Object.keys(formData).length - 3; // Exclude file arrays
+  const filledFields = Object.entries(formData).filter(([key, value]) => {
+    if (key.includes('Documents') || key.includes('Logo') || key.includes('Profile')) return true;
+    return value && value !== '';
+  }).length;
+  const progress = Math.round((filledFields / totalFields) * 100);
 
-  const organizationTypes = [
-    'Startup', 'SME', 'Large Enterprise', 'Government', 'NGO', 'Academic Institution'
-  ];
-
-  const entityTypes = [
-    'Private Limited', 'Public Limited', 'Partnership', 'Sole Proprietorship', 'Government Entity', 'Non-Profit'
-  ];
-
-  const countries = [
-    'India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Singapore'
-  ];
-
-  const industries = [
-    'Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail', 'Education', 'Energy', 'Agriculture'
-  ];
-
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.password) newErrors.password = 'Password is required';
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    if (!formData.organizationName) newErrors.organizationName = 'Organization name is required';
-    if (!formData.contactPersonName) newErrors.contactPersonName = 'Contact person name is required';
-    if (!formData.organizationType) newErrors.organizationType = 'Organization type is required';
-    if (!formData.entityType) newErrors.entityType = 'Entity type is required';
-    if (!formData.country) newErrors.country = 'Country is required';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleFileUpload = (field: 'registrationDocuments' | 'companyProfile' | 'companyLogo', files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    setFormData(prev => ({ 
+      ...prev, 
+      [field]: [...prev[field], ...newFiles]
+    }));
   };
+
+  const handleFileRemove = (field: 'registrationDocuments' | 'companyProfile' | 'companyLogo', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
+  };
+
+  const requiresRegistrationDocuments = ['Non-Profit Organization', 'Society', 'Trust'].includes(formData.entityType);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (masterDataLoading) {
+      setErrors({ submit: 'Please wait for master data to load' });
+      return;
+    }
+
+    const validationErrors = validateForm(formData);
+    setErrors(validationErrors);
+    
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
 
     setIsLoading(true);
     try {
       const { error } = await signUp(formData.email, formData.password, {
         organization_name: formData.organizationName,
-        contact_person_name: formData.contactPersonName,
+        organization_id: formData.organizationId,
         organization_type: formData.organizationType,
         entity_type: formData.entityType,
-        country: formData.country,
         industry_segment: formData.industrySegment,
+        contact_person_name: formData.contactPersonName,
+        country: formData.country,
         address: formData.address,
+        website: formData.website,
         phone_number: formData.phoneNumber,
-        website: formData.website
+        country_code: formData.countryCode,
+        custom_user_id: formData.userId
       });
 
       if (error) {
@@ -101,206 +154,398 @@ const SignUpForm = () => {
     }
   };
 
+  if (masterDataLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading registration form...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email and Password Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Enter your email"
-              className={`h-11 ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
-            />
-            {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
+    <div className="w-full max-w-4xl mx-auto">
+      {/* Header with Progress */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Solution Seeking Organization Registration</h1>
+        <p className="text-gray-600 mb-4">Register your organization to access our platform</p>
+        
+        <div className="mb-4">
+          <div className="flex justify-between text-sm text-gray-600 mb-1">
+            <span>Progress</span>
+            <span>{progress}% Complete</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Organization Information */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+            <h3 className="text-lg font-semibold text-blue-600">Organization Information</h3>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password *</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                placeholder="Enter password"
-                className={`h-11 pr-10 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="industrySegment" className={errors.industrySegment ? "text-red-500" : ""}>Industry Segment *</Label>
+              <Select value={formData.industrySegment} onValueChange={(value) => handleInputChange('industrySegment', value)}>
+                <SelectTrigger className={errors.industrySegment ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select industry segment" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                  {industrySegments.map((segment) => (
+                    <SelectItem key={segment.id} value={segment.id} className="hover:bg-gray-50">
+                      {segment.industrySegment}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.industrySegment && <p className="text-sm text-red-500">{errors.industrySegment}</p>}
             </div>
-            {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
+
+            <div className="space-y-2">
+              <Label htmlFor="organizationName" className={errors.organizationName ? "text-red-500" : ""}>Organization Name *</Label>
+              <Input
+                id="organizationName"
+                value={formData.organizationName}
+                onChange={(e) => handleInputChange('organizationName', e.target.value)}
+                placeholder="Enter organization name"
+                className={errors.organizationName ? "border-red-500" : ""}
+              />
+              {errors.organizationName && <p className="text-sm text-red-500">{errors.organizationName}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="organizationId">Organization ID</Label>
+              <Input
+                id="organizationId"
+                value={formData.organizationId}
+                readOnly
+                className="bg-gray-100"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="organizationType" className={errors.organizationType ? "text-red-500" : ""}>Organization Type *</Label>
+              <Select value={formData.organizationType} onValueChange={(value) => handleInputChange('organizationType', value)}>
+                <SelectTrigger className={errors.organizationType ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select organization type" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                  {organizationTypes.map((type) => (
+                    <SelectItem key={type} value={type} className="hover:bg-gray-50">
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.organizationType && <p className="text-sm text-red-500">{errors.organizationType}</p>}
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="entityType" className={errors.entityType ? "text-red-500" : ""}>Entity Type *</Label>
+              <Select value={formData.entityType} onValueChange={(value) => handleInputChange('entityType', value)}>
+                <SelectTrigger className={`md:w-1/2 ${errors.entityType ? "border-red-500" : ""}`}>
+                  <SelectValue placeholder="Select entity type" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                  {entityTypes.map((type) => (
+                    <SelectItem key={type} value={type} className="hover:bg-gray-50">
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.entityType && <p className="text-sm text-red-500">{errors.entityType}</p>}
+            </div>
           </div>
         </div>
 
-        {/* Confirm Password */}
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">Confirm Password *</Label>
-          <div className="relative">
-            <Input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              value={formData.confirmPassword}
-              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-              placeholder="Confirm your password"
-              className={`h-11 pr-10 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          {errors.confirmPassword && <p className="text-sm text-red-500 mt-1">{errors.confirmPassword}</p>}
-        </div>
-
-        {/* Organization Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="organizationName" className="text-sm font-medium text-gray-700">Organization Name *</Label>
-            <Input
-              id="organizationName"
-              value={formData.organizationName}
-              onChange={(e) => handleInputChange('organizationName', e.target.value)}
-              placeholder="Enter organization name"
-              className={`h-11 ${errors.organizationName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
-            />
-            {errors.organizationName && <p className="text-sm text-red-500 mt-1">{errors.organizationName}</p>}
+        {/* Company Documents */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+            <h3 className="text-lg font-semibold text-blue-600">Company Documents</h3>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contactPersonName" className="text-sm font-medium text-gray-700">Contact Person Name *</Label>
-            <Input
-              id="contactPersonName"
-              value={formData.contactPersonName}
-              onChange={(e) => handleInputChange('contactPersonName', e.target.value)}
-              placeholder="Enter contact person name"
-              className={`h-11 ${errors.contactPersonName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
-            />
-            {errors.contactPersonName && <p className="text-sm text-red-500 mt-1">{errors.contactPersonName}</p>}
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {requiresRegistrationDocuments && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Registration Documents *</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileUpload('registrationDocuments', e.target.files)}
+                    className="hidden"
+                    id="registrationDocuments"
+                    accept=".pdf,.doc,.docx"
+                    multiple
+                  />
+                  <Label htmlFor="registrationDocuments" className="cursor-pointer text-blue-600 hover:underline">
+                    Choose Files
+                  </Label>
+                  <p className="text-xs text-gray-400 mt-1">Required for Non-Profit Organization, Society, or Trust</p>
+                </div>
+                {formData.registrationDocuments.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {formData.registrationDocuments.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm">{file.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleFileRemove('registrationDocuments', index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-        {/* Organization and Entity Type */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="organizationType" className="text-sm font-medium text-gray-700">Organization Type *</Label>
-            <Select value={formData.organizationType} onValueChange={(value) => handleInputChange('organizationType', value)}>
-              <SelectTrigger className={`h-11 ${errors.organizationType ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}>
-                <SelectValue placeholder="Select organization type" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                {organizationTypes.map((type) => (
-                  <SelectItem key={type} value={type} className="hover:bg-gray-50 focus:bg-gray-50">
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.organizationType && <p className="text-sm text-red-500 mt-1">{errors.organizationType}</p>}
-          </div>
+            <div className="space-y-2">
+              <Label>Company Profile Document</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <input
+                  type="file"
+                  onChange={(e) => handleFileUpload('companyProfile', e.target.files)}
+                  className="hidden"
+                  id="companyProfile"
+                  accept=".pdf,.doc,.docx"
+                  multiple
+                />
+                <Label htmlFor="companyProfile" className="cursor-pointer text-blue-600 hover:underline">
+                  Choose Files
+                </Label>
+              </div>
+              {formData.companyProfile.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {formData.companyProfile.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFileRemove('companyProfile', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="entityType" className="text-sm font-medium text-gray-700">Entity Type *</Label>
-            <Select value={formData.entityType} onValueChange={(value) => handleInputChange('entityType', value)}>
-              <SelectTrigger className={`h-11 ${errors.entityType ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}>
-                <SelectValue placeholder="Select entity type" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                {entityTypes.map((type) => (
-                  <SelectItem key={type} value={type} className="hover:bg-gray-50 focus:bg-gray-50">
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.entityType && <p className="text-sm text-red-500 mt-1">{errors.entityType}</p>}
-          </div>
-        </div>
-
-        {/* Country and Industry */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="country" className="text-sm font-medium text-gray-700">Country *</Label>
-            <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
-              <SelectTrigger className={`h-11 ${errors.country ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}>
-                <SelectValue placeholder="Select country" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                {countries.map((country) => (
-                  <SelectItem key={country} value={country} className="hover:bg-gray-50 focus:bg-gray-50">
-                    {country}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.country && <p className="text-sm text-red-500 mt-1">{errors.country}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="industrySegment" className="text-sm font-medium text-gray-700">Industry Segment</Label>
-            <Select value={formData.industrySegment} onValueChange={(value) => handleInputChange('industrySegment', value)}>
-              <SelectTrigger className="h-11 border-gray-300 focus:border-blue-500">
-                <SelectValue placeholder="Select industry" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                {industries.map((industry) => (
-                  <SelectItem key={industry} value={industry} className="hover:bg-gray-50 focus:bg-gray-50">
-                    {industry}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label>Company Logo</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <input
+                  type="file"
+                  onChange={(e) => handleFileUpload('companyLogo', e.target.files)}
+                  className="hidden"
+                  id="companyLogo"
+                  accept="image/*"
+                  multiple
+                />
+                <Label htmlFor="companyLogo" className="cursor-pointer text-blue-600 hover:underline">
+                  Choose Files
+                </Label>
+              </div>
+              {formData.companyLogo.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {formData.companyLogo.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFileRemove('companyLogo', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Contact Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</Label>
-            <Input
-              id="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-              placeholder="Enter phone number"
-              className="h-11 border-gray-300 focus:border-blue-500"
-            />
+        {/* Contact & Location Information */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+            <h3 className="text-lg font-semibold text-blue-600">Contact & Location Information</h3>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="website" className="text-sm font-medium text-gray-700">Website</Label>
-            <Input
-              id="website"
-              value={formData.website}
-              onChange={(e) => handleInputChange('website', e.target.value)}
-              placeholder="Enter website URL"
-              className="h-11 border-gray-300 focus:border-blue-500"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="website">Website URL</Label>
+              <Input
+                id="website"
+                value={formData.website}
+                onChange={(e) => handleInputChange('website', e.target.value)}
+                placeholder="https://www.example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country" className={errors.country ? "text-red-500" : ""}>Country *</Label>
+              <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
+                <SelectTrigger className={errors.country ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name} className="hover:bg-gray-50">
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.country && <p className="text-sm text-red-500">{errors.country}</p>}
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="address">Address *</Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="Enter complete address"
+                rows={3}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Address */}
-        <div className="space-y-2">
-          <Label htmlFor="address" className="text-sm font-medium text-gray-700">Address</Label>
-          <Textarea
-            id="address"
-            value={formData.address}
-            onChange={(e) => handleInputChange('address', e.target.value)}
-            placeholder="Enter organization address"
-            rows={3}
-            className="border-gray-300 focus:border-blue-500 resize-none"
-          />
+        {/* Contact Person Details */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+            <h3 className="text-lg font-semibold text-blue-600">Contact Person Details</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="contactPersonName" className={errors.contactPersonName ? "text-red-500" : ""}>Contact Person Name *</Label>
+              <Input
+                id="contactPersonName"
+                value={formData.contactPersonName}
+                onChange={(e) => handleInputChange('contactPersonName', e.target.value)}
+                placeholder="Enter contact person name"
+                className={errors.contactPersonName ? "border-red-500" : ""}
+              />
+              {errors.contactPersonName && <p className="text-sm text-red-500">{errors.contactPersonName}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className={errors.email ? "text-red-500" : ""}>Email ID *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="Enter email address"
+                className={errors.email ? "border-red-500" : ""}
+              />
+              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="countryCode">Country Code</Label>
+              <Select value={formData.countryCode} onValueChange={(value) => handleInputChange('countryCode', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country code" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                  {countries.map((country) => (
+                    <SelectItem key={country.code} value={country.code} className="hover:bg-gray-50">
+                      +{country.code} ({country.name})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="userId" className={errors.userId ? "text-red-500" : ""}>User ID *</Label>
+              <Input
+                id="userId"
+                value={formData.userId}
+                onChange={(e) => handleInputChange('userId', e.target.value)}
+                placeholder="Enter user ID"
+                className={errors.userId ? "border-red-500" : ""}
+              />
+              {errors.userId && <p className="text-sm text-red-500">{errors.userId}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className={errors.password ? "text-red-500" : ""}>Password *</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  placeholder="Enter password"
+                  className={`pr-10 ${errors.password ? "border-red-500" : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="confirmPassword" className={errors.confirmPassword ? "text-red-500" : ""}>Confirm Password *</Label>
+              <div className="relative md:w-1/2">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  placeholder="Confirm your password"
+                  className={`pr-10 ${errors.confirmPassword ? "border-red-500" : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
+            </div>
+          </div>
         </div>
 
         {errors.submit && (
@@ -309,28 +554,17 @@ const SignUpForm = () => {
           </div>
         )}
 
-        <Button 
-          type="submit" 
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base shadow-sm transition-colors"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating Account...
-            </>
-          ) : (
-            'Create Organization Account'
-          )}
-        </Button>
-
-        <div className="text-center pt-4 border-t">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <Button variant="link" className="p-0 h-auto text-blue-600 font-medium hover:underline">
-              Sign in instead
-            </Button>
-          </p>
+        <div className="flex justify-between pt-6">
+          <Button type="button" variant="outline" onClick={() => window.history.back()}>
+            Back
+          </Button>
+          <Button 
+            type="submit" 
+            className="px-8 bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Registering...' : 'Register Organization'}
+          </Button>
         </div>
       </form>
     </div>

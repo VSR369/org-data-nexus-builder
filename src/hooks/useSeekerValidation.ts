@@ -1,4 +1,5 @@
-// Seeker form validation utilities
+
+// Comprehensive seeker form validation utilities
 export const useSeekerValidation = () => {
   const validateForm = (formData: any) => {
     const errors: { [key: string]: string } = {};
@@ -38,6 +39,29 @@ export const useSeekerValidation = () => {
       errors.country = 'Country is required';
     }
 
+    if (!formData.address?.trim()) {
+      errors.address = 'Address is required';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters long';
+    }
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    // Check if registration documents are required
+    const requiresRegistrationDocuments = ['Non-Profit Organization', 'Society', 'Trust'].includes(formData.entityType);
+    if (requiresRegistrationDocuments && (!formData.registrationDocuments || formData.registrationDocuments.length === 0)) {
+      errors.registrationDocuments = 'Registration documents are required for this entity type';
+    }
+
     return errors;
   };
 
@@ -46,6 +70,7 @@ export const useSeekerValidation = () => {
   };
 
   const validateUrl = (url: string): boolean => {
+    if (!url) return true; // URL is optional
     try {
       new URL(url);
       return true;
@@ -54,9 +79,20 @@ export const useSeekerValidation = () => {
     }
   };
 
+  const validatePassword = (password: string): boolean => {
+    return password.length >= 6;
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    if (!phone) return true; // Phone is optional
+    return /^[\+]?[1-9][\d]{0,15}$/.test(phone);
+  };
+
   return {
     validateForm,
     validateEmail,
-    validateUrl
+    validateUrl,
+    validatePassword,
+    validatePhone
   };
 };
