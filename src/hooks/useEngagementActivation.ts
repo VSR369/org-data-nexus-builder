@@ -13,6 +13,7 @@ interface EngagementActivationData {
   organizationType?: string;
   country?: string;
   termsAccepted: boolean;
+  userId?: string; // Add userId parameter for session-based auth
 }
 
 export const useEngagementActivation = () => {
@@ -26,6 +27,11 @@ export const useEngagementActivation = () => {
     try {
       // Test toast functionality first
       console.log('📋 Testing toast functionality...');
+      toast({
+        title: "🔄 Processing Activation",
+        description: "Activating your engagement model...",
+        duration: 2000,
+      });
       
       // Validate required fields
       console.log('✅ Validating required fields...');
@@ -51,18 +57,23 @@ export const useEngagementActivation = () => {
 
       console.log('✅ All validations passed');
 
-      // Get current user
-      console.log('👤 Getting current user...');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ User not authenticated');
-        throw new Error('User not authenticated');
+      // Get user ID from session data or Supabase auth
+      let userId = data.userId;
+      if (!userId) {
+        console.log('👤 Getting current user from Supabase auth...');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('❌ User not authenticated');
+          throw new Error('User not authenticated - please log in');
+        }
+        userId = user.id;
       }
-      console.log('✅ User authenticated:', user.id);
+      
+      console.log('✅ User ID obtained:', userId);
 
-      // Prepare data for insertion
+      // Prepare data for insertion with normalized engagement model name
       const insertData = {
-        user_id: user.id,
+        user_id: userId,
         engagement_model: data.engagementModel,
         membership_status: data.membershipStatus,
         platform_fee_percentage: data.platformFeePercentage,
@@ -91,13 +102,15 @@ export const useEngagementActivation = () => {
 
       console.log('✅ Activation record created successfully:', activation);
 
-      // Show success message
-      console.log('📢 Showing success toast...');
-      toast({
-        title: "✅ Engagement Model Activated Successfully",
-        description: `${data.engagementModel} has been activated. You can now proceed.`,
-        duration: 5000,
-      });
+      // Show success message with delay to ensure visibility
+      setTimeout(() => {
+        console.log('📢 Showing success toast...');
+        toast({
+          title: "✅ Engagement Model Activated Successfully!",
+          description: `${data.engagementModel} has been activated. You can now proceed with your engagement.`,
+          duration: 5000,
+        });
+      }, 500);
 
       console.log('🎉 Engagement activation completed successfully');
       return activation;
@@ -108,13 +121,15 @@ export const useEngagementActivation = () => {
       // Show contextual error messages
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
-      console.log('📢 Showing error toast...');
-      toast({
-        title: "Activation Failed",
-        description: errorMessage,
-        variant: "destructive",
-        duration: 5000,
-      });
+      setTimeout(() => {
+        console.log('📢 Showing error toast...');
+        toast({
+          title: "❌ Activation Failed",
+          description: errorMessage,
+          variant: "destructive",
+          duration: 5000,
+        });
+      }, 500);
       
       throw error;
     } finally {

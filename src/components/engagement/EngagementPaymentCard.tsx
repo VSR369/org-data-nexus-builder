@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { PricingConfig } from '@/types/pricing';
 import { FrequencySelector } from './FrequencySelector';
 import { AgreementSection } from './AgreementSection';
 import { useEngagementActivation } from '@/hooks/useEngagementActivation';
+import { sessionStorageManager } from '@/utils/storage/SessionStorageManager';
 
 interface EngagementPaymentCardProps {
   selectedEngagementModel: string | null;
@@ -101,14 +103,12 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   const isMembershipPaid = membershipStatus === 'member_paid';
   const currentPricing = isMembershipPaid && memberConfig ? memberConfig : nonMemberConfig;
 
-  // For Marketplace models, we don't need frequency - show platform fee percentage
-  // For PaaS models, we need frequency to show the subscription fee
+  // Calculate display amounts
   let currentAmount = null;
   let nonMemberAmount = null;
   let memberAmount = null;
 
   if (isMarketplace) {
-    // Marketplace models use platform fee percentage, no frequency needed
     if (currentPricing && currentPricing.platformFeePercentage) {
       currentAmount = { amount: currentPricing.platformFeePercentage, isPercentage: true };
     }
@@ -119,7 +119,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
       memberAmount = { amount: memberConfig.platformFeePercentage, isPercentage: true };
     }
   } else if (isPaaS && selectedFrequency) {
-    // PaaS models use frequency-based subscription fees
     if (currentPricing) {
       const amount = getDisplayAmount(selectedFrequency, currentPricing, membershipStatus);
       currentAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
@@ -163,27 +162,44 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
       console.error('❌ Validation failed: Missing engagement model or not marketplace');
       return;
     }
+
+    if (!agreementAccepted) {
+      console.error('❌ Validation failed: Terms not accepted');
+      return;
+    }
+
+    if (!currentPricing) {
+      console.error('❌ Validation failed: No pricing configuration found');
+      return;
+    }
     
     try {
+      // Get user data from session storage
+      const sessionData = sessionStorageManager.loadSession();
+      const userId = sessionData?.seekerUserId;
+
+      console.log('👤 Session data loaded:', { userId, sessionData });
+
       const activationData = {
         engagementModel: selectedEngagementModel,
         membershipStatus: membershipStatus,
-        platformFeePercentage: currentPricing?.platformFeePercentage,
-        discountPercentage: currentPricing?.discountPercentage,
+        platformFeePercentage: currentPricing.platformFeePercentage,
+        discountPercentage: currentPricing.discountPercentage,
         finalCalculatedPrice: currentAmount?.amount,
-        currency: currentPricing?.currency || 'USD',
+        currency: currentPricing.currency || 'USD',
         organizationType: organizationType,
         country: country,
-        termsAccepted: agreementAccepted
+        termsAccepted: agreementAccepted,
+        userId: userId // Pass userId from session
       };
 
       console.log('🚀 Calling activateEngagement with data:', activationData);
       
-      await activateEngagement(activationData);
+      const result = await activateEngagement(activationData);
       
-      console.log('✅ Engagement activation completed successfully');
+      console.log('✅ Engagement activation completed successfully:', result);
       
-      // Call the parent callback if provided
+      // Call the parent callback if provided (after successful activation)
       if (onEngagementActivation) {
         console.log('📞 Calling parent onEngagementActivation callback');
         onEngagementActivation();
@@ -191,6 +207,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
       
     } catch (error) {
       console.error('💥 Failed to activate engagement:', error);
+      // Error handling is done in the hook, so we just log here
     }
   };
 
@@ -361,10 +378,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                 engagementModel={selectedEngagementModel}
               />
               <Button
-                onClick={() => {
-                  console.log('🖱️ Activate button clicked');
-                  handleEngagementActivation();
-                }}
+                onClick={handleEngagementActivation}
                 disabled={
                   !agreementAccepted || 
                   loading || 
