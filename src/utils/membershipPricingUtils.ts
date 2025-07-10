@@ -31,6 +31,12 @@ export const getEngagementPricing = (
   const isMembershipPaid = membershipStatus === 'member_paid';
   const membershipStatusForConfig = isMembershipPaid ? 'member' : 'not-a-member';
   
+  console.log('🔍 Membership status details:', {
+    membershipStatus,
+    isMembershipPaid,
+    membershipStatusForConfig
+  });
+  
   // Get the proper engagement model name for pricing lookup
   const engagementModelName = getEngagementModelName(selectedEngagementModel);
   

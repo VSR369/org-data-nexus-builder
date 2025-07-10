@@ -31,8 +31,19 @@ export const useMembershipPricingData = (
         
         // Load pricing configurations from Supabase
         const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+        
+        // Clear localStorage cache to force fresh Supabase load
+        localStorage.removeItem('custom_pricing');
+        localStorage.removeItem('master_data_pricing_configs');
+        
         const configs = await getPricingConfigsAsync();
         console.log('🔍 Raw configs from Supabase:', configs.length);
+        console.log('🔍 Sample discount values:', configs.slice(0,3).map(c => ({
+          model: c.engagementModel, 
+          status: c.membershipStatus, 
+          discount: c.discountPercentage,
+          id: c.id
+        })));
         
         setPricingConfigs(configs);
         console.log('✅ Set pricing configs in state:', configs.length);
