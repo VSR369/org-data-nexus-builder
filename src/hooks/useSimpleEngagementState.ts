@@ -5,13 +5,17 @@ interface SimpleEngagementState {
   membership_type: 'not-a-member' | 'annual' | null;
   selected_engagement_model: string | null;
   selected_frequency: 'quarterly' | 'half-yearly' | 'annual' | null;
+  engagement_payment_status: 'idle' | 'loading' | 'success' | 'error';
+  engagement_activation_status: 'idle' | 'loading' | 'success' | 'error';
 }
 
 const DEFAULT_STATE: SimpleEngagementState = {
   membership_status: 'inactive',
   membership_type: null,
   selected_engagement_model: null,
-  selected_frequency: null
+  selected_frequency: null,
+  engagement_payment_status: 'idle',
+  engagement_activation_status: 'idle'
 };
 
 export const useSimpleEngagementState = () => {
@@ -33,11 +37,21 @@ export const useSimpleEngagementState = () => {
     setState(prev => ({ ...prev, selected_frequency: frequency }));
   };
 
+  const updateEngagementPaymentStatus = (status: SimpleEngagementState['engagement_payment_status']) => {
+    setState(prev => ({ ...prev, engagement_payment_status: status }));
+  };
+
+  const updateEngagementActivationStatus = (status: SimpleEngagementState['engagement_activation_status']) => {
+    setState(prev => ({ ...prev, engagement_activation_status: status }));
+  };
+
   return {
     state,
     updateMembershipStatus,
     updateMembershipType,
     updateEngagementModel,
-    updateFrequency
+    updateFrequency,
+    updateEngagementPaymentStatus,
+    updateEngagementActivationStatus
   };
 };

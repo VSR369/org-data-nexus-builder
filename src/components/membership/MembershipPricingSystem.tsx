@@ -8,7 +8,7 @@ import { useMembershipPricingData } from '@/hooks/useMembershipPricingData';
 import { MembershipPlanSelection } from './MembershipPlanSelection';
 import { EngagementModelSelection } from './EngagementModelSelection';
 import { MembershipPaymentCard } from './MembershipPaymentCard';
-// EngagementPaymentCard removed
+import { EngagementPaymentCard } from '../engagement/EngagementPaymentCard';
 import { 
   getEngagementPricing, 
   getEngagementModelName,
@@ -37,7 +37,9 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     updateMembershipStatus,
     updateMembershipType,
     updateEngagementModel,
-    updateFrequency
+    updateFrequency,
+    updateEngagementPaymentStatus,
+    updateEngagementActivationStatus
   } = useSimpleEngagementState();
 
   const { pricingConfigs, membershipFees, engagementModels, loading: dataLoading } = useMembershipPricingData(
@@ -46,7 +48,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     country
   );
 
-  // Engagement payment functionality removed
+  // Engagement functionality restored
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
   const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [paymentDate, setPaymentDate] = useState<string | undefined>(undefined);
@@ -98,7 +100,51 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setSubmittedMembershipType(null);
   };
 
-  // All engagement activation functionality removed
+  // Engagement payment handler
+  const handleEngagementPayment = async () => {
+    updateEngagementPaymentStatus('loading');
+    
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      updateEngagementPaymentStatus('success');
+      toast({
+        title: "Payment Successful",
+        description: "Your engagement payment has been processed successfully.",
+      });
+    } catch (error) {
+      updateEngagementPaymentStatus('error');
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: "There was an error processing your payment. Please try again.",
+      });
+    }
+  };
+
+  // Engagement activation handler
+  const handleEngagementActivation = async () => {
+    updateEngagementActivationStatus('loading');
+    
+    try {
+      // Simulate activation processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      updateEngagementActivationStatus('success');
+      toast({
+        title: "Engagement Activated",
+        description: "Your engagement has been activated successfully.",
+      });
+    } catch (error) {
+      updateEngagementActivationStatus('error');
+      toast({
+        variant: "destructive",
+        title: "Activation Failed",
+        description: "There was an error activating your engagement. Please try again.",
+      });
+    }
+  };
 
   // Don't block rendering on data loading - show with fallbacks
   console.log('MembershipPricingSystem render state:', {
@@ -183,12 +229,24 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         />
       </div>
       
+      {/* Engagement Payment Card */}
       {state.selected_engagement_model && (
-        <Alert>
-          <AlertDescription>
-            Engagement activation functionality has been temporarily removed. Selected model: {state.selected_engagement_model}
-          </AlertDescription>
-        </Alert>
+        <div className="mt-8">
+          <EngagementPaymentCard
+            selectedEngagementModel={state.selected_engagement_model}
+            selectedFrequency={state.selected_frequency}
+            membershipStatus={state.membership_status}
+            pricingConfigs={pricingConfigs}
+            country={country}
+            organizationType={organizationType}
+            onFrequencyChange={updateFrequency}
+            onEngagementPayment={handleEngagementPayment}
+            onEngagementActivation={handleEngagementActivation}
+            loading={dataLoading}
+            engagementPaymentStatus={state.engagement_payment_status}
+            engagementActivationStatus={state.engagement_activation_status}
+          />
+        </div>
       )}
     </div>
   );
