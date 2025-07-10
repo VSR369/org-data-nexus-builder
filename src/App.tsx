@@ -17,18 +17,20 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/contributor-auth" element={<ContributorAuth />} />
-            <Route path="/seeking-org-admin-login" element={<SeekingOrgAdministratorLogin />} />
-            <Route path="/master-data-portal" element={<MasterDataPortal />} />
-            <Route path="/master-data" element={<MasterDataPortal />} />
-          </Routes>
-        </BrowserRouter>
+        <div className="min-h-screen w-full overflow-x-hidden">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/contributor-auth" element={<ContributorAuth />} />
+              <Route path="/seeking-org-admin-login" element={<SeekingOrgAdministratorLogin />} />
+              <Route path="/master-data-portal" element={<MasterDataPortal />} />
+              <Route path="/master-data" element={<MasterDataPortal />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

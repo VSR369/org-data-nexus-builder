@@ -8,38 +8,38 @@ const Index = () => {
   console.log('Index page is rendering...');
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background to-muted/20">
       {/* Simple Header */}
-      <header className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-6 py-4">
+      <header className="w-full bg-white border-b shadow-sm">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
                 <span className="text-white font-bold text-sm">C</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">CoInnovator Platform</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">CoInnovator Platform</h1>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Dashboard */}
-      <main className="container mx-auto px-6 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
             Welcome to CoInnovator
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
             Access master data management, organization registration, and contributor portal
           </p>
         </div>
 
         {/* Access Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 w-full">
           {/* Master Data Portal */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow w-full">
             <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
                 <Database className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl">Master Data Portal</CardTitle>
@@ -55,7 +55,7 @@ const Index = () => {
                 <p>• Communication Types, Rewards</p>
                 <p>• Events, Diagnostics & More</p>
               </div>
-              <Link to="/master-data-portal">
+              <Link to="/master-data-portal" className="block">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
                   Access Master Data
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -65,9 +65,9 @@ const Index = () => {
           </Card>
 
           {/* Seeking Organization Access */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow w-full">
             <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
                 <Building className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl">Seeking Organization</CardTitle>
@@ -99,9 +99,9 @@ const Index = () => {
           </Card>
 
           {/* Contributor Access */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow w-full md:col-span-2 lg:col-span-1">
             <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
                 <Users className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl">Contributor Portal</CardTitle>
@@ -134,8 +134,8 @@ const Index = () => {
         </div>
 
         {/* Additional Info */}
-        <div className="mt-16 text-center">
-          <p className="text-gray-600">
+        <div className="mt-12 sm:mt-16 text-center">
+          <p className="text-gray-600 px-4">
             Need help? Contact our support team for assistance with platform access.
           </p>
         </div>
