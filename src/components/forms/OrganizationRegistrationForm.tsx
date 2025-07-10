@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -229,7 +230,7 @@ const OrganizationRegistrationForm = () => {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Password Error",
+        title: "Password Error", 
         description: "Passwords do not match",
         variant: "destructive"
       });
@@ -239,12 +240,12 @@ const OrganizationRegistrationForm = () => {
     setIsSubmitting(true);
 
     try {
-      console.log('📝 Preparing registration data...');
+      console.log('📝 Preparing complete registration data...');
       
       // Generate organization ID
       const organizationId = `ORG_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Prepare additional data for profile creation
+      // Prepare complete additional data for profile creation
       const additionalData = {
         organizationName: formData.organizationName,
         organizationId: organizationId,
@@ -255,11 +256,17 @@ const OrganizationRegistrationForm = () => {
         countryCode: formData.contactMobile.split('-')[0] || '+1',
         address: formData.registeredAddress,
         website: formData.websiteUrl,
-        phoneNumber: formData.contactMobile
+        phoneNumber: formData.contactMobile,
+        contactPersonDesignation: formData.contactPersonDesignation
       };
 
-      console.log('🔐 Attempting to create account with email:', formData.contactEmail);
-      console.log('📊 Additional profile data prepared');
+      console.log('🔐 Creating account with email:', formData.contactEmail);
+      console.log('📊 Complete registration data prepared:', {
+        email: formData.contactEmail,
+        organizationName: formData.organizationName,
+        organizationType: formData.organizationType,
+        country: formData.country
+      });
 
       const { error } = await signUp(formData.contactEmail, password, additionalData);
 
@@ -286,10 +293,11 @@ const OrganizationRegistrationForm = () => {
           });
         }
       } else {
-        console.log('✅ Registration successful!');
+        console.log('✅ Registration successful! All data saved.');
+        
         toast({
           title: "Registration Successful!",
-          description: "Your organization has been registered successfully. You can now sign in.",
+          description: "Your organization has been registered successfully. Redirecting to home page...",
         });
         
         // Clear form
@@ -307,10 +315,9 @@ const OrganizationRegistrationForm = () => {
         setPassword('');
         setConfirmPassword('');
         
-        // Navigate to auth page for sign in
-        setTimeout(() => {
-          navigate('/auth');
-        }, 2000);
+        // Redirect to home page immediately
+        console.log('🏠 Redirecting to home page...');
+        navigate('/');
       }
     } catch (error) {
       console.error('❌ Unexpected registration error:', error);
