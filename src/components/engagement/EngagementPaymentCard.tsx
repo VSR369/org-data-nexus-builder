@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
-import { isPaaSModel, isMarketplaceModel, formatCurrency, getBothMemberAndNonMemberPricing } from '@/utils/membershipPricingUtils';
+import { Loader2, CheckCircle, AlertCircle, CreditCard } from "lucide-react";
+import { isPaaSModel, isMarketplaceModel, formatCurrency, getBothMemberAndNonMemberPricing, getDisplayAmount } from '@/utils/membershipPricingUtils';
 import { PricingConfig } from '@/types/pricing';
 import { FrequencySelector } from './FrequencySelector';
 import { PricingDisplaySection } from './PricingDisplaySection';
@@ -75,6 +75,11 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   const isMembershipPaid = membershipStatus === 'member_paid';
   const currentPricing = isMembershipPaid && memberConfig ? memberConfig : nonMemberConfig;
 
+  // Get display amounts for pricing
+  const nonMemberAmount = nonMemberConfig && selectedFrequency ? getDisplayAmount(selectedFrequency, nonMemberConfig, 'inactive') : null;
+  const memberAmount = memberConfig && selectedFrequency ? getDisplayAmount(selectedFrequency, memberConfig, 'member_paid') : null;
+  const currentAmount = isMembershipPaid && memberAmount ? memberAmount : nonMemberAmount;
+
   // Check if engagement is already activated/paid
   const isEngagementActivated = engagementPaymentStatus === 'success' || engagementActivationStatus === 'success';
 
@@ -107,21 +112,22 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5" />
-          {isPaaS ? 'Engagement Payment' : 'Engagement Activation'}
-        </CardTitle>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{selectedEngagementModel}</Badge>
-          {isMembershipPaid && (
-            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-              Member Discount Applied
-            </Badge>
-          )}
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">
+            {isPaaS ? 'Engagement Payment' : 'Engagement Activation'}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
+            {isMembershipPaid && (
+              <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                Member Discount
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {/* Frequency Selector - Only for PaaS models */}
         {isPaaS && (
           <FrequencySelector
@@ -131,22 +137,39 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           />
         )}
 
-        {/* Pricing Display */}
+        {/* Compact Pricing Display */}
         {currentPricing && (
-          <PricingDisplaySection
-            pricing={currentPricing}
-            memberPricing={memberConfig}
-            nonMemberPricing={nonMemberConfig}
-            selectedFrequency={isPaaS ? selectedFrequency : 'annual'} // Default to annual for non-PaaS
-            modelName={selectedEngagementModel}
-            membershipStatus={membershipStatus}
-            showFrequencyInTitle={isPaaS}
-          />
+          <div className="bg-muted/30 rounded-lg p-4">
+            <div className="text-center space-y-2">
+              <div className="text-2xl font-bold text-primary">
+                {currentAmount ? formatCurrency(currentAmount.amount, currentPricing?.currency || 'USD') : 'Price not configured'}
+              </div>
+              {isPaaS && selectedFrequency && (
+                <p className="text-sm text-muted-foreground">
+                  per {selectedFrequency === 'half-yearly' ? 'half year' : selectedFrequency.replace('ly', '')}
+                </p>
+              )}
+              
+              {/* Compact Discount Display */}
+              {isMembershipPaid && memberAmount && nonMemberAmount && memberAmount.amount < nonMemberAmount.amount && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground line-through">
+                      {formatCurrency(nonMemberAmount.amount, currentPricing?.currency || 'USD')}
+                    </span>
+                    <span className="text-green-700 font-medium">
+                      Save {formatCurrency(nonMemberAmount.amount - memberAmount.amount, currentPricing?.currency || 'USD')}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
 
         {/* Action Buttons */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {isPaaS && (
             <Button
               onClick={onEngagementPayment}
@@ -157,17 +180,15 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                 !currentPricing
               }
               className="w-full"
-              size="lg"
             >
               {engagementPaymentStatus === 'loading' ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Processing Payment...
+                </>
               ) : (
-                <CreditCard className="w-4 h-4 mr-2" />
+                `Pay ${selectedFrequency ? selectedFrequency.charAt(0).toUpperCase() + selectedFrequency.slice(1) : ''} Fee`
               )}
-              {engagementPaymentStatus === 'loading' 
-                ? 'Processing Payment...' 
-                : `Pay ${selectedFrequency ? selectedFrequency.charAt(0).toUpperCase() + selectedFrequency.slice(1) : ''} Fee`
-              }
             </Button>
           )}
 
@@ -186,17 +207,15 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                   engagementActivationStatus === 'loading'
                 }
                 className="w-full"
-                size="lg"
               >
                 {engagementActivationStatus === 'loading' ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Activating...
+                  </>
                 ) : (
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                  'Activate Engagement'
                 )}
-                {engagementActivationStatus === 'loading' 
-                  ? 'Activating...' 
-                  : 'Activate Engagement'
-                }
               </Button>
             </div>
           )}
