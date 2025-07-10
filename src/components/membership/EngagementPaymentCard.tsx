@@ -2,7 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet } from "lucide-react";
 import { PricingConfig } from '@/types/pricing';
-import { isPaaSModel, isMarketplaceModel } from '@/utils/membershipPricingUtils';
+import { isPaaSModel, isMarketplaceModel, getEngagementModelName, getBothMemberAndNonMemberPricing } from '@/utils/membershipPricingUtils';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { FrequencySelector } from './engagement/FrequencySelector';
 import { PlatformFeeDisplay } from './engagement/PlatformFeeDisplay';
 import { EngagementSummary } from './engagement/EngagementSummary';
@@ -34,8 +36,90 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   onFrequencyChange,
   onEngagementPayment
 }) => {
+  const { toast } = useToast();
   const isPaaS = isPaaSModel(selectedEngagementModel);
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
+
+  const handleActivateEngagement = async () => {
+    try {
+      if (!engagementPricing) {
+        toast({
+          title: "Error",
+          description: "Pricing information not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get both member and non-member pricing for accurate calculations
+      const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+        selectedEngagementModel,
+        pricingConfigs,
+        country,
+        organizationType
+      );
+
+      // Calculate platform fee details
+      const isMembershipPaid = membershipStatus === 'member_paid';
+      const originalPlatformFee = nonMemberConfig?.platformFeePercentage || engagementPricing.platformFeePercentage || 0;
+      const discountPercentage = memberConfig?.discountPercentage || 0;
+      const finalPlatformFee = isMembershipPaid && discountPercentage > 0 
+        ? originalPlatformFee * (1 - discountPercentage / 100)
+        : originalPlatformFee;
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to activate an engagement model",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save engagement activation to database
+      const { error } = await supabase
+        .from('engagement_activations')
+        .insert({
+          user_id: user.id,
+          engagement_model: getEngagementModelName(selectedEngagementModel),
+          membership_status: membershipStatus,
+          platform_fee_percentage: finalPlatformFee,
+          discount_percentage: isMembershipPaid ? discountPercentage : 0,
+          final_calculated_price: finalPlatformFee,
+          currency: engagementPricing.currency || 'USD',
+          activation_status: 'Activated',
+          terms_accepted: true,
+          organization_type: organizationType,
+          country: country
+        });
+
+      if (error) {
+        console.error('Error saving engagement activation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to activate engagement model. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `${getEngagementModelName(selectedEngagementModel)} has been activated successfully!`,
+      });
+
+    } catch (error) {
+      console.error('Activation error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during activation",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Auto-select platform fee for marketplace models
   React.useEffect(() => {
@@ -96,6 +180,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
               selectedEngagementModel={selectedEngagementModel}
               engagementPaymentLoading={engagementPaymentLoading}
               onEngagementPayment={onEngagementPayment}
+              onActivateEngagement={handleActivateEngagement}
             />
               </div>
             )}
