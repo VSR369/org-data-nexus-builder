@@ -24,4 +24,5 @@ export const triggerCustomDataRestoration = async () => {
 };
 
 // Execute restoration immediately
+console.log('🚀 Initiating comprehensive custom data restoration...');
 triggerCustomDataRestoration();
