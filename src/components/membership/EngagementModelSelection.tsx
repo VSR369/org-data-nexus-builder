@@ -29,56 +29,47 @@ export const EngagementModelSelection: React.FC<EngagementModelSelectionProps> =
   };
 
   return (
-    <Card className={membershipType ? '' : 'opacity-50'}>
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <div className="w-2 h-2 bg-primary rounded-full" />
           Engagement Models
-          {!membershipType && (
-            <Badge variant="outline" className="text-xs">Select Plan First</Badge>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {membershipType ? (
-          <div className="space-y-4">
-            <RadioGroup 
-              value={selectedEngagementModel || ''} 
-              onValueChange={handleModelChange}
-            >
-              <div className="space-y-3">
-                {engagementModels.map((model) => (
-                  <Label 
-                    key={model.id} 
-                    htmlFor={`model-${model.id}`} 
-                    className="cursor-pointer"
-                  >
-                    <div className={`flex items-start space-x-3 p-3 border rounded-lg transition-colors ${
-                      selectedEngagementModel === model.id ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                    }`}>
-                      <RadioGroupItem 
-                        value={model.id} 
-                        id={`model-${model.id}`} 
-                        className="mt-1" 
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          {model.icon}
-                          <span className="font-medium">{model.name}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{model.description}</p>
+        <div className="space-y-4">
+          <RadioGroup 
+            value={selectedEngagementModel || ''} 
+            onValueChange={handleModelChange}
+          >
+            <div className="space-y-3">
+              {engagementModels.map((model) => (
+                <Label 
+                  key={model.id} 
+                  htmlFor={`model-${model.id}`} 
+                  className="cursor-pointer"
+                >
+                  <div className={`flex items-start space-x-3 p-3 border rounded-lg transition-colors ${
+                    selectedEngagementModel === model.id ? 'border-primary bg-primary/5' : 'hover:bg-accent'
+                  }`}>
+                    <RadioGroupItem 
+                      value={model.id} 
+                      id={`model-${model.id}`} 
+                      className="mt-1" 
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {model.icon}
+                        <span className="font-medium">{model.name}</span>
                       </div>
+                      <p className="text-sm text-muted-foreground">{model.description}</p>
                     </div>
-                  </Label>
-                ))}
-              </div>
-            </RadioGroup>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">Select a membership plan first</p>
-          </div>
-        )}
+                  </div>
+                </Label>
+              ))}
+            </div>
+          </RadioGroup>
+        </div>
       </CardContent>
     </Card>
   );
