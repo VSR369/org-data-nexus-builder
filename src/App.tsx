@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MasterDataHealthProvider } from "@/components/providers/MasterDataHealthProvider";
 import { MasterDataAutoInitService } from "@/services/MasterDataAutoInitService";
+import '@/utils/cleanupActivationData'; // Auto-cleanup activation data
 import { AuthProvider } from "@/hooks/useAuthContext";
 
 // Import pages

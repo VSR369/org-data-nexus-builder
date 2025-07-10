@@ -8,7 +8,7 @@ import { useMembershipPricingData } from '@/hooks/useMembershipPricingData';
 import { MembershipPlanSelection } from './MembershipPlanSelection';
 import { EngagementModelSelection } from './EngagementModelSelection';
 import { MembershipPaymentCard } from './MembershipPaymentCard';
-import { EngagementPaymentCard } from './EngagementPaymentCard';
+// EngagementPaymentCard removed
 import { 
   getEngagementPricing, 
   getEngagementModelName,
@@ -48,7 +48,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     country
   );
 
-  const [engagementPaymentLoading, setEngagementPaymentLoading] = useState(false);
+  // Engagement payment functionality removed
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
   const [membershipPaymentLoading, setMembershipPaymentLoading] = useState(false);
   const [paymentDate, setPaymentDate] = useState<string | undefined>(undefined);
@@ -101,100 +101,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setSubmittedMembershipType(null);
   };
 
-  // Enhanced engagement activation handler
-  const handleEngagementActivation = async (termsAccepted: boolean, calculatedPrice: number, originalPrice: number, selectedFrequency?: string) => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "You must be logged in to activate an engagement model."
-      });
-      return;
-    }
-
-    if (!termsAccepted) {
-      toast({
-        variant: "destructive",
-        title: "Terms Not Accepted",
-        description: "Please accept the terms and conditions to continue."
-      });
-      return;
-    }
-
-    const pricing = getEngagementPricing(
-      state.selected_engagement_model,
-      state.membership_status,
-      pricingConfigs,
-      country,
-      organizationType
-    );
-    if (!pricing) return;
-
-    setEngagementPaymentLoading(true);
-    
-    try {
-      console.log('🚀 Starting engagement activation:', {
-        user_id: user.id,
-        engagement_model: state.selected_engagement_model,
-        membership_status: state.membership_status,
-        calculated_price: calculatedPrice,
-        original_price: originalPrice,
-        selected_frequency: selectedFrequency || state.selected_frequency
-      });
-
-      // Insert activation record into Supabase
-      const { error } = await supabase
-        .from('engagement_activations')
-        .insert({
-          user_id: user.id,
-          engagement_model: state.selected_engagement_model,
-          membership_status: state.membership_status === 'member_paid' ? 'member' : 'not-a-member',
-          organization_type: organizationType,
-          country: country,
-          currency: pricing.currency || 'INR',
-          platform_fee_percentage: pricing.platformFeePercentage,
-          discount_percentage: pricing.discountPercentage,
-          final_calculated_price: calculatedPrice,
-          billing_frequency: selectedFrequency || state.selected_frequency,
-          terms_accepted: termsAccepted,
-          activation_status: 'Activated'
-        });
-
-      if (error) {
-        console.error('❌ Supabase insertion error:', error);
-        throw error;
-      }
-
-      console.log('✅ Engagement activation saved to database');
-      
-      toast({
-        title: "✅ Activation Successful",
-        description: `${getEngagementModelName(state.selected_engagement_model || '')} has been activated successfully!${
-          state.membership_status === 'member_paid' ? ' (Member discount applied)' : ''
-        }`
-      });
-
-      // Navigate to validation dashboard after successful activation
-      setTimeout(() => {
-        window.location.href = '/master-data?section=solution-seekers-validation';
-      }, 2000);
-      
-    } catch (error: any) {
-      console.error('❌ Activation failed:', error);
-      toast({
-        variant: "destructive",
-        title: "Activation Failed",
-        description: error.message || "There was an error activating your engagement model. Please try again."
-      });
-    } finally {
-      setEngagementPaymentLoading(false);
-    }
-  };
-
-  // Simple engagement payment handler (for backward compatibility)
-  const handleEngagementPayment = async () => {
-    await handleEngagementActivation(true, 0, 0, state.selected_frequency);
-  };
+  // All engagement activation functionality removed
 
   if (dataLoading) {
     return (
@@ -218,7 +125,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Membership & Engagement System</h1>
-        <p className="text-muted-foreground">Select your membership plan and engagement model</p>
+        <p className="text-muted-foreground">Select your membership plan and view engagement models</p>
       </div>
 
       {/* Current Status */}
@@ -246,7 +153,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         <MembershipPlanSelection
           membershipType={state.membership_type}
           membershipStatus={state.membership_status}
@@ -275,21 +182,15 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           engagementModels={engagementModels}
           onEngagementModelChange={updateEngagementModel}
         />
-
-        <EngagementPaymentCard
-          selectedEngagementModel={state.selected_engagement_model}
-          selectedFrequency={state.selected_frequency}
-          membershipStatus={state.membership_status}
-          engagementPricing={engagementPricing}
-          organizationType={organizationType}
-          country={country}
-          pricingConfigs={pricingConfigs}
-          engagementPaymentLoading={engagementPaymentLoading}
-          onFrequencyChange={(value) => updateFrequency(value as any)}
-          onEngagementPayment={handleEngagementPayment}
-          onEngagementActivation={handleEngagementActivation}
-        />
       </div>
+      
+      {state.selected_engagement_model && (
+        <Alert>
+          <AlertDescription>
+            Engagement activation functionality has been temporarily removed. Selected model: {state.selected_engagement_model}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };

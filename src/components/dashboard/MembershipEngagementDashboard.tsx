@@ -7,10 +7,10 @@ import { PricingDataManager } from '@/utils/pricingDataManager';
 import { PricingConfig } from '@/types/pricing';
 import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
 import { getEngagementPricing, getEngagementModelName, getBothMemberAndNonMemberPricing, isPaaSModel, isMarketplaceModel } from '@/utils/membershipPricingUtils';
-import { useEngagementActivation } from '@/hooks/useEngagementActivation';
+// Activation functionality removed
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
-import { DynamicPricingSection } from "../engagement/DynamicPricingSection";
+// Dynamic pricing component removed
 
 interface MembershipEngagementDashboardProps {
   organizationType: string;
@@ -53,8 +53,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
   const [selectedMembershipFee, setSelectedMembershipFee] = useState<MembershipFeeEntry | null>(null);
 
-  // Activation hook
-  const { recordActivation } = useEngagementActivation();
+  // Activation functionality removed
   const { toast } = useToast();
 
   // Load localStorage data and pricing configurations on mount
@@ -159,214 +158,12 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     console.log('✅ Selected pricing plan:', plan);
   };
 
-  // Simplified activation handler for marketplace models (platform fee based)
-  const handleActivateEngagement = async (termsAccepted: boolean = false, calculatedPrice: number = 0, originalPrice: number = 0) => {
-    console.log('🚀 Starting handleActivateEngagement', { termsAccepted, selectedEngagementModel, selectedMembershipPlan, calculatedPrice, originalPrice });
-    try {
-      if (!selectedEngagementModel || !selectedMembershipPlan) {
-        toast({
-          variant: "destructive",
-          title: "Selection Required",
-          description: "Please select both membership plan and engagement model before activating."
-        });
-        return;
-      }
-
-      if (!termsAccepted) {
-        toast({
-          variant: "destructive",
-          title: "Terms Required",
-          description: "Please accept the terms and conditions before activating."
-        });
-        return;
-      }
-
-      setEngagementPaymentLoading(true);
-
-      const pricingConfig = getPricingConfig();
-      console.log('💰 Pricing config:', pricingConfig);
-      if (!pricingConfig) {
-        console.error('❌ No pricing config found for:', {
-          selectedEngagementModel,
-          selectedMembershipPlan,
-          country,
-          organizationType
-        });
-        toast({
-          title: "Configuration Error",
-          description: `Pricing information not available for ${selectedEngagementModel} with ${selectedMembershipPlan} membership`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('🔐 Authentication check:', { user: user?.id, authError });
-      
-      if (!user) {
-        console.error('❌ Authentication failed:', authError);
-        toast({
-          title: "Authentication Required",
-          description: "You must be logged in to activate an engagement model. Please sign in first.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Calculate discount percentage for database storage
-      const discountPercentage = originalPrice > 0 && calculatedPrice < originalPrice 
-        ? ((originalPrice - calculatedPrice) / originalPrice) * 100 
-        : 0;
-
-      // Save engagement activation to database using already-calculated prices
-      const { error } = await supabase
-        .from('engagement_activations')
-        .insert({
-          user_id: user.id,
-          engagement_model: getEngagementModelName(selectedEngagementModel),
-          membership_status: selectedMembershipPlan,
-          platform_fee_percentage: originalPrice,
-          discount_percentage: discountPercentage,
-          final_calculated_price: calculatedPrice,
-          currency: pricingConfig.currency || 'USD',
-          activation_status: 'Activated',
-          terms_accepted: true,
-          organization_type: organizationType,
-          country: country
-        });
-
-      if (error) {
-        console.error('❌ Database insertion error:', error);
-        toast({
-          title: "Database Error",
-          description: `Failed to save activation: ${error.message}. Please try again.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('✅ Successfully saved engagement activation to database');
-
-      // Record the activation for state management
-      await recordActivation(selectedEngagementModel, selectedMembershipPlan);
-      setIsSubmitted(true);
-
-      toast({
-        title: "Success",
-        description: `${getEngagementModelName(selectedEngagementModel)} has been activated successfully!`,
-      });
-
-    } catch (error) {
-      console.error('Activation error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred during activation",
-        variant: "destructive",
-      });
-    } finally {
-      setEngagementPaymentLoading(false);
-    }
-  };
-
-  // Simplified activation handler for PaaS models (subscription fee based)
-  const handlePaaSPayment = async (termsAccepted: boolean = false, calculatedPrice: number = 0, originalPrice: number = 0) => {
-    console.log('🚀 Starting handlePaaSPayment', { termsAccepted, selectedEngagementModel, selectedMembershipPlan, selectedPricingPlan, calculatedPrice, originalPrice });
-    try {
-      if (!selectedEngagementModel || !selectedMembershipPlan || !selectedPricingPlan) {
-        toast({
-          variant: "destructive",
-          title: "Selection Required",
-          description: "Please select membership plan, engagement model, and billing frequency before activating."
-        });
-        return;
-      }
-
-      if (!termsAccepted) {
-        toast({
-          variant: "destructive",
-          title: "Terms Required",
-          description: "Please accept the terms and conditions before activating."
-        });
-        return;
-      }
-
-      setEngagementPaymentLoading(true);
-
-      const pricingConfig = getPricingConfig();
-      if (!pricingConfig) {
-        toast({
-          title: "Error",
-          description: "Pricing information or billing frequency not available",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to process payment",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Calculate discount percentage for database storage
-      const discountPercentage = originalPrice > 0 && calculatedPrice < originalPrice 
-        ? ((originalPrice - calculatedPrice) / originalPrice) * 100 
-        : 0;
-
-      // Save engagement activation to database using already-calculated prices
-      const { error } = await supabase
-        .from('engagement_activations')
-        .insert({
-          user_id: user.id,
-          engagement_model: getEngagementModelName(selectedEngagementModel),
-          membership_status: selectedMembershipPlan,
-          platform_fee_percentage: originalPrice,
-          billing_frequency: selectedPricingPlan,
-          discount_percentage: discountPercentage,
-          final_calculated_price: calculatedPrice,
-          currency: pricingConfig.currency || 'USD',
-          activation_status: 'Activated',
-          terms_accepted: true,
-          organization_type: organizationType,
-          country: country
-        });
-
-      if (error) {
-        console.error('Error saving engagement activation:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save engagement details. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Record the activation for state management
-      await recordActivation(selectedEngagementModel, selectedMembershipPlan);
-      setIsSubmitted(true);
-
-      toast({
-        title: "Payment Processing",
-        description: `Processing payment for ${getEngagementModelName(selectedEngagementModel)} - ${selectedPricingPlan} plan`,
-      });
-
-    } catch (error) {
-      console.error('Payment processing error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred during payment processing",
-        variant: "destructive",
-      });
-    } finally {
-      setEngagementPaymentLoading(false);
-    }
+  // All activation functionality removed - only membership and pricing display remain
+  const handleEngagementSelection = () => {
+    toast({
+      title: "Feature Notice",
+      description: "Engagement activation has been temporarily removed. Please contact support for assistance.",
+    });
   };
 
   // Format currency (keep for compatibility)
@@ -643,20 +440,23 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           </CardContent>
         </Card>
 
-        {/* Column 4: Dynamic Pricing Section */}
+        {/* Column 4: Pricing Display Only */}
         <div className="space-y-4">
           {selectedEngagementModel && (
-            <DynamicPricingSection
-              selectedEngagementModel={selectedEngagementModel}
-              engagementModelName={selectedEngagementModel}
-              selectedPricingPlan={selectedPricingPlan}
-              onPricingPlanChange={handlePricingPlanChange}
-              pricingConfig={getPricingConfig()}
-              membershipStatus={membershipStatus === 'active' ? 'member' : 'not-a-member'}
-              onSelectPlatformFee={(termsAccepted, calculatedPrice, originalPrice) => isPaaSModel(selectedEngagementModel) ? handlePaaSPayment(termsAccepted, calculatedPrice, originalPrice) : handleActivateEngagement(termsAccepted, calculatedPrice, originalPrice)}
-              isSubmitted={isSubmitted}
-              isLoading={engagementPaymentLoading}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  Engagement Pricing Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Pricing display for {selectedEngagementModel}</p>
+                  <p className="text-xs mt-2">Activation functionality temporarily removed</p>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
