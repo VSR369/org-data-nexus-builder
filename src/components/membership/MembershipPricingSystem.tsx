@@ -204,7 +204,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
         <MembershipPlanSelection
           membershipType={state.membership_type}
           membershipStatus={state.membership_status}
@@ -233,10 +233,8 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           engagementModels={engagementModels}
           onEngagementModelChange={updateEngagementModel}
         />
-      </div>
-      
-      {/* Engagement Payment Card - Always show to guide user */}
-      <div className="mt-8">
+
+        {/* Engagement Payment Card - Adjacent to Engagement Models */}
         <EngagementPaymentCard
           selectedEngagementModel={state.selected_engagement_model}
           selectedFrequency={state.selected_frequency}
