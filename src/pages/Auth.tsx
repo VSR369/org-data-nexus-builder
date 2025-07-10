@@ -21,8 +21,10 @@ const Auth = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    // Only redirect if we're sure the user is authenticated and not loading
     if (isAuthenticated && !loading) {
-      navigate('/seeking-org-admin-dashboard');
+      console.log('User is authenticated, redirecting to home page');
+      navigate('/');
     }
   }, [isAuthenticated, loading, navigate]);
 
@@ -30,6 +32,15 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is already authenticated
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Redirecting...</div>
       </div>
     );
   }

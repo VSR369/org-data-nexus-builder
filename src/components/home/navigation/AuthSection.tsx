@@ -50,11 +50,9 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
               )}
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/seeking-org-admin-dashboard" className="flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                Dashboard
-              </Link>
+            <DropdownMenuItem>
+              <User className="mr-2 h-4 w-4" />
+              Dashboard
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />

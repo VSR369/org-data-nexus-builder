@@ -24,7 +24,10 @@ const SignInForm = () => {
     setIsLoading(true);
 
     try {
-      await signIn(formData.email, formData.password);
+      const result = await signIn(formData.email, formData.password);
+      if (result.success) {
+        console.log('Sign in successful, will be redirected by Auth component');
+      }
     } finally {
       setIsLoading(false);
     }
