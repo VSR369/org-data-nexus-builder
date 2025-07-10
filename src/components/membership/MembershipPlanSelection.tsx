@@ -20,7 +20,6 @@ export const MembershipPlanSelection: React.FC<MembershipPlanSelectionProps> = (
   onMembershipTypeChange,
   onMembershipSubmit
 }) => {
-  const [selectedType, setSelectedType] = useState(membershipType);
   const annualFee = getAnnualMembershipFee(membershipFees);
   const isPaid = membershipStatus === 'member_paid';
 
@@ -29,17 +28,8 @@ export const MembershipPlanSelection: React.FC<MembershipPlanSelectionProps> = (
     if (isPaid && value === 'not-a-member') {
       return;
     }
-    setSelectedType(value);
     onMembershipTypeChange(value);
-  };
-
-  const handleSubmit = () => {
-    if (selectedType) {
-      onMembershipSubmit(selectedType);
-    } else {
-      // This should not happen due to the conditional rendering, but add for safety
-      alert('Please select a membership option before submitting.');
-    }
+    onMembershipSubmit(value);
   };
 
   return (
@@ -53,7 +43,7 @@ export const MembershipPlanSelection: React.FC<MembershipPlanSelectionProps> = (
       <CardContent>
         <div className="space-y-4">
           <RadioGroup 
-            value={selectedType || ''} 
+            value={membershipType || ''} 
             onValueChange={handleSelectionChange}
           >
             <div className="space-y-4">
@@ -95,16 +85,6 @@ export const MembershipPlanSelection: React.FC<MembershipPlanSelectionProps> = (
             </div>
           </RadioGroup>
           
-          {/* Only show Submit Selection button if not paid and a selection is made */}
-          {!isPaid && selectedType && (
-            <Button 
-              onClick={handleSubmit}
-              className="w-full"
-              variant="default"
-            >
-              Submit Selection
-            </Button>
-          )}
           
           {/* Show status message if already paid */}
           {isPaid && (
