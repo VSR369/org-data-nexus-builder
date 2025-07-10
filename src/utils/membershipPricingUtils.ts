@@ -143,27 +143,20 @@ export const calculateDiscountedPrice = (baseAmount: number, discountPercentage:
   return Math.round(baseAmount * (1 - discountPercentage / 100));
 };
 
-// Get display amount with proper discount application
+// Get display amount directly from database (no additional discount calculation needed)
 export const getDisplayAmount = (
   frequency: string, 
   pricing: PricingConfig, 
   membershipStatus: string
-): { amount: number; originalAmount?: number; discountApplied: boolean } => {
+): { amount: number; discountApplied: boolean } => {
   const feeKey = frequency === 'half-yearly' ? 'halfYearlyFee' : `${frequency}Fee` as keyof PricingConfig;
-  const baseAmount = pricing[feeKey] as number;
+  const amount = pricing[feeKey] as number;
   
-  if (membershipStatus === 'member_paid' && pricing.discountPercentage) {
-    const discountedAmount = calculateDiscountedPrice(baseAmount, pricing.discountPercentage);
-    return {
-      amount: discountedAmount,
-      originalAmount: baseAmount,
-      discountApplied: true
-    };
-  }
-  
+  // Database already contains the correct prices for member/non-member
+  // No need to apply discount calculation here
   return {
-    amount: baseAmount,
-    discountApplied: false
+    amount: amount || 0,
+    discountApplied: false // This will be determined by comparing member vs non-member prices
   };
 };
 

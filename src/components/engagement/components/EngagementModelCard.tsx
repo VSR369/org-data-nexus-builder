@@ -86,34 +86,39 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
       return 0;
     }
 
-    let basePrice = 0;
+    let price = 0;
     switch (selectedPricingPlan) {
       case 'quarterly':
-        basePrice = item.pricing.quarterlyFee || 0;
+        price = item.pricing.quarterlyFee || 0;
         break;
       case 'halfyearly':
-        basePrice = item.pricing.halfYearlyFee || 0;
+        price = item.pricing.halfYearlyFee || 0;
         break;
       case 'annual':
-        basePrice = item.pricing.annualFee || 0;
+        price = item.pricing.annualFee || 0;
         break;
       default:
         console.warn('⚠️ getCurrentPrice: Unknown pricing plan:', selectedPricingPlan);
         return 0;
     }
 
-    // Validate base price
-    if (typeof basePrice !== 'number' || isNaN(basePrice)) {
-      console.warn('⚠️ getCurrentPrice: Invalid base price:', basePrice, 'for plan:', selectedPricingPlan);
+    // Validate price
+    if (typeof price !== 'number' || isNaN(price)) {
+      console.warn('⚠️ getCurrentPrice: Invalid price:', price, 'for plan:', selectedPricingPlan);
       return 0;
     }
 
-    if (membershipStatus === 'active' && item.pricing.discountPercentage) {
-      const discountMultiplier = 1 - (item.pricing.discountPercentage / 100);
-      return Math.max(0, basePrice * discountMultiplier);
-    }
+    console.log('💰 getCurrentPrice calculation:', {
+      modelName: item.model.name,
+      selectedPlan: selectedPricingPlan,
+      price,
+      membershipStatus: item.pricing.membershipStatus,
+      note: 'Database already contains correct member/non-member pricing'
+    });
 
-    return basePrice;
+    // Database already contains the correct price for member/non-member
+    // No additional discount calculation needed
+    return price;
   };
 
   const getOriginalPrice = () => {

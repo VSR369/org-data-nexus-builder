@@ -27,26 +27,24 @@ export const ModelSelectionSummary: React.FC<ModelSelectionSummaryProps> = ({
   const getCurrentPrice = () => {
     if (!selectedModel.pricing || !selectedPricingPlan) return 0;
 
-    let basePrice = 0;
+    let price = 0;
     switch (selectedPricingPlan) {
       case 'quarterly':
-        basePrice = selectedModel.pricing.quarterlyFee || 0;
+        price = selectedModel.pricing.quarterlyFee || 0;
         break;
       case 'halfyearly':
-        basePrice = selectedModel.pricing.halfYearlyFee || 0;
+        price = selectedModel.pricing.halfYearlyFee || 0;
         break;
       case 'annual':
-        basePrice = selectedModel.pricing.annualFee || 0;
+        price = selectedModel.pricing.annualFee || 0;
         break;
       default:
         return 0;
     }
 
-    if (membershipStatus === 'active' && selectedModel.pricing.discountPercentage) {
-      return basePrice * (1 - selectedModel.pricing.discountPercentage / 100);
-    }
-
-    return basePrice;
+    // Database already contains the correct price for member/non-member
+    // No additional discount calculation needed
+    return price;
   };
 
   const getOriginalPrice = () => {
