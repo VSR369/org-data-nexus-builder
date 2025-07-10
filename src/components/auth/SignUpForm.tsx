@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,8 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
 import { useSeekerValidation } from '@/hooks/useSeekerValidation';
 import { generateOrganizationId } from '@/utils/seekerUserStorage';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface FormData {
   // Organization Information
@@ -43,6 +46,7 @@ interface FormData {
 const SignUpForm = () => {
   const { signUp } = useSupabaseAuth();
   const { validateForm } = useSeekerValidation();
+  const navigate = useNavigate();
   const {
     countries,
     industrySegments,
@@ -166,25 +170,43 @@ const SignUpForm = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await signUp(formData.email, formData.password, {
-        organization_name: formData.organizationName,
-        organization_id: formData.organizationId,
-        organization_type: formData.organizationType,
-        entity_type: formData.entityType,
-        industry_segment: formData.industrySegment,
-        contact_person_name: formData.contactPersonName,
+      console.log('🔐 Starting registration process...');
+      
+      // Prepare additional data for profile creation
+      const additionalData = {
+        organizationName: formData.organizationName,
+        organizationId: formData.organizationId,
+        organizationType: formData.organizationType,
+        entityType: formData.entityType,
+        industrySegment: formData.industrySegment,
+        contactPersonName: formData.contactPersonName,
         country: formData.country,
+        countryCode: formData.countryCode,
         address: formData.address,
         website: formData.website,
-        phone_number: formData.phoneNumber,
-        country_code: formData.countryCode
+        phoneNumber: formData.phoneNumber
+      };
+
+      console.log('📝 Registration data prepared:', { 
+        email: formData.email, 
+        additionalData: { ...additionalData, password: '[REDACTED]' }
       });
 
+      const { error } = await signUp(formData.email, formData.password, additionalData);
+
       if (error) {
+        console.error('❌ Registration failed:', error);
         setErrors({ submit: error.message });
+      } else {
+        console.log('✅ Registration successful!');
+        toast.success('Registration successful! Please check your email to confirm your account, then sign in.');
+        
+        // Redirect to sign-in page
+        navigate('/auth');
       }
     } catch (error) {
-      setErrors({ submit: 'An unexpected error occurred' });
+      console.error('❌ Registration error:', error);
+      setErrors({ submit: 'An unexpected error occurred during registration' });
     } finally {
       setIsLoading(false);
     }
@@ -586,7 +608,7 @@ const SignUpForm = () => {
             className="px-8 bg-blue-600 hover:bg-blue-700"
             disabled={isLoading}
           >
-            {isLoading ? 'Registering...' : 'Register Organization'}
+            {isLoading ? 'Registering Organization...' : 'Register Organization'}
           </Button>
         </div>
       </form>

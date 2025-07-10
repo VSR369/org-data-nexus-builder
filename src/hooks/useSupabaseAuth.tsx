@@ -40,12 +40,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('🔐 Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
+          // Fetch user profile with a slight delay to avoid deadlock
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
@@ -59,6 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔐 Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -74,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('👤 Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -81,17 +83,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
+        console.error('❌ Error fetching profile:', error);
         return;
       }
 
+      console.log('✅ Profile fetched:', data);
       setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('❌ Error fetching profile:', error);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('🔐 Signing in user:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -100,6 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, additionalData?: any) => {
+    console.log('📝 Signing up user:', email);
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -111,6 +116,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     if (!error && data.user && additionalData) {
+      console.log('👤 Creating profile for user:', data.user.id);
+      
       // Create profile record
       const customUserId = `ORG_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
@@ -120,10 +127,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: data.user.id,
           custom_user_id: customUserId,
           organization_name: additionalData.organizationName,
+          organization_id: additionalData.organizationId,
           contact_person_name: additionalData.contactPersonName,
           organization_type: additionalData.organizationType,
           entity_type: additionalData.entityType,
           country: additionalData.country,
+          country_code: additionalData.countryCode,
           industry_segment: additionalData.industrySegment,
           address: additionalData.address,
           phone_number: additionalData.phoneNumber,
@@ -131,14 +140,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
       if (profileError) {
-        console.error('Error creating profile:', profileError);
+        console.error('❌ Error creating profile:', profileError);
+        return { error: profileError };
       }
+      
+      console.log('✅ Profile created successfully');
     }
 
     return { error };
   };
 
   const signOut = async () => {
+    console.log('🚪 Signing out user');
     await supabase.auth.signOut();
   };
 
