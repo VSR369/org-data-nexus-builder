@@ -214,6 +214,43 @@
     padding: 1rem;
   }
 
+  /* Custom scrollbar styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+    background-color: rgb(209 213 219);
+    border-radius: 6px;
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Auto-stacking utilities */
+  .auto-stack {
+    @apply flex flex-col sm:flex-row sm:flex-wrap gap-4;
+  }
+
+  .auto-stack-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  /* Dynamic scaling utilities */
+  .scale-to-fit {
+    @apply w-full max-w-full min-w-0;
+  }
+
+  .scale-to-fit > * {
+    @apply flex-shrink min-w-0;
+  }
+
   /* Media queries for responsive behavior */
   @media (max-width: 1440px) {
     .responsive-grid {
@@ -237,11 +274,19 @@
     .responsive-flex {
       flex-direction: column;
     }
+
+    .auto-stack {
+      @apply flex-col;
+    }
   }
 
   @media (max-width: 768px) {
     .dashboard-content {
       padding: 0.5rem;
+    }
+
+    .auto-stack-grid {
+      @apply grid-cols-1;
     }
   }
 }

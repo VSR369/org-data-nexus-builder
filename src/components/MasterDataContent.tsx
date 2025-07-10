@@ -1,5 +1,5 @@
-
 import React from "react";
+import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfig from "./master-data/CountryConfig";
 import CurrencyConfig from "./master-data/CurrencyConfig";
 import IndustrySegmentConfig from "./master-data/IndustrySegmentConfig";
@@ -86,11 +86,14 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
   };
 
   return (
-    <div className="w-full max-w-full no-horizontal-scroll">
-      <div className="responsive-container">
-        {renderContent()}
-      </div>
-    </div>
+    <ResponsiveDashboardWrapper
+      layout="stack"
+      padding="md"
+      showBackground={true}
+      className="min-h-screen"
+    >
+      {renderContent()}
+    </ResponsiveDashboardWrapper>
   );
 };
 
