@@ -1,12 +1,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Building, Users, ArrowRight } from "lucide-react";
+import { Database, Building, Users, ArrowRight, LogOut, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 const Index = () => {
   console.log('Index page is rendering...');
+  const { isAuthenticated, user, profile, signOut, loading } = useSupabaseAuth();
   
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 overflow-x-hidden">
       {/* Header */}
@@ -19,6 +25,40 @@ const Index = () => {
               </div>
               <h1 className="text-xl font-bold text-gray-900">CoInnovator Platform</h1>
             </div>
+            
+            {/* Authentication Status Display */}
+            {!loading && (
+              <div className="flex items-center space-x-4">
+                {isAuthenticated ? (
+                  <div className="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                    <User className="h-4 w-4 text-green-600" />
+                    <div className="text-sm">
+                      <div className="font-medium text-green-800">
+                        Signed in as: {profile?.contact_person_name || user?.email}
+                      </div>
+                      {profile?.organization_name && (
+                        <div className="text-green-600 text-xs">
+                          {profile.organization_name}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleSignOut}
+                      variant="outline"
+                      size="sm"
+                      className="text-green-700 border-green-300 hover:bg-green-100"
+                    >
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border">
+                    Not signed in
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -83,18 +123,43 @@ const Index = () => {
                 <p>• Solution Evaluation</p>
                 <p>• Supabase Authentication</p>
               </div>
-              <div className="space-y-2">
-                <Link to="/auth?mode=signup" className="w-full block">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                    Sign Up Organization
+              
+              {/* Authentication Status Specific Content */}
+              {loading ? (
+                <div className="text-sm text-gray-500">Loading...</div>
+              ) : isAuthenticated ? (
+                <div className="space-y-3">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-700 font-medium">
+                      ✓ You are already signed in!
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      You can now access organization features or sign out to use a different account.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleSignOut}
+                    variant="outline" 
+                    className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out to Use Different Account
                   </Button>
-                </Link>
-                <Link to="/auth" className="w-full block">
-                  <Button variant="outline" className="w-full">
-                    Sign In Organization
-                  </Button>
-                </Link>
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Link to="/auth?mode=signup" className="w-full block">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      Sign Up Organization
+                    </Button>
+                  </Link>
+                  <Link to="/auth" className="w-full block">
+                    <Button variant="outline" className="w-full">
+                      Sign In Organization
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
 
