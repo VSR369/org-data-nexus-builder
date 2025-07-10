@@ -23,8 +23,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompleteUserData } from '@/hooks/useCompleteUserData';
 import { loadEngagementPricingDetails } from '@/components/master-data/solution-seekers/utils/viewDetailsHelpers';
 import MembershipPricingSystem from '@/components/membership/MembershipPricingSystem';
-// Auth imports removed - no authentication required
-// import '@/utils/cleanupMembershipEngagementStorage';
 
 interface OrganizationSession {
   userId: string;
@@ -44,7 +42,6 @@ const OrganizationDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  // No auth context needed - using direct navigation
 
   // Load complete user data - make it non-blocking
   const { userData: completeUserData, loading: userDataLoading, error: userDataError } = useCompleteUserData(sessionData?.userId);
@@ -457,82 +454,19 @@ const OrganizationDashboard = () => {
           </Card>
         </div>
 
-        {/* Additional Details - Compact */}
-        {completeUserData && (
-          <Card className="mb-8">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                Additional Information & Documents
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Organization Details */}
-                <div className="space-y-4">
-                  <h4 className="font-medium mb-3">Organization Information</h4>
-                  <div className="space-y-2 text-sm">
-                    {completeUserData.organizationId && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Organization ID:</span>
-                        <span className="font-mono">{completeUserData.organizationId}</span>
-                      </div>
-                    )}
-                    {completeUserData.address && (
-                      <div>
-                        <span className="text-muted-foreground">Address:</span>
-                        <p className="mt-1">{completeUserData.address}</p>
-                      </div>
-                    )}
-                    {completeUserData.registrationTimestamp && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Registered:</span>
-                        <span>{new Date(completeUserData.registrationTimestamp).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Documents */}
-                <div className="space-y-4">
-                  <h4 className="font-medium mb-3">Uploaded Documents</h4>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div className="text-center p-3 border rounded-lg">
-                      <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                      <div className="text-xs text-muted-foreground">Registration</div>
-                      <div className="text-xs font-medium">
-                        {completeUserData.registrationDocuments?.length || 0} files
-                      </div>
-                    </div>
-                    <div className="text-center p-3 border rounded-lg">
-                      <FileText className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                      <div className="text-xs text-muted-foreground">Profile</div>
-                      <div className="text-xs font-medium">
-                        {completeUserData.companyProfile?.length || 0} files
-                      </div>
-                    </div>
-                    <div className="text-center p-3 border rounded-lg">
-                      <Building2 className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                      <div className="text-xs text-muted-foreground">Logo</div>
-                      <div className="text-xs font-medium">
-                        {completeUserData.companyLogo?.length || 0} files
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Membership and Engagement Dashboard */}
+        {/* Membership and Engagement Dashboard - 4 Column Grid Structure */}
         <div className="space-y-6">
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Membership & Engagement System</h3>
+            <p className="text-gray-600">Select your membership plan and engagement model</p>
+          </div>
+          
           <MembershipPricingSystem
-            organizationType={completeUserData?.organizationType || sessionData.organizationType || 'Technology'}
-            entityType={completeUserData?.entityType || sessionData.entityType}
-            country={completeUserData?.country || sessionData.country}
-            organizationId={completeUserData?.organizationId || sessionData.organizationId}
-            organizationName={completeUserData?.organizationName || sessionData.organizationName}
+            organizationType={completeUserData?.organizationType || displayData.organizationType || 'Technology'}
+            entityType={completeUserData?.entityType || displayData.entityType}
+            country={completeUserData?.country || displayData.country}
+            organizationId={completeUserData?.organizationId || displayData.organizationId}
+            organizationName={completeUserData?.organizationName || displayData.organizationName}
           />
         </div>
 
