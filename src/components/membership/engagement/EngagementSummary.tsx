@@ -44,12 +44,45 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
                 <span className="text-sm">Pricing Structure:</span>
                 <span className="font-medium">Platform Fee</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Platform Fee:</span>
-                <span className="font-bold text-lg text-green-600">
-                  {engagementPricing.platformFeePercentage || 0}% of solution fee
-                </span>
-              </div>
+              {(() => {
+                // Calculate discounted platform fee if membership is paid
+                const isMembershipPaid = membershipStatus === 'member_paid';
+                const basePlatformFee = engagementPricing.platformFeePercentage || 0;
+                const discountPercentage = engagementPricing.discountPercentage || 0;
+                const hasDiscount = isMembershipPaid && discountPercentage > 0;
+                const discountedPlatformFee = hasDiscount 
+                  ? Math.round(basePlatformFee * (1 - discountPercentage / 100) * 100) / 100
+                  : basePlatformFee;
+
+                return (
+                  <div className="space-y-2">
+                    {hasDiscount && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Original Platform Fee:</span>
+                        <span className="text-gray-500 line-through">
+                          {basePlatformFee}% of solution fee
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        {hasDiscount ? 'Discounted Platform Fee:' : 'Platform Fee:'}
+                      </span>
+                      <span className="font-bold text-lg text-green-600">
+                        {discountedPlatformFee}% of solution fee
+                      </span>
+                    </div>
+                    {hasDiscount && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-green-600">Member Discount:</span>
+                        <span className="text-green-600 font-medium">
+                          -{discountPercentage}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         } else {
