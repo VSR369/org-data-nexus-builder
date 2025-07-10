@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DollarSign, Percent, Loader2 } from 'lucide-react';
 import { PricingConfig } from '@/types/pricing';
 
@@ -28,6 +29,7 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
   isSubmitted = false,
   isLoading = false
 }) => {
+  const [termsAccepted, setTermsAccepted] = useState(false);
   // Check if engagement model is marketplace-based (fee-based)
   const isMarketplaceBased = (modelName: string) => {
     return ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(modelName);
@@ -147,12 +149,24 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
                 </div>
               </div>
 
+              {/* Terms & Conditions */}
+              <div className="mt-4 flex items-center space-x-2">
+                <Checkbox 
+                  id="terms-marketplace" 
+                  checked={termsAccepted}
+                  onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                />
+                <label htmlFor="terms-marketplace" className="text-sm text-gray-600 cursor-pointer">
+                  I accept the terms and conditions for platform fee activation
+                </label>
+              </div>
+
               <div className="text-center">
                 <Button 
                   onClick={onSelectPlatformFee}
                   className="bg-primary hover:bg-primary/90 px-8 py-3"
                   size="lg"
-                  disabled={!pricingConfig || isSubmitted || isLoading}
+                  disabled={!pricingConfig || isSubmitted || isLoading || !termsAccepted}
                 >
                   {isLoading ? (
                     <>
@@ -251,22 +265,36 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
               )}
 
               {selectedPricingPlan && (
-                <div className="text-center">
-                  <Button 
-                    onClick={onSelectPlatformFee}
-                    className="bg-primary hover:bg-primary/90 px-8 py-3"
-                    size="lg"
-                    disabled={!selectedPricingPlan || isSubmitted || isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Activating...
-                      </>
-                    ) : (
-                      "Select Subscription Fee"
-                    )}
-                  </Button>
+                <div className="space-y-4">
+                  {/* Terms & Conditions */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="terms-paas" 
+                      checked={termsAccepted}
+                      onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                    />
+                    <label htmlFor="terms-paas" className="text-sm text-gray-600 cursor-pointer">
+                      I accept the terms and conditions for subscription activation
+                    </label>
+                  </div>
+
+                  <div className="text-center">
+                    <Button 
+                      onClick={onSelectPlatformFee}
+                      className="bg-primary hover:bg-primary/90 px-8 py-3"
+                      size="lg"
+                      disabled={!selectedPricingPlan || isSubmitted || isLoading || !termsAccepted}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Activating...
+                        </>
+                      ) : (
+                        "Select Subscription Fee"
+                      )}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { PricingDataManager } from '@/utils/pricingDataManager';
 import { PricingConfig } from '@/types/pricing';
 import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
-import { DynamicPricingSection } from '@/components/engagement/DynamicPricingSection';
-import { getEngagementPricing } from '@/utils/membershipPricingUtils';
+import { getEngagementPricing, getEngagementModelName, getBothMemberAndNonMemberPricing, isPaaSModel, isMarketplaceModel } from '@/utils/membershipPricingUtils';
 import { useEngagementActivation } from '@/hooks/useEngagementActivation';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
+import { DynamicPricingSection } from "../engagement/DynamicPricingSection";
 
 interface MembershipEngagementDashboardProps {
   organizationType: string;
@@ -158,37 +159,217 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     console.log('✅ Selected pricing plan:', plan);
   };
 
-  // Handle platform/subscription fee selection
-  const handleSelectPlatformFee = async () => {
-    if (!selectedEngagementModel || !selectedMembershipPlan) {
-      toast({
-        variant: "destructive",
-        title: "Selection Required",
-        description: "Please select both membership plan and engagement model before activating."
-      });
-      return;
-    }
-
-    setEngagementPaymentLoading(true);
-
+  // Robust activation handler for marketplace models (platform fee based)
+  const handleActivateEngagement = async () => {
     try {
-      // Record the activation
+      if (!selectedEngagementModel || !selectedMembershipPlan) {
+        toast({
+          variant: "destructive",
+          title: "Selection Required",
+          description: "Please select both membership plan and engagement model before activating."
+        });
+        return;
+      }
+
+      setEngagementPaymentLoading(true);
+
+      const pricingConfig = getPricingConfig();
+      if (!pricingConfig) {
+        toast({
+          title: "Error",
+          description: "Pricing information not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get both member and non-member pricing for accurate calculations
+      const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+        selectedEngagementModel,
+        pricingConfigs,
+        country,
+        organizationType
+      );
+
+      // Calculate platform fee details
+      const isMembershipPaid = membershipStatus === 'active';
+      const originalPlatformFee = nonMemberConfig?.platformFeePercentage || pricingConfig.platformFeePercentage || 0;
+      const discountPercentage = memberConfig?.discountPercentage || 0;
+      const finalPlatformFee = isMembershipPaid && discountPercentage > 0 
+        ? originalPlatformFee * (1 - discountPercentage / 100)
+        : originalPlatformFee;
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to activate an engagement model",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save engagement activation to database
+      const { error } = await supabase
+        .from('engagement_activations')
+        .insert({
+          user_id: user.id,
+          engagement_model: getEngagementModelName(selectedEngagementModel),
+          membership_status: selectedMembershipPlan,
+          platform_fee_percentage: finalPlatformFee,
+          discount_percentage: isMembershipPaid ? discountPercentage : 0,
+          final_calculated_price: finalPlatformFee,
+          currency: pricingConfig.currency || 'USD',
+          activation_status: 'Activated',
+          terms_accepted: true,
+          organization_type: organizationType,
+          country: country
+        });
+
+      if (error) {
+        console.error('Error saving engagement activation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to activate engagement model. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Record the activation for state management
       await recordActivation(selectedEngagementModel, selectedMembershipPlan);
-      
       setIsSubmitted(true);
-      
+
       toast({
-        title: "Engagement Model Activated",
-        description: `Successfully activated ${selectedEngagementModel} engagement model.`,
+        title: "Success",
+        description: `${getEngagementModelName(selectedEngagementModel)} has been activated successfully!`,
       });
-      
-      console.log('✅ Platform/Subscription fee selected and activation recorded');
+
     } catch (error) {
-      console.error('Error recording activation:', error);
+      console.error('Activation error:', error);
       toast({
+        title: "Error",
+        description: "An unexpected error occurred during activation",
         variant: "destructive",
-        title: "Activation Failed",
-        description: "Failed to record engagement model activation. Please try again."
+      });
+    } finally {
+      setEngagementPaymentLoading(false);
+    }
+  };
+
+  // Robust activation handler for PaaS models (subscription fee based)
+  const handlePaaSPayment = async () => {
+    try {
+      if (!selectedEngagementModel || !selectedMembershipPlan || !selectedPricingPlan) {
+        toast({
+          variant: "destructive",
+          title: "Selection Required",
+          description: "Please select membership plan, engagement model, and billing frequency before activating."
+        });
+        return;
+      }
+
+      setEngagementPaymentLoading(true);
+
+      const pricingConfig = getPricingConfig();
+      if (!pricingConfig) {
+        toast({
+          title: "Error",
+          description: "Pricing information or billing frequency not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get both member and non-member pricing for accurate calculations
+      const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+        selectedEngagementModel,
+        pricingConfigs,
+        country,
+        organizationType
+      );
+
+      // Calculate pricing details based on frequency
+      const isMembershipPaid = membershipStatus === 'active';
+      const discountPercentage = memberConfig?.discountPercentage || 0;
+      
+      let originalPrice = 0;
+      let finalPrice = 0;
+      
+      if (selectedPricingPlan === 'quarterly') {
+        originalPrice = nonMemberConfig?.quarterlyFee || pricingConfig.quarterlyFee || 0;
+        finalPrice = isMembershipPaid && discountPercentage > 0 
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice;
+      } else if (selectedPricingPlan === 'half-yearly') {
+        originalPrice = nonMemberConfig?.halfYearlyFee || pricingConfig.halfYearlyFee || 0;
+        finalPrice = isMembershipPaid && discountPercentage > 0 
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice;
+      } else if (selectedPricingPlan === 'annual') {
+        originalPrice = nonMemberConfig?.annualFee || pricingConfig.annualFee || 0;
+        finalPrice = isMembershipPaid && discountPercentage > 0 
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice;
+      }
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to process payment",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save engagement activation to database
+      const { error } = await supabase
+        .from('engagement_activations')
+        .insert({
+          user_id: user.id,
+          engagement_model: getEngagementModelName(selectedEngagementModel),
+          membership_status: selectedMembershipPlan,
+          platform_fee_percentage: originalPrice,
+          billing_frequency: selectedPricingPlan,
+          discount_percentage: isMembershipPaid ? discountPercentage : 0,
+          final_calculated_price: finalPrice,
+          currency: pricingConfig.currency || 'USD',
+          activation_status: 'Activated',
+          terms_accepted: true,
+          organization_type: organizationType,
+          country: country
+        });
+
+      if (error) {
+        console.error('Error saving engagement activation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save engagement details. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Record the activation for state management
+      await recordActivation(selectedEngagementModel, selectedMembershipPlan);
+      setIsSubmitted(true);
+
+      toast({
+        title: "Payment Processing",
+        description: `Processing payment for ${getEngagementModelName(selectedEngagementModel)} - ${selectedPricingPlan} plan`,
+      });
+
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during payment processing",
+        variant: "destructive",
       });
     } finally {
       setEngagementPaymentLoading(false);
@@ -487,7 +668,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               onPricingPlanChange={handlePricingPlanChange}
               pricingConfig={getPricingConfig()}
               membershipStatus={membershipStatus === 'active' ? 'member' : 'not-a-member'}
-              onSelectPlatformFee={handleSelectPlatformFee}
+              onSelectPlatformFee={isPaaSModel(selectedEngagementModel) ? handlePaaSPayment : handleActivateEngagement}
               isSubmitted={isSubmitted}
               isLoading={engagementPaymentLoading}
             />
