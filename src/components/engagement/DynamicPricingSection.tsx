@@ -13,7 +13,7 @@ interface DynamicPricingSectionProps {
   onPricingPlanChange: (plan: string) => void;
   pricingConfig: PricingConfig | null;
   membershipStatus: 'member' | 'not-a-member';
-  onSelectPlatformFee: (termsAccepted: boolean) => void;
+  onSelectPlatformFee: (termsAccepted: boolean, calculatedPrice: number, originalPrice: number) => void;
   isSubmitted?: boolean;
   isLoading?: boolean;
 }
@@ -163,7 +163,7 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
 
               <div className="text-center">
                 <Button 
-                  onClick={() => onSelectPlatformFee(termsAccepted)}
+                  onClick={() => onSelectPlatformFee(termsAccepted, discountedFee, platformFee)}
                   className="bg-primary hover:bg-primary/90 px-8 py-3"
                   size="lg"
                   disabled={!pricingConfig || isSubmitted || isLoading || !termsAccepted}
@@ -280,7 +280,11 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
 
                   <div className="text-center">
                     <Button 
-                      onClick={() => onSelectPlatformFee(termsAccepted)}
+                      onClick={() => {
+                        const basePrice = getFrequencyPrice(selectedPricingPlan);
+                        const finalPrice = getDiscountedSubscriptionPrice(selectedPricingPlan);
+                        onSelectPlatformFee(termsAccepted, finalPrice, basePrice);
+                      }}
                       className="bg-primary hover:bg-primary/90 px-8 py-3"
                       size="lg"
                       disabled={!selectedPricingPlan || isSubmitted || isLoading || !termsAccepted}

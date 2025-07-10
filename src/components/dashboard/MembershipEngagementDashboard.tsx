@@ -159,9 +159,9 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     console.log('✅ Selected pricing plan:', plan);
   };
 
-  // Robust activation handler for marketplace models (platform fee based)
-  const handleActivateEngagement = async (termsAccepted: boolean = false) => {
-    console.log('🚀 Starting handleActivateEngagement', { termsAccepted, selectedEngagementModel, selectedMembershipPlan });
+  // Simplified activation handler for marketplace models (platform fee based)
+  const handleActivateEngagement = async (termsAccepted: boolean = false, calculatedPrice: number = 0, originalPrice: number = 0) => {
+    console.log('🚀 Starting handleActivateEngagement', { termsAccepted, selectedEngagementModel, selectedMembershipPlan, calculatedPrice, originalPrice });
     try {
       if (!selectedEngagementModel || !selectedMembershipPlan) {
         toast({
@@ -200,22 +200,6 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         return;
       }
 
-      // Get both member and non-member pricing for accurate calculations
-      const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
-        selectedEngagementModel,
-        pricingConfigs,
-        country,
-        organizationType
-      );
-
-      // Calculate platform fee details
-      const isMembershipPaid = membershipStatus === 'active';
-      const originalPlatformFee = nonMemberConfig?.platformFeePercentage || pricingConfig.platformFeePercentage || 0;
-      const discountPercentage = memberConfig?.discountPercentage || 0;
-      const finalPlatformFee = isMembershipPaid && discountPercentage > 0 
-        ? originalPlatformFee * (1 - discountPercentage / 100)
-        : originalPlatformFee;
-
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       console.log('🔐 Authentication check:', { user: user?.id, authError });
@@ -230,16 +214,21 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         return;
       }
 
-      // Save engagement activation to database
+      // Calculate discount percentage for database storage
+      const discountPercentage = originalPrice > 0 && calculatedPrice < originalPrice 
+        ? ((originalPrice - calculatedPrice) / originalPrice) * 100 
+        : 0;
+
+      // Save engagement activation to database using already-calculated prices
       const { error } = await supabase
         .from('engagement_activations')
         .insert({
           user_id: user.id,
           engagement_model: getEngagementModelName(selectedEngagementModel),
           membership_status: selectedMembershipPlan,
-          platform_fee_percentage: finalPlatformFee,
-          discount_percentage: isMembershipPaid ? discountPercentage : 0,
-          final_calculated_price: finalPlatformFee,
+          platform_fee_percentage: originalPrice,
+          discount_percentage: discountPercentage,
+          final_calculated_price: calculatedPrice,
           currency: pricingConfig.currency || 'USD',
           activation_status: 'Activated',
           terms_accepted: true,
@@ -280,9 +269,9 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   };
 
-  // Robust activation handler for PaaS models (subscription fee based)
-  const handlePaaSPayment = async (termsAccepted: boolean = false) => {
-    console.log('🚀 Starting handlePaaSPayment', { termsAccepted, selectedEngagementModel, selectedMembershipPlan, selectedPricingPlan });
+  // Simplified activation handler for PaaS models (subscription fee based)
+  const handlePaaSPayment = async (termsAccepted: boolean = false, calculatedPrice: number = 0, originalPrice: number = 0) => {
+    console.log('🚀 Starting handlePaaSPayment', { termsAccepted, selectedEngagementModel, selectedMembershipPlan, selectedPricingPlan, calculatedPrice, originalPrice });
     try {
       if (!selectedEngagementModel || !selectedMembershipPlan || !selectedPricingPlan) {
         toast({
@@ -314,38 +303,6 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         return;
       }
 
-      // Get both member and non-member pricing for accurate calculations
-      const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
-        selectedEngagementModel,
-        pricingConfigs,
-        country,
-        organizationType
-      );
-
-      // Calculate pricing details based on frequency
-      const isMembershipPaid = membershipStatus === 'active';
-      const discountPercentage = memberConfig?.discountPercentage || 0;
-      
-      let originalPrice = 0;
-      let finalPrice = 0;
-      
-      if (selectedPricingPlan === 'quarterly') {
-        originalPrice = nonMemberConfig?.quarterlyFee || pricingConfig.quarterlyFee || 0;
-        finalPrice = isMembershipPaid && discountPercentage > 0 
-          ? originalPrice * (1 - discountPercentage / 100)
-          : originalPrice;
-      } else if (selectedPricingPlan === 'half-yearly') {
-        originalPrice = nonMemberConfig?.halfYearlyFee || pricingConfig.halfYearlyFee || 0;
-        finalPrice = isMembershipPaid && discountPercentage > 0 
-          ? originalPrice * (1 - discountPercentage / 100)
-          : originalPrice;
-      } else if (selectedPricingPlan === 'annual') {
-        originalPrice = nonMemberConfig?.annualFee || pricingConfig.annualFee || 0;
-        finalPrice = isMembershipPaid && discountPercentage > 0 
-          ? originalPrice * (1 - discountPercentage / 100)
-          : originalPrice;
-      }
-
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -358,7 +315,12 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         return;
       }
 
-      // Save engagement activation to database
+      // Calculate discount percentage for database storage
+      const discountPercentage = originalPrice > 0 && calculatedPrice < originalPrice 
+        ? ((originalPrice - calculatedPrice) / originalPrice) * 100 
+        : 0;
+
+      // Save engagement activation to database using already-calculated prices
       const { error } = await supabase
         .from('engagement_activations')
         .insert({
@@ -367,8 +329,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
           membership_status: selectedMembershipPlan,
           platform_fee_percentage: originalPrice,
           billing_frequency: selectedPricingPlan,
-          discount_percentage: isMembershipPaid ? discountPercentage : 0,
-          final_calculated_price: finalPrice,
+          discount_percentage: discountPercentage,
+          final_calculated_price: calculatedPrice,
           currency: pricingConfig.currency || 'USD',
           activation_status: 'Activated',
           terms_accepted: true,
@@ -407,22 +369,14 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     }
   };
 
-  // Calculate price based on membership status and apply discounts
-  const calculatePrice = (basePrice: number): number => {
-    if (!basePrice) return 0;
-    
-    // Apply member discount if applicable
-    const memberDiscount = membershipStatus === 'active' ? 0.8 : 1; // 20% discount for active members
-    return Math.round(basePrice * memberDiscount);
-  };
-
-  // Get formatted currency
+  // Format currency (keep for compatibility)
   const formatCurrency = (amount: number, currency: string = 'INR'): string => {
     if (currency === 'INR') {
       return `INR ${amount}`;
     }
     return `${currency} ${amount}`;
   };
+
 
   // Get membership plans with dynamic pricing from master data (independent of engagement model)
   const getMembershipPlans = (): PricingPlan[] => {
@@ -551,16 +505,16 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
                         <div className="flex-1">
                           <div className="font-medium">{plan.name}</div>
                           <div className="text-sm text-gray-500">{plan.duration}</div>
-                          {plan.price && (
-                            <div className="text-lg font-bold text-blue-600">
-                              {formatCurrency(calculatePrice(plan.price), plan.currency)}
-                            </div>
-                          )}
                            {plan.price && (
-                             <div className="text-xs text-gray-400">
-                               ~{formatCurrency(Math.round(calculatePrice(plan.price) / 12), plan.currency)}/mo
+                             <div className="text-lg font-bold text-blue-600">
+                               {formatCurrency(plan.price, plan.currency)}
                              </div>
                            )}
+                            {plan.price && (
+                              <div className="text-xs text-gray-400">
+                                ~{formatCurrency(Math.round(plan.price / 12), plan.currency)}/mo
+                              </div>
+                            )}
                         </div>
                       </div>
                     </Label>
@@ -699,7 +653,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               onPricingPlanChange={handlePricingPlanChange}
               pricingConfig={getPricingConfig()}
               membershipStatus={membershipStatus === 'active' ? 'member' : 'not-a-member'}
-              onSelectPlatformFee={(termsAccepted) => isPaaSModel(selectedEngagementModel) ? handlePaaSPayment(termsAccepted) : handleActivateEngagement(termsAccepted)}
+              onSelectPlatformFee={(termsAccepted, calculatedPrice, originalPrice) => isPaaSModel(selectedEngagementModel) ? handlePaaSPayment(termsAccepted, calculatedPrice, originalPrice) : handleActivateEngagement(termsAccepted, calculatedPrice, originalPrice)}
               isSubmitted={isSubmitted}
               isLoading={engagementPaymentLoading}
             />
