@@ -214,15 +214,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           )}
         </div>
 
-        {/* Information Note - Only for PaaS */}
-        {isPaaS && (
-          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-            <p>
-              <strong>Platform as a Service:</strong> Payment is required to activate your engagement. 
-              Select your preferred billing frequency and complete the payment to start using the platform.
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
