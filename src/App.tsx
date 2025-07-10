@@ -6,13 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ContributorAuth from "./pages/ContributorAuth";
 import SeekingOrgAdministratorLogin from "./pages/SeekingOrgAdministratorLogin";
-import Challenges from "./pages/Challenges";
-import Solutions from "./pages/Solutions";
-import Events from "./pages/Events";
-import Community from "./pages/Community";
-import Resources from "./pages/Resources";
-import MasterData from "./pages/MasterData";
+import MasterDataPortal from "./pages/MasterDataPortal";
 
 const queryClient = new QueryClient();
 
@@ -25,15 +21,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/signin" element={<Auth />} />
-          <Route path="/signup" element={<Auth />} />
-          <Route path="/challenges" element={<Challenges />} />
-          <Route path="/solutions" element={<Solutions />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/resources" element={<Resources />} />
-          <Route path="/master-data" element={<MasterData />} />
+          <Route path="/contributor-auth" element={<ContributorAuth />} />
           <Route path="/seeking-org-admin-login" element={<SeekingOrgAdministratorLogin />} />
+          <Route path="/master-data-portal" element={<MasterDataPortal />} />
+          <Route path="/master-data" element={<MasterDataPortal />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
