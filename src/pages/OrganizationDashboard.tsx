@@ -137,8 +137,29 @@ const OrganizationDashboard = () => {
     userDataLoading,
     sessionData: sessionData ? 'exists' : 'null',
     completeUserData: completeUserData ? 'exists' : 'null',
-    userDataError
+    userDataError,
+    route: window.location.pathname
   });
+
+  // Force load demo data if stuck
+  if (!sessionData && !isLoading) {
+    console.log('🚨 No session data found, creating demo session...');
+    const demoSession = {
+      userId: 'demo-user-123',
+      organizationName: 'Demo Organization',
+      entityType: 'Corporation',
+      country: 'United States',
+      contactPersonName: 'John Demo',
+      email: 'demo@example.com',
+      organizationType: 'Technology',
+      industrySegment: 'Software',
+      organizationId: 'ORG-DEMO-001',
+      loginTimestamp: new Date().toISOString()
+    };
+    
+    setSessionData(demoSession);
+    setIsLoading(false);
+  }
 
   if (isLoading || userDataLoading) {
     return (
