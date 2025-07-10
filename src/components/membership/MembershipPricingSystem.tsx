@@ -154,7 +154,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     engagementModelsLength: engagementModels?.length || 0,
     organizationType,
     entityType,
-    country
+    country,
+    // Current state debugging
+    membershipStatus: state.membership_status,
+    selectedEngagementModel: state.selected_engagement_model,
+    selectedFrequency: state.selected_frequency,
+    engagementPaymentStatus: state.engagement_payment_status,
+    engagementActivationStatus: state.engagement_activation_status
   });
 
   const engagementPricing = getEngagementPricing(
@@ -229,25 +235,23 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
         />
       </div>
       
-      {/* Engagement Payment Card */}
-      {state.selected_engagement_model && (
-        <div className="mt-8">
-          <EngagementPaymentCard
-            selectedEngagementModel={state.selected_engagement_model}
-            selectedFrequency={state.selected_frequency}
-            membershipStatus={state.membership_status}
-            pricingConfigs={pricingConfigs}
-            country={country}
-            organizationType={organizationType}
-            onFrequencyChange={updateFrequency}
-            onEngagementPayment={handleEngagementPayment}
-            onEngagementActivation={handleEngagementActivation}
-            loading={dataLoading}
-            engagementPaymentStatus={state.engagement_payment_status}
-            engagementActivationStatus={state.engagement_activation_status}
-          />
-        </div>
-      )}
+      {/* Engagement Payment Card - Always show to guide user */}
+      <div className="mt-8">
+        <EngagementPaymentCard
+          selectedEngagementModel={state.selected_engagement_model}
+          selectedFrequency={state.selected_frequency}
+          membershipStatus={state.membership_status}
+          pricingConfigs={pricingConfigs}
+          country={country}
+          organizationType={organizationType}
+          onFrequencyChange={updateFrequency}
+          onEngagementPayment={handleEngagementPayment}
+          onEngagementActivation={handleEngagementActivation}
+          loading={dataLoading}
+          engagementPaymentStatus={state.engagement_payment_status}
+          engagementActivationStatus={state.engagement_activation_status}
+        />
+      </div>
     </div>
   );
 };
