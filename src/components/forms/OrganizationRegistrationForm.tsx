@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Building, Mail, Phone, User, Globe } from 'lucide-react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { Building, Mail, Phone, User, Globe, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface OrganizationFormData {
   organizationName: string;
@@ -162,6 +163,10 @@ const sampleOrganizations = [
 
 const OrganizationRegistrationForm = () => {
   const { toast } = useToast();
+  const { signUp } = useSupabaseAuth();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState<OrganizationFormData>({
     organizationName: '',
     organizationType: '',
@@ -174,6 +179,9 @@ const OrganizationRegistrationForm = () => {
     contactMobile: ''
   });
 
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const handleInputChange = (field: keyof OrganizationFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -181,8 +189,10 @@ const OrganizationRegistrationForm = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🚀 Starting organization registration process...');
     
     // Basic validation
     const requiredFields = [
@@ -204,15 +214,114 @@ const OrganizationRegistrationForm = () => {
         description: "Please fill in all required fields",
         variant: "destructive"
       });
+      console.log('❌ Missing required fields:', missingFields);
       return;
     }
 
-    toast({
-      title: "Registration Submitted",
-      description: "Organization registration has been submitted successfully"
-    });
+    if (!password || password.length < 6) {
+      toast({
+        title: "Password Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    console.log('Form submitted:', formData);
+    if (password !== confirmPassword) {
+      toast({
+        title: "Password Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      console.log('📝 Preparing registration data...');
+      
+      // Generate organization ID
+      const organizationId = `ORG_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Prepare additional data for profile creation
+      const additionalData = {
+        organizationName: formData.organizationName,
+        organizationId: organizationId,
+        organizationType: formData.organizationType,
+        entityType: 'Private Limited Company', // Default entity type
+        contactPersonName: formData.contactPersonName,
+        country: formData.country,
+        countryCode: formData.contactMobile.split('-')[0] || '+1',
+        address: formData.registeredAddress,
+        website: formData.websiteUrl,
+        phoneNumber: formData.contactMobile
+      };
+
+      console.log('🔐 Attempting to create account with email:', formData.contactEmail);
+      console.log('📊 Additional profile data prepared');
+
+      const { error } = await signUp(formData.contactEmail, password, additionalData);
+
+      if (error) {
+        console.error('❌ Registration failed:', error);
+        
+        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+          toast({
+            title: "Registration Error",
+            description: "This email is already registered. Please sign in instead or use a different email.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes('Invalid email')) {
+          toast({
+            title: "Registration Error",
+            description: "Please enter a valid email address.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Registration Error",
+            description: `Registration failed: ${error.message}`,
+            variant: "destructive"
+          });
+        }
+      } else {
+        console.log('✅ Registration successful!');
+        toast({
+          title: "Registration Successful!",
+          description: "Your organization has been registered successfully. You can now sign in.",
+        });
+        
+        // Clear form
+        setFormData({
+          organizationName: '',
+          organizationType: '',
+          country: '',
+          registeredAddress: '',
+          websiteUrl: '',
+          contactPersonName: '',
+          contactPersonDesignation: '',
+          contactEmail: '',
+          contactMobile: ''
+        });
+        setPassword('');
+        setConfirmPassword('');
+        
+        // Navigate to auth page for sign in
+        setTimeout(() => {
+          navigate('/auth');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('❌ Unexpected registration error:', error);
+      toast({
+        title: "Registration Error",
+        description: "An unexpected error occurred during registration. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const fillSampleData = (sampleOrg: typeof sampleOrganizations[0]) => {
@@ -235,6 +344,8 @@ const OrganizationRegistrationForm = () => {
       contactEmail: '',
       contactMobile: ''
     });
+    setPassword('');
+    setConfirmPassword('');
   };
 
   return (
@@ -399,12 +510,56 @@ const OrganizationRegistrationForm = () => {
               </div>
             </div>
 
+            {/* Password Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Account Security</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password (min 6 characters)"
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Form Actions */}
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="flex-1">
-                Submit Registration
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Registering Organization...
+                  </>
+                ) : (
+                  'Register Organization'
+                )}
               </Button>
-              <Button type="button" variant="outline" onClick={clearForm}>
+              <Button type="button" variant="outline" onClick={clearForm} disabled={isSubmitting}>
                 Clear Form
               </Button>
             </div>
