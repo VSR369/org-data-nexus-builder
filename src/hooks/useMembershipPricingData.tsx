@@ -37,19 +37,9 @@ export const useMembershipPricingData = (
         setPricingConfigs(configs);
         console.log('✅ Set pricing configs in state:', configs.length);
         
-        // Force initialization if no configs loaded or configs have invalid values
-        // Marketplace models should have platformFeePercentage, PaaS models should have at least one fee field
-        const isValidConfig = (c: any) => {
-          const isMarketplace = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(c.engagementModel);
-          if (isMarketplace) {
-            return c.platformFeePercentage !== null && c.platformFeePercentage !== undefined;
-          } else {
-            return c.quarterlyFee || c.halfYearlyFee || c.annualFee;
-          }
-        };
-        
-        if (!configs || configs.length === 0 || configs.some(c => !isValidConfig(c))) {
-          console.log('🔧 No valid pricing configs found, forcing default data load...');
+        // Force initialization if no configs loaded at all
+        if (!configs || configs.length === 0) {
+          console.log('🔧 No pricing configs found, forcing default data load...');
           const currentMode = localStorage.getItem('master_data_mode');
           
           // Temporarily force mixed mode to get defaults
@@ -64,6 +54,13 @@ export const useMembershipPricingData = (
           
           setPricingConfigs(defaultConfigs);
           console.log('✅ Loaded default pricing configs:', defaultConfigs.length);
+        } else {
+          console.log('✅ Using Supabase pricing configs with proper discounts:', configs.length);
+          console.log('🔍 Sample config discounts:', configs.slice(0,3).map(c => ({
+            model: c.engagementModel, 
+            status: c.membershipStatus, 
+            discount: c.discountPercentage
+          })));
         }
 
         // Load membership fees
