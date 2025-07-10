@@ -45,6 +45,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string>('');
   const [selectedPricingPlan, setSelectedPricingPlan] = useState<string>('');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [engagementPaymentLoading, setEngagementPaymentLoading] = useState<boolean>(false);
   
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
@@ -168,6 +169,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       return;
     }
 
+    setEngagementPaymentLoading(true);
+
     try {
       // Record the activation
       await recordActivation(selectedEngagementModel, selectedMembershipPlan);
@@ -187,6 +190,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         title: "Activation Failed",
         description: "Failed to record engagement model activation. Please try again."
       });
+    } finally {
+      setEngagementPaymentLoading(false);
     }
   };
 
@@ -484,6 +489,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               membershipStatus={membershipStatus === 'active' ? 'member' : 'not-a-member'}
               onSelectPlatformFee={handleSelectPlatformFee}
               isSubmitted={isSubmitted}
+              isLoading={engagementPaymentLoading}
             />
           )}
         </div>

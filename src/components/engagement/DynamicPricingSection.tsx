@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Percent } from 'lucide-react';
+import { DollarSign, Percent, Loader2 } from 'lucide-react';
 import { PricingConfig } from '@/types/pricing';
 
 interface DynamicPricingSectionProps {
@@ -14,6 +14,7 @@ interface DynamicPricingSectionProps {
   membershipStatus: 'member' | 'not-a-member';
   onSelectPlatformFee: () => void;
   isSubmitted?: boolean;
+  isLoading?: boolean;
 }
 
 export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
@@ -24,7 +25,8 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
   pricingConfig,
   membershipStatus,
   onSelectPlatformFee,
-  isSubmitted = false
+  isSubmitted = false,
+  isLoading = false
 }) => {
   // Check if engagement model is marketplace-based (fee-based)
   const isMarketplaceBased = (modelName: string) => {
@@ -150,9 +152,16 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
                   onClick={onSelectPlatformFee}
                   className="bg-primary hover:bg-primary/90 px-8 py-3"
                   size="lg"
-                  disabled={!pricingConfig || isSubmitted}
+                  disabled={!pricingConfig || isSubmitted || isLoading}
                 >
-                  Select Platform Fee
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Activating...
+                    </>
+                  ) : (
+                    "Select Platform Fee"
+                  )}
                 </Button>
               </div>
             </div>
@@ -247,9 +256,16 @@ export const DynamicPricingSection: React.FC<DynamicPricingSectionProps> = ({
                     onClick={onSelectPlatformFee}
                     className="bg-primary hover:bg-primary/90 px-8 py-3"
                     size="lg"
-                    disabled={!selectedPricingPlan || isSubmitted}
+                    disabled={!selectedPricingPlan || isSubmitted || isLoading}
                   >
-                    Select Subscription Fee
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Activating...
+                      </>
+                    ) : (
+                      "Select Subscription Fee"
+                    )}
                   </Button>
                 </div>
               )}
