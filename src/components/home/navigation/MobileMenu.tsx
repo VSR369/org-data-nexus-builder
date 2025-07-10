@@ -54,7 +54,7 @@ export const MobileMenu = ({
         <div className="px-4 py-2 border-t pt-4 mt-4">
           <div className="space-y-2">
             <Link
-              to="/signin"
+              to="/auth"
               onClick={() => setIsMenuOpen(false)}
               className="block w-full"
             >
@@ -63,7 +63,7 @@ export const MobileMenu = ({
               </Button>
             </Link>
             <Link
-              to="/signup"
+              to="/auth?mode=signup"
               onClick={() => setIsMenuOpen(false)}
               className="block w-full"
             >

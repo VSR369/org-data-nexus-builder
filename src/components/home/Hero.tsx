@@ -1,5 +1,29 @@
 
+import { useNavigate } from "react-router-dom";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+
 export const Hero = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSupabaseAuth();
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate("/challenges");
+    } else {
+      navigate("/auth?mode=signup");
+    }
+  };
+
+  const handleLearnMore = () => {
+    // Scroll to success stories section or navigate to resources
+    const successStoriesSection = document.getElementById('success-stories');
+    if (successStoriesSection) {
+      successStoriesSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate("/resources");
+    }
+  };
+
   return (
     <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-20">
       <div className="container mx-auto px-6 text-center">
@@ -11,10 +35,16 @@ export const Hero = () => {
           Join our platform to find solutions, share challenges, and build the future together.
         </p>
         <div className="flex gap-4 justify-center">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-            Get Started
+          <button 
+            onClick={handleGetStarted}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+          >
+            {isAuthenticated ? "Explore Challenges" : "Get Started"}
           </button>
-          <button className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-semibold transition-colors">
+          <button 
+            onClick={handleLearnMore}
+            className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-semibold transition-colors"
+          >
             Learn More
           </button>
         </div>

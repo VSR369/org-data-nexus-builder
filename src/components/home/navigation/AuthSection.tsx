@@ -12,12 +12,7 @@ import { User, Settings, LogOut, Database } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
-interface AuthSectionProps {
-  isLoggedIn?: boolean;
-  setIsLoggedIn?: (value: boolean) => void;
-}
-
-export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => {
+export const AuthSection = () => {
   const { isAuthenticated, user, profile, signOut, loading } = useSupabaseAuth();
 
   if (loading) {

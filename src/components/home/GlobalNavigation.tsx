@@ -6,10 +6,11 @@ import { SearchBar } from "./navigation/SearchBar";
 import { AuthSection } from "./navigation/AuthSection";
 import { MobileMenu } from "./navigation/MobileMenu";
 import { MobileMenuToggle } from "./navigation/MobileMenuToggle";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 export const GlobalNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isAuthenticated } = useSupabaseAuth();
 
   const navigationItems = [
     { label: "Home", href: "/" },
@@ -34,10 +35,7 @@ export const GlobalNavigation = () => {
           <SearchBar />
 
           {/* Auth Section */}
-          <AuthSection 
-            isLoggedIn={isLoggedIn} 
-            setIsLoggedIn={setIsLoggedIn} 
-          />
+          <AuthSection />
 
           {/* Mobile Menu Toggle */}
           <MobileMenuToggle 
@@ -50,8 +48,8 @@ export const GlobalNavigation = () => {
         <MobileMenu
           isMenuOpen={isMenuOpen}
           setIsMenuOpen={setIsMenuOpen}
-          isLoggedIn={isLoggedIn}
-          setIsLoggedIn={setIsLoggedIn}
+          isLoggedIn={isAuthenticated}
+          setIsLoggedIn={() => {}} // This is now handled by Supabase
           navigationItems={navigationItems}
         />
       </div>
