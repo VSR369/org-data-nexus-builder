@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-2xl font-semibold leading-none tracking-tight">
             <CreditCard className="w-5 h-5" />
             Engagement Activation
           </CardTitle>
@@ -147,7 +148,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     return (
       <Card className="w-full border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700">
+          <CardTitle className="flex items-center gap-2 text-green-700 text-2xl font-semibold leading-none tracking-tight">
             <CheckCircle className="w-5 h-5" />
             {isPaaS ? 'Engagement Payment Completed' : 'Engagement Activated'}
           </CardTitle>
@@ -173,18 +174,16 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">
-            {isPaaS ? 'Engagement Payment' : 'Engagement Activation'}
-          </CardTitle>
-          <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
-            {isMembershipPaid && (
-              <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
-                Member
-              </Badge>
-            )}
-          </div>
+        <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+          {isPaaS ? 'Engagement Payment' : 'Engagement Activation'}
+        </CardTitle>
+        <div className="flex items-center gap-1 mt-2">
+          <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
+          {isMembershipPaid && (
+            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
+              Member
+            </Badge>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -204,11 +203,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
             {isMarketplace && currentAmount ? (
               <>
                 <div className="text-xl font-bold text-primary">
-                  {currentAmount.amount}% Platform Fee
+                  Platform fee = {currentAmount.amount}% of Solution Fee
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  of solution transaction amount
-                </p>
               </>
             ) : isPaaS && selectedFrequency && currentAmount ? (
               <>
@@ -237,7 +233,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                   <div className="bg-green-50 border border-green-200 rounded-md p-2 mt-2 text-xs">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground line-through">
-                        {nonMemberAmount.amount}%
+                        Platform fee = {nonMemberAmount.amount}% of Solution Fee
                       </span>
                       <span className="text-green-700 font-medium">
                         Save {(nonMemberAmount.amount - memberAmount.amount).toFixed(1)}%
