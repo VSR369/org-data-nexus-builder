@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -233,167 +234,42 @@ const OrganizationDashboard = () => {
           </p>
         </div>
 
-        {/* Membership & Engagement Status Display - Updated to use displayData */}
-        {(membershipEngagementData.membershipData?.paymentStatus === 'paid' || membershipEngagementData.pricingData?.engagementModel || membershipEngagementData.membershipData || membershipEngagementData.pricingData) && (
-          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-blue-600" />
-                Membership & Engagement Status
-              </h3>
-              
-              <div className="bg-white rounded-lg p-4 border border-blue-100">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {/* Membership Status */}
-                  {membershipEngagementData.membershipData?.paymentStatus === 'paid' ? (
-                    <>
-                      <Badge variant="default" className="bg-blue-600 hover:bg-blue-700 text-white">
-                        Premium Member
-                      </Badge>
-                      <Badge variant="outline" className="border-blue-200 bg-blue-50">
-                        {membershipEngagementData.membershipData.type === 'annual' ? 'Annual Plan' : membershipEngagementData.membershipData.type || 'Member'}
-                      </Badge>
-                      {membershipEngagementData.membershipData.paymentAmount > 0 && (
-                        <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
-                          Paid: {membershipEngagementData.membershipData.paymentCurrency} {membershipEngagementData.membershipData.paymentAmount}
-                        </Badge>
-                      )}
-                    </>
-                  ) : (
-                    <Badge variant="secondary">
-                      Not a Member
-                    </Badge>
-                  )}
-                </div>
-                
-                {/* Engagement Model Details */}
-                {membershipEngagementData.pricingData?.engagementModel ? (
-                  <div className="space-y-2">
-                    <div className="font-medium text-primary flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Engagement Model: {membershipEngagementData.pricingData.engagementModel}
-                      {membershipEngagementData.pricingData.selectedFrequency && (
-                        <span className="text-muted-foreground font-normal">({membershipEngagementData.pricingData.selectedFrequency})</span>
-                      )}
-                    </div>
-                    {membershipEngagementData.pricingData.paymentStatus === 'paid' && membershipEngagementData.pricingData.paymentAmount > 0 && (
-                      <div className="flex gap-2 flex-wrap">
-                        <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
-                           ✅ Paid: {membershipEngagementData.pricingData.engagementModel?.toLowerCase().includes('marketplace') 
-                             ? `${Number(membershipEngagementData.pricingData.paymentAmount).toFixed(2)}% of solution fee`
-                             : `${membershipEngagementData.pricingData.paymentCurrency} ${membershipEngagementData.pricingData.paymentAmount}`
-                           }
-                        </Badge>
-                        {membershipEngagementData.pricingData.paidAt && (
-                          <Badge variant="outline" className="text-xs">
-                            {new Date(membershipEngagementData.pricingData.paidAt).toLocaleDateString()}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                    {membershipEngagementData.pricingData.paymentStatus !== 'paid' && (
-                      <Badge variant="destructive" className="text-xs">
-                        ❌ Payment Pending
-                      </Badge>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-sm text-red-600 italic flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    No engagement model selected - Please select and pay for an engagement model below
-                  </div>
-                )}
-                
-                {/* Debug info for troubleshooting */}
-                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
-                  <strong>Debug Status:</strong> Membership: {membershipEngagementData.membershipData?.paymentStatus || 'none'} | 
-                  Engagement: {membershipEngagementData.pricingData?.engagementModel || 'none'} | 
-                  Data Source: {membershipEngagementData.membershipData?.dataSource || membershipEngagementData.pricingData?.dataSource || 'none'}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Data Loading Status */}
-        {userDataError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load complete organization data: {userDataError}
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Organization Overview Cards - Compact Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Primary Organization Info */}
-          <Card className="lg:col-span-2">
+          <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Building2 className="h-5 w-5" />
-                Organization Overview
+                Organization Details
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {completeUserData ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Organization</label>
-                      <p className="text-sm font-semibold mt-1">{completeUserData.organizationName}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Organization Type</label>
-                      <div className="mt-1">
-                        <Badge variant="secondary" className="text-xs">{completeUserData.organizationType}</Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Entity Type</label>
-                      <div className="mt-1">
-                        <Badge variant="outline" className="text-xs">{completeUserData.entityType}</Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">User ID</label>
-                      <p className="text-sm font-mono mt-1">{completeUserData.userId}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{completeUserData.country}</span>
-                      </div>
-                    </div>
-                    {completeUserData.industrySegment && (
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Industry</label>
-                        <div className="mt-1">
-                          <Badge variant="outline" className="text-xs">{completeUserData.industrySegment}</Badge>
-                          <p className="text-xs text-gray-500 mt-1">From registration data</p>
-                        </div>
-                      </div>
-                    )}
-                    {!completeUserData.industrySegment && (
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Industry</label>
-                        <div className="mt-1">
-                          <Badge variant="outline" className="text-xs text-orange-600">Not specified</Badge>
-                          <p className="text-xs text-gray-500 mt-1">Missing from registration</p>
-                        </div>
-                      </div>
-                    )}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Organization Name</label>
+                  <p className="text-sm font-semibold mt-1">{displayData.organizationName}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Organization Type</label>
+                  <div className="mt-1">
+                    <Badge variant="secondary" className="text-xs">{displayData.organizationType}</Badge>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Loading organization data...</p>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Entity Type</label>
+                  <div className="mt-1">
+                    <Badge variant="outline" className="text-xs">{displayData.entityType}</Badge>
+                  </div>
                 </div>
-              )}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm">{displayData.country}</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -402,76 +278,44 @@ const OrganizationDashboard = () => {
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <User className="h-5 w-5" />
-                Contact Details
+                Contact Information
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {completeUserData ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact Person</label>
-                    <p className="text-sm font-medium mt-1">{completeUserData.contactPersonName}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Email</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Mail className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm truncate">{completeUserData.email}</span>
-                    </div>
-                  </div>
-                  {completeUserData.phoneNumber && (
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">
-                          {completeUserData.countryCode ? `+${completeUserData.countryCode} ` : ''}
-                          {completeUserData.phoneNumber}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {completeUserData.website && (
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Website</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Globe className="h-3 w-3 text-muted-foreground" />
-                        <a href={completeUserData.website} target="_blank" rel="noopener noreferrer" 
-                           className="text-sm text-blue-600 hover:underline truncate">
-                          {completeUserData.website}
-                        </a>
-                      </div>
-                    </div>
-                  )}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact Person</label>
+                  <p className="text-sm font-medium mt-1">{displayData.contactPersonName}</p>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <User className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Loading contact data...</p>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Email</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Mail className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm truncate">{displayData.email}</span>
+                  </div>
                 </div>
-              )}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">User ID</label>
+                  <p className="text-sm font-mono mt-1">{displayData.userId}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Membership and Engagement Dashboard - 4 Column Grid Structure */}
-        <div className="space-y-6">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Membership & Engagement System</h3>
-            <p className="text-gray-600">Select your membership plan and engagement model</p>
-          </div>
-          
+        {/* Membership and Engagement System - 4 Column Grid Structure */}
+        <div className="mb-8">
           <MembershipPricingSystem
-            organizationType={completeUserData?.organizationType || displayData.organizationType || 'Technology'}
-            entityType={completeUserData?.entityType || displayData.entityType}
-            country={completeUserData?.country || displayData.country}
-            organizationId={completeUserData?.organizationId || displayData.organizationId}
-            organizationName={completeUserData?.organizationName || displayData.organizationName}
+            organizationType={displayData.organizationType || 'Technology'}
+            entityType={displayData.entityType}
+            country={displayData.country}
+            organizationId={displayData.organizationId}
+            organizationName={displayData.organizationName}
           />
         </div>
 
         {/* Quick Actions */}
-        <Card className="mt-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
