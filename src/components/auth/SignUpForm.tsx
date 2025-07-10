@@ -37,7 +37,6 @@ interface FormData {
   phoneNumber: string;
   
   // Authentication
-  userId: string;
   password: string;
   confirmPassword: string;
 }
@@ -69,7 +68,6 @@ const SignUpForm = () => {
     email: '',
     countryCode: '',
     phoneNumber: '',
-    userId: '',
     password: '',
     confirmPassword: ''
   });
@@ -79,10 +77,10 @@ const SignUpForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Calculate progress
-  const totalFields = Object.keys(formData).length - 3; // Exclude file arrays
+  // Calculate progress - exclude file arrays and confirmation field
+  const totalFields = Object.keys(formData).length - 4; // Exclude file arrays and confirmPassword
   const filledFields = Object.entries(formData).filter(([key, value]) => {
-    if (key.includes('Documents') || key.includes('Logo') || key.includes('Profile')) return true;
+    if (key.includes('Documents') || key.includes('Logo') || key.includes('Profile') || key === 'confirmPassword') return true;
     return value && value !== '';
   }).length;
   const progress = Math.round((filledFields / totalFields) * 100);
@@ -140,8 +138,7 @@ const SignUpForm = () => {
         address: formData.address,
         website: formData.website,
         phone_number: formData.phoneNumber,
-        country_code: formData.countryCode,
-        custom_user_id: formData.userId
+        country_code: formData.countryCode
       });
 
       if (error) {
@@ -491,18 +488,6 @@ const SignUpForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="userId" className={errors.userId ? "text-red-500" : ""}>User ID *</Label>
-              <Input
-                id="userId"
-                value={formData.userId}
-                onChange={(e) => handleInputChange('userId', e.target.value)}
-                placeholder="Enter user ID"
-                className={errors.userId ? "border-red-500" : ""}
-              />
-              {errors.userId && <p className="text-sm text-red-500">{errors.userId}</p>}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="password" className={errors.password ? "text-red-500" : ""}>Password *</Label>
               <div className="relative">
                 <Input
@@ -524,9 +509,9 @@ const SignUpForm = () => {
               {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="confirmPassword" className={errors.confirmPassword ? "text-red-500" : ""}>Confirm Password *</Label>
-              <div className="relative md:w-1/2">
+              <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}

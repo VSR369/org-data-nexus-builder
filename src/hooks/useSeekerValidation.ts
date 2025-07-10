@@ -4,41 +4,44 @@ export const useSeekerValidation = () => {
   const validateForm = (formData: any) => {
     const errors: { [key: string]: string } = {};
 
-    // Required field validations
-    if (!formData.userId?.trim()) {
-      errors.userId = 'User ID is required';
-    }
-
+    // Organization name validation
     if (!formData.organizationName?.trim()) {
       errors.organizationName = 'Organization name is required';
     }
 
+    // Contact person name validation
     if (!formData.contactPersonName?.trim()) {
       errors.contactPersonName = 'Contact person name is required';
     }
 
+    // Email validation
     if (!formData.email?.trim()) {
       errors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
 
+    // Organization type validation
     if (!formData.organizationType) {
       errors.organizationType = 'Organization type is required';
     }
 
+    // Entity type validation
     if (!formData.entityType) {
       errors.entityType = 'Entity type is required';
     }
 
+    // Industry segment validation
     if (!formData.industrySegment) {
       errors.industrySegment = 'Industry segment is required';
     }
 
+    // Country validation
     if (!formData.country) {
       errors.country = 'Country is required';
     }
 
+    // Address validation
     if (!formData.address?.trim()) {
       errors.address = 'Address is required';
     }
@@ -50,6 +53,7 @@ export const useSeekerValidation = () => {
       errors.password = 'Password must be at least 6 characters long';
     }
 
+    // Confirm password validation
     if (!formData.confirmPassword) {
       errors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {

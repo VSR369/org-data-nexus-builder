@@ -20,7 +20,6 @@ export const useSeekerFormData = () => {
     email: '',
     countryCode: '',
     phoneNumber: '',
-    userId: '',
     password: '',
     confirmPassword: ''
   });
