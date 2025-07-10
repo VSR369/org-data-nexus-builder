@@ -37,6 +37,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔐 Setting up auth state listener...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -45,11 +47,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile with a slight delay to avoid deadlock
+          console.log('👤 User authenticated, fetching profile...');
+          // Fetch user profile with a slight delay to avoid issues
           setTimeout(() => {
             fetchUserProfile(session.user.id);
-          }, 0);
+          }, 100);
         } else {
+          console.log('👤 User signed out, clearing profile');
           setProfile(null);
         }
         
@@ -58,19 +62,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔐 Initial session check:', session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
+    console.log('🔍 Checking for existing session...');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('❌ Error getting session:', error);
+      } else {
+        console.log('🔐 Initial session check:', session?.user?.email || 'No session');
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        }
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🔐 Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -87,72 +99,119 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      console.log('✅ Profile fetched:', data);
-      setProfile(data);
+      if (data) {
+        console.log('✅ Profile fetched successfully:', {
+          name: data.contact_person_name,
+          organization: data.organization_name,
+          email: data.id
+        });
+        setProfile(data);
+      } else {
+        console.log('ℹ️ No profile found for user');
+      }
     } catch (error) {
       console.error('❌ Error fetching profile:', error);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 Signing in user:', email);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    return { error };
+    console.log('🔐 Attempting to sign in user:', email);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password
+      });
+
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        return { error };
+      }
+
+      if (data.user) {
+        console.log('✅ Sign in successful for:', data.user.email);
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error('❌ Unexpected sign in error:', error);
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string, additionalData?: any) => {
-    console.log('📝 Signing up user:', email);
+    console.log('📝 Attempting to sign up user:', email);
     const redirectUrl = `${window.location.origin}/`;
     
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
 
-    if (!error && data.user && additionalData) {
-      console.log('👤 Creating profile for user:', data.user.id);
-      
-      // Create profile record
-      const customUserId = `ORG_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          custom_user_id: customUserId,
-          organization_name: additionalData.organizationName,
-          organization_id: additionalData.organizationId,
-          contact_person_name: additionalData.contactPersonName,
-          organization_type: additionalData.organizationType,
-          entity_type: additionalData.entityType,
-          country: additionalData.country,
-          country_code: additionalData.countryCode,
-          industry_segment: additionalData.industrySegment,
-          address: additionalData.address,
-          phone_number: additionalData.phoneNumber,
-          website: additionalData.website
-        });
-
-      if (profileError) {
-        console.error('❌ Error creating profile:', profileError);
-        return { error: profileError };
+      if (error) {
+        console.error('❌ Sign up error:', error);
+        return { error };
       }
-      
-      console.log('✅ Profile created successfully');
+
+      if (data.user) {
+        console.log('✅ Sign up successful for:', data.user.email);
+        
+        if (additionalData) {
+          console.log('👤 Creating profile for user:', data.user.id);
+          
+          // Create profile record
+          const customUserId = `ORG_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              custom_user_id: customUserId,
+              organization_name: additionalData.organizationName,
+              organization_id: additionalData.organizationId,
+              contact_person_name: additionalData.contactPersonName,
+              organization_type: additionalData.organizationType,
+              entity_type: additionalData.entityType,
+              country: additionalData.country,
+              country_code: additionalData.countryCode,
+              industry_segment: additionalData.industrySegment,
+              address: additionalData.address,
+              phone_number: additionalData.phoneNumber,
+              website: additionalData.website
+            });
+
+          if (profileError) {
+            console.error('❌ Error creating profile:', profileError);
+            return { error: profileError };
+          }
+          
+          console.log('✅ Profile created successfully');
+        }
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error('❌ Unexpected sign up error:', error);
+      return { error };
     }
-
-    return { error };
   };
 
   const signOut = async () => {
     console.log('🚪 Signing out user');
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('❌ Sign out error:', error);
+      } else {
+        console.log('✅ Sign out successful');
+      }
+    } catch (error) {
+      console.error('❌ Unexpected sign out error:', error);
+    }
   };
 
   const value = {
@@ -160,7 +219,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     profile,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!session,
     signIn,
     signUp,
     signOut
