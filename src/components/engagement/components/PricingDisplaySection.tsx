@@ -64,14 +64,12 @@ export const PricingDisplaySection: React.FC<PricingDisplaySectionProps> = ({
       ) : (
         membershipStatus === 'active' && pricing.discountPercentage && currentPrice < originalPrice ? (
           <div className="space-y-1">
-            <div className="text-lg font-bold text-green-600">
-              {formatPricing(currentPrice, pricing.currency, modelName)}
-            </div>
+            <div className="text-xs text-gray-500">Member discount:</div>
             <div className="text-sm text-gray-500 line-through">
               {formatPricing(originalPrice, pricing.currency, modelName)}
             </div>
-            <div className="text-xs text-green-600">
-              {pricing.discountPercentage}% member discount
+            <div className="text-lg font-bold text-green-600">
+              {formatPricing(currentPrice, pricing.currency, modelName)}
             </div>
             <div className="text-xs text-gray-500">
               per {selectedPricingPlan === 'quarterly' ? 'quarter' : 

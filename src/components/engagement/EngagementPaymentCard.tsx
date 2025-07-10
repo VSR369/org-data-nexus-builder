@@ -144,14 +144,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           />
         )}
 
-        {/* Agreement Section - Only for Marketplace models */}
-        {isMarketplace && (
-          <AgreementSection
-            agreementAccepted={agreementAccepted}
-            onAgreementChange={setAgreementAccepted}
-            engagementModel={selectedEngagementModel}
-          />
-        )}
 
         {/* Action Buttons */}
         <div className="space-y-3">
@@ -180,26 +172,33 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           )}
 
           {isMarketplace && (
-            <Button
-              onClick={onEngagementActivation}
-              disabled={
-                !agreementAccepted || 
-                loading || 
-                engagementActivationStatus === 'loading'
-              }
-              className="w-full"
-              size="lg"
-            >
-              {engagementActivationStatus === 'loading' ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <CheckCircle className="w-4 h-4 mr-2" />
-              )}
-              {engagementActivationStatus === 'loading' 
-                ? 'Activating...' 
-                : 'Agree & Activate Engagement'
-              }
-            </Button>
+            <div className="space-y-2">
+              <AgreementSection
+                agreementAccepted={agreementAccepted}
+                onAgreementChange={setAgreementAccepted}
+                engagementModel={selectedEngagementModel}
+              />
+              <Button
+                onClick={onEngagementActivation}
+                disabled={
+                  !agreementAccepted || 
+                  loading || 
+                  engagementActivationStatus === 'loading'
+                }
+                className="w-full"
+                size="lg"
+              >
+                {engagementActivationStatus === 'loading' ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                )}
+                {engagementActivationStatus === 'loading' 
+                  ? 'Activating...' 
+                  : 'Activate Engagement'
+                }
+              </Button>
+            </div>
           )}
 
           {engagementPaymentStatus === 'error' && (
@@ -215,20 +214,15 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           )}
         </div>
 
-        {/* Information Note */}
-        <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-          {isPaaS ? (
+        {/* Information Note - Only for PaaS */}
+        {isPaaS && (
+          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
             <p>
               <strong>Platform as a Service:</strong> Payment is required to activate your engagement. 
               Select your preferred billing frequency and complete the payment to start using the platform.
             </p>
-          ) : (
-            <p>
-              <strong>Marketplace Engagement:</strong> No payment required. 
-              Simply review and accept the terms to activate your engagement model.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
