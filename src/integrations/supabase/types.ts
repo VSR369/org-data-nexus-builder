@@ -17,6 +17,7 @@ export type Database = {
       engagement_activations: {
         Row: {
           activation_status: string | null
+          billing_frequency: string | null
           country: string | null
           created_at: string
           currency: string | null
@@ -33,6 +34,7 @@ export type Database = {
         }
         Insert: {
           activation_status?: string | null
+          billing_frequency?: string | null
           country?: string | null
           created_at?: string
           currency?: string | null
@@ -49,6 +51,7 @@ export type Database = {
         }
         Update: {
           activation_status?: string | null
+          billing_frequency?: string | null
           country?: string | null
           created_at?: string
           currency?: string | null
