@@ -89,10 +89,16 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+
+  html {
+    overflow-x: hidden;
   }
 }
 
@@ -127,6 +133,12 @@
 
   .animation-delay-4000 {
     animation-delay: 4s;
+  }
+
+  /* Prevent horizontal scrolling globally */
+  .no-horizontal-scroll {
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 }
 

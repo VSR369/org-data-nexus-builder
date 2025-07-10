@@ -17,7 +17,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <div className="min-h-screen w-full">
+        <div className="w-full overflow-x-hidden">
           <Toaster />
           <Sonner />
           <BrowserRouter>
