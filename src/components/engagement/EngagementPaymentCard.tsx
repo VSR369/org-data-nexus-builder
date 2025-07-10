@@ -144,7 +144,25 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
 
   // Handle engagement activation for marketplace models
   const handleEngagementActivation = async () => {
-    if (!selectedEngagementModel || !isMarketplace) return;
+    console.log('🎯 handleEngagementActivation called');
+    console.log('📋 Current state:', {
+      selectedEngagementModel,
+      isMarketplace,
+      agreementAccepted,
+      currentPricing: currentPricing ? {
+        platformFeePercentage: currentPricing.platformFeePercentage,
+        discountPercentage: currentPricing.discountPercentage,
+        currency: currentPricing.currency
+      } : null,
+      membershipStatus,
+      organizationType,
+      country
+    });
+    
+    if (!selectedEngagementModel || !isMarketplace) {
+      console.error('❌ Validation failed: Missing engagement model or not marketplace');
+      return;
+    }
     
     try {
       const activationData = {
@@ -159,17 +177,20 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
         termsAccepted: agreementAccepted
       };
 
-      console.log('🚀 Activating engagement with data:', activationData);
+      console.log('🚀 Calling activateEngagement with data:', activationData);
       
       await activateEngagement(activationData);
       
+      console.log('✅ Engagement activation completed successfully');
+      
       // Call the parent callback if provided
       if (onEngagementActivation) {
+        console.log('📞 Calling parent onEngagementActivation callback');
         onEngagementActivation();
       }
       
     } catch (error) {
-      console.error('Failed to activate engagement:', error);
+      console.error('💥 Failed to activate engagement:', error);
     }
   };
 
@@ -340,7 +361,10 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                 engagementModel={selectedEngagementModel}
               />
               <Button
-                onClick={handleEngagementActivation}
+                onClick={() => {
+                  console.log('🖱️ Activate button clicked');
+                  handleEngagementActivation();
+                }}
                 disabled={
                   !agreementAccepted || 
                   loading || 
