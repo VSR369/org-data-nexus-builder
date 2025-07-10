@@ -199,13 +199,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           }}
         />
 
-        <EngagementModelSelection
-          membershipType={state.membership_type}
-          selectedEngagementModel={state.selected_engagement_model}
-          engagementModels={engagementModels}
-          onEngagementModelChange={updateEngagementModel}
-        />
-
         <MembershipPaymentCard
           membershipType={state.membership_type}
           membershipStatus={state.membership_status}
@@ -216,6 +209,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           membershipAmount={membershipAmount}
           onMembershipPayment={handleMembershipPayment}
           onResetPaymentStatus={onResetPaymentStatus}
+        />
+
+        <EngagementModelSelection
+          membershipType={state.membership_type}
+          selectedEngagementModel={state.selected_engagement_model}
+          engagementModels={engagementModels}
+          onEngagementModelChange={updateEngagementModel}
         />
 
         <EngagementPaymentCard
