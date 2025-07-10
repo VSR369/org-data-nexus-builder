@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl font-semibold leading-none tracking-tight">
+          <CardTitle className="flex items-center gap-2 text-2xl font-semibold leading-none tracking-tight whitespace-nowrap">
             <CreditCard className="w-5 h-5" />
             Engagement Activation
           </CardTitle>
@@ -148,7 +147,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     return (
       <Card className="w-full border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700 text-2xl font-semibold leading-none tracking-tight">
+          <CardTitle className="flex items-center gap-2 text-green-700 text-2xl font-semibold leading-none tracking-tight whitespace-nowrap">
             <CheckCircle className="w-5 h-5" />
             {isPaaS ? 'Engagement Payment Completed' : 'Engagement Activated'}
           </CardTitle>
@@ -174,7 +173,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+        <CardTitle className="text-2xl font-semibold leading-none tracking-tight whitespace-nowrap">
           {isPaaS ? 'Engagement Payment' : 'Engagement Activation'}
         </CardTitle>
         <div className="flex items-center gap-1 mt-2">
