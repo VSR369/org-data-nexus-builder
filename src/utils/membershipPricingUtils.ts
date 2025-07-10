@@ -216,6 +216,55 @@ export const isMarketplaceModel = (engagementModel: string): boolean => {
 };
 
 // Diagnostic function to check pricing configurations
+// Get both member and non-member pricing configs for discount display
+export const getBothMemberAndNonMemberPricing = (
+  selectedEngagementModel: string | null,
+  pricingConfigs: PricingConfig[],
+  country: string,
+  organizationType: string
+): { memberConfig: PricingConfig | null; nonMemberConfig: PricingConfig | null } => {
+  if (!selectedEngagementModel) return { memberConfig: null, nonMemberConfig: null };
+
+  const engagementModelName = getEngagementModelName(selectedEngagementModel);
+
+  // Get member config
+  const memberConfig = pricingConfigs.find(config => 
+    config.engagementModel === engagementModelName &&
+    config.country === country &&
+    config.organizationType === organizationType &&
+    config.membershipStatus === 'member'
+  ) || pricingConfigs.find(config => 
+    config.engagementModel === engagementModelName &&
+    config.membershipStatus === 'member'
+  );
+
+  // Get non-member config (this will be our "original" pricing)
+  const nonMemberConfig = pricingConfigs.find(config => 
+    config.engagementModel === engagementModelName &&
+    config.country === country &&
+    config.organizationType === organizationType &&
+    config.membershipStatus === 'not-a-member'
+  ) || pricingConfigs.find(config => 
+    config.engagementModel === engagementModelName &&
+    config.membershipStatus === 'not-a-member'
+  );
+
+  console.log('🔍 getBothMemberAndNonMemberPricing:', {
+    engagementModelName,
+    memberConfig: memberConfig ? {
+      id: memberConfig.id,
+      platformFee: memberConfig.platformFeePercentage,
+      discount: memberConfig.discountPercentage
+    } : null,
+    nonMemberConfig: nonMemberConfig ? {
+      id: nonMemberConfig.id,
+      platformFee: nonMemberConfig.platformFeePercentage
+    } : null
+  });
+
+  return { memberConfig, nonMemberConfig };
+};
+
 export const debugPricingConfigurations = (pricingConfigs: PricingConfig[]): void => {
   console.log('🔍 === PRICING CONFIGURATIONS DEBUG ===');
   console.log('📊 Total configurations:', pricingConfigs.length);

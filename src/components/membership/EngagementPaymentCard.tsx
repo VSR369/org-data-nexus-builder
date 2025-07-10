@@ -87,6 +87,9 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                   selectedFrequency={selectedFrequency}
                   engagementPricing={engagementPricing}
                   membershipStatus={membershipStatus}
+                  pricingConfigs={pricingConfigs}
+                  country={country}
+                  organizationType={organizationType}
                 />
                 
             <PaymentButton

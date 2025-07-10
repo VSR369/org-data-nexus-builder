@@ -4,7 +4,8 @@ import {
   getEngagementModelName, 
   getDisplayAmount, 
   formatCurrency, 
-  isMarketplaceModel 
+  isMarketplaceModel,
+  getBothMemberAndNonMemberPricing
 } from '@/utils/membershipPricingUtils';
 
 interface EngagementSummaryProps {
@@ -12,13 +13,19 @@ interface EngagementSummaryProps {
   selectedFrequency: string;
   engagementPricing: PricingConfig;
   membershipStatus: string;
+  pricingConfigs?: PricingConfig[];
+  country?: string;
+  organizationType?: string;
 }
 
 export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
   selectedEngagementModel,
   selectedFrequency,
   engagementPricing,
-  membershipStatus
+  membershipStatus,
+  pricingConfigs = [],
+  country = 'India',
+  organizationType = 'Private Limited'
 }) => {
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
   
@@ -45,14 +52,35 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
                 <span className="font-medium">Platform Fee</span>
               </div>
               {(() => {
-                // Calculate discounted platform fee if membership is paid
+                // Get both member and non-member configs to calculate proper original vs discounted fees
                 const isMembershipPaid = membershipStatus === 'member_paid';
-                const basePlatformFee = engagementPricing.platformFeePercentage || 0;
-                const discountPercentage = engagementPricing.discountPercentage || 0;
-                const hasDiscount = isMembershipPaid && discountPercentage > 0;
-                const discountedPlatformFee = hasDiscount 
-                  ? Math.round(basePlatformFee * (1 - discountPercentage / 100) * 100) / 100
-                  : basePlatformFee;
+                const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+                  selectedEngagementModel,
+                  pricingConfigs,
+                  country,
+                  organizationType
+                );
+
+                // Use non-member config as the original fee, member config for discounted fee
+                const originalPlatformFee = nonMemberConfig?.platformFeePercentage || engagementPricing.platformFeePercentage || 0;
+                const memberPlatformFee = memberConfig?.platformFeePercentage || 0;
+                const discountPercentage = memberConfig?.discountPercentage || 0;
+                
+                // Calculate discounted fee properly: original fee - (original fee × discount percentage)
+                const calculatedDiscountedFee = originalPlatformFee * (1 - discountPercentage / 100);
+                
+                const hasDiscount = isMembershipPaid && discountPercentage > 0 && originalPlatformFee > 0;
+                const displayedFee = hasDiscount ? calculatedDiscountedFee : originalPlatformFee;
+
+                console.log('🔍 Platform Fee Calculation:', {
+                  isMembershipPaid,
+                  originalPlatformFee,
+                  memberPlatformFee,
+                  discountPercentage,
+                  calculatedDiscountedFee,
+                  hasDiscount,
+                  displayedFee
+                });
 
                 return (
                   <div className="space-y-2">
@@ -60,7 +88,7 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
                       <div className="flex justify-between items-center">
                         <span className="text-sm">Original Platform Fee:</span>
                         <span className="text-gray-500 line-through">
-                          {basePlatformFee}% of solution fee
+                          {originalPlatformFee}% of solution fee
                         </span>
                       </div>
                     )}
@@ -68,8 +96,8 @@ export const EngagementSummary: React.FC<EngagementSummaryProps> = ({
                       <span className="text-sm font-medium">
                         {hasDiscount ? 'Discounted Platform Fee:' : 'Platform Fee:'}
                       </span>
-                      <span className="font-bold text-lg text-green-600">
-                        {discountedPlatformFee}% of solution fee
+                      <span className={`font-bold text-lg ${hasDiscount ? 'text-green-600' : ''}`}>
+                        {Math.round(displayedFee * 100) / 100}% of solution fee
                       </span>
                     </div>
                     {hasDiscount && (
