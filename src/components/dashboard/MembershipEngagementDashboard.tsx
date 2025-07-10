@@ -160,7 +160,8 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   };
 
   // Robust activation handler for marketplace models (platform fee based)
-  const handleActivateEngagement = async () => {
+  const handleActivateEngagement = async (termsAccepted: boolean = false) => {
+    console.log('🚀 Starting handleActivateEngagement', { termsAccepted, selectedEngagementModel, selectedMembershipPlan });
     try {
       if (!selectedEngagementModel || !selectedMembershipPlan) {
         toast({
@@ -171,13 +172,29 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         return;
       }
 
+      if (!termsAccepted) {
+        toast({
+          variant: "destructive",
+          title: "Terms Required",
+          description: "Please accept the terms and conditions before activating."
+        });
+        return;
+      }
+
       setEngagementPaymentLoading(true);
 
       const pricingConfig = getPricingConfig();
+      console.log('💰 Pricing config:', pricingConfig);
       if (!pricingConfig) {
+        console.error('❌ No pricing config found for:', {
+          selectedEngagementModel,
+          selectedMembershipPlan,
+          country,
+          organizationType
+        });
         toast({
-          title: "Error",
-          description: "Pricing information not available",
+          title: "Configuration Error",
+          description: `Pricing information not available for ${selectedEngagementModel} with ${selectedMembershipPlan} membership`,
           variant: "destructive",
         });
         return;
@@ -200,12 +217,14 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         : originalPlatformFee;
 
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('🔐 Authentication check:', { user: user?.id, authError });
       
       if (!user) {
+        console.error('❌ Authentication failed:', authError);
         toast({
-          title: "Error",
-          description: "You must be logged in to activate an engagement model",
+          title: "Authentication Required",
+          description: "You must be logged in to activate an engagement model. Please sign in first.",
           variant: "destructive",
         });
         return;
@@ -229,14 +248,16 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
         });
 
       if (error) {
-        console.error('Error saving engagement activation:', error);
+        console.error('❌ Database insertion error:', error);
         toast({
-          title: "Error",
-          description: "Failed to activate engagement model. Please try again.",
+          title: "Database Error",
+          description: `Failed to save activation: ${error.message}. Please try again.`,
           variant: "destructive",
         });
         return;
       }
+
+      console.log('✅ Successfully saved engagement activation to database');
 
       // Record the activation for state management
       await recordActivation(selectedEngagementModel, selectedMembershipPlan);
@@ -260,13 +281,23 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   };
 
   // Robust activation handler for PaaS models (subscription fee based)
-  const handlePaaSPayment = async () => {
+  const handlePaaSPayment = async (termsAccepted: boolean = false) => {
+    console.log('🚀 Starting handlePaaSPayment', { termsAccepted, selectedEngagementModel, selectedMembershipPlan, selectedPricingPlan });
     try {
       if (!selectedEngagementModel || !selectedMembershipPlan || !selectedPricingPlan) {
         toast({
           variant: "destructive",
           title: "Selection Required",
           description: "Please select membership plan, engagement model, and billing frequency before activating."
+        });
+        return;
+      }
+
+      if (!termsAccepted) {
+        toast({
+          variant: "destructive",
+          title: "Terms Required",
+          description: "Please accept the terms and conditions before activating."
         });
         return;
       }
@@ -462,7 +493,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       return null;
     }
 
-    const membershipStatusForPricing = selectedMembershipPlan === 'annual' ? 'member_paid' : 'not-member';
+    const membershipStatusForPricing = selectedMembershipPlan === 'annual' ? 'member' : 'not-a-member';
     const pricingConfigs = PricingDataManager.getAllConfigurations();
 
     return getEngagementPricing(
@@ -668,7 +699,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
               onPricingPlanChange={handlePricingPlanChange}
               pricingConfig={getPricingConfig()}
               membershipStatus={membershipStatus === 'active' ? 'member' : 'not-a-member'}
-              onSelectPlatformFee={isPaaSModel(selectedEngagementModel) ? handlePaaSPayment : handleActivateEngagement}
+              onSelectPlatformFee={(termsAccepted) => isPaaSModel(selectedEngagementModel) ? handlePaaSPayment(termsAccepted) : handleActivateEngagement(termsAccepted)}
               isSubmitted={isSubmitted}
               isLoading={engagementPaymentLoading}
             />

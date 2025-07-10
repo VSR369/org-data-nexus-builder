@@ -200,8 +200,10 @@ export const getAnnualMembershipFee = (membershipFees: any[]) => {
 
 // Check if current engagement model is Platform as a Service
 export const isPaaSModel = (selectedEngagementModel: string | null): boolean => {
-  return selectedEngagementModel?.toLowerCase().includes('platform') || 
-         selectedEngagementModel?.toLowerCase().includes('paas') || false;
+  if (!selectedEngagementModel) return false;
+  return selectedEngagementModel === 'Platform as a Service' || 
+         selectedEngagementModel.toLowerCase().includes('platform') || 
+         selectedEngagementModel.toLowerCase().includes('paas');
 };
 
 export const isMarketplaceModel = (engagementModel: string): boolean => {
