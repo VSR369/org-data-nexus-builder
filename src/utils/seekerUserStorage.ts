@@ -1,118 +1,85 @@
 
 import { FormData } from '@/types/seekerRegistration';
-import { userDataManager } from './storage/UserDataManager';
 
-// Generate unique organization ID
-export function generateOrganizationId(): string {
-  return `ORG-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-}
+export const generateOrganizationId = (): string => {
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `ORG-${timestamp}-${random}`.toUpperCase();
+};
 
-import { BulletproofRegistrationService } from '@/services/BulletproofRegistrationService';
+export const generateUserId = (): string => {
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `USER-${timestamp}-${random}`.toUpperCase();
+};
 
-// Initialize bulletproof registration service
-const bulletproofService = new BulletproofRegistrationService();
-
-// Bulletproof user data save with comprehensive validation and multiple storage redundancy
-export async function saveUserDataSecurely(userData: any): Promise<boolean> {
+export const saveFormDataToStorage = (formData: FormData): void => {
   try {
-    console.log('🛡️ Starting bulletproof user data save process...');
-    
-    const result = await bulletproofService.registerUser(userData);
-    
-    if (result.success) {
-      console.log('✅ Bulletproof registration completed successfully');
-      return true;
-    } else {
-      console.error('❌ Bulletproof registration failed:', result.error);
-      return false;
-    }
-    
+    const dataToStore = {
+      ...formData,
+      password: '', // Don't store password
+      confirmPassword: '', // Don't store confirm password
+      timestamp: Date.now()
+    };
+    localStorage.setItem('seekerRegistrationData', JSON.stringify(dataToStore));
+    console.log('✅ Form data saved to localStorage');
   } catch (error) {
-    console.error('❌ Error during bulletproof user data save:', error);
-    return false;
+    console.error('❌ Error saving form data to localStorage:', error);
   }
-}
+};
 
-export function prepareRegistrationData(formData: FormData) {
-  // Helper function to get industry segment name instead of ID
-  const getIndustrySegmentName = (industrySegmentId: string) => {
-    if (!industrySegmentId) return '';
-    
-    // If it's already a name (not numeric), return as is
-    if (isNaN(Number(industrySegmentId))) {
-      return industrySegmentId;
+export const loadFormDataFromStorage = (): Partial<FormData> | null => {
+  try {
+    const stored = localStorage.getItem('seekerRegistrationData');
+    if (stored) {
+      const parsedData = JSON.parse(stored);
+      console.log('✅ Form data loaded from localStorage');
+      return parsedData;
     }
-    
-    // Look up the industry segment name from master data
-    try {
-      const masterDataKey = 'master_data_industry_segments';
-      const savedData = localStorage.getItem(masterDataKey);
-      if (savedData) {
-        const industryData = JSON.parse(savedData);
-        const segments = industryData.industrySegments || industryData;
-        
-        if (Array.isArray(segments)) {
-          const foundSegment = segments.find((segment: any) => 
-            segment.id === industrySegmentId
-          );
-          
-          if (foundSegment) {
-            console.log('✅ Found industry segment name:', foundSegment.industrySegment);
-            return foundSegment.industrySegment;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error looking up industry segment:', error);
-    }
-    
-    return industrySegmentId; // Fallback to ID if lookup fails
-  };
+  } catch (error) {
+    console.error('❌ Error loading form data from localStorage:', error);
+  }
+  return null;
+};
 
-  const resolvedIndustrySegment = getIndustrySegmentName(formData.industrySegment);
-  console.log('🏭 Industry segment resolution:', {
-    original: formData.industrySegment,
-    resolved: resolvedIndustrySegment
-  });
+export const clearFormDataFromStorage = (): void => {
+  try {
+    localStorage.removeItem('seekerRegistrationData');
+    console.log('✅ Form data cleared from localStorage');
+  } catch (error) {
+    console.error('❌ Error clearing form data from localStorage:', error);
+  }
+};
+
+export const validateFormData = (formData: FormData): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!formData.industrySegment) errors.push('Industry segment is required');
+  if (!formData.organizationName) errors.push('Organization name is required');
+  if (!formData.organizationType) errors.push('Organization type is required');
+  if (!formData.entityType) errors.push('Entity type is required');
+  if (!formData.country) errors.push('Country is required');
+  if (!formData.contactPersonName) errors.push('Contact person name is required');
+  if (!formData.email) errors.push('Email is required');
+  if (!formData.password) errors.push('Password is required');
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (formData.email && !emailRegex.test(formData.email)) {
+    errors.push('Invalid email format');
+  }
+
+  // Password validation
+  if (formData.password && formData.password.length < 6) {
+    errors.push('Password must be at least 6 characters long');
+  }
+
+  if (formData.password !== formData.confirmPassword) {
+    errors.push('Passwords do not match');
+  }
 
   return {
-    // Basic Information
-    userId: formData.userId.trim(),
-    password: formData.password,
-    organizationName: formData.organizationName.trim(),
-    organizationId: formData.organizationId,
-    organizationType: formData.organizationType,
-    entityType: formData.entityType,
-    industrySegment: resolvedIndustrySegment, // Store the actual name, not ID
-    
-    // Contact Details
-    contactPersonName: formData.contactPersonName.trim(),
-    email: formData.email.trim().toLowerCase(),
-    countryCode: formData.countryCode,
-    phoneNumber: formData.phoneNumber,
-    
-    // Location
-    country: formData.country,
-    address: formData.address,
-    
-    // Web Presence
-    website: formData.website,
-    
-    // Documents (converted to metadata for storage)
-    registrationDocuments: formData.registrationDocuments || [],
-    companyProfile: formData.companyProfile || [],
-    companyLogo: formData.companyLogo || [],
-    
-    // Timestamp
-    registrationTimestamp: new Date().toISOString()
+    isValid: errors.length === 0,
+    errors
   };
-}
-
-// Legacy compatibility
-export function saveUserDataSecurelySync(userData: any): boolean {
-  console.warn('⚠️ Using deprecated sync save method. Use async version instead.');
-  saveUserDataSecurely(userData).catch(error => {
-    console.error('❌ Background save failed:', error);
-  });
-  return true; // Optimistic return for compatibility
-}
+};

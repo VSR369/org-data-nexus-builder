@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +75,46 @@ const SignUpForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Auto-populate country code when country is selected
+  useEffect(() => {
+    if (formData.country && countries.length > 0) {
+      const selectedCountry = countries.find(country => country.name === formData.country);
+      if (selectedCountry && selectedCountry.code) {
+        // Map country codes to phone codes
+        const phoneCodeMap: { [key: string]: string } = {
+          'IN': '+91',
+          'US': '+1',
+          'AE': '+971',
+          'GB': '+44',
+          'CA': '+1',
+          'AU': '+61',
+          'DE': '+49',
+          'FR': '+33',
+          'JP': '+81',
+          'CN': '+86',
+          'BR': '+55',
+          'MX': '+52',
+          'SG': '+65',
+          'MY': '+60',
+          'TH': '+66',
+          'ID': '+62',
+          'PH': '+63',
+          'VN': '+84',
+          'KR': '+82',
+          'TW': '+886'
+        };
+        
+        const phoneCode = phoneCodeMap[selectedCountry.code] || '+1';
+        setFormData(prev => ({ ...prev, countryCode: phoneCode }));
+        
+        // Clear any existing error for countryCode
+        if (errors.countryCode) {
+          setErrors(prev => ({ ...prev, countryCode: '' }));
+        }
+      }
+    }
+  }, [formData.country, countries, errors.countryCode]);
 
   // Calculate progress - exclude file arrays and confirmation field
   const totalFields = Object.keys(formData).length - 4; // Exclude file arrays and confirmPassword
@@ -462,29 +501,28 @@ const SignUpForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="countryCode">Country Code</Label>
-              <Select value={formData.countryCode} onValueChange={(value) => handleInputChange('countryCode', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country code" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                  {countries.map((country) => (
-                    <SelectItem key={country.code} value={country.code} className="hover:bg-gray-50">
-                      +{country.code} ({country.name})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="countryCode" className={errors.countryCode ? "text-red-500" : ""}>Country Code *</Label>
+              <Input
+                id="countryCode"
+                value={formData.countryCode}
+                readOnly
+                className="bg-gray-100"
+                placeholder="Auto-populated based on country selection"
+              />
+              {errors.countryCode && <p className="text-sm text-red-500">{errors.countryCode}</p>}
+              <p className="text-xs text-gray-500">This field is auto-populated when you select a country</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Label htmlFor="phoneNumber" className={errors.phoneNumber ? "text-red-500" : ""}>Phone Number *</Label>
               <Input
                 id="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                 placeholder="Enter phone number"
+                className={errors.phoneNumber ? "border-red-500" : ""}
               />
+              {errors.phoneNumber && <p className="text-sm text-red-500">{errors.phoneNumber}</p>}
             </div>
 
             <div className="space-y-2">
