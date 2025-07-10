@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   engagementActivationStatus = 'idle'
 }) => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [paasAgreementAccepted, setPaasAgreementAccepted] = useState(false);
 
   // Check if no engagement model is selected
   if (!selectedEngagementModel) {
@@ -273,27 +273,35 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
         {/* Action Buttons */}
         <div className="space-y-2">
           {isPaaS && (
-            <Button
-              onClick={onEngagementPayment}
-              disabled={
-                !selectedFrequency || 
-                loading || 
-                engagementPaymentStatus === 'loading' ||
-                !currentPricing ||
-                !currentAmount
-              }
-              className="w-full"
-              size="sm"
-            >
-              {engagementPaymentStatus === 'loading' ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Processing...
-                </>
-              ) : (
-                `Pay ${selectedFrequency ? selectedFrequency.charAt(0).toUpperCase() + selectedFrequency.slice(1) : ''} Fee`
-              )}
-            </Button>
+            <div className="space-y-2">
+              <AgreementSection
+                agreementAccepted={paasAgreementAccepted}
+                onAgreementChange={setPaasAgreementAccepted}
+                engagementModel={selectedEngagementModel}
+              />
+              <Button
+                onClick={onEngagementPayment}
+                disabled={
+                  !selectedFrequency || 
+                  !paasAgreementAccepted ||
+                  loading || 
+                  engagementPaymentStatus === 'loading' ||
+                  !currentPricing ||
+                  !currentAmount
+                }
+                className="w-full"
+                size="sm"
+              >
+                {engagementPaymentStatus === 'loading' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  `Pay ${selectedFrequency ? selectedFrequency.charAt(0).toUpperCase() + selectedFrequency.slice(1) : ''} Fee`
+                )}
+              </Button>
+            </div>
           )}
 
           {isMarketplace && (
