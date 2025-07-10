@@ -23,8 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompleteUserData } from '@/hooks/useCompleteUserData';
 import { loadEngagementPricingDetails } from '@/components/master-data/solution-seekers/utils/viewDetailsHelpers';
 import MembershipPricingSystem from '@/components/membership/MembershipPricingSystem';
-import { AuthWrapper } from '@/components/auth/AuthWrapper';
-import { useAuth } from '@/hooks/useAuthContext';
+// Auth imports removed - no authentication required
 // import '@/utils/cleanupMembershipEngagementStorage';
 
 interface OrganizationSession {
@@ -45,7 +44,7 @@ const OrganizationDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  // No auth context needed - using direct navigation
 
   // Load complete user data
   const { userData: completeUserData, loading: userDataLoading, error: userDataError } = useCompleteUserData(sessionData?.userId);
@@ -124,23 +123,13 @@ const OrganizationDashboard = () => {
     loadSessionData();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      sessionStorage.removeItem('seeker_session');
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      navigate('/auth');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({
-        variant: "destructive",
-        title: "Logout Error",
-        description: "There was an error logging out. Please try again.",
-      });
-    }
+  const handleLogout = () => {
+    sessionStorage.removeItem('seeker_session');
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    navigate('/');
   };
 
   console.log('🔍 OrganizationDashboard Debug:', {

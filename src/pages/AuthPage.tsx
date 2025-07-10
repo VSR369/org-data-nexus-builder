@@ -25,12 +25,8 @@ export const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (user) {
-      navigate('/organization-dashboard');
-    }
-  }, [user, navigate]);
+  // Allow direct access without authentication redirects
+  // No auth checking - user can navigate freely
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
