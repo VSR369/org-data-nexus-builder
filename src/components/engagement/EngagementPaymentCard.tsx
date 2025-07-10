@@ -63,6 +63,15 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   const isPaaS = isPaaSModel(selectedEngagementModel);
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
 
+  console.log('🔍 EngagementPaymentCard Debug:', {
+    selectedEngagementModel,
+    isPaaS,
+    isMarketplace,
+    selectedFrequency,
+    membershipStatus,
+    availableConfigs: pricingConfigs.length
+  });
+
   // Get both member and non-member pricing for discount display
   const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
     selectedEngagementModel,
@@ -71,14 +80,65 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     organizationType
   );
 
+  console.log('💰 Pricing configs found:', {
+    memberConfig: memberConfig ? {
+      id: memberConfig.id,
+      platformFee: memberConfig.platformFeePercentage,
+      quarterlyFee: memberConfig.quarterlyFee,
+      membershipStatus: memberConfig.membershipStatus
+    } : null,
+    nonMemberConfig: nonMemberConfig ? {
+      id: nonMemberConfig.id,
+      platformFee: nonMemberConfig.platformFeePercentage,
+      quarterlyFee: nonMemberConfig.quarterlyFee,
+      membershipStatus: nonMemberConfig.membershipStatus
+    } : null
+  });
+
   // Determine which config to use based on membership status
   const isMembershipPaid = membershipStatus === 'member_paid';
   const currentPricing = isMembershipPaid && memberConfig ? memberConfig : nonMemberConfig;
 
-  // Get display amounts for pricing
-  const nonMemberAmount = nonMemberConfig && selectedFrequency ? getDisplayAmount(selectedFrequency, nonMemberConfig, 'inactive') : null;
-  const memberAmount = memberConfig && selectedFrequency ? getDisplayAmount(selectedFrequency, memberConfig, 'member_paid') : null;
-  const currentAmount = isMembershipPaid && memberAmount ? memberAmount : nonMemberAmount;
+  // For Marketplace models, we don't need frequency - show platform fee percentage
+  // For PaaS models, we need frequency to show the subscription fee
+  let currentAmount = null;
+  let nonMemberAmount = null;
+  let memberAmount = null;
+
+  if (isMarketplace) {
+    // Marketplace models use platform fee percentage, no frequency needed
+    if (currentPricing && currentPricing.platformFeePercentage) {
+      currentAmount = { amount: currentPricing.platformFeePercentage, isPercentage: true };
+    }
+    if (nonMemberConfig && nonMemberConfig.platformFeePercentage) {
+      nonMemberAmount = { amount: nonMemberConfig.platformFeePercentage, isPercentage: true };
+    }
+    if (memberConfig && memberConfig.platformFeePercentage) {
+      memberAmount = { amount: memberConfig.platformFeePercentage, isPercentage: true };
+    }
+  } else if (isPaaS && selectedFrequency) {
+    // PaaS models use frequency-based subscription fees
+    if (currentPricing) {
+      const amount = getDisplayAmount(selectedFrequency, currentPricing, membershipStatus);
+      currentAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
+    }
+    if (nonMemberConfig) {
+      const amount = getDisplayAmount(selectedFrequency, nonMemberConfig, 'inactive');
+      nonMemberAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
+    }
+    if (memberConfig) {
+      const amount = getDisplayAmount(selectedFrequency, memberConfig, 'member_paid');
+      memberAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
+    }
+  }
+
+  console.log('💸 Display amounts:', {
+    currentAmount,
+    nonMemberAmount,
+    memberAmount,
+    isMembershipPaid,
+    selectedFrequency
+  });
 
   // Check if engagement is already activated/paid
   const isEngagementActivated = engagementPaymentStatus === 'success' || engagementActivationStatus === 'success';
@@ -140,33 +200,72 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
         {/* Pricing Display */}
         {currentPricing ? (
           <div className="bg-muted/30 rounded-lg p-3 text-center">
-            <div className="text-xl font-bold text-primary">
-              {currentAmount ? formatCurrency(currentAmount.amount, currentPricing?.currency || 'USD') : 'Price not configured'}
-            </div>
-            {isPaaS && selectedFrequency && (
-              <p className="text-xs text-muted-foreground mt-1">
-                per {selectedFrequency === 'half-yearly' ? 'half year' : selectedFrequency.replace('ly', '')}
-              </p>
+            {/* Show pricing based on model type and availability */}
+            {isMarketplace && currentAmount ? (
+              <>
+                <div className="text-xl font-bold text-primary">
+                  {currentAmount.amount}% Platform Fee
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  of solution transaction amount
+                </p>
+              </>
+            ) : isPaaS && selectedFrequency && currentAmount ? (
+              <>
+                <div className="text-xl font-bold text-primary">
+                  {formatCurrency(currentAmount.amount, currentPricing?.currency || 'USD')}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  per {selectedFrequency === 'half-yearly' ? 'half year' : selectedFrequency.replace('ly', '')}
+                </p>
+              </>
+            ) : isPaaS && !selectedFrequency ? (
+              <div className="text-sm text-muted-foreground">
+                Select frequency to view pricing
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Loading pricing configuration...
+              </div>
             )}
             
-            {/* Show discount info only for PaaS when membership is paid */}
-            {isPaaS && isMembershipPaid && memberAmount && nonMemberAmount && memberAmount.amount < nonMemberAmount.amount && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-2 mt-2 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground line-through">
-                    {formatCurrency(nonMemberAmount.amount, currentPricing?.currency || 'USD')}
-                  </span>
-                  <span className="text-green-700 font-medium">
-                    Save {formatCurrency(nonMemberAmount.amount - memberAmount.amount, currentPricing?.currency || 'USD')}
-                  </span>
-                </div>
-              </div>
+            {/* Show discount info for members when applicable */}
+            {isMembershipPaid && memberAmount && nonMemberAmount && (
+              isMarketplace ? (
+                // Show percentage discount for marketplace
+                memberAmount.amount < nonMemberAmount.amount && (
+                  <div className="bg-green-50 border border-green-200 rounded-md p-2 mt-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground line-through">
+                        {nonMemberAmount.amount}%
+                      </span>
+                      <span className="text-green-700 font-medium">
+                        Save {(nonMemberAmount.amount - memberAmount.amount).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                )
+              ) : (
+                // Show currency discount for PaaS
+                memberAmount.amount < nonMemberAmount.amount && (
+                  <div className="bg-green-50 border border-green-200 rounded-md p-2 mt-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground line-through">
+                        {formatCurrency(nonMemberAmount.amount, currentPricing?.currency || 'USD')}
+                      </span>
+                      <span className="text-green-700 font-medium">
+                        Save {formatCurrency(nonMemberAmount.amount - memberAmount.amount, currentPricing?.currency || 'USD')}
+                      </span>
+                    </div>
+                  </div>
+                )
+              )
             )}
           </div>
         ) : (
           <div className="bg-muted/30 rounded-lg p-3 text-center">
             <div className="text-sm text-muted-foreground">
-              {selectedFrequency ? 'Loading pricing...' : (isPaaS ? 'Select frequency to view pricing' : 'Pricing not available')}
+              No pricing configuration found for {selectedEngagementModel}
             </div>
           </div>
         )}
@@ -209,7 +308,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                 disabled={
                   !agreementAccepted || 
                   loading || 
-                  engagementActivationStatus === 'loading'
+                  engagementActivationStatus === 'loading' ||
+                  !currentPricing
                 }
                 className="w-full"
                 size="sm"
