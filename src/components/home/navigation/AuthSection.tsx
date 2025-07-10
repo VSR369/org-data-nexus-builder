@@ -53,12 +53,18 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 bg-white" align="end">
               <DropdownMenuItem asChild>
+                <Link to="/auth" className="flex items-center">
+                  <User className="mr-2 h-4 w-4" />
+                  Supabase Auth (Recommended)
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
                 <Link to="/general-signin" className="flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   General Sign In
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/seeker-login" className="flex items-center">
                   <Building2 className="mr-2 h-4 w-4" />
@@ -79,7 +85,7 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link to="/signup">
+          <Link to="/auth?mode=signup">
             <Button>
               Sign Up
             </Button>

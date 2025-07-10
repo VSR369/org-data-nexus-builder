@@ -22,6 +22,7 @@ interface EngagementPaymentCardProps {
   engagementPaymentLoading: boolean;
   onFrequencyChange: (value: string) => void;
   onEngagementPayment: () => void;
+  onEngagementActivation?: (termsAccepted: boolean, calculatedPrice: number, originalPrice: number, selectedFrequency?: string) => void;
 }
 
 export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
@@ -34,7 +35,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   pricingConfigs,
   engagementPaymentLoading,
   onFrequencyChange,
-  onEngagementPayment
+  onEngagementPayment,
+  onEngagementActivation
 }) => {
   const { toast } = useToast();
   const isPaaS = isPaaSModel(selectedEngagementModel);

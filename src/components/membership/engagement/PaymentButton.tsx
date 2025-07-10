@@ -21,6 +21,10 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   const isMarketplace = isMarketplaceModel(selectedEngagementModel);
   
   const handleAction = () => {
+    if (!termsAccepted) {
+      return; // Button should be disabled, but extra safety check
+    }
+    
     if (isMarketplace && onActivateEngagement) {
       onActivateEngagement();
     } else {

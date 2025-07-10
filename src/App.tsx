@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MasterDataHealthProvider } from "@/components/providers/MasterDataHealthProvider";
 import { MasterDataAutoInitService } from "@/services/MasterDataAutoInitService";
+import { AuthProvider } from "@/hooks/useAuthContext";
 
 // Import pages
 import Index from './pages/Index';
@@ -21,6 +22,7 @@ import MasterDataPortal from './pages/MasterDataPortal';
 import AdminRegistration from './pages/AdminRegistration';
 import OrganizationDashboard from './pages/OrganizationDashboard';
 import TestPage from './pages/TestPage';
+import { AuthPage } from './pages/AuthPage';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -35,12 +37,14 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MasterDataHealthProvider enableAutoFix={true} showToastNotifications={true}>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full">
-            <Router>
+      <AuthProvider>
+        <MasterDataHealthProvider enableAutoFix={true} showToastNotifications={true}>
+          <SidebarProvider>
+            <div className="min-h-screen flex w-full">
+              <Router>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/general-signin" element={<GeneralSignIn />} />
                 <Route path="/signup" element={<SignUp />} />
@@ -56,11 +60,12 @@ function App() {
                 <Route path="/master-data-portal" element={<MasterDataPortal />} />
                 <Route path="/master-data" element={<MasterDataPortal />} />
               </Routes>
-            </Router>
-          </div>
-        </SidebarProvider>
-        <Toaster />
-      </MasterDataHealthProvider>
+              </Router>
+            </div>
+          </SidebarProvider>
+          <Toaster />
+        </MasterDataHealthProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

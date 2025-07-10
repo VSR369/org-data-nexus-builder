@@ -16,6 +16,8 @@ import {
   getAnnualMembershipFee
 } from '@/utils/membershipPricingUtils';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuthContext";
 
 interface MembershipPricingSystemProps {
   organizationType: string;
@@ -52,6 +54,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   const [paymentDate, setPaymentDate] = useState<string | undefined>(undefined);
   const [membershipAmount, setMembershipAmount] = useState<number | undefined>(undefined);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Membership payment handler
   const handleMembershipPayment = async () => {
@@ -98,8 +101,26 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setSubmittedMembershipType(null);
   };
 
-  // Simple engagement payment handler
-  const handleEngagementPayment = async () => {
+  // Enhanced engagement activation handler
+  const handleEngagementActivation = async (termsAccepted: boolean, calculatedPrice: number, originalPrice: number, selectedFrequency?: string) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You must be logged in to activate an engagement model."
+      });
+      return;
+    }
+
+    if (!termsAccepted) {
+      toast({
+        variant: "destructive",
+        title: "Terms Not Accepted",
+        description: "Please accept the terms and conditions to continue."
+      });
+      return;
+    }
+
     const pricing = getEngagementPricing(
       state.selected_engagement_model,
       state.membership_status,
@@ -107,35 +128,72 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
       country,
       organizationType
     );
-    if (!pricing || !state.selected_frequency) return;
+    if (!pricing) return;
 
     setEngagementPaymentLoading(true);
     
     try {
-      const displayInfo = getDisplayAmount(state.selected_frequency, pricing, state.membership_status);
-      
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Payment Successful",
-        description: `Your ${getEngagementModelName(state.selected_engagement_model || '')} plan has been activated!${displayInfo.discountApplied ? ' (Member discount applied)' : ''}`
+      console.log('🚀 Starting engagement activation:', {
+        user_id: user.id,
+        engagement_model: state.selected_engagement_model,
+        membership_status: state.membership_status,
+        calculated_price: calculatedPrice,
+        original_price: originalPrice,
+        selected_frequency: selectedFrequency || state.selected_frequency
       });
 
-      // Navigate to validation dashboard after successful payment
+      // Insert activation record into Supabase
+      const { error } = await supabase
+        .from('engagement_activations')
+        .insert({
+          user_id: user.id,
+          engagement_model: state.selected_engagement_model,
+          membership_status: state.membership_status === 'member_paid' ? 'member' : 'not-a-member',
+          organization_type: organizationType,
+          country: country,
+          currency: pricing.currency || 'INR',
+          platform_fee_percentage: pricing.platformFeePercentage,
+          discount_percentage: pricing.discountPercentage,
+          final_calculated_price: calculatedPrice,
+          billing_frequency: selectedFrequency || state.selected_frequency,
+          terms_accepted: termsAccepted,
+          activation_status: 'Activated'
+        });
+
+      if (error) {
+        console.error('❌ Supabase insertion error:', error);
+        throw error;
+      }
+
+      console.log('✅ Engagement activation saved to database');
+      
+      toast({
+        title: "✅ Activation Successful",
+        description: `${getEngagementModelName(state.selected_engagement_model || '')} has been activated successfully!${
+          state.membership_status === 'member_paid' ? ' (Member discount applied)' : ''
+        }`
+      });
+
+      // Navigate to validation dashboard after successful activation
       setTimeout(() => {
         window.location.href = '/master-data?section=solution-seekers-validation';
       }, 2000);
       
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Activation failed:', error);
       toast({
         variant: "destructive",
-        title: "Payment Failed",
-        description: "There was an error processing your payment. Please try again."
+        title: "Activation Failed",
+        description: error.message || "There was an error activating your engagement model. Please try again."
       });
     } finally {
       setEngagementPaymentLoading(false);
     }
+  };
+
+  // Simple engagement payment handler (for backward compatibility)
+  const handleEngagementPayment = async () => {
+    await handleEngagementActivation(true, 0, 0, state.selected_frequency);
   };
 
   if (dataLoading) {
@@ -229,6 +287,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           engagementPaymentLoading={engagementPaymentLoading}
           onFrequencyChange={(value) => updateFrequency(value as any)}
           onEngagementPayment={handleEngagementPayment}
+          onEngagementActivation={handleEngagementActivation}
         />
       </div>
     </div>
