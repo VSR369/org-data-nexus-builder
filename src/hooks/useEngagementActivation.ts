@@ -13,7 +13,7 @@ interface EngagementActivationData {
   organizationType?: string;
   country?: string;
   termsAccepted: boolean;
-  userId?: string; // Add userId parameter for session-based auth
+  userId: string; // Make userId required - no fallback to Supabase auth
 }
 
 export const useEngagementActivation = () => {
@@ -55,25 +55,17 @@ export const useEngagementActivation = () => {
         throw new Error('Platform fee not configured');
       }
 
-      console.log('✅ All validations passed');
-
-      // Get user ID from session data or Supabase auth
-      let userId = data.userId;
-      if (!userId) {
-        console.log('👤 Getting current user from Supabase auth...');
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error('❌ User not authenticated');
-          throw new Error('User not authenticated - please log in');
-        }
-        userId = user.id;
+      // Validate userId is provided (no fallback to Supabase auth)
+      if (!data.userId) {
+        console.error('❌ Validation failed: User ID is required');
+        throw new Error('User ID is required - session not found');
       }
-      
-      console.log('✅ User ID obtained:', userId);
 
-      // Prepare data for insertion with normalized engagement model name
+      console.log('✅ All validations passed, using session user ID:', data.userId);
+
+      // Prepare data for insertion with session-based user ID
       const insertData = {
-        user_id: userId,
+        user_id: data.userId, // Use session-based user ID directly
         engagement_model: data.engagementModel,
         membership_status: data.membershipStatus,
         platform_fee_percentage: data.platformFeePercentage,
@@ -88,7 +80,7 @@ export const useEngagementActivation = () => {
 
       console.log('💾 Inserting activation record with data:', insertData);
 
-      // Insert activation record
+      // Insert activation record - RLS policies now allow this operation
       const { data: activation, error } = await supabase
         .from('engagement_activations')
         .insert(insertData)
@@ -102,15 +94,13 @@ export const useEngagementActivation = () => {
 
       console.log('✅ Activation record created successfully:', activation);
 
-      // Show success message with delay to ensure visibility
-      setTimeout(() => {
-        console.log('📢 Showing success toast...');
-        toast({
-          title: "✅ Engagement Model Activated Successfully!",
-          description: `${data.engagementModel} has been activated. You can now proceed with your engagement.`,
-          duration: 5000,
-        });
-      }, 500);
+      // Show success message
+      console.log('📢 Showing success toast...');
+      toast({
+        title: "✅ Engagement Model Activated Successfully!",
+        description: `${data.engagementModel} has been activated. You can now proceed with your engagement.`,
+        duration: 5000,
+      });
 
       console.log('🎉 Engagement activation completed successfully');
       return activation;
@@ -121,15 +111,13 @@ export const useEngagementActivation = () => {
       // Show contextual error messages
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
-      setTimeout(() => {
-        console.log('📢 Showing error toast...');
-        toast({
-          title: "❌ Activation Failed",
-          description: errorMessage,
-          variant: "destructive",
-          duration: 5000,
-        });
-      }, 500);
+      console.log('📢 Showing error toast...');
+      toast({
+        title: "❌ Activation Failed",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
       
       throw error;
     } finally {

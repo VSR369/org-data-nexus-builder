@@ -144,19 +144,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   // Handle engagement activation for marketplace models
   const handleEngagementActivation = async () => {
     console.log('🎯 handleEngagementActivation called');
-    console.log('📋 Current state:', {
-      selectedEngagementModel,
-      isMarketplace,
-      agreementAccepted,
-      currentPricing: currentPricing ? {
-        platformFeePercentage: currentPricing.platformFeePercentage,
-        discountPercentage: currentPricing.discountPercentage,
-        currency: currentPricing.currency
-      } : null,
-      membershipStatus,
-      organizationType,
-      country
-    });
     
     if (!selectedEngagementModel || !isMarketplace) {
       console.error('❌ Validation failed: Missing engagement model or not marketplace');
@@ -174,11 +161,16 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     }
     
     try {
-      // Get user data from session storage
+      // Get user data from session storage - ensure we have a user ID
       const sessionData = sessionStorageManager.loadSession();
       const userId = sessionData?.seekerUserId;
 
       console.log('👤 Session data loaded:', { userId, sessionData });
+
+      if (!userId) {
+        console.error('❌ No user ID found in session');
+        throw new Error('User session not found. Please refresh the page and try again.');
+      }
 
       const activationData = {
         engagementModel: selectedEngagementModel,
@@ -190,7 +182,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
         organizationType: organizationType,
         country: country,
         termsAccepted: agreementAccepted,
-        userId: userId // Pass userId from session
+        userId: userId // Pass session-based user ID (required)
       };
 
       console.log('🚀 Calling activateEngagement with data:', activationData);
