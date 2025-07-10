@@ -8,6 +8,8 @@ import { PricingConfig } from '@/types/pricing';
 import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
 import { DynamicPricingSection } from '@/components/engagement/DynamicPricingSection';
 import { getEngagementPricing } from '@/utils/membershipPricingUtils';
+import { useEngagementActivation } from '@/hooks/useEngagementActivation';
+import { useToast } from '@/hooks/use-toast';
 
 interface MembershipEngagementDashboardProps {
   organizationType: string;
@@ -48,6 +50,10 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
   const [selectedMembershipFee, setSelectedMembershipFee] = useState<MembershipFeeEntry | null>(null);
+
+  // Activation hook
+  const { recordActivation } = useEngagementActivation();
+  const { toast } = useToast();
 
   // Load localStorage data and pricing configurations on mount
   useEffect(() => {
@@ -152,9 +158,36 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   };
 
   // Handle platform/subscription fee selection
-  const handleSelectPlatformFee = () => {
-    setIsSubmitted(true);
-    console.log('✅ Platform/Subscription fee selected');
+  const handleSelectPlatformFee = async () => {
+    if (!selectedEngagementModel || !selectedMembershipPlan) {
+      toast({
+        variant: "destructive",
+        title: "Selection Required",
+        description: "Please select both membership plan and engagement model before activating."
+      });
+      return;
+    }
+
+    try {
+      // Record the activation
+      await recordActivation(selectedEngagementModel, selectedMembershipPlan);
+      
+      setIsSubmitted(true);
+      
+      toast({
+        title: "Engagement Model Activated",
+        description: `Successfully activated ${selectedEngagementModel} engagement model.`,
+      });
+      
+      console.log('✅ Platform/Subscription fee selected and activation recorded');
+    } catch (error) {
+      console.error('Error recording activation:', error);
+      toast({
+        variant: "destructive",
+        title: "Activation Failed",
+        description: "Failed to record engagement model activation. Please try again."
+      });
+    }
   };
 
   // Calculate price based on membership status and apply discounts
