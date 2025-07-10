@@ -16,8 +16,6 @@ import {
   getAnnualMembershipFee
 } from '@/utils/membershipPricingUtils';
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuthContext";
 
 interface MembershipPricingSystemProps {
   organizationType: string;
@@ -54,7 +52,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
   const [paymentDate, setPaymentDate] = useState<string | undefined>(undefined);
   const [membershipAmount, setMembershipAmount] = useState<number | undefined>(undefined);
   const { toast } = useToast();
-  const { user } = useAuth();
 
   // Membership payment handler
   const handleMembershipPayment = async () => {
@@ -103,14 +100,16 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
   // All engagement activation functionality removed
 
-  if (dataLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        <span>Loading your preferences...</span>
-      </div>
-    );
-  }
+  // Don't block rendering on data loading - show with fallbacks
+  console.log('MembershipPricingSystem render state:', {
+    dataLoading,
+    pricingConfigsLength: pricingConfigs?.length || 0,
+    membershipFeesLength: membershipFees?.length || 0,
+    engagementModelsLength: engagementModels?.length || 0,
+    organizationType,
+    entityType,
+    country
+  });
 
   const engagementPricing = getEngagementPricing(
     state.selected_engagement_model,
