@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import MembershipPricingSystem from "@/components/membership/MembershipPricingSystem";
 
 const Index = () => {
   console.log('Index page is rendering...');
@@ -13,7 +14,7 @@ const Index = () => {
     await signOut();
   };
 
-  // If user is authenticated, show their organization dashboard
+  // If user is authenticated, show their organization dashboard with membership grid
   if (isAuthenticated && profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 overflow-x-hidden">
@@ -143,6 +144,17 @@ const Index = () => {
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Membership & Engagement System - 4 Column Grid */}
+          <div className="mb-8">
+            <MembershipPricingSystem
+              organizationType={profile.organization_type}
+              entityType={profile.entity_type}
+              country={profile.country}
+              organizationId={profile.organization_id || undefined}
+              organizationName={profile.organization_name}
+            />
           </div>
 
           {/* Quick Actions */}
