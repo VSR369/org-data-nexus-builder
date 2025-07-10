@@ -7,6 +7,7 @@ import { isPaaSModel, isMarketplaceModel, formatCurrency, getBothMemberAndNonMem
 import { PricingConfig } from '@/types/pricing';
 import { FrequencySelector } from './FrequencySelector';
 import { AgreementSection } from './AgreementSection';
+import { useEngagementActivation } from '@/hooks/useEngagementActivation';
 
 interface EngagementPaymentCardProps {
   selectedEngagementModel: string | null;
@@ -39,6 +40,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
 }) => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [paasAgreementAccepted, setPaasAgreementAccepted] = useState(false);
+  const { activateEngagement, isActivating } = useEngagementActivation();
 
   // Check if no engagement model is selected
   if (!selectedEngagementModel) {
@@ -139,6 +141,37 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     isMembershipPaid,
     selectedFrequency
   });
+
+  // Handle engagement activation for marketplace models
+  const handleEngagementActivation = async () => {
+    if (!selectedEngagementModel || !isMarketplace) return;
+    
+    try {
+      const activationData = {
+        engagementModel: selectedEngagementModel,
+        membershipStatus: membershipStatus,
+        platformFeePercentage: currentPricing?.platformFeePercentage,
+        discountPercentage: currentPricing?.discountPercentage,
+        finalCalculatedPrice: currentAmount?.amount,
+        currency: currentPricing?.currency || 'USD',
+        organizationType: organizationType,
+        country: country,
+        termsAccepted: agreementAccepted
+      };
+
+      console.log('🚀 Activating engagement with data:', activationData);
+      
+      await activateEngagement(activationData);
+      
+      // Call the parent callback if provided
+      if (onEngagementActivation) {
+        onEngagementActivation();
+      }
+      
+    } catch (error) {
+      console.error('Failed to activate engagement:', error);
+    }
+  };
 
   // Check if engagement is already activated/paid
   const isEngagementActivated = engagementPaymentStatus === 'success' || engagementActivationStatus === 'success';
@@ -307,17 +340,18 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
                 engagementModel={selectedEngagementModel}
               />
               <Button
-                onClick={onEngagementActivation}
+                onClick={handleEngagementActivation}
                 disabled={
                   !agreementAccepted || 
                   loading || 
+                  isActivating ||
                   engagementActivationStatus === 'loading' ||
                   !currentPricing
                 }
                 className="w-full"
                 size="sm"
               >
-                {engagementActivationStatus === 'loading' ? (
+                {isActivating || engagementActivationStatus === 'loading' ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     Activating...

@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      engagement_activations: {
+        Row: {
+          activation_status: string | null
+          country: string | null
+          created_at: string
+          currency: string | null
+          discount_percentage: number | null
+          engagement_model: string
+          final_calculated_price: number | null
+          id: string
+          membership_status: string
+          organization_type: string | null
+          platform_fee_percentage: number | null
+          terms_accepted: boolean | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          activation_status?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          discount_percentage?: number | null
+          engagement_model: string
+          final_calculated_price?: number | null
+          id?: string
+          membership_status: string
+          organization_type?: string | null
+          platform_fee_percentage?: number | null
+          terms_accepted?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          activation_status?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          discount_percentage?: number | null
+          engagement_model?: string
+          final_calculated_price?: number | null
+          id?: string
+          membership_status?: string
+          organization_type?: string | null
+          platform_fee_percentage?: number | null
+          terms_accepted?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pricing_configs: {
         Row: {
           annual_fee: number | null
