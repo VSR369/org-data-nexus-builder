@@ -80,14 +80,14 @@ const SignUpForm = () => {
     setIsLoading(true);
     try {
       const { error } = await signUp(formData.email, formData.password, {
-        organizationName: formData.organizationName,
-        contactPersonName: formData.contactPersonName,
-        organizationType: formData.organizationType,
-        entityType: formData.entityType,
+        organization_name: formData.organizationName,
+        contact_person_name: formData.contactPersonName,
+        organization_type: formData.organizationType,
+        entity_type: formData.entityType,
         country: formData.country,
-        industrySegment: formData.industrySegment,
+        industry_segment: formData.industrySegment,
         address: formData.address,
-        phoneNumber: formData.phoneNumber,
+        phone_number: formData.phoneNumber,
         website: formData.website
       });
 
@@ -102,223 +102,238 @@ const SignUpForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Email and Password Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email *</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
-            placeholder="Enter your email"
-            className={errors.email ? 'border-red-500' : ''}
-          />
-          {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+    <div className="w-full max-w-2xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Email and Password Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email *</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="Enter your email"
+              className={`h-11 ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+            />
+            {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password *</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                placeholder="Enter password"
+                className={`h-11 pr-10 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
+          </div>
         </div>
 
+        {/* Confirm Password */}
         <div className="space-y-2">
-          <Label htmlFor="password">Password *</Label>
+          <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">Confirm Password *</Label>
           <div className="relative">
             <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              placeholder="Enter password"
-              className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword}
+              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+              placeholder="Confirm your password"
+              className={`h-11 pr-10 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+          {errors.confirmPassword && <p className="text-sm text-red-500 mt-1">{errors.confirmPassword}</p>}
         </div>
-      </div>
 
-      {/* Confirm Password */}
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm Password *</Label>
-        <div className="relative">
-          <Input
-            id="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            value={formData.confirmPassword}
-            onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-            placeholder="Confirm your password"
-            className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+        {/* Organization Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="organizationName" className="text-sm font-medium text-gray-700">Organization Name *</Label>
+            <Input
+              id="organizationName"
+              value={formData.organizationName}
+              onChange={(e) => handleInputChange('organizationName', e.target.value)}
+              placeholder="Enter organization name"
+              className={`h-11 ${errors.organizationName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+            />
+            {errors.organizationName && <p className="text-sm text-red-500 mt-1">{errors.organizationName}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactPersonName" className="text-sm font-medium text-gray-700">Contact Person Name *</Label>
+            <Input
+              id="contactPersonName"
+              value={formData.contactPersonName}
+              onChange={(e) => handleInputChange('contactPersonName', e.target.value)}
+              placeholder="Enter contact person name"
+              className={`h-11 ${errors.contactPersonName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+            />
+            {errors.contactPersonName && <p className="text-sm text-red-500 mt-1">{errors.contactPersonName}</p>}
+          </div>
+        </div>
+
+        {/* Organization and Entity Type */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="organizationType" className="text-sm font-medium text-gray-700">Organization Type *</Label>
+            <Select value={formData.organizationType} onValueChange={(value) => handleInputChange('organizationType', value)}>
+              <SelectTrigger className={`h-11 ${errors.organizationType ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}>
+                <SelectValue placeholder="Select organization type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                {organizationTypes.map((type) => (
+                  <SelectItem key={type} value={type} className="hover:bg-gray-50 focus:bg-gray-50">
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.organizationType && <p className="text-sm text-red-500 mt-1">{errors.organizationType}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="entityType" className="text-sm font-medium text-gray-700">Entity Type *</Label>
+            <Select value={formData.entityType} onValueChange={(value) => handleInputChange('entityType', value)}>
+              <SelectTrigger className={`h-11 ${errors.entityType ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}>
+                <SelectValue placeholder="Select entity type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                {entityTypes.map((type) => (
+                  <SelectItem key={type} value={type} className="hover:bg-gray-50 focus:bg-gray-50">
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.entityType && <p className="text-sm text-red-500 mt-1">{errors.entityType}</p>}
+          </div>
+        </div>
+
+        {/* Country and Industry */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="country" className="text-sm font-medium text-gray-700">Country *</Label>
+            <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
+              <SelectTrigger className={`h-11 ${errors.country ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}>
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                {countries.map((country) => (
+                  <SelectItem key={country} value={country} className="hover:bg-gray-50 focus:bg-gray-50">
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.country && <p className="text-sm text-red-500 mt-1">{errors.country}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="industrySegment" className="text-sm font-medium text-gray-700">Industry Segment</Label>
+            <Select value={formData.industrySegment} onValueChange={(value) => handleInputChange('industrySegment', value)}>
+              <SelectTrigger className="h-11 border-gray-300 focus:border-blue-500">
+                <SelectValue placeholder="Select industry" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                {industries.map((industry) => (
+                  <SelectItem key={industry} value={industry} className="hover:bg-gray-50 focus:bg-gray-50">
+                    {industry}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Contact Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+              placeholder="Enter phone number"
+              className="h-11 border-gray-300 focus:border-blue-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="website" className="text-sm font-medium text-gray-700">Website</Label>
+            <Input
+              id="website"
+              value={formData.website}
+              onChange={(e) => handleInputChange('website', e.target.value)}
+              placeholder="Enter website URL"
+              className="h-11 border-gray-300 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="space-y-2">
+          <Label htmlFor="address" className="text-sm font-medium text-gray-700">Address</Label>
+          <Textarea
+            id="address"
+            value={formData.address}
+            onChange={(e) => handleInputChange('address', e.target.value)}
+            placeholder="Enter organization address"
+            rows={3}
+            className="border-gray-300 focus:border-blue-500 resize-none"
           />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
-        {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
-      </div>
-
-      {/* Organization Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="organizationName">Organization Name *</Label>
-          <Input
-            id="organizationName"
-            value={formData.organizationName}
-            onChange={(e) => handleInputChange('organizationName', e.target.value)}
-            placeholder="Enter organization name"
-            className={errors.organizationName ? 'border-red-500' : ''}
-          />
-          {errors.organizationName && <p className="text-sm text-red-500">{errors.organizationName}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="contactPersonName">Contact Person Name *</Label>
-          <Input
-            id="contactPersonName"
-            value={formData.contactPersonName}
-            onChange={(e) => handleInputChange('contactPersonName', e.target.value)}
-            placeholder="Enter contact person name"
-            className={errors.contactPersonName ? 'border-red-500' : ''}
-          />
-          {errors.contactPersonName && <p className="text-sm text-red-500">{errors.contactPersonName}</p>}
-        </div>
-      </div>
-
-      {/* Organization and Entity Type */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="organizationType">Organization Type *</Label>
-          <Select value={formData.organizationType} onValueChange={(value) => handleInputChange('organizationType', value)}>
-            <SelectTrigger className={errors.organizationType ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Select organization type" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {organizationTypes.map((type) => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.organizationType && <p className="text-sm text-red-500">{errors.organizationType}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="entityType">Entity Type *</Label>
-          <Select value={formData.entityType} onValueChange={(value) => handleInputChange('entityType', value)}>
-            <SelectTrigger className={errors.entityType ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Select entity type" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {entityTypes.map((type) => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.entityType && <p className="text-sm text-red-500">{errors.entityType}</p>}
-        </div>
-      </div>
-
-      {/* Country and Industry */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="country">Country *</Label>
-          <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
-            <SelectTrigger className={errors.country ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Select country" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {countries.map((country) => (
-                <SelectItem key={country} value={country}>{country}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.country && <p className="text-sm text-red-500">{errors.country}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="industrySegment">Industry Segment</Label>
-          <Select value={formData.industrySegment} onValueChange={(value) => handleInputChange('industrySegment', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select industry" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {industries.map((industry) => (
-                <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Contact Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="phoneNumber">Phone Number</Label>
-          <Input
-            id="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-            placeholder="Enter phone number"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="website">Website</Label>
-          <Input
-            id="website"
-            value={formData.website}
-            onChange={(e) => handleInputChange('website', e.target.value)}
-            placeholder="Enter website URL"
-          />
-        </div>
-      </div>
-
-      {/* Address */}
-      <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
-        <Textarea
-          id="address"
-          value={formData.address}
-          onChange={(e) => handleInputChange('address', e.target.value)}
-          placeholder="Enter organization address"
-          rows={3}
-        />
-      </div>
-
-      {errors.submit && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{errors.submit}</p>
-        </div>
-      )}
-
-      <Button 
-        type="submit" 
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating Account...
-          </>
-        ) : (
-          'Create Organization Account'
+        {errors.submit && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{errors.submit}</p>
+          </div>
         )}
-      </Button>
 
-      <div className="text-center text-sm text-gray-600">
-        Already have an account?{' '}
-        <Button variant="link" className="p-0 h-auto text-blue-600">
-          Sign in instead
+        <Button 
+          type="submit" 
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base shadow-sm transition-colors"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            'Create Organization Account'
+          )}
         </Button>
-      </div>
-    </form>
+
+        <div className="text-center pt-4 border-t">
+          <p className="text-sm text-gray-600">
+            Already have an account?{' '}
+            <Button variant="link" className="p-0 h-auto text-blue-600 font-medium hover:underline">
+              Sign in instead
+            </Button>
+          </p>
+        </div>
+      </form>
+    </div>
   );
 };
 
