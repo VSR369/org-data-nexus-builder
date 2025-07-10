@@ -12,7 +12,7 @@ const ContributorAuth = () => {
   const [activeTab, setActiveTab] = useState('signin');
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
@@ -25,19 +25,19 @@ const ContributorAuth = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
             <Users className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Contributor Portal</h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base px-2">Access for solution providers and innovation partners</p>
+          <h1 className="text-2xl font-bold text-gray-900">Contributor Portal</h1>
+          <p className="text-gray-600 mt-2">Access for solution providers and innovation partners</p>
         </div>
 
         {/* Auth Card */}
-        <Card className="w-full">
+        <Card>
           <CardHeader>
             <CardTitle className="text-center">Contributor Access</CardTitle>
             <CardDescription className="text-center">
               Sign in to your contributor account or create a new one
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -57,7 +57,7 @@ const ContributorAuth = () => {
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-sm text-gray-600 px-2">
+          <p className="text-sm text-gray-600">
             Looking for organization access?{' '}
             <Link to="/auth" className="text-purple-600 hover:underline">
               Sign in as Organization
