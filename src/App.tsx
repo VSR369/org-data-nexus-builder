@@ -1,74 +1,54 @@
-
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MasterDataHealthProvider } from "@/components/providers/MasterDataHealthProvider";
-import { MasterDataAutoInitService } from "@/services/MasterDataAutoInitService";
-import '@/utils/cleanupActivationData'; // Auto-cleanup activation data
-import { AuthProvider } from "@/hooks/useAuthContext";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import OrganizationRegistration from "./pages/OrganizationRegistration";
+import SeekerRegistration from "./pages/SeekerRegistration";
+import GeneralSignIn from "./pages/GeneralSignIn";
+import SeekerLogin from "./pages/SeekerLogin";
+import SeekingOrgAdminLogin from "./pages/SeekingOrgAdminLogin";
+import SeekingOrgAdminDashboard from "./pages/SeekingOrgAdminDashboard";
+import MasterDataPortal from "./pages/MasterDataPortal";
+import SolutionProviderEnrollment from "./pages/SolutionProviderEnrollment";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRegistration from "./pages/AdminRegistration";
+import IndustrySegmentsAdmin from "./components/master-data/industry-segments/IndustrySegmentsAdmin";
+import CountriesAdmin from "./components/master-data/countries/CountriesAdmin";
+import { SimplifiedSignIn } from "./pages/SimplifiedSignIn";
+import { SimplifiedSignUp } from "./pages/SimplifiedSignUp";
 
-// Import pages
-import Index from './pages/Index';
-import SignIn from './pages/SignIn';
-import GeneralSignIn from './pages/GeneralSignIn';
-import SignUp from './pages/SignUp';
-import SeekerLogin from './pages/SeekerLogin';
-import SeekerRegistration from './pages/SeekerRegistration';
-import ContributorLogin from './pages/ContributorLogin';
-import SeekingOrgAdministratorLogin from './pages/SeekingOrgAdministratorLogin';
-import ContributorEnrollment from './pages/ContributorEnrollment';
-import MasterDataPortal from './pages/MasterDataPortal';
-import AdminRegistration from './pages/AdminRegistration';
-import OrganizationDashboard from './pages/OrganizationDashboard';
-import TestPage from './pages/TestPage';
-import { AuthPage } from './pages/AuthPage';
-
-// Create a client
 const queryClient = new QueryClient();
 
-function App() {
-  // Initialize master data persistence on app startup
-  useEffect(() => {
-    MasterDataAutoInitService.initialize().catch(error => {
-      console.error('❌ Failed to initialize master data:', error);
-    });
-  }, []);
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <MasterDataHealthProvider enableAutoFix={true} showToastNotifications={true}>
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-              <Router>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/general-signin" element={<GeneralSignIn />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/test" element={<TestPage />} />
-                <Route path="/seeker-login" element={<SeekerLogin />} />
-                <Route path="/solution-seeking-org/login" element={<SeekerLogin />} />
-                <Route path="/seeker-registration" element={<SeekerRegistration />} />
-                <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
-                <Route path="/contributor-login" element={<ContributorLogin />} />
-                <Route path="/seeking-org-administrator-login" element={<SeekingOrgAdministratorLogin />} />
-                <Route path="/contributor-enrollment" element={<ContributorEnrollment />} />
-                <Route path="/admin-registration" element={<AdminRegistration />} />
-                <Route path="/master-data-portal" element={<MasterDataPortal />} />
-                <Route path="/master-data" element={<MasterDataPortal />} />
-              </Routes>
-              </Router>
-            </div>
-          </SidebarProvider>
-          <Toaster />
-        </MasterDataHealthProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/organization-registration" element={<OrganizationRegistration />} />
+          <Route path="/seeker-registration" element={<SeekerRegistration />} />
+          <Route path="/general-signin" element={<GeneralSignIn />} />
+          <Route path="/seeker-login" element={<SeekerLogin />} />
+          <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
+          <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
+          <Route path="/master-data" element={<MasterDataPortal />} />
+          <Route path="/solution-provider-enrollment" element={<SolutionProviderEnrollment />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-registration" element={<AdminRegistration />} />
+          <Route path="/industry-segments-admin" element={<IndustrySegmentsAdmin />} />
+          <Route path="/countries-admin" element={<CountriesAdmin />} />
+          <Route path="/signin" element={<SimplifiedSignIn />} />
+          <Route path="/signup" element={<SimplifiedSignUp />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

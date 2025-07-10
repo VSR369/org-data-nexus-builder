@@ -8,36 +8,59 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Database, Building2, Target, Shield } from "lucide-react";
+import { User, Settings, LogOut, Database } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 interface AuthSectionProps {
-  isLoggedIn: boolean;
-  setIsLoggedIn: (value: boolean) => void;
+  isLoggedIn?: boolean;
+  setIsLoggedIn?: (value: boolean) => void;
 }
 
 export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => {
+  const { isAuthenticated, user, profile, signOut, loading } = useSupabaseAuth();
+
+  if (loading) {
+    return (
+      <div className="hidden sm:flex items-center space-x-3">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center space-x-4">
-      {isLoggedIn ? (
+      {isAuthenticated ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarFallback>
+                  {profile?.contact_person_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 bg-white" align="end">
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+            <div className="px-2 py-1.5 text-sm">
+              <div className="font-medium">{profile?.contact_person_name || 'User'}</div>
+              <div className="text-xs text-gray-500">{user?.email}</div>
+              {profile?.custom_user_id && (
+                <div className="text-xs text-gray-500">ID: {profile.custom_user_id}</div>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/seeking-org-admin-dashboard" className="flex items-center">
+                <User className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
+            <DropdownMenuItem onClick={() => signOut()}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </DropdownMenuItem>
@@ -45,46 +68,11 @@ export const AuthSection = ({ isLoggedIn, setIsLoggedIn }: AuthSectionProps) => 
         </DropdownMenu>
       ) : (
         <div className="hidden sm:flex items-center space-x-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                Sign In
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-white" align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/auth" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  Supabase Auth (Recommended)
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/general-signin" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  General Sign In
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/seeker-login" className="flex items-center">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Solution Seeking Organization
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/seeking-org-administrator-login" className="flex items-center">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Seeking Org Administrator
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/seeker-login" className="flex items-center">
-                  <Target className="mr-2 h-4 w-4" />
-                  Solution Seeker
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link to="/auth">
+            <Button variant="outline">
+              Sign In
+            </Button>
+          </Link>
           <Link to="/auth?mode=signup">
             <Button>
               Sign Up

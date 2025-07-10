@@ -125,6 +125,69 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          address: string | null
+          company_logo: string[] | null
+          company_profile: string[] | null
+          contact_person_name: string
+          country: string
+          country_code: string | null
+          created_at: string
+          custom_user_id: string
+          entity_type: string
+          id: string
+          industry_segment: string | null
+          organization_id: string | null
+          organization_name: string
+          organization_type: string
+          phone_number: string | null
+          registration_documents: string[] | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_logo?: string[] | null
+          company_profile?: string[] | null
+          contact_person_name: string
+          country: string
+          country_code?: string | null
+          created_at?: string
+          custom_user_id: string
+          entity_type: string
+          id: string
+          industry_segment?: string | null
+          organization_id?: string | null
+          organization_name: string
+          organization_type: string
+          phone_number?: string | null
+          registration_documents?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_logo?: string[] | null
+          company_profile?: string[] | null
+          contact_person_name?: string
+          country?: string
+          country_code?: string | null
+          created_at?: string
+          custom_user_id?: string
+          entity_type?: string
+          id?: string
+          industry_segment?: string | null
+          organization_id?: string | null
+          organization_name?: string
+          organization_type?: string
+          phone_number?: string | null
+          registration_documents?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
