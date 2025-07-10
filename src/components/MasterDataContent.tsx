@@ -86,8 +86,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
   };
 
   return (
-    <div className="p-6 max-w-full overflow-x-hidden">
-      <div className="max-w-full overflow-x-auto">
+    <div className="w-full max-w-full no-horizontal-scroll">
+      <div className="responsive-container">
         {renderContent()}
       </div>
     </div>

@@ -73,36 +73,37 @@ const MasterDataPortal = () => {
   console.log('MasterDataPortal - activeSection:', activeSection);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 overflow-x-hidden">
+    <div className="dashboard-layout no-horizontal-scroll">
       <SidebarProvider defaultOpen={true}>
-        <div className="flex w-full max-w-full overflow-x-hidden">
+        <div className="dashboard-main">
           {/* Sidebar */}
           <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
           
           {/* Main Content Area */}
-          <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
+          <SidebarInset className="flex-1 min-w-0 no-horizontal-scroll">
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 shadow-sm z-10 sticky top-0">
-              <div className="px-6 w-full overflow-x-hidden">
-                <div className="flex items-center justify-between h-16 min-w-0">
-                  <div className="flex items-center space-x-4 min-w-0">
+            <header className="bg-white border-b border-gray-200 shadow-sm z-10 sticky top-0 w-full">
+              <div className="px-4 lg:px-6 w-full">
+                <div className="flex items-center justify-between h-16 w-full">
+                  <div className="flex items-center space-x-2 lg:space-x-4 min-w-0 flex-1">
                     <SidebarTrigger />
                     <Link to="/">
                       <Button variant="ghost" size="sm" className="flex items-center gap-2 shrink-0">
                         <ArrowLeft className="h-4 w-4" />
-                        Back to CoInnovator
+                        <span className="hidden sm:inline">Back to CoInnovator</span>
+                        <span className="sm:hidden">Back</span>
                       </Button>
                     </Link>
-                    <div className="h-6 w-px bg-gray-300 shrink-0" />
-                    <div className="flex items-center space-x-3 min-w-0">
+                    <div className="h-6 w-px bg-gray-300 shrink-0 hidden sm:block" />
+                    <div className="flex items-center space-x-2 lg:space-x-3 min-w-0 flex-1">
                       <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center shrink-0">
                         <Database className="h-4 w-4 text-white" />
                       </div>
-                      <div className="min-w-0">
-                        <h1 className="font-bold text-xl text-gray-900 truncate">
+                      <div className="min-w-0 flex-1">
+                        <h1 className="font-bold text-lg lg:text-xl text-gray-900 truncate">
                           Master Data Portal
                         </h1>
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-xs lg:text-sm text-muted-foreground truncate hidden sm:block">
                           Configuration Management System
                         </p>
                       </div>
@@ -117,7 +118,8 @@ const MasterDataPortal = () => {
                       className="flex items-center gap-2"
                     >
                       <RefreshCw className="h-4 w-4" />
-                      <span className="hidden sm:inline">Restore Custom Data</span>
+                      <span className="hidden lg:inline">Restore Custom Data</span>
+                      <span className="lg:hidden">Restore</span>
                     </Button>
                   </div>
                 </div>
@@ -125,10 +127,8 @@ const MasterDataPortal = () => {
             </header>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-hidden">
-              <div className="h-full overflow-y-auto">
-                <MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />
-              </div>
+            <div className="dashboard-content">
+              <MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />
             </div>
           </SidebarInset>
         </div>
