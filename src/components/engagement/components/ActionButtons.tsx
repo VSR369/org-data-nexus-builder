@@ -41,6 +41,32 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   currentPricing,
   currentAmount
 }) => {
+  
+  const handleActivationClick = () => {
+    console.log('🎯 Activation button clicked');
+    console.log('📊 Button state:', {
+      agreementAccepted,
+      loading,
+      isActivating,
+      engagementActivationStatus,
+      currentPricing: !!currentPricing,
+      selectedEngagementModel
+    });
+    
+    if (!agreementAccepted) {
+      console.warn('⚠️ Terms not accepted');
+      return;
+    }
+    
+    if (!currentPricing) {
+      console.warn('⚠️ No pricing configuration');
+      return;
+    }
+    
+    console.log('✅ All checks passed, calling handleEngagementActivation');
+    handleEngagementActivation();
+  };
+
   return (
     <div className="space-y-2">
       {isPaaS && (
@@ -83,7 +109,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             engagementModel={selectedEngagementModel}
           />
           <Button
-            onClick={handleEngagementActivation}
+            onClick={handleActivationClick}
             disabled={
               !agreementAccepted || 
               loading || 
@@ -91,7 +117,9 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
               engagementActivationStatus === 'loading' ||
               !currentPricing
             }
-            className="w-full"
+            className={`w-full transition-all duration-200 ${
+              isActivating ? 'bg-blue-600 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'
+            }`}
             size="sm"
           >
             {isActivating || engagementActivationStatus === 'loading' ? (
@@ -103,17 +131,24 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
               'Activate Engagement'
             )}
           </Button>
+          
+          {/* Debug info - remove in production */}
+          <div className="text-xs text-gray-500 mt-1">
+            Debug: Agreement={agreementAccepted ? '✓' : '✗'} | 
+            Pricing={currentPricing ? '✓' : '✗'} | 
+            Loading={isActivating ? '✓' : '✗'}
+          </div>
         </div>
       )}
 
       {engagementPaymentStatus === 'error' && (
-        <div className="text-center text-red-600 text-xs">
+        <div className="text-center text-red-600 text-xs bg-red-50 p-2 rounded">
           Payment failed. Please try again.
         </div>
       )}
 
       {engagementActivationStatus === 'error' && (
-        <div className="text-center text-red-600 text-xs">
+        <div className="text-center text-red-600 text-xs bg-red-50 p-2 rounded">
           Activation failed. Please try again.
         </div>
       )}

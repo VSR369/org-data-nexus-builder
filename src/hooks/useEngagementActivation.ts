@@ -13,20 +13,48 @@ interface EngagementActivationData {
   organizationType?: string;
   country?: string;
   termsAccepted: boolean;
-  userId: string; // Make userId required - no fallback to Supabase auth
+  userId: string;
 }
 
 export const useEngagementActivation = () => {
   const [isActivating, setIsActivating] = useState(false);
   const { toast } = useToast();
 
+  // Test database connectivity
+  const testDatabaseConnection = async () => {
+    try {
+      console.log('🔄 Testing database connection...');
+      const { data, error } = await supabase
+        .from('engagement_activations')
+        .select('count(*)')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ Database connection test failed:', error);
+        return false;
+      }
+      
+      console.log('✅ Database connection successful:', data);
+      return true;
+    } catch (error) {
+      console.error('❌ Database connection error:', error);
+      return false;
+    }
+  };
+
   const activateEngagement = async (data: EngagementActivationData) => {
     console.log('🚀 Starting engagement activation with data:', data);
     setIsActivating(true);
     
     try {
-      // Test toast functionality first
-      console.log('📋 Testing toast functionality...');
+      // Test database connection first
+      const isConnected = await testDatabaseConnection();
+      if (!isConnected) {
+        throw new Error('Database connection failed');
+      }
+
+      // Show processing toast
+      console.log('📋 Showing processing toast...');
       toast({
         title: "🔄 Processing Activation",
         description: "Activating your engagement model...",
@@ -55,17 +83,16 @@ export const useEngagementActivation = () => {
         throw new Error('Platform fee not configured');
       }
 
-      // Validate userId is provided (no fallback to Supabase auth)
       if (!data.userId) {
         console.error('❌ Validation failed: User ID is required');
         throw new Error('User ID is required - session not found');
       }
 
-      console.log('✅ All validations passed, using session user ID:', data.userId);
+      console.log('✅ All validations passed, using user ID:', data.userId);
 
-      // Prepare data for insertion with session-based user ID
+      // Prepare data for insertion
       const insertData = {
-        user_id: data.userId, // Use session-based user ID directly
+        user_id: data.userId,
         engagement_model: data.engagementModel,
         membership_status: data.membershipStatus,
         platform_fee_percentage: data.platformFeePercentage,
@@ -80,7 +107,7 @@ export const useEngagementActivation = () => {
 
       console.log('💾 Inserting activation record with data:', insertData);
 
-      // Insert activation record - RLS policies now allow this operation
+      // Insert activation record
       const { data: activation, error } = await supabase
         .from('engagement_activations')
         .insert(insertData)
@@ -108,7 +135,6 @@ export const useEngagementActivation = () => {
     } catch (error) {
       console.error('💥 Activation failed with error:', error);
       
-      // Show contextual error messages
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       console.log('📢 Showing error toast...');
@@ -128,6 +154,7 @@ export const useEngagementActivation = () => {
 
   return {
     activateEngagement,
-    isActivating
+    isActivating,
+    testDatabaseConnection
   };
 };
