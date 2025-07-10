@@ -121,6 +121,107 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     }
   };
 
+  const handlePaaSPayment = async () => {
+    try {
+      if (!engagementPricing || !selectedFrequency) {
+        toast({
+          title: "Error",
+          description: "Pricing information or billing frequency not available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get both member and non-member pricing for accurate calculations
+      const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+        selectedEngagementModel,
+        pricingConfigs,
+        country,
+        organizationType
+      );
+
+      // Calculate pricing details based on frequency
+      const isMembershipPaid = membershipStatus === 'member_paid';
+      const discountPercentage = memberConfig?.discountPercentage || 0;
+      
+      let originalPrice = 0;
+      let finalPrice = 0;
+      
+      if (selectedFrequency === 'quarterly') {
+        originalPrice = nonMemberConfig?.quarterlyFee || engagementPricing.quarterlyFee || 0;
+        finalPrice = isMembershipPaid && discountPercentage > 0 
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice;
+      } else if (selectedFrequency === 'half-yearly') {
+        originalPrice = nonMemberConfig?.halfYearlyFee || engagementPricing.halfYearlyFee || 0;
+        finalPrice = isMembershipPaid && discountPercentage > 0 
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice;
+      } else if (selectedFrequency === 'annual') {
+        originalPrice = nonMemberConfig?.annualFee || engagementPricing.annualFee || 0;
+        finalPrice = isMembershipPaid && discountPercentage > 0 
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice;
+      }
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to process payment",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save engagement activation to database
+      const { error } = await supabase
+        .from('engagement_activations')
+        .insert({
+          user_id: user.id,
+          engagement_model: getEngagementModelName(selectedEngagementModel),
+          membership_status: membershipStatus,
+          platform_fee_percentage: originalPrice,
+          billing_frequency: selectedFrequency,
+          discount_percentage: isMembershipPaid ? discountPercentage : 0,
+          final_calculated_price: finalPrice,
+          currency: engagementPricing.currency || 'USD',
+          activation_status: 'Activated',
+          terms_accepted: true,
+          organization_type: organizationType,
+          country: country
+        });
+
+      if (error) {
+        console.error('Error saving engagement activation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save engagement details. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Call the original payment handler
+      onEngagementPayment();
+
+      toast({
+        title: "Payment Processing",
+        description: `Processing payment for ${getEngagementModelName(selectedEngagementModel)} - ${selectedFrequency} plan`,
+      });
+
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during payment processing",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Auto-select platform fee for marketplace models
   React.useEffect(() => {
     if (isMarketplace && selectedFrequency !== 'platform-fee') {
@@ -179,7 +280,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
             <PaymentButton
               selectedEngagementModel={selectedEngagementModel}
               engagementPaymentLoading={engagementPaymentLoading}
-              onEngagementPayment={onEngagementPayment}
+              onEngagementPayment={isPaaS ? handlePaaSPayment : onEngagementPayment}
               onActivateEngagement={handleActivateEngagement}
             />
               </div>

@@ -30,27 +30,25 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
 
   return (
     <div className="space-y-3">
-      {isMarketplace && (
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="terms-checkbox"
-            checked={termsAccepted}
-            onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
-          />
-          <label 
-            htmlFor="terms-checkbox" 
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            I agree to the Terms and Conditions
-          </label>
-        </div>
-      )}
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="terms-checkbox"
+          checked={termsAccepted}
+          onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+        />
+        <label 
+          htmlFor="terms-checkbox" 
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          I agree to the Terms and Conditions
+        </label>
+      </div>
       
       <Button 
         className="w-full" 
         size="lg"
         onClick={handleAction}
-        disabled={engagementPaymentLoading || (isMarketplace && !termsAccepted)}
+        disabled={engagementPaymentLoading || !termsAccepted}
       >
         {engagementPaymentLoading ? (
           <>
