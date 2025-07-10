@@ -8,7 +8,7 @@ interface PricingDisplaySectionProps {
   pricing: PricingConfig | null;
   selectedPricingPlan: string;
   modelName: string;
-  membershipStatus: 'active' | 'inactive';
+  membershipStatus: string;
   getCurrentPrice: () => number;
   getOriginalPrice: () => number;
   formatPricing: (amount: number, currency: string, modelName: string) => string;
@@ -62,7 +62,7 @@ export const PricingDisplaySection: React.FC<PricingDisplaySectionProps> = ({
           </div>
         </div>
       ) : (
-        membershipStatus === 'active' && pricing.discountPercentage && currentPrice < originalPrice ? (
+        membershipStatus === 'member_paid' && pricing.discountPercentage && currentPrice < originalPrice ? (
           <div className="space-y-1">
             <div className="text-xs text-gray-500">Member discount:</div>
             <div className="text-sm text-gray-500 line-through">
