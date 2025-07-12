@@ -24,6 +24,17 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   isMarketplace,
   isPaaS
 }) => {
+  console.log('🚀 PricingSection props:', {
+    selectedEngagementModel,
+    selectedFrequency,
+    membershipStatus,
+    country,
+    organizationType,
+    isMarketplace,
+    isPaaS,
+    pricingConfigsCount: pricingConfigs.length
+  });
+
   const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
     selectedEngagementModel,
     pricingConfigs,
@@ -31,8 +42,35 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
     organizationType
   );
 
+  console.log('💰 Pricing configs retrieved:', {
+    memberConfig: memberConfig ? {
+      id: memberConfig.id,
+      engagementModel: memberConfig.engagementModel,
+      membershipStatus: memberConfig.membershipStatus,
+      quarterlyFee: memberConfig.quarterlyFee,
+      halfYearlyFee: memberConfig.halfYearlyFee,
+      annualFee: memberConfig.annualFee,
+      currency: memberConfig.currency
+    } : null,
+    nonMemberConfig: nonMemberConfig ? {
+      id: nonMemberConfig.id,
+      engagementModel: nonMemberConfig.engagementModel,
+      membershipStatus: nonMemberConfig.membershipStatus,
+      quarterlyFee: nonMemberConfig.quarterlyFee,
+      halfYearlyFee: nonMemberConfig.halfYearlyFee,
+      annualFee: nonMemberConfig.annualFee,
+      currency: nonMemberConfig.currency
+    } : null
+  });
+
   const isMembershipPaid = membershipStatus === 'member_paid';
   const currentPricing = isMembershipPaid && memberConfig ? memberConfig : nonMemberConfig;
+
+  console.log('🎯 Current pricing selection:', {
+    isMembershipPaid,
+    selectedPricing: currentPricing ? 'memberConfig' : 'nonMemberConfig',
+    currentPricingId: currentPricing?.id
+  });
 
   let currentAmount = null;
   let nonMemberAmount = null;
@@ -49,18 +87,34 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
       memberAmount = { amount: memberConfig.platformFeePercentage, isPercentage: true };
     }
   } else if (isPaaS && selectedFrequency) {
+    console.log('💳 Processing PaaS pricing with frequency:', selectedFrequency);
+    
     if (currentPricing) {
+      console.log('🔄 Getting current pricing amount...');
       const amount = getDisplayAmount(selectedFrequency, currentPricing, membershipStatus);
+      console.log('📊 Current pricing result:', amount);
       currentAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
     }
     if (nonMemberConfig) {
+      console.log('🔄 Getting non-member pricing amount...');
       const amount = getDisplayAmount(selectedFrequency, nonMemberConfig, 'inactive');
+      console.log('📊 Non-member pricing result:', amount);
       nonMemberAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
     }
     if (memberConfig) {
+      console.log('🔄 Getting member pricing amount...');
       const amount = getDisplayAmount(selectedFrequency, memberConfig, 'member_paid');
+      console.log('📊 Member pricing result:', amount);
       memberAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
     }
+    
+    console.log('🎯 Final amount calculations:', {
+      currentAmount,
+      nonMemberAmount,
+      memberAmount
+    });
+  } else if (isPaaS && !selectedFrequency) {
+    console.log('⚠️ PaaS selected but no frequency provided');
   }
 
   if (!currentPricing) {
