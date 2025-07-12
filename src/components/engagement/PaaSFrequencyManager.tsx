@@ -142,33 +142,57 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Current Payment Summary */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Lock className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-lg">Current PaaS Engagement</CardTitle>
-            <Badge variant="secondary">Locked</Badge>
+      {/* Enhanced Payment Summary */}
+      <Card className="border-success/20 bg-success/5">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-success/20 flex items-center justify-center">
+                <Lock className="h-4 w-4 text-success" />
+              </div>
+              <div>
+                <CardTitle className="text-lg text-foreground">Platform as a Service - Active</CardTitle>
+                <p className="text-sm text-muted-foreground">Existing paid engagement</p>
+              </div>
+            </div>
+            <Badge variant="default" className="bg-success text-success-foreground">
+              Paid & Active
+            </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Current Frequency:</span>
-              <p className="font-medium capitalize">{freshActivationData?.current_frequency || currentFrequency}</p>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-card rounded-lg border">
+            <h4 className="font-semibold text-sm mb-3 text-foreground">Payment Summary</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Current Billing Frequency</span>
+                <p className="font-semibold text-foreground capitalize">{freshActivationData?.current_frequency || currentFrequency}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Last Payment Amount</span>
+                <p className="font-semibold text-foreground">{formatAmount(freshActivationData?.payment_amount)}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Payment Date</span>
+                <p className="font-semibold text-foreground">
+                  {freshActivationData?.payment_date ? formatDate(freshActivationData.payment_date) : 'N/A'}
+                  {freshActivationData?.payment_date && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({Math.floor((Date.now() - new Date(freshActivationData.payment_date).getTime()) / (1000 * 60 * 60 * 24))} days ago)
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Total Payments Made</span>
+                <p className="font-semibold text-foreground">{formatAmount(freshActivationData?.total_payments_made || freshActivationData?.payment_amount)}</p>
+              </div>
             </div>
-            <div>
-              <span className="text-muted-foreground">Last Payment:</span>
-              <p className="font-medium">{formatAmount(freshActivationData?.payment_amount)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Payment Date:</span>
-              <p className="font-medium">{freshActivationData?.payment_date ? formatDate(freshActivationData.payment_date) : 'N/A'}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Total Payments:</span>
-              <p className="font-medium">{formatAmount(freshActivationData?.total_payments_made || freshActivationData?.payment_amount)}</p>
-            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-success"></div>
+            <span>Engagement is locked and active. You can change your billing frequency below.</span>
           </div>
         </CardContent>
       </Card>
