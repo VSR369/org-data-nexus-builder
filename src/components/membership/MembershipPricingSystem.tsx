@@ -106,21 +106,13 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
 
 
 
-  // Don't block rendering on data loading - show with fallbacks
-  console.log('MembershipPricingSystem render state:', {
-    dataLoading,
-    pricingConfigsLength: pricingConfigs?.length || 0,
-    membershipFeesLength: membershipFees?.length || 0,
-    engagementModelsLength: engagementModels?.length || 0,
-    organizationType,
-    entityType,
-    country,
-    // Current state debugging
-    membershipStatus: state.membership_status,
-    selectedEngagementModel: state.selected_engagement_model,
-    selectedFrequency: state.selected_frequency,
-    engagementActivationStatus: state.engagement_activation_status
-  });
+  // Debug: Log key state changes for PaaS frequency selection
+  if (state.selected_engagement_model === 'Platform as a Service') {
+    console.log('PaaS State Debug:', {
+      selectedFrequency: state.selected_frequency,
+      membershipStatus: state.membership_status
+    });
+  }
 
   const engagementPricing = getEngagementPricing(
     state.selected_engagement_model,
