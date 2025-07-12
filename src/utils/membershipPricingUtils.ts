@@ -1,4 +1,5 @@
 import { PricingConfig } from '@/types/pricing';
+import { normalizeCountryName } from './pricing/pricingUtils';
 
 // Map engagement model IDs to display names used in pricing configs (match master data exactly)
 export const getEngagementModelName = (modelId: string): string => {
@@ -227,11 +228,12 @@ export const getBothMemberAndNonMemberPricing = (
   if (!selectedEngagementModel) return { memberConfig: null, nonMemberConfig: null };
 
   const engagementModelName = getEngagementModelName(selectedEngagementModel);
+  const normalizedCountry = normalizeCountryName(country);
 
   // Get member config
   const memberConfig = pricingConfigs.find(config => 
     config.engagementModel === engagementModelName &&
-    config.country === country &&
+    normalizeCountryName(config.country) === normalizedCountry &&
     config.organizationType === organizationType &&
     config.membershipStatus === 'member'
   ) || pricingConfigs.find(config => 
@@ -242,7 +244,7 @@ export const getBothMemberAndNonMemberPricing = (
   // Get non-member config (this will be our "original" pricing)
   const nonMemberConfig = pricingConfigs.find(config => 
     config.engagementModel === engagementModelName &&
-    config.country === country &&
+    normalizeCountryName(config.country) === normalizedCountry &&
     config.organizationType === organizationType &&
     config.membershipStatus === 'not-a-member'
   ) || pricingConfigs.find(config => 
