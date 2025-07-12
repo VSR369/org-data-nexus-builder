@@ -1,5 +1,6 @@
 // Engagement Model Mapping and Lookup
 import { PricingConfig } from '@/types/pricing';
+import { normalizeCountryName } from '@/utils/pricing/pricingUtils';
 
 export class EngagementModelMapper {
   // Fix Platform as a Service Lookup with proper name mapping
@@ -10,41 +11,60 @@ export class EngagementModelMapper {
     'Platform as a Service': ['Platform as a Service', 'platform-service', 'PaaS', 'Platform Service']
   };
 
-  // Enhanced lookup with proper model name matching
+  // Membership status mapping
+  private static readonly MEMBERSHIP_STATUS_MAPPINGS = {
+    'not-a-member': ['not-a-member', 'inactive', 'non-member'],
+    'member': ['member', 'active']
+  };
+
+  // Enhanced lookup with proper model name, country and membership status matching
   static getPricingForEngagementModel(
     configs: PricingConfig[], 
     engagementModel: string, 
+    country: string,
+    organizationType: string,
     membershipStatus?: string
   ): PricingConfig | null {
-    console.log(`🔍 Enhanced: Looking for pricing - Model: "${engagementModel}", Membership: "${membershipStatus || 'any'}"`);
+    console.log(`🔍 Enhanced: Looking for pricing - Model: "${engagementModel}", Country: "${country}", OrgType: "${organizationType}", Membership: "${membershipStatus || 'any'}"`);
     
-    // Use mapping to find the correct configuration
-    const possibleNames = this.getPossibleModelNames(engagementModel);
-    console.log(`🔍 Enhanced: Checking possible names:`, possibleNames);
+    // Normalize inputs
+    const normalizedCountry = normalizeCountryName(country);
+    const possibleModelNames = this.getPossibleModelNames(engagementModel);
+    const possibleMembershipStatuses = membershipStatus ? this.getPossibleMembershipStatuses(membershipStatus) : [];
     
-    // First try exact match with membership status
+    console.log(`🔍 Enhanced: Normalized country: "${normalizedCountry}"`);
+    console.log(`🔍 Enhanced: Possible model names:`, possibleModelNames);
+    console.log(`🔍 Enhanced: Possible membership statuses:`, possibleMembershipStatuses);
+    
+    // First try exact match with all criteria
     if (membershipStatus) {
-      for (const name of possibleNames) {
-        const exactMatch = configs.find(config => 
-          this.normalizeModelName(config.engagementModel) === this.normalizeModelName(name) &&
-          config.membershipStatus === membershipStatus
-        );
-        
-        if (exactMatch) {
-          console.log(`✅ Enhanced: Found exact match for "${name}" with membership "${membershipStatus}"`);
-          return exactMatch;
+      for (const modelName of possibleModelNames) {
+        for (const membershipVariant of possibleMembershipStatuses) {
+          const exactMatch = configs.find(config => 
+            this.normalizeModelName(config.engagementModel) === this.normalizeModelName(modelName) &&
+            normalizeCountryName(config.country || '') === normalizedCountry &&
+            config.organizationType === organizationType &&
+            config.membershipStatus === membershipVariant
+          );
+          
+          if (exactMatch) {
+            console.log(`✅ Enhanced: Found exact match for "${modelName}" with membership "${membershipVariant}"`);
+            return exactMatch;
+          }
         }
       }
     }
     
-    // Then try without membership status constraint
-    for (const name of possibleNames) {
+    // Then try without membership status constraint but with country and org type
+    for (const modelName of possibleModelNames) {
       const match = configs.find(config => 
-        this.normalizeModelName(config.engagementModel) === this.normalizeModelName(name)
+        this.normalizeModelName(config.engagementModel) === this.normalizeModelName(modelName) &&
+        normalizeCountryName(config.country || '') === normalizedCountry &&
+        config.organizationType === organizationType
       );
       
       if (match) {
-        console.log(`✅ Enhanced: Found match for "${name}"`);
+        console.log(`✅ Enhanced: Found match for "${modelName}" without membership constraint`);
         return match;
       }
     }
@@ -53,10 +73,21 @@ export class EngagementModelMapper {
     console.log('📋 Enhanced: Available configurations:', configs.map(c => ({
       engagementModel: c.engagementModel,
       membershipStatus: c.membershipStatus,
-      country: c.country
+      country: c.country,
+      organizationType: c.organizationType
     })));
     
     return null;
+  }
+
+  private static getPossibleMembershipStatuses(membershipStatus: string): string[] {
+    // Find all possible variations of the membership status
+    for (const [key, variations] of Object.entries(this.MEMBERSHIP_STATUS_MAPPINGS)) {
+      if (variations.includes(membershipStatus)) {
+        return [key, ...variations];
+      }
+    }
+    return [membershipStatus];
   }
   
   private static getPossibleModelNames(modelName: string): string[] {

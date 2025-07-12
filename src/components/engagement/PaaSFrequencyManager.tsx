@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Lock, Wallet, Clock } from "lucide-react";
 import { getDisplayAmount } from '@/utils/membershipPricingUtils';
 import { useEngagementDataStorage } from '@/hooks/useEngagementDataStorage';
+import { EngagementModelMapper } from '@/utils/enhanced/EngagementModelMapper';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PaaSFrequencyManagerProps {
   selectedEngagementModel: string;
@@ -31,19 +33,30 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
   onFrequencyChange
 }) => {
   const [selectedNewFrequency, setSelectedNewFrequency] = useState<string | null>(null);
+  const [freshActivationData, setFreshActivationData] = useState<any>(null);
+  const [dataLoading, setDataLoading] = useState(false);
 
   const frequencies = ['quarterly', 'half_yearly', 'annual'];
   
-  // Get current pricing config
-  const currentPricing = pricingConfigs.find(config => 
-    config.engagement_model === selectedEngagementModel &&
-    config.membership_status === membershipStatus &&
-    config.country === country &&
-    config.organization_type === organizationType
-  ) || null;
+  // Fetch fresh data from database on component mount
+  useEffect(() => {
+    fetchFreshData();
+  }, [activationData?.id]);
+
+  // Use enhanced EngagementModelMapper to get pricing config from master data
+  const currentPricing = EngagementModelMapper.getPricingForEngagementModel(
+    pricingConfigs,
+    selectedEngagementModel,
+    country,
+    organizationType,
+    membershipStatus
+  );
+
+  console.log('🔍 PaaSFrequencyManager: Current pricing config:', currentPricing);
+  console.log('🔍 PaaSFrequencyManager: Fresh activation data:', freshActivationData);
 
   const {
-    loading,
+    loading: paymentLoading,
     payEngagementFee
   } = useEngagementDataStorage({
     selectedEngagementModel,
@@ -61,7 +74,36 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     setSelectedNewFrequency(frequency);
     const success = await payEngagementFee(true); // true indicates frequency change
     if (success) {
+      // Refresh the data after successful payment
+      await fetchFreshData();
       onFrequencyChange(true);
+    }
+  };
+
+  const fetchFreshData = async () => {
+    if (!activationData?.id) return;
+    
+    console.log('🔄 PaaSFrequencyManager: Refreshing data from database...');
+    setDataLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('engagement_activations')
+        .select('*')
+        .eq('id', activationData.id)
+        .single();
+        
+      if (error) {
+        console.error('❌ Error fetching fresh activation data:', error);
+        setFreshActivationData(activationData); // fallback to passed data
+      } else {
+        console.log('✅ Fresh activation data fetched:', data);
+        setFreshActivationData(data);
+      }
+    } catch (error) {
+      console.error('❌ Error in fetchFreshData:', error);
+      setFreshActivationData(activationData); // fallback to passed data
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -83,19 +125,19 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Current Frequency:</span>
-              <p className="font-medium capitalize">{currentFrequency}</p>
+              <p className="font-medium capitalize">{freshActivationData?.current_frequency || currentFrequency}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Last Payment:</span>
-              <p className="font-medium">{formatCurrency(activationData?.payment_amount)}</p>
+              <p className="font-medium">{formatCurrency(freshActivationData?.payment_amount)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Payment Date:</span>
-              <p className="font-medium">{activationData?.payment_date ? formatDate(activationData.payment_date) : 'N/A'}</p>
+              <p className="font-medium">{freshActivationData?.payment_date ? formatDate(freshActivationData.payment_date) : 'N/A'}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Total Payments:</span>
-              <p className="font-medium">{formatCurrency(activationData?.total_payments_made || activationData?.payment_amount)}</p>
+              <p className="font-medium">{formatCurrency(freshActivationData?.total_payments_made || freshActivationData?.payment_amount)}</p>
             </div>
           </div>
         </CardContent>
@@ -138,7 +180,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
                     {!isCurrentFrequency && amount?.amount && (
                       <Button
                         onClick={() => handleFrequencyPayment(frequency)}
-                        disabled={loading}
+                        disabled={paymentLoading || dataLoading}
                         size="sm"
                         className="flex items-center gap-2"
                       >
@@ -155,11 +197,11 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
           <Separator />
           
           {/* Payment History */}
-          {activationData?.frequency_change_history && Array.isArray(activationData.frequency_change_history) && activationData.frequency_change_history.length > 0 && (
+          {freshActivationData?.frequency_change_history && Array.isArray(freshActivationData.frequency_change_history) && freshActivationData.frequency_change_history.length > 0 && (
             <div>
               <h4 className="font-medium text-sm mb-2">Frequency Change History</h4>
               <div className="space-y-2">
-                {activationData.frequency_change_history.map((change: any, index: number) => (
+                {freshActivationData.frequency_change_history.map((change: any, index: number) => (
                   <div key={index} className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
                     <p>Changed to <span className="font-medium capitalize">{change?.to_frequency || 'Unknown'}</span></p>
                     <p>Amount: {formatCurrency(change?.amount)} • {change?.date ? formatDate(change.date) : 'N/A'}</p>

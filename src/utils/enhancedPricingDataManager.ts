@@ -13,10 +13,15 @@ export class EnhancedPricingDataManager {
   // Re-export data loading methods
   static getAllConfigurations = DataLoader.getAllConfigurations.bind(DataLoader);
 
-  // Re-export engagement model lookup methods
-  static getPricingForEngagementModel(engagementModel: string, membershipStatus?: string): PricingConfig | null {
+  // Re-export engagement model lookup methods  
+  static getPricingForEngagementModel(
+    engagementModel: string, 
+    country: string,
+    organizationType: string,
+    membershipStatus?: string
+  ): PricingConfig | null {
     const configs = DataLoader.getAllConfigurations();
-    const pricing = EngagementModelMapper.getPricingForEngagementModel(configs, engagementModel, membershipStatus);
+    const pricing = EngagementModelMapper.getPricingForEngagementModel(configs, engagementModel, country, organizationType, membershipStatus);
     return pricing ? ConfigurationValidator.validateConfigurationData(pricing) : null;
   }
 

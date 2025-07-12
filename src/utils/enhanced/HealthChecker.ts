@@ -37,8 +37,8 @@ export class HealthChecker {
       recommendations.push('Create pricing configurations for your engagement models');
     }
     
-    // Check for Platform as a Service specifically
-    const paasConfig = EngagementModelMapper.getPricingForEngagementModel(configs, 'Platform as a Service');
+    // Check for Platform as a Service specifically (using dummy values for health check)
+    const paasConfig = EngagementModelMapper.getPricingForEngagementModel(configs, 'Platform as a Service', 'India', 'Corporate');
     if (!paasConfig) {
       issues.push('No Platform as a Service pricing configuration found');
       recommendations.push('Add Platform as a Service pricing configuration');

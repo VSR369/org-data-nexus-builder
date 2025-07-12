@@ -8,6 +8,8 @@ export class ErrorHandling {
   // Enhanced Error Handling with graceful degradation
   static getPricingWithErrorHandling(
     engagementModel: string, 
+    country: string,
+    organizationType: string,
     membershipStatus?: string
   ): { 
     pricing: PricingConfig | null; 
@@ -16,7 +18,7 @@ export class ErrorHandling {
   } {
     try {
       const configs = DataLoader.getAllConfigurations();
-      const pricing = EngagementModelMapper.getPricingForEngagementModel(configs, engagementModel, membershipStatus);
+      const pricing = EngagementModelMapper.getPricingForEngagementModel(configs, engagementModel, country, organizationType, membershipStatus);
       
       if (pricing) {
         return { pricing, error: null, fallbackUsed: false };
@@ -24,7 +26,7 @@ export class ErrorHandling {
       
       // Try fallback without membership status
       if (membershipStatus) {
-        const fallbackPricing = EngagementModelMapper.getPricingForEngagementModel(configs, engagementModel);
+        const fallbackPricing = EngagementModelMapper.getPricingForEngagementModel(configs, engagementModel, country, organizationType);
         if (fallbackPricing) {
           return { 
             pricing: fallbackPricing, 
