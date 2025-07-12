@@ -1,10 +1,11 @@
 
 export interface Currency {
-  id: string;
+  id?: string;
   code: string;
   name: string;
   symbol: string;
-  country: string;
+  country_id: string;
+  countryName?: string;
   createdAt: string;
   updatedAt: string;
   isUserCreated: boolean;

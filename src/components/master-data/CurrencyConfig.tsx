@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash2, DollarSign, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { CurrencyService } from '@/utils/masterData/currencyService';
 import { Currency } from '@/utils/masterData/interfaces';
 import { Country } from '@/types/seekerRegistration';
+import { fetchData, postData, putData, deleteData } from '@/utils/apiClient';
+import { symbol } from 'zod';
 
 const CurrencyConfig = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -23,32 +24,94 @@ const CurrencyConfig = () => {
 
   // Load countries from master data
   useEffect(() => {
-    const loadedCountries = countriesDataManager.loadData();
-    console.log('🌍 CurrencyConfig - Loading countries from master data:', loadedCountries);
-    setCountries(loadedCountries);
-  }, []);
-
-  // Load currencies from master data service
-  useEffect(() => {
-    const loadedCurrencies = CurrencyService.getCurrencies();
-    console.log('🔍 CurrencyConfig - Loaded currencies from master data service:', loadedCurrencies);
-    setCurrencies(loadedCurrencies);
+    fetchCountries();
+    fetchCurrencies();
     setIsInitialized(true);
   }, []);
 
-  // Save currencies whenever they change
-  useEffect(() => {
-    if (!isInitialized) {
-      return;
-    }
-    console.log('💾 CurrencyConfig - Saving currencies to master data service:', currencies.length);
-    CurrencyService.saveCurrencies(currencies);
-  }, [currencies, isInitialized]);
+  // Load currencies from master data service
+  // useEffect(() => {
+  //   const loadedCurrencies = []; //CurrencyService.getCurrencies();
+  //   console.log('🔍 CurrencyConfig - Loaded currencies from master data service:', loadedCurrencies);
+  //   setCurrencies(loadedCurrencies);
+  //   setIsInitialized(true);
+  // }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Save currencies whenever they change
+  // useEffect(() => {
+  //   if (!isInitialized) {
+  //     return;
+  //   }
+  //   console.log('💾 CurrencyConfig - Saving currencies to master data service:', currencies.length);
+  //   CurrencyService.saveCurrencies(currencies);
+  // }, [currencies, isInitialized]);
+
+  const fetchCurrencies = async () => {
+    try {
+      const currenciesData = await fetchData('currencies');
+      console.log("Currencies", currenciesData);
+      setCurrencies(currenciesData.data.map((currency: any) => ({
+        id: currency._id,
+        name: currency.name,
+        code: currency.code,
+        symbol: currency.symbol,
+        country_id: currency.country_id,
+        countryName : currency.countryData.name
+      })) ?? []);
+    } catch (error) {
+      console.error('Error fetching currencies:', error);
+      setCurrencies([]);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const countriesData = await fetchData('countries');
+      console.log("Countres", countriesData);
+      setCountries(countriesData.data.map((country: any) => ({
+        id: country._id,
+        name: country.name,
+        code: country.code,
+        region: country.region,
+      })) ?? []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      const defaultCountries = [];
+      setCountries(defaultCountries);
+    }
+  };
+
+  const saveCurrencyData = async (currencyData : Currency) => {
+    try {
+      await postData('currencies', currencyData);
+      console.log('💾 CurrencyConfig - Saved currency to API:', currencyData);
+    } catch (error) {
+      console.error('❌ Error saving currency to API:', error);
+    }
+  };
+
+  const updateCurrencyData = async(currencyData: Currency) => {
+    try {
+      await putData('currencies', currencyData, currencyData.id);
+      console.log('💾 CurrencyConfig - updated currency to API:', currencyData);
+    } catch (error) {
+      console.error('❌ Error saving currency to API:', error);
+    }
+  };
+
+  const deleteCurrency = async (currencyID : string) => {
+    try {
+      await deleteData('currencies', currencyID);
+      console.log('💾 CurrencyConfig - deleted currency from API:', currencyID);
+    } catch (error) {
+      console.error('❌ Error deleting currency from API:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!currentCurrency.code || !currentCurrency.name || !currentCurrency.symbol || !currentCurrency.country) {
+  
+    if (!currentCurrency.code || !currentCurrency.name || !currentCurrency.symbol || !currentCurrency.country_id) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -67,6 +130,9 @@ const CurrencyConfig = () => {
           isUserCreated: true
         } : item
       ));
+      console.log("Update");
+      console.log(currentCurrency)
+      await updateCurrencyData(currentCurrency);
       toast({
         title: "Success",
         description: "Currency updated successfully.",
@@ -80,12 +146,15 @@ const CurrencyConfig = () => {
         isUserCreated: true
       };
       setCurrencies(prev => [...prev, newCurrency]);
+      console.log("++++++++++++++");
+      console.log(newCurrency);
+      await saveCurrencyData(newCurrency);
       toast({
         title: "Success",
         description: "Currency created successfully.",
       });
     }
-
+    await fetchCurrencies();
     setCurrentCurrency({});
     setIsEditing(false);
   };
@@ -95,8 +164,11 @@ const CurrencyConfig = () => {
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setCurrencies(prev => prev.filter(item => item.id !== id));
+
+    await deleteCurrency(id);
+    await fetchCurrencies();
     toast({
       title: "Success",
       description: "Currency deleted successfully.",
@@ -144,15 +216,15 @@ const CurrencyConfig = () => {
               <div>
                 <Label htmlFor="country">Country *</Label>
                 <Select
-                  value={currentCurrency.country || ''}
-                  onValueChange={(value) => setCurrentCurrency(prev => ({ ...prev, country: value }))}
+                  value={currentCurrency.country_id || ''}
+                  onValueChange={(value) => setCurrentCurrency(prev => ({ ...prev, country_id: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
                     {countries.map((country) => (
-                      <SelectItem key={country.id} value={country.name}>
+                      <SelectItem key={country.id} value={country.id}>
                         {country.name} ({country.code})
                       </SelectItem>
                     ))}
@@ -222,7 +294,7 @@ const CurrencyConfig = () => {
                   <div>
                     <h3 className="font-medium">{currency.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Symbol: {currency.symbol} • Country: {currency.country}
+                      Symbol: {currency.symbol} • Country: {currency.countryName}
                     </p>
                     {currency.isUserCreated && (
                       <p className="text-xs text-blue-600 mt-1">User Created</p>

@@ -11,7 +11,7 @@ async function connectToDatabase() {
   // Check if a collection exists; if not, create one to ensure the database is created
   const collections = await db.listCollections().toArray();
   if (!collections.length) {
-    await db.createCollection('vsr');
+    await db.createCollection('demo');
   }
   return db;
 }

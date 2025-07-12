@@ -16,7 +16,7 @@ connectToDatabase().then(async database => {
   }
 
   // Get all countries
-  router.get('/countries', async (req, res) => {
+  router.get('/', async (req, res) => {
     try {
       const allCountries = await countries.find({}).toArray();
       successResponse(res, allCountries);
@@ -26,7 +26,7 @@ connectToDatabase().then(async database => {
   });
 
   // Add a new country
-  router.post('/countries', async (req, res) => {
+  router.post('/', async (req, res) => {
     try {
       const newCountry = req.body;
       const result = await countries.insertOne(newCountry);
@@ -37,7 +37,7 @@ connectToDatabase().then(async database => {
   });
 
   // Update an existing country
-  router.put('/countries/:id', async (req, res) => {
+  router.put('/:id', async (req, res) => {
     try {
       const { id } = req.params;
       const { id: _, ...updatedCountry } = req.body;
@@ -53,7 +53,7 @@ connectToDatabase().then(async database => {
   });
 
   // Delete a country
-  router.delete('/countries/:id', async (req, res) => {
+  router.delete('/:id', async (req, res) => {
     try {
       const { id } = req.params;
       const result = await countries.deleteOne({ _id: new ObjectId(id) });
