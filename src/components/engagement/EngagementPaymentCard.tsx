@@ -143,28 +143,18 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     }
   };
 
-  // If user has existing paid PaaS activation, show frequency manager directly
+  // If user has existing paid PaaS activation, show success summary + frequency manager
   if (hasExistingPaidActivation && activationStatus.activationData) {
     return (
       <div className="space-y-4">
-        <Card className="w-full">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
-              Manage Existing Engagement
-            </CardTitle>
-            <div className="flex items-center gap-1 mt-2">
-              <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
-              <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
-                Active
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              You have an active {selectedEngagementModel} engagement. You can change your billing frequency below.
-            </p>
-          </CardContent>
-        </Card>
+        <EngagementDataConfirmation
+          selectedEngagementModel={selectedEngagementModel}
+          selectedFrequency={activationStatus.activationData.current_frequency || activationStatus.activationData.selected_frequency}
+          membershipStatus={membershipStatus}
+          platformFeePercentage={activationStatus.activationData.platform_fee_percentage}
+          paymentAmount={activationStatus.activationData.payment_amount}
+          paymentDate={activationStatus.activationData.payment_date}
+        />
         <PaaSFrequencyManager
           selectedEngagementModel={selectedEngagementModel}
           currentFrequency={activationStatus.activationData.current_frequency || activationStatus.activationData.selected_frequency}
