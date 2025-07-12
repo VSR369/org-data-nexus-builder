@@ -123,28 +123,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     }
   };
 
-  // Engagement activation handler
-  const handleEngagementActivation = async () => {
-    updateEngagementActivationStatus('loading');
-    
-    try {
-      // Simulate activation processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      updateEngagementActivationStatus('success');
-      toast({
-        title: "Engagement Activated",
-        description: "Your engagement has been activated successfully.",
-      });
-    } catch (error) {
-      updateEngagementActivationStatus('error');
-      toast({
-        variant: "destructive",
-        title: "Activation Failed",
-        description: "There was an error activating your engagement. Please try again.",
-      });
-    }
-  };
 
   // Don't block rendering on data loading - show with fallbacks
   console.log('MembershipPricingSystem render state:', {
@@ -244,7 +222,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           organizationType={organizationType}
           onFrequencyChange={updateFrequency}
           onEngagementPayment={handleEngagementPayment}
-          onEngagementActivation={handleEngagementActivation}
+          
           loading={dataLoading}
           engagementPaymentStatus={state.engagement_payment_status}
           engagementActivationStatus={state.engagement_activation_status}

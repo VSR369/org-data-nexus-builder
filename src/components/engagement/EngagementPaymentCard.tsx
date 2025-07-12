@@ -5,8 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { isPaaSModel, isMarketplaceModel, getBothMemberAndNonMemberPricing, getDisplayAmount } from '@/utils/membershipPricingUtils';
 import { PricingConfig } from '@/types/pricing';
 import { FrequencySelector } from './FrequencySelector';
-import { useEngagementActivation } from '@/hooks/useEngagementActivation';
-import { sessionStorageManager } from '@/utils/storage/SessionStorageManager';
 import { NoEngagementSelected } from './components/NoEngagementSelected';
 import { EngagementSuccessCard } from './components/EngagementSuccessCard';
 import { PricingSection } from './components/PricingSection';
@@ -21,7 +19,6 @@ interface EngagementPaymentCardProps {
   organizationType: string;
   onFrequencyChange: (frequency: string) => void;
   onEngagementPayment?: () => void;
-  onEngagementActivation?: () => void;
   loading?: boolean;
   engagementPaymentStatus?: 'idle' | 'loading' | 'success' | 'error';
   engagementActivationStatus?: 'idle' | 'loading' | 'success' | 'error';
@@ -36,14 +33,12 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   organizationType,
   onFrequencyChange,
   onEngagementPayment,
-  onEngagementActivation,
   loading = false,
   engagementPaymentStatus = 'idle',
   engagementActivationStatus = 'idle'
 }) => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [paasAgreementAccepted, setPaasAgreementAccepted] = useState(false);
-  const { activateEngagement, isActivating } = useEngagementActivation();
 
   // Check if no engagement model is selected
   if (!selectedEngagementModel) {
@@ -105,72 +100,11 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     selectedFrequency
   });
 
-  // Handle engagement activation for marketplace models
-  const handleEngagementActivation = async () => {
-    console.log('🎯 handleEngagementActivation called');
-    
-    if (!selectedEngagementModel || !isMarketplace) {
-      console.error('❌ Validation failed: Missing engagement model or not marketplace');
-      return;
-    }
 
-    if (!agreementAccepted) {
-      console.error('❌ Validation failed: Terms not accepted');
-      return;
-    }
+  // Check if engagement is already activated/paid (only for PaaS models)
+  const isEngagementActivated = engagementPaymentStatus === 'success';
 
-    if (!currentPricing) {
-      console.error('❌ Validation failed: No pricing configuration found');
-      return;
-    }
-    
-    try {
-      // Get user data from session storage - ensure we have a user ID
-      const sessionData = sessionStorageManager.loadSession();
-      const userId = sessionData?.seekerUserId;
-
-      console.log('👤 Session data loaded:', { userId, sessionData });
-
-      if (!userId) {
-        console.error('❌ No user ID found in session');
-        throw new Error('User session not found. Please refresh the page and try again.');
-      }
-
-      const activationData = {
-        engagementModel: selectedEngagementModel,
-        membershipStatus: membershipStatus,
-        platformFeePercentage: currentPricing.platformFeePercentage,
-        discountPercentage: currentPricing.discountPercentage,
-        finalCalculatedPrice: currentAmount?.amount,
-        currency: currentPricing.currency || 'USD',
-        organizationType: organizationType,
-        country: country,
-        termsAccepted: agreementAccepted,
-        userId: userId // Pass session-based user ID (required)
-      };
-
-      console.log('🚀 Calling activateEngagement with data:', activationData);
-      
-      const result = await activateEngagement(activationData);
-      
-      console.log('✅ Engagement activation completed successfully:', result);
-      
-      // Call the parent callback if provided (after successful activation)
-      if (onEngagementActivation) {
-        console.log('📞 Calling parent onEngagementActivation callback');
-        onEngagementActivation();
-      }
-      
-    } catch (error) {
-      console.error('💥 Failed to activate engagement:', error);
-      // Error handling is done in the hook, so we just log here
-    }
-  };
-
-  // Check if engagement is already activated/paid
-  const isEngagementActivated = engagementPaymentStatus === 'success' || engagementActivationStatus === 'success';
-
-  if (isEngagementActivated) {
+  if (isEngagementActivated && isPaaS) {
     return <EngagementSuccessCard selectedEngagementModel={selectedEngagementModel} />;
   }
 
@@ -178,7 +112,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-2xl font-semibold leading-none tracking-tight whitespace-nowrap">
-          {isPaaS ? 'Engagement Payment' : 'Engagement Activation'}
+          {isPaaS ? 'Engagement Payment' : 'Engagement Selection'}
         </CardTitle>
         <div className="flex items-center gap-1 mt-2">
           <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
@@ -222,11 +156,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           agreementAccepted={agreementAccepted}
           setAgreementAccepted={setAgreementAccepted}
           onEngagementPayment={onEngagementPayment}
-          handleEngagementActivation={handleEngagementActivation}
           loading={loading}
-          isActivating={isActivating}
           engagementPaymentStatus={engagementPaymentStatus}
-          engagementActivationStatus={engagementActivationStatus}
           currentPricing={currentPricing}
           currentAmount={currentAmount}
         />
