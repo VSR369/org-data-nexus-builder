@@ -156,13 +156,35 @@ export const getDisplayAmount = (
     return null;
   }
 
-  const feeKey = frequency === 'half-yearly' ? 'halfYearlyFee' : `${frequency}Fee` as keyof PricingConfig;
-  const amount = pricing[feeKey] as number;
+  console.log('🔍 getDisplayAmount debug:', {
+    frequency,
+    pricing: {
+      id: pricing.id,
+      engagementModel: pricing.engagementModel,
+      quarterlyFee: pricing.quarterlyFee,
+      halfYearlyFee: pricing.halfYearlyFee,
+      annualFee: pricing.annualFee,
+      currency: pricing.currency,
+      membershipStatus: pricing.membershipStatus
+    }
+  });
+
+  // Use correct field names from PricingConfig type
+  let amount: number = 0;
+  if (frequency === 'quarterly') {
+    amount = pricing.quarterlyFee || 0;
+  } else if (frequency === 'half-yearly') {
+    amount = pricing.halfYearlyFee || 0;
+  } else if (frequency === 'annual') {
+    amount = pricing.annualFee || 0;
+  }
+  
+  console.log('✅ getDisplayAmount result:', { frequency, amount, currency: pricing.currency });
   
   // Database already contains the correct prices for member/non-member
   // No need to apply discount calculation here
   return {
-    amount: amount || 0,
+    amount: amount,
     discountApplied: false // This will be determined by comparing member vs non-member prices
   };
 };
