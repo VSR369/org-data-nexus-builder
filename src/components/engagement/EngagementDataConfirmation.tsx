@@ -64,7 +64,20 @@ export const EngagementDataConfirmation: React.FC<EngagementDataConfirmationProp
             <Percent className="h-4 w-4 text-purple-600" />
             <div>
               <p className="text-sm font-medium">Platform Fee</p>
-              <p className="text-lg font-semibold text-purple-600">{platformFeePercentage}%</p>
+              <div className="flex items-center gap-2">
+                {membershipUpgraded && originalPlatformFee && discountedPlatformFee ? (
+                  <>
+                    <span className="text-lg font-semibold line-through text-red-500">{originalPlatformFee}%</span>
+                    <span className="text-lg font-semibold text-green-600">{discountedPlatformFee}%</span>
+                    <span className="text-sm text-green-600 font-medium">of solution fee</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-lg font-semibold text-purple-600">{platformFeePercentage}%</span>
+                    <span className="text-sm text-purple-600 font-medium">of solution fee</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -107,21 +120,24 @@ export const EngagementDataConfirmation: React.FC<EngagementDataConfirmationProp
 
         {/* Membership Upgrade Summary */}
         {membershipUpgraded && originalPlatformFee && discountedPlatformFee && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-semibold text-blue-700 mb-3">Membership Upgrade Benefits</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">Original Platform Fee:</span>
-                <span className="font-medium line-through text-red-500">{originalPlatformFee}%</span>
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg">
+            <h4 className="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Membership Upgrade Benefits Applied
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2 bg-white rounded-md shadow-sm">
+                <span className="text-sm font-medium">Original Platform Fee:</span>
+                <span className="font-semibold line-through text-red-500 text-lg">{originalPlatformFee}% of solution fee</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Discounted Platform Fee:</span>
-                <span className="font-medium text-green-600">{discountedPlatformFee}%</span>
+              <div className="flex items-center justify-between p-2 bg-green-100 rounded-md shadow-sm">
+                <span className="text-sm font-medium">New Platform Fee:</span>
+                <span className="font-semibold text-green-600 text-lg">{discountedPlatformFee}% of solution fee</span>
               </div>
-              <div className="flex justify-between border-t pt-2">
-                <span className="text-sm font-medium">You Save:</span>
-                <span className="font-bold text-green-600">
-                  {(originalPlatformFee - discountedPlatformFee).toFixed(2)}%
+              <div className="flex items-center justify-between border-t pt-3">
+                <span className="text-sm font-semibold text-gray-700">Annual Savings:</span>
+                <span className="font-bold text-green-600 text-lg">
+                  {(originalPlatformFee - discountedPlatformFee).toFixed(1)}% of every solution fee
                 </span>
               </div>
             </div>
