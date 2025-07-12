@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Lock, Wallet, Clock } from "lucide-react";
-import { getDisplayAmount } from '@/utils/membershipPricingUtils';
+import { Lock, Wallet, Calendar } from "lucide-react";
+import { getDisplayAmount, formatCurrency } from '@/utils/membershipPricingUtils';
 import { useEngagementDataStorage } from '@/hooks/useEngagementDataStorage';
 import { EngagementModelMapper } from '@/utils/enhanced/EngagementModelMapper';
+import { FrequencySelector } from './FrequencySelector';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PaaSFrequencyManagerProps {
@@ -36,7 +37,8 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
   const [freshActivationData, setFreshActivationData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(false);
 
-  const frequencies = ['quarterly', 'half_yearly', 'annual'];
+  // Use consistent frequency keys to match FrequencySelector
+  const frequencies = ['quarterly', 'half-yearly', 'annual'];
   
   // Fetch fresh data from database on component mount
   useEffect(() => {
@@ -44,6 +46,14 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
   }, [activationData?.id]);
 
   // Use enhanced EngagementModelMapper to get pricing config from master data
+  console.log('🔍 PaaSFrequencyManager: Input parameters:', {
+    selectedEngagementModel,
+    membershipStatus,
+    country,
+    organizationType,
+    activationData: activationData?.id || 'None'
+  });
+
   const currentPricing = EngagementModelMapper.getPricingForEngagementModel(
     pricingConfigs,
     selectedEngagementModel,
@@ -107,8 +117,10 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     }
   };
 
-  const formatCurrency = (amount: number | undefined | null) => `₹${(amount || 0).toLocaleString()}`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
+  
+  // Helper function to format currency using the imported utility
+  const formatAmount = (amount: number | undefined | null) => formatCurrency(amount || 0, 'INR');
 
   return (
     <div className="space-y-4">
@@ -129,7 +141,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
             </div>
             <div>
               <span className="text-muted-foreground">Last Payment:</span>
-              <p className="font-medium">{formatCurrency(freshActivationData?.payment_amount)}</p>
+              <p className="font-medium">{formatAmount(freshActivationData?.payment_amount)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Payment Date:</span>
@@ -137,7 +149,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
             </div>
             <div>
               <span className="text-muted-foreground">Total Payments:</span>
-              <p className="font-medium">{formatCurrency(freshActivationData?.total_payments_made || freshActivationData?.payment_amount)}</p>
+              <p className="font-medium">{formatAmount(freshActivationData?.total_payments_made || freshActivationData?.payment_amount)}</p>
             </div>
           </div>
         </CardContent>
@@ -147,7 +159,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="text-lg">Change Billing Frequency</CardTitle>
           </div>
         </CardHeader>
@@ -157,42 +169,41 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
               <p className="text-sm text-yellow-800">No pricing configuration found for your current membership status and location.</p>
             </div>
           )}
-          <div className="grid gap-3">
-            {frequencies.map((frequency) => {
-              const amount = currentPricing ? getDisplayAmount(frequency, currentPricing, membershipStatus) : null;
-              const isCurrentFrequency = frequency === currentFrequency;
-              
-              return (
-                <div key={frequency} className={`p-3 border rounded-lg ${isCurrentFrequency ? 'bg-muted/50 border-primary' : ''}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium capitalize">{frequency.replace('_', ' ')}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {amount?.amount ? formatCurrency(amount.amount) : 'Price not available'}
-                        </p>
-                      </div>
-                      {isCurrentFrequency && (
-                        <Badge variant="default" className="text-xs">Current</Badge>
-                      )}
-                    </div>
-                    
-                    {!isCurrentFrequency && amount?.amount && (
-                      <Button
-                        onClick={() => handleFrequencyPayment(frequency)}
-                        disabled={paymentLoading || dataLoading}
-                        size="sm"
-                        className="flex items-center gap-2"
-                      >
-                        <Wallet className="h-3 w-3" />
-                        Pay Fee
-                      </Button>
-                    )}
-                  </div>
+          
+          {/* Frequency Selector with Radio Buttons */}
+          <FrequencySelector
+            selectedFrequency={selectedNewFrequency}
+            onFrequencyChange={setSelectedNewFrequency}
+            disabled={paymentLoading || dataLoading}
+          />
+          
+          {/* Pricing Display and Pay Button */}
+          {selectedNewFrequency && currentPricing && (
+            <div className="mt-4 p-4 border rounded-lg bg-muted/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Selected: {selectedNewFrequency.replace('-', ' ')}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {(() => {
+                      const amount = getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus);
+                      return amount?.amount ? formatAmount(amount.amount) : 'Price not available';
+                    })()}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+                <Button
+                  onClick={() => handleFrequencyPayment(selectedNewFrequency)}
+                  disabled={paymentLoading || dataLoading || selectedNewFrequency === currentFrequency}
+                  className="flex items-center gap-2"
+                >
+                  <Wallet className="h-4 w-4" />
+                  {paymentLoading ? 'Processing...' : `Pay Fee - ${(() => {
+                    const amount = getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus);
+                    return amount?.amount ? formatAmount(amount.amount) : 'N/A';
+                  })()}`}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <Separator />
           
@@ -204,7 +215,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
                 {freshActivationData.frequency_change_history.map((change: any, index: number) => (
                   <div key={index} className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
                     <p>Changed to <span className="font-medium capitalize">{change?.to_frequency || 'Unknown'}</span></p>
-                    <p>Amount: {formatCurrency(change?.amount)} • {change?.date ? formatDate(change.date) : 'N/A'}</p>
+                    <p>Amount: {formatAmount(change?.amount)} • {change?.date ? formatDate(change.date) : 'N/A'}</p>
                   </div>
                 ))}
               </div>

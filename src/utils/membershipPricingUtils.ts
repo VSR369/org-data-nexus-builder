@@ -173,11 +173,20 @@ export const getDisplayAmount = (
   let amount: number = 0;
   if (frequency === 'quarterly') {
     amount = pricing.quarterlyFee || 0;
-  } else if (frequency === 'half-yearly') {
+  } else if (frequency === 'half-yearly' || frequency === 'half_yearly') {
     amount = pricing.halfYearlyFee || 0;
   } else if (frequency === 'annual') {
     amount = pricing.annualFee || 0;
   }
+  
+  console.log('🔍 getDisplayAmount mapping:', {
+    frequency,
+    quarterlyFee: pricing.quarterlyFee,
+    halfYearlyFee: pricing.halfYearlyFee,
+    annualFee: pricing.annualFee,
+    mappedAmount: amount,
+    membershipStatus: pricing.membershipStatus
+  });
   
   console.log('✅ getDisplayAmount result:', { frequency, amount, currency: pricing.currency });
   
