@@ -18,9 +18,7 @@ interface EngagementPaymentCardProps {
   country: string;
   organizationType: string;
   onFrequencyChange: (frequency: string) => void;
-  onEngagementPayment?: () => void;
   loading?: boolean;
-  engagementPaymentStatus?: 'idle' | 'loading' | 'success' | 'error';
   engagementActivationStatus?: 'idle' | 'loading' | 'success' | 'error';
 }
 
@@ -32,9 +30,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   country,
   organizationType,
   onFrequencyChange,
-  onEngagementPayment,
   loading = false,
-  engagementPaymentStatus = 'idle',
   engagementActivationStatus = 'idle'
 }) => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
@@ -101,12 +97,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   });
 
 
-  // Check if engagement is already activated/paid (only for PaaS models)
-  const isEngagementActivated = engagementPaymentStatus === 'success';
-
-  if (isEngagementActivated && isPaaS) {
-    return <EngagementSuccessCard selectedEngagementModel={selectedEngagementModel} />;
-  }
 
   return (
     <Card className="w-full">
@@ -129,7 +119,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           <FrequencySelector
             selectedFrequency={selectedFrequency}
             onFrequencyChange={onFrequencyChange}
-            disabled={loading || engagementPaymentStatus === 'loading'}
+            disabled={loading}
           />
         )}
 
@@ -155,9 +145,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           setPaasAgreementAccepted={setPaasAgreementAccepted}
           agreementAccepted={agreementAccepted}
           setAgreementAccepted={setAgreementAccepted}
-          onEngagementPayment={onEngagementPayment}
           loading={loading}
-          engagementPaymentStatus={engagementPaymentStatus}
           currentPricing={currentPricing}
           currentAmount={currentAmount}
         />

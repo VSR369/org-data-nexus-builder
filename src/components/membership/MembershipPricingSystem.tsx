@@ -100,28 +100,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     setSubmittedMembershipType(null);
   };
 
-  // Engagement payment handler
-  const handleEngagementPayment = async () => {
-    updateEngagementPaymentStatus('loading');
-    
-    try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      updateEngagementPaymentStatus('success');
-      toast({
-        title: "Payment Successful",
-        description: "Your engagement payment has been processed successfully.",
-      });
-    } catch (error) {
-      updateEngagementPaymentStatus('error');
-      toast({
-        variant: "destructive",
-        title: "Payment Failed",
-        description: "There was an error processing your payment. Please try again.",
-      });
-    }
-  };
 
 
   // Don't block rendering on data loading - show with fallbacks
@@ -137,7 +115,6 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     membershipStatus: state.membership_status,
     selectedEngagementModel: state.selected_engagement_model,
     selectedFrequency: state.selected_frequency,
-    engagementPaymentStatus: state.engagement_payment_status,
     engagementActivationStatus: state.engagement_activation_status
   });
 
@@ -221,10 +198,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           country={country}
           organizationType={organizationType}
           onFrequencyChange={updateFrequency}
-          onEngagementPayment={handleEngagementPayment}
-          
           loading={dataLoading}
-          engagementPaymentStatus={state.engagement_payment_status}
           engagementActivationStatus={state.engagement_activation_status}
         />
       </div>

@@ -13,9 +13,7 @@ interface ActionButtonsProps {
   setPaasAgreementAccepted: (accepted: boolean) => void;
   agreementAccepted: boolean;
   setAgreementAccepted: (accepted: boolean) => void;
-  onEngagementPayment?: () => void;
   loading: boolean;
-  engagementPaymentStatus: 'idle' | 'loading' | 'success' | 'error';
   currentPricing: any;
   currentAmount: any;
 }
@@ -29,9 +27,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   setPaasAgreementAccepted,
   agreementAccepted,
   setAgreementAccepted,
-  onEngagementPayment,
   loading,
-  engagementPaymentStatus,
   currentPricing,
   currentAmount
 }) => {
@@ -39,35 +35,11 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <div className="space-y-2">
       {isPaaS && (
-        <div className="space-y-2">
-          <AgreementSection
-            agreementAccepted={paasAgreementAccepted}
-            onAgreementChange={setPaasAgreementAccepted}
-            engagementModel={selectedEngagementModel}
-          />
-          <Button
-            onClick={onEngagementPayment}
-            disabled={
-              !selectedFrequency || 
-              !paasAgreementAccepted ||
-              loading || 
-              engagementPaymentStatus === 'loading' ||
-              !currentPricing ||
-              !currentAmount
-            }
-            className="w-full"
-            size="sm"
-          >
-            {engagementPaymentStatus === 'loading' ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Processing...
-              </>
-            ) : (
-              `Pay ${selectedFrequency ? selectedFrequency.charAt(0).toUpperCase() + selectedFrequency.slice(1) : ''} Fee`
-            )}
-          </Button>
-        </div>
+        <AgreementSection
+          agreementAccepted={paasAgreementAccepted}
+          onAgreementChange={setPaasAgreementAccepted}
+          engagementModel={selectedEngagementModel}
+        />
       )}
 
       {isMarketplace && (
@@ -77,13 +49,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           engagementModel={selectedEngagementModel}
         />
       )}
-
-      {engagementPaymentStatus === 'error' && (
-        <div className="text-center text-red-600 text-xs bg-red-50 p-2 rounded">
-          Payment failed. Please try again.
-        </div>
-      )}
-
     </div>
   );
 };
