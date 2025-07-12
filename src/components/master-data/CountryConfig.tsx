@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Globe, RotateCcw } from 'lucide-react';
 import { toast } from "sonner";
-import { fetchData, postData, putData, deleteData } from '../../utils/apiClient';
+import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 interface Country {
-  id?: string;
+  id: string;
   name: string;
   code: string;
   region?: string;
@@ -20,21 +20,16 @@ const CountryConfig = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<Partial<Country>>({});
 
-  // Load data from API
+  // Load data from local storage
   useEffect(() => {
     fetchCountries();
   }, []);
 
   const fetchCountries = async () => {
     try {
-      const countriesData = await fetchData('countries');
-      console.log("Countres", countriesData);
-      setCountries(countriesData.data.map((country: any) => ({
-        id: country._id,
-        name: country.name,
-        code: country.code,
-        region: country.region,
-      })) ?? []);
+      const countriesData = countriesDataManager.loadData();
+      console.log("Countries from local storage:", countriesData);
+      setCountries(countriesData || []);
     } catch (error) {
       console.error('Error fetching countries:', error);
       const defaultCountries = [];
@@ -42,23 +37,27 @@ const CountryConfig = () => {
     }
   };
 
-  const saveCountriesData = async (countries: Country) => {
+  const saveCountriesData = async (country: Country) => {
     try {
-      await postData('countries', countries);
-      console.log('💾 CountryConfig - Saved countries to API:', countries);
+      const currentCountries = countriesDataManager.loadData() || [];
+      const newCountry = { ...country, id: Date.now().toString() };
+      currentCountries.push(newCountry);
+      countriesDataManager.saveData(currentCountries);
+      console.log('💾 CountryConfig - Saved country to local storage:', newCountry);
     } catch (error) {
-      console.error('❌ Error saving countries to API:', error);
+      console.error('❌ Error saving country to local storage:', error);
     }
   };
 
-  const updateCountriesData = async (countries: Country, id: string) => {
+  const updateCountriesData = async (country: Country) => {
     try {
-      console.log("Update country data", countries, id);
-      await putData('countries', countries, id);
-      console.log('💾 CountryConfig - Saved countries to API:', countries);
+      const currentCountries = countriesDataManager.loadData() || [];
+      const updatedCountries = currentCountries.map(c => c.id === country.id ? country : c);
+      countriesDataManager.saveData(updatedCountries);
+      console.log('💾 CountryConfig - Updated country in local storage:', country);
       await fetchCountries();
     } catch (error) {
-      console.error('❌ Error saving countries to API:', error);
+      console.error('❌ Error updating country in local storage:', error);
     }
   };
 
@@ -107,7 +106,7 @@ const CountryConfig = () => {
       
       console.log("Update country data", updatedCountry, updatedCountry.id);
 
-      await updateCountriesData(updatedCountry, updatedCountry.id);
+      await updateCountriesData(updatedCountry);
 
       console.log('✅ Updated country:', updatedCountry);
       
@@ -115,8 +114,9 @@ const CountryConfig = () => {
     } else {
       // Add new country
       const newCountry: Country = {
-        name: currentCountry.name,
-        code: currentCountry.code.toUpperCase(),
+        id: Date.now().toString(),
+        name: currentCountry.name!,
+        code: currentCountry.code!.toUpperCase(),
         region: currentCountry.region || ''
       };
       
@@ -140,11 +140,11 @@ const CountryConfig = () => {
   };
 
   const handleDelete = async (id: string) => {
-    setCountries(prev => prev.filter(item => item.id !== id));
-    
-    // Delete country from API
     try {
-      await deleteData('countries', id);
+      const currentCountries = countriesDataManager.loadData() || [];
+      const updatedCountries = currentCountries.filter(c => c.id !== id);
+      countriesDataManager.saveData(updatedCountries);
+      setCountries(updatedCountries);
       toast.success("Country deleted successfully!");
     } catch (error) {
       console.error('Error deleting country:', error);

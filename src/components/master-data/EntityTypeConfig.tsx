@@ -5,16 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LegacyDataManager } from '@/utils/core/DataManager';
-import { fetchData, postData, putData, deleteData } from '@/utils/apiClient';
 
-const entityTypesDataManager = new LegacyDataManager<string[]>({
+interface EntityType {
+  _id: string;
+  name: string;
+}
+
+const entityTypesDataManager = new LegacyDataManager<EntityType[]>({
   key: 'master_data_entity_types',
   defaultData: [],
   version: 1
 });
 
 const EntityTypeConfig = () => {
-  const [entityTypes, setEntityTypes] = useState<any[]>([]);
+  const [entityTypes, setEntityTypes] = useState<EntityType[]>([]);
   const [newEntityType, setNewEntityType] = useState('');
   const { toast } = useToast();
 
@@ -31,15 +35,18 @@ const EntityTypeConfig = () => {
   }, [entityTypes]);
 
   const fetchEntityTypes = async () => {
-    const loadedEntityTypes = await fetchData('entityTypes');
-    console.log("+++++++++++++++++++++");
-    console.log(loadedEntityTypes.data);
-    setEntityTypes(loadedEntityTypes.data);
+    const loadedEntityTypes = entityTypesDataManager.loadData();
+    console.log("Entity types from local storage:", loadedEntityTypes);
+    setEntityTypes(loadedEntityTypes || []);
   }
 
-  const saveEntityType = async (newEntityType : string) => {
+  const saveEntityType = async (newEntityType: string) => {
     try {
-      await postData('entityTypes', {"name" : newEntityType});
+      const currentEntityTypes = entityTypesDataManager.loadData() || [];
+      const newEntity: EntityType = { _id: Date.now().toString(), name: newEntityType };
+      currentEntityTypes.push(newEntity);
+      entityTypesDataManager.saveData(currentEntityTypes);
+      setEntityTypes(currentEntityTypes);
       toast({
         title: "Success",
         description: "Entity type saved successfully.",
@@ -49,17 +56,20 @@ const EntityTypeConfig = () => {
       console.error('Error saving entity type:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to save entity type.",
         variant: "destructive",
       });
-    } finally {
-      await fetchEntityTypes();
     }
   }
 
-  const updateEntityType = async (newEntityType : string, id : string) => {
+  const updateEntityType = async (newEntityType: string, id: string) => {
     try {
-      await putData('entityTypes', {"name" : newEntityType}, id);
+      const currentEntityTypes = entityTypesDataManager.loadData() || [];
+      const updatedEntityTypes = currentEntityTypes.map(et => 
+        et._id === id ? { ...et, name: newEntityType } : et
+      );
+      entityTypesDataManager.saveData(updatedEntityTypes);
+      setEntityTypes(updatedEntityTypes);
       toast({
         title: "Success",
         description: "Entity type updated successfully.",
@@ -75,9 +85,12 @@ const EntityTypeConfig = () => {
     }
   }
 
-  const deleteEntityType = async (entityID : string) => {
+  const deleteEntityType = async (entityID: string) => {
     try {
-      await deleteData('entityTypes', entityID);
+      const currentEntityTypes = entityTypesDataManager.loadData() || [];
+      const updatedEntityTypes = currentEntityTypes.filter(et => et._id !== entityID);
+      entityTypesDataManager.saveData(updatedEntityTypes);
+      setEntityTypes(updatedEntityTypes);
       toast({
         title: "Success",
         description: "Entity type deleted successfully.",
@@ -90,14 +103,12 @@ const EntityTypeConfig = () => {
         description: "Failed to delete entity type.",
         variant: "destructive",
       });
-    } finally {
-      await fetchEntityTypes();
     }
   }
   
   const addEntityType = async () => {
     if (newEntityType.trim() !== '') {
-      if (entityTypes.includes(newEntityType.trim())) {
+      if (entityTypes.some(et => et.name === newEntityType.trim())) {
         toast({
           title: "Duplicate Entry",
           description: "This entity type already exists.",
@@ -105,7 +116,8 @@ const EntityTypeConfig = () => {
         });
         return;
       }
-      await saveEntityType(newEntityType.trim())
+      await saveEntityType(newEntityType.trim());
+      setNewEntityType('');
     } else {
       toast({
         title: "Input Required",
@@ -116,12 +128,8 @@ const EntityTypeConfig = () => {
   };
 
   const removeEntityType = async (id: string) => {
-    console.log("---------");
-    console.log(id)
+    console.log("Removing entity type with id:", id);
     await deleteEntityType(id);
-    // const updatedEntityTypes = [...entityTypes];
-    // updatedEntityTypes.splice(index, 1);
-    // setEntityTypes(updatedEntityTypes);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -161,12 +169,12 @@ const EntityTypeConfig = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Current Entity Types</CardTitle>
+          <CardTitle>Current Entity Types ({entityTypes.length})</CardTitle>
           <CardDescription>Manage existing entity types.</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="list-none space-y-2">
-            {entityTypes.map((entityType, index) => (
+            {entityTypes.map((entityType) => (
               <li key={entityType._id} className="flex items-center justify-between py-2 border-b border-gray-200">
                 <span>{entityType.name}</span>
                 <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType._id)}>

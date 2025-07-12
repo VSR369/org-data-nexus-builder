@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CurrencyService } from '@/utils/masterData/currencyService';
 import { Currency } from '@/utils/masterData/interfaces';
 import { Country } from '@/types/seekerRegistration';
-import { fetchData, postData, putData, deleteData } from '@/utils/apiClient';
-import { symbol } from 'zod';
+import { countriesDataManager } from '@/utils/sharedDataManagers';
 
 const CurrencyConfig = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -29,35 +27,11 @@ const CurrencyConfig = () => {
     setIsInitialized(true);
   }, []);
 
-  // Load currencies from master data service
-  // useEffect(() => {
-  //   const loadedCurrencies = []; //CurrencyService.getCurrencies();
-  //   console.log('🔍 CurrencyConfig - Loaded currencies from master data service:', loadedCurrencies);
-  //   setCurrencies(loadedCurrencies);
-  //   setIsInitialized(true);
-  // }, []);
-
-  // Save currencies whenever they change
-  // useEffect(() => {
-  //   if (!isInitialized) {
-  //     return;
-  //   }
-  //   console.log('💾 CurrencyConfig - Saving currencies to master data service:', currencies.length);
-  //   CurrencyService.saveCurrencies(currencies);
-  // }, [currencies, isInitialized]);
-
   const fetchCurrencies = async () => {
     try {
-      const currenciesData = await fetchData('currencies');
-      console.log("Currencies", currenciesData);
-      setCurrencies(currenciesData.data.map((currency: any) => ({
-        id: currency._id,
-        name: currency.name,
-        code: currency.code,
-        symbol: currency.symbol,
-        country_id: currency.country_id,
-        countryName : currency.countryData.name
-      })) ?? []);
+      const currenciesData = CurrencyService.getCurrencies();
+      console.log("Currencies from local storage:", currenciesData);
+      setCurrencies(currenciesData || []);
     } catch (error) {
       console.error('Error fetching currencies:', error);
       setCurrencies([]);
@@ -66,45 +40,46 @@ const CurrencyConfig = () => {
 
   const fetchCountries = async () => {
     try {
-      const countriesData = await fetchData('countries');
-      console.log("Countres", countriesData);
-      setCountries(countriesData.data.map((country: any) => ({
-        id: country._id,
-        name: country.name,
-        code: country.code,
-        region: country.region,
-      })) ?? []);
+      const countriesData = countriesDataManager.loadData();
+      console.log("Countries from local storage:", countriesData);
+      setCountries(countriesData || []);
     } catch (error) {
       console.error('Error fetching countries:', error);
-      const defaultCountries = [];
-      setCountries(defaultCountries);
+      setCountries([]);
     }
   };
 
-  const saveCurrencyData = async (currencyData : Currency) => {
+  const saveCurrencyData = async (currencyData: Currency) => {
     try {
-      await postData('currencies', currencyData);
-      console.log('💾 CurrencyConfig - Saved currency to API:', currencyData);
+      const currentCurrencies = CurrencyService.getCurrencies() || [];
+      const newCurrency = { ...currencyData, id: Date.now().toString() };
+      currentCurrencies.push(newCurrency);
+      CurrencyService.saveCurrencies(currentCurrencies);
+      console.log('💾 CurrencyConfig - Saved currency to local storage:', newCurrency);
     } catch (error) {
-      console.error('❌ Error saving currency to API:', error);
+      console.error('❌ Error saving currency to local storage:', error);
     }
   };
 
   const updateCurrencyData = async(currencyData: Currency) => {
     try {
-      await putData('currencies', currencyData, currencyData.id);
-      console.log('💾 CurrencyConfig - updated currency to API:', currencyData);
+      const currentCurrencies = CurrencyService.getCurrencies() || [];
+      const updatedCurrencies = currentCurrencies.map(c => c.id === currencyData.id ? currencyData : c);
+      CurrencyService.saveCurrencies(updatedCurrencies);
+      console.log('💾 CurrencyConfig - updated currency in local storage:', currencyData);
     } catch (error) {
-      console.error('❌ Error saving currency to API:', error);
+      console.error('❌ Error updating currency in local storage:', error);
     }
   };
 
-  const deleteCurrency = async (currencyID : string) => {
+  const deleteCurrency = async (currencyID: string) => {
     try {
-      await deleteData('currencies', currencyID);
-      console.log('💾 CurrencyConfig - deleted currency from API:', currencyID);
+      const currentCurrencies = CurrencyService.getCurrencies() || [];
+      const updatedCurrencies = currentCurrencies.filter(c => c.id !== currencyID);
+      CurrencyService.saveCurrencies(updatedCurrencies);
+      console.log('💾 CurrencyConfig - deleted currency from local storage:', currencyID);
     } catch (error) {
-      console.error('❌ Error deleting currency from API:', error);
+      console.error('❌ Error deleting currency from local storage:', error);
     }
   };
 
@@ -298,7 +273,7 @@ const CurrencyConfig = () => {
                   <div>
                     <h3 className="font-medium">{currency.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Symbol: {currency.symbol} • Country: {currency.countryName}
+                      Symbol: {currency.symbol} • Country: {currency.countryName || 'Unknown'}
                     </p>
                     {currency.isUserCreated && (
                       <p className="text-xs text-blue-600 mt-1">User Created</p>
