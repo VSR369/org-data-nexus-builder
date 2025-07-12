@@ -9,7 +9,7 @@ export const normalizeCountryName = (country: string): string => {
   
   // India variations
   if (['India', 'IN', 'IND'].includes(normalizedCountry)) {
-    return 'India';
+    return 'IN';
   }
   
   // UAE variations
