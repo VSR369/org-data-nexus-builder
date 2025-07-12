@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { isPaaSModel, isMarketplaceModel, getBothMemberAndNonMemberPricing, getDisplayAmount } from '@/utils/membershipPricingUtils';
@@ -10,6 +10,7 @@ import { ActionButtons } from './components/ActionButtons';
 import { useEngagementDataStorage } from '@/hooks/useEngagementDataStorage';
 import { EngagementDataConfirmation } from './EngagementDataConfirmation';
 import { PaaSFrequencyManager } from './PaaSFrequencyManager';
+import { useEngagementActivationStatus } from '@/hooks/useEngagementActivationStatus';
 
 interface EngagementPaymentCardProps {
   selectedEngagementModel: string | null;
@@ -22,6 +23,7 @@ interface EngagementPaymentCardProps {
   loading?: boolean;
   engagementActivationStatus?: 'idle' | 'loading' | 'success' | 'error';
   membershipFees: any[];
+  organizationId?: string;
 }
 
 export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
@@ -34,7 +36,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   onFrequencyChange,
   loading = false,
   engagementActivationStatus = 'idle',
-  membershipFees
+  membershipFees,
+  organizationId
 }) => {
   // ALL HOOKS MUST BE CALLED FIRST - before any conditional returns
   const [agreementAccepted, setAgreementAccepted] = useState(false);
@@ -42,10 +45,19 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   const [activationSuccess, setActivationSuccess] = useState(false);
   const [activationData, setActivationData] = useState<any>(null);
 
+  // Check for existing paid activations
+  const activationStatus = useEngagementActivationStatus(organizationId);
+
   // Calculate values for hook parameters (safe defaults for null case)
   const engagementModel = selectedEngagementModel || '';
   const isPaaS = selectedEngagementModel ? isPaaSModel(selectedEngagementModel) : false;
   const isMarketplace = selectedEngagementModel ? isMarketplaceModel(selectedEngagementModel) : false;
+
+  // Check if user has existing paid PaaS activation for the selected model
+  const hasExistingPaidActivation = activationStatus.isActivated && 
+    activationStatus.activatedModel === selectedEngagementModel &&
+    isPaaS &&
+    !activationStatus.loading;
 
   let currentPricing = null;
   let currentAmount = null;
@@ -131,6 +143,48 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     }
   };
 
+  // If user has existing paid PaaS activation, show frequency manager directly
+  if (hasExistingPaidActivation && activationStatus.activationData) {
+    return (
+      <div className="space-y-4">
+        <Card className="w-full">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+              Manage Existing Engagement
+            </CardTitle>
+            <div className="flex items-center gap-1 mt-2">
+              <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                Active
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              You have an active {selectedEngagementModel} engagement. You can change your billing frequency below.
+            </p>
+          </CardContent>
+        </Card>
+        <PaaSFrequencyManager
+          selectedEngagementModel={selectedEngagementModel}
+          currentFrequency={activationStatus.activationData.current_frequency || activationStatus.activationData.selected_frequency}
+          activationData={activationStatus.activationData}
+          membershipStatus={membershipStatus}
+          pricingConfigs={pricingConfigs}
+          country={country}
+          organizationType={organizationType}
+          membershipFees={membershipFees}
+          onFrequencyChange={(success) => {
+            if (success) {
+              window.location.reload();
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // If user just completed a new payment in this session, show confirmation + frequency manager
   if (activationSuccess && activationData) {
     // For PaaS models, show both confirmation and frequency manager
     if (isPaaS) {
@@ -155,7 +209,6 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
             membershipFees={membershipFees}
             onFrequencyChange={(success) => {
               if (success) {
-                // Refresh the page or update state as needed
                 window.location.reload();
               }
             }}
@@ -183,7 +236,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-2xl font-semibold leading-none tracking-tight whitespace-nowrap">
-          {isPaaS ? 'Engagement Payment' : 'Engagement Selection'}
+          {isPaaS ? 'New Engagement Payment' : 'Engagement Selection'}
         </CardTitle>
         <div className="flex items-center gap-1 mt-2">
           <Badge variant="outline" className="text-xs">{selectedEngagementModel}</Badge>
