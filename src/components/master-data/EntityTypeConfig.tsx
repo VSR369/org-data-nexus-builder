@@ -5,25 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LegacyDataManager } from '@/utils/core/DataManager';
+import { EntityTypesRestorer } from '@/utils/entityTypesRestorer';
 
-interface EntityType {
-  _id: string;
-  name: string;
-}
-
-const entityTypesDataManager = new LegacyDataManager<EntityType[]>({
+const entityTypesDataManager = new LegacyDataManager<string[]>({
   key: 'master_data_entity_types',
-  defaultData: [],
+  defaultData: ['Commercial', 'Non-Profit Organization', 'Society', 'Trust'],
   version: 1
 });
 
 const EntityTypeConfig = () => {
-  const [entityTypes, setEntityTypes] = useState<EntityType[]>([]);
+  const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [newEntityType, setNewEntityType] = useState('');
   const { toast } = useToast();
 
-  // Load data on component mount
+  // Load data on component mount with restoration
   useEffect(() => {
+    // First run restoration to ensure data is properly formatted
+    const restorationResult = EntityTypesRestorer.restoreEntityTypes();
+    console.log('🔄 Entity Types restoration result:', restorationResult);
+    
+    // Then fetch the restored data
     fetchEntityTypes();
   }, []);
 
@@ -37,16 +38,25 @@ const EntityTypeConfig = () => {
   const fetchEntityTypes = async () => {
     const loadedEntityTypes = entityTypesDataManager.loadData();
     console.log("Entity types from local storage:", loadedEntityTypes);
-    setEntityTypes(loadedEntityTypes || []);
+    setEntityTypes(loadedEntityTypes || ['Commercial', 'Non-Profit Organization', 'Society', 'Trust']);
   }
 
   const saveEntityType = async (newEntityType: string) => {
     try {
       const currentEntityTypes = entityTypesDataManager.loadData() || [];
-      const newEntity: EntityType = { _id: Date.now().toString(), name: newEntityType };
-      currentEntityTypes.push(newEntity);
-      entityTypesDataManager.saveData(currentEntityTypes);
-      setEntityTypes(currentEntityTypes);
+      if (currentEntityTypes.includes(newEntityType.trim())) {
+        toast({
+          title: "Duplicate Entry",
+          description: "This entity type already exists.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const updatedEntityTypes = [...currentEntityTypes, newEntityType.trim()];
+      entityTypesDataManager.saveData(updatedEntityTypes);
+      setEntityTypes(updatedEntityTypes);
+      
       toast({
         title: "Success",
         description: "Entity type saved successfully.",
@@ -62,35 +72,13 @@ const EntityTypeConfig = () => {
     }
   }
 
-  const updateEntityType = async (newEntityType: string, id: string) => {
+  const deleteEntityType = async (entityType: string) => {
     try {
       const currentEntityTypes = entityTypesDataManager.loadData() || [];
-      const updatedEntityTypes = currentEntityTypes.map(et => 
-        et._id === id ? { ...et, name: newEntityType } : et
-      );
+      const updatedEntityTypes = currentEntityTypes.filter(et => et !== entityType);
       entityTypesDataManager.saveData(updatedEntityTypes);
       setEntityTypes(updatedEntityTypes);
-      toast({
-        title: "Success",
-        description: "Entity type updated successfully.",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error('Error updating entity type:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update entity type.",
-        variant: "destructive",
-      });
-    }
-  }
-
-  const deleteEntityType = async (entityID: string) => {
-    try {
-      const currentEntityTypes = entityTypesDataManager.loadData() || [];
-      const updatedEntityTypes = currentEntityTypes.filter(et => et._id !== entityID);
-      entityTypesDataManager.saveData(updatedEntityTypes);
-      setEntityTypes(updatedEntityTypes);
+      
       toast({
         title: "Success",
         description: "Entity type deleted successfully.",
@@ -108,14 +96,6 @@ const EntityTypeConfig = () => {
   
   const addEntityType = async () => {
     if (newEntityType.trim() !== '') {
-      if (entityTypes.some(et => et.name === newEntityType.trim())) {
-        toast({
-          title: "Duplicate Entry",
-          description: "This entity type already exists.",
-          variant: "destructive",
-        });
-        return;
-      }
       await saveEntityType(newEntityType.trim());
       setNewEntityType('');
     } else {
@@ -127,9 +107,9 @@ const EntityTypeConfig = () => {
     }
   };
 
-  const removeEntityType = async (id: string) => {
-    console.log("Removing entity type with id:", id);
-    await deleteEntityType(id);
+  const removeEntityType = async (entityType: string) => {
+    console.log("Removing entity type:", entityType);
+    await deleteEntityType(entityType);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -174,15 +154,22 @@ const EntityTypeConfig = () => {
         </CardHeader>
         <CardContent>
           <ul className="list-none space-y-2">
-            {entityTypes.map((entityType) => (
-              <li key={entityType._id} className="flex items-center justify-between py-2 border-b border-gray-200">
-                <span>{entityType.name}</span>
-                <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType._id)}>
+            {entityTypes.map((entityType, index) => (
+              <li key={`${entityType}-${index}`} className="flex items-center justify-between py-2 border-b border-gray-200">
+                <span>{entityType}</span>
+                <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </li>
             ))}
           </ul>
+          
+          {entityTypes.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No entity types configured.</p>
+              <p className="text-sm">Add entity types using the form above.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

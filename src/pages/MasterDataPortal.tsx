@@ -8,6 +8,7 @@ import { ArrowLeft, Database, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MasterDataSeeder } from "@/utils/masterDataSeeder";
 import { MasterDataRestorer } from "@/utils/masterDataRestorer";
+import { EntityTypesRestorer } from "@/utils/entityTypesRestorer";
 import { useToast } from "@/hooks/use-toast";
 
 const MasterDataPortal = () => {
@@ -17,6 +18,32 @@ const MasterDataPortal = () => {
 
   const handleSignInComplete = () => {
     setIsLoggedIn(true);
+  };
+
+  const handleRestoreEntityTypes = async () => {
+    console.log('🔧 User requested Entity Types restoration...');
+    
+    try {
+      const result = EntityTypesRestorer.restoreEntityTypes();
+      
+      if (result.success) {
+        toast({
+          title: "Entity Types Restored",
+          description: `Restored ${result.count} entity types from ${result.source}. Please refresh the Entity Types page to see the changes.`,
+        });
+        
+        console.log('✅ Entity Types restoration successful:', result);
+      } else {
+        throw new Error('Restoration failed');
+      }
+    } catch (error) {
+      console.error('❌ Entity Types restoration failed:', error);
+      toast({
+        title: "Restoration Failed",
+        description: "Failed to restore Entity Types. Please check the console for details.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRestoreCustomData = async () => {
@@ -111,7 +138,15 @@ const MasterDataPortal = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2 shrink-0">
-                    <Button 
+              <Button
+                variant="outline"
+                onClick={handleRestoreEntityTypes}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Restore Entity Types
+              </Button>
+              <Button
                       onClick={handleRestoreCustomData}
                       variant="outline" 
                       size="sm" 
