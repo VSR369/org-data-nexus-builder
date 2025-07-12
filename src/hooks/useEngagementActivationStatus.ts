@@ -28,12 +28,12 @@ export const useEngagementActivationStatus = (organizationId?: string) => {
       try {
         setStatus(prev => ({ ...prev, loading: true }));
 
-        // Query engagement_activations table for any active engagements for this organization
+        // Query engagement_activations table for any locked engagements for this organization
         const { data, error } = await supabase
           .from('engagement_activations')
           .select('*')
           .eq('user_id', organizationId)
-          .eq('activation_status', 'Activated')
+          .eq('engagement_locked', true)
           .order('created_at', { ascending: false })
           .limit(1);
 

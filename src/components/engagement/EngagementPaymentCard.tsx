@@ -9,6 +9,7 @@ import { PricingSection } from './components/PricingSection';
 import { ActionButtons } from './components/ActionButtons';
 import { useEngagementDataStorage } from '@/hooks/useEngagementDataStorage';
 import { EngagementDataConfirmation } from './EngagementDataConfirmation';
+import { PaaSFrequencyManager } from './PaaSFrequencyManager';
 
 interface EngagementPaymentCardProps {
   selectedEngagementModel: string | null;
@@ -131,6 +132,39 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   };
 
   if (activationSuccess && activationData) {
+    // For PaaS models, show both confirmation and frequency manager
+    if (isPaaS) {
+      return (
+        <div className="space-y-4">
+          <EngagementDataConfirmation
+            selectedEngagementModel={activationData.model}
+            selectedFrequency={activationData.frequency}
+            membershipStatus={membershipStatus}
+            platformFeePercentage={activationData.platformFee}
+            paymentAmount={activationData.amount}
+            paymentDate={activationData.paymentDate || activationData.activationDate}
+          />
+          <PaaSFrequencyManager
+            selectedEngagementModel={activationData.model}
+            currentFrequency={activationData.frequency}
+            activationData={activationData}
+            membershipStatus={membershipStatus}
+            pricingConfigs={pricingConfigs}
+            country={country}
+            organizationType={organizationType}
+            membershipFees={membershipFees}
+            onFrequencyChange={(success) => {
+              if (success) {
+                // Refresh the page or update state as needed
+                window.location.reload();
+              }
+            }}
+          />
+        </div>
+      );
+    }
+    
+    // For marketplace models, show only confirmation
     return (
       <EngagementDataConfirmation
         selectedEngagementModel={activationData.model}

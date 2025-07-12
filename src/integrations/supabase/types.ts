@@ -20,10 +20,16 @@ export type Database = {
           country: string | null
           created_at: string
           currency: string | null
+          current_frequency: string | null
           discount_percentage: number | null
+          engagement_locked: boolean | null
           engagement_model: string
           final_calculated_price: number | null
+          frequency_change_history: Json | null
+          frequency_payments: Json | null
           id: string
+          last_payment_date: string | null
+          lock_date: string | null
           membership_status: string
           membership_type: string | null
           organization_type: string | null
@@ -34,6 +40,7 @@ export type Database = {
           pricing_locked: boolean | null
           selected_frequency: string | null
           terms_accepted: boolean | null
+          total_payments_made: number | null
           updated_at: string
           updated_platform_fee_percentage: number | null
           user_id: string | null
@@ -43,10 +50,16 @@ export type Database = {
           country?: string | null
           created_at?: string
           currency?: string | null
+          current_frequency?: string | null
           discount_percentage?: number | null
+          engagement_locked?: boolean | null
           engagement_model: string
           final_calculated_price?: number | null
+          frequency_change_history?: Json | null
+          frequency_payments?: Json | null
           id?: string
+          last_payment_date?: string | null
+          lock_date?: string | null
           membership_status: string
           membership_type?: string | null
           organization_type?: string | null
@@ -57,6 +70,7 @@ export type Database = {
           pricing_locked?: boolean | null
           selected_frequency?: string | null
           terms_accepted?: boolean | null
+          total_payments_made?: number | null
           updated_at?: string
           updated_platform_fee_percentage?: number | null
           user_id?: string | null
@@ -66,10 +80,16 @@ export type Database = {
           country?: string | null
           created_at?: string
           currency?: string | null
+          current_frequency?: string | null
           discount_percentage?: number | null
+          engagement_locked?: boolean | null
           engagement_model?: string
           final_calculated_price?: number | null
+          frequency_change_history?: Json | null
+          frequency_payments?: Json | null
           id?: string
+          last_payment_date?: string | null
+          lock_date?: string | null
           membership_status?: string
           membership_type?: string | null
           organization_type?: string | null
@@ -80,6 +100,7 @@ export type Database = {
           pricing_locked?: boolean | null
           selected_frequency?: string | null
           terms_accepted?: boolean | null
+          total_payments_made?: number | null
           updated_at?: string
           updated_platform_fee_percentage?: number | null
           user_id?: string | null

@@ -48,7 +48,11 @@ export const useEngagementDataStorage = (props: EngagementDataStorageProps) => {
         terms_accepted: true,
         membership_type: props.membershipStatus === 'member_paid' ? 'annual' : 'not-a-member',
         payment_status: 'idle',
-        pricing_locked: false
+        pricing_locked: false,
+        engagement_locked: true,
+        lock_date: new Date().toISOString(),
+        current_frequency: props.selectedFrequency,
+        last_payment_date: new Date().toISOString()
       };
 
       const { error } = await supabase
@@ -76,7 +80,7 @@ export const useEngagementDataStorage = (props: EngagementDataStorageProps) => {
     }
   };
 
-  const payEngagementFee = async () => {
+  const payEngagementFee = async (isFrequencyChange = false) => {
     if (!isPaaSModel(props.selectedEngagementModel)) {
       toast({
         title: "Error",
@@ -101,29 +105,87 @@ export const useEngagementDataStorage = (props: EngagementDataStorageProps) => {
       if (!user) throw new Error('User not authenticated');
 
       const paymentAmount = props.currentAmount || 0;
-      
-      const activationData = {
-        user_id: user.id,
-        engagement_model: props.selectedEngagementModel,
-        membership_status: props.membershipStatus,
-        organization_type: props.organizationType,
-        country: props.country,
-        currency: 'INR',
-        activation_status: 'Engagement Payment Paid',
-        terms_accepted: true,
-        selected_frequency: props.selectedFrequency,
-        payment_amount: paymentAmount,
-        payment_date: new Date().toISOString(),
-        payment_status: 'paid',
-        membership_type: props.membershipStatus === 'member_paid' ? 'annual' : 'not-a-member',
-        pricing_locked: false
-      };
+      const now = new Date().toISOString();
 
-      const { error } = await supabase
-        .from('engagement_activations')
-        .insert(activationData);
+      if (isFrequencyChange) {
+        // Update existing record with frequency change
+        const { data: existingData } = await supabase
+          .from('engagement_activations')
+          .select('frequency_payments, frequency_change_history, total_payments_made')
+          .eq('user_id', user.id)
+          .eq('engagement_model', props.selectedEngagementModel)
+          .single();
 
-      if (error) throw error;
+        const frequencyPayments = Array.isArray(existingData?.frequency_payments) ? existingData.frequency_payments : [];
+        const changeHistory = Array.isArray(existingData?.frequency_change_history) ? existingData.frequency_change_history : [];
+        const totalPaid = (existingData?.total_payments_made || 0) + paymentAmount;
+
+        // Add new payment to history
+        frequencyPayments.push({
+          frequency: props.selectedFrequency,
+          amount: paymentAmount,
+          date: now
+        });
+
+        changeHistory.push({
+          to_frequency: props.selectedFrequency,
+          amount: paymentAmount,
+          date: now
+        });
+
+        const { error: updateError } = await supabase
+          .from('engagement_activations')
+          .update({
+            selected_frequency: props.selectedFrequency,
+            current_frequency: props.selectedFrequency,
+            frequency_payments: frequencyPayments,
+            frequency_change_history: changeHistory,
+            total_payments_made: totalPaid,
+            last_payment_date: now,
+            payment_amount: paymentAmount,
+            payment_date: now
+          })
+          .eq('user_id', user.id)
+          .eq('engagement_model', props.selectedEngagementModel);
+
+        if (updateError) throw updateError;
+      } else {
+        // Initial payment - insert new record with lock
+        const initialPayment = [{
+          frequency: props.selectedFrequency,
+          amount: paymentAmount,
+          date: now
+        }];
+
+        const activationData = {
+          user_id: user.id,
+          engagement_model: props.selectedEngagementModel,
+          membership_status: props.membershipStatus,
+          organization_type: props.organizationType,
+          country: props.country,
+          currency: 'INR',
+          activation_status: 'Engagement Payment Paid',
+          terms_accepted: true,
+          selected_frequency: props.selectedFrequency,
+          current_frequency: props.selectedFrequency,
+          payment_amount: paymentAmount,
+          payment_date: now,
+          payment_status: 'paid',
+          membership_type: props.membershipStatus === 'member_paid' ? 'annual' : 'not-a-member',
+          pricing_locked: false,
+          engagement_locked: true,
+          lock_date: now,
+          frequency_payments: initialPayment,
+          total_payments_made: paymentAmount,
+          last_payment_date: now
+        };
+
+        const { error: insertError } = await supabase
+          .from('engagement_activations')
+          .insert(activationData);
+
+        if (insertError) throw insertError;
+      }
 
       toast({
         title: "Success",
