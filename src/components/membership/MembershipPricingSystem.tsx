@@ -200,6 +200,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           onFrequencyChange={updateFrequency}
           loading={dataLoading}
           engagementActivationStatus={state.engagement_activation_status}
+          membershipFees={membershipFees}
         />
       </div>
     </div>

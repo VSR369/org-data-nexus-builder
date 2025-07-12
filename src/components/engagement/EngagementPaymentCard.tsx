@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +5,10 @@ import { isPaaSModel, isMarketplaceModel, getBothMemberAndNonMemberPricing, getD
 import { PricingConfig } from '@/types/pricing';
 import { FrequencySelector } from './FrequencySelector';
 import { NoEngagementSelected } from './components/NoEngagementSelected';
-import { EngagementSuccessCard } from './components/EngagementSuccessCard';
 import { PricingSection } from './components/PricingSection';
 import { ActionButtons } from './components/ActionButtons';
+import { useEngagementDataStorage } from '@/hooks/useEngagementDataStorage';
+import { EngagementDataConfirmation } from './EngagementDataConfirmation';
 
 interface EngagementPaymentCardProps {
   selectedEngagementModel: string | null;
@@ -20,6 +20,7 @@ interface EngagementPaymentCardProps {
   onFrequencyChange: (frequency: string) => void;
   loading?: boolean;
   engagementActivationStatus?: 'idle' | 'loading' | 'success' | 'error';
+  membershipFees: any[];
 }
 
 export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
@@ -31,10 +32,13 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   organizationType,
   onFrequencyChange,
   loading = false,
-  engagementActivationStatus = 'idle'
+  engagementActivationStatus = 'idle',
+  membershipFees
 }) => {
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [paasAgreementAccepted, setPaasAgreementAccepted] = useState(false);
+  const [activationSuccess, setActivationSuccess] = useState(false);
+  const [activationData, setActivationData] = useState<any>(null);
 
   // Check if no engagement model is selected
   if (!selectedEngagementModel) {
@@ -96,7 +100,64 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     selectedFrequency
   });
 
+  // Initialize engagement data storage hook
+  const {
+    loading: activationLoading,
+    activateEngagement,
+    payEngagementFee,
+    isMarketplaceModel: isMarketplaceModelHook,
+    isPaaSModel: isPaaSModelHook
+  } = useEngagementDataStorage({
+    selectedEngagementModel,
+    selectedFrequency,
+    membershipStatus,
+    pricingConfigs,
+    country,
+    organizationType,
+    currentPricing,
+    currentAmount: currentAmount?.amount || 0,
+    membershipFees
+  });
 
+  const handleActivateEngagement = async () => {
+    const success = await activateEngagement();
+    if (success) {
+      setActivationSuccess(true);
+      setActivationData({
+        model: selectedEngagementModel,
+        platformFee: currentPricing?.platformFeePercentage,
+        membershipStatus,
+        activationDate: new Date().toISOString()
+      });
+    }
+  };
+
+  const handlePayEngagementFee = async () => {
+    const success = await payEngagementFee();
+    if (success) {
+      setActivationSuccess(true);
+      setActivationData({
+        model: selectedEngagementModel,
+        frequency: selectedFrequency,
+        amount: currentAmount?.amount,
+        membershipStatus,
+        paymentDate: new Date().toISOString()
+      });
+    }
+  };
+
+  if (activationSuccess && activationData) {
+    return (
+      <EngagementDataConfirmation
+        selectedEngagementModel={activationData.model}
+        selectedFrequency={activationData.frequency}
+        membershipStatus={membershipStatus}
+        platformFeePercentage={activationData.platformFee}
+        paymentAmount={activationData.amount}
+        paymentDate={activationData.paymentDate || activationData.activationDate}
+      />
+    );
+  }
 
   return (
     <Card className="w-full">
@@ -148,6 +209,9 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           loading={loading}
           currentPricing={currentPricing}
           currentAmount={currentAmount}
+          onActivateEngagement={handleActivateEngagement}
+          onPayEngagementFee={handlePayEngagementFee}
+          activationLoading={activationLoading}
         />
       </CardContent>
     </Card>

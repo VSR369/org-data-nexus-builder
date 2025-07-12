@@ -16,6 +16,9 @@ interface ActionButtonsProps {
   loading: boolean;
   currentPricing: any;
   currentAmount: any;
+  onActivateEngagement?: () => void;
+  onPayEngagementFee?: () => void;
+  activationLoading?: boolean;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -29,11 +32,14 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   setAgreementAccepted,
   loading,
   currentPricing,
-  currentAmount
+  currentAmount,
+  onActivateEngagement,
+  onPayEngagementFee,
+  activationLoading = false
 }) => {
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {isPaaS && (
         <AgreementSection
           agreementAccepted={paasAgreementAccepted}
@@ -48,6 +54,44 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           onAgreementChange={setAgreementAccepted}
           engagementModel={selectedEngagementModel}
         />
+      )}
+
+      {/* Marketplace Models Action Button */}
+      {isMarketplace && (
+        <Button
+          onClick={onActivateEngagement}
+          disabled={!agreementAccepted || activationLoading}
+          className="w-full"
+          size="lg"
+        >
+          {activationLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Activating...
+            </>
+          ) : (
+            'Activate Engagement'
+          )}
+        </Button>
+      )}
+
+      {/* PaaS Model Action Button */}
+      {isPaaS && (
+        <Button
+          onClick={onPayEngagementFee}
+          disabled={!paasAgreementAccepted || !selectedFrequency || activationLoading}
+          className="w-full"
+          size="lg"
+        >
+          {activationLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            `Pay Fee - ₹${currentAmount || 0}`
+          )}
+        </Button>
       )}
     </div>
   );

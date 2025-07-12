@@ -25,10 +25,17 @@ export type Database = {
           final_calculated_price: number | null
           id: string
           membership_status: string
+          membership_type: string | null
           organization_type: string | null
+          payment_amount: number | null
+          payment_date: string | null
+          payment_status: string | null
           platform_fee_percentage: number | null
+          pricing_locked: boolean | null
+          selected_frequency: string | null
           terms_accepted: boolean | null
           updated_at: string
+          updated_platform_fee_percentage: number | null
           user_id: string | null
         }
         Insert: {
@@ -41,10 +48,17 @@ export type Database = {
           final_calculated_price?: number | null
           id?: string
           membership_status: string
+          membership_type?: string | null
           organization_type?: string | null
+          payment_amount?: number | null
+          payment_date?: string | null
+          payment_status?: string | null
           platform_fee_percentage?: number | null
+          pricing_locked?: boolean | null
+          selected_frequency?: string | null
           terms_accepted?: boolean | null
           updated_at?: string
+          updated_platform_fee_percentage?: number | null
           user_id?: string | null
         }
         Update: {
@@ -57,10 +71,17 @@ export type Database = {
           final_calculated_price?: number | null
           id?: string
           membership_status?: string
+          membership_type?: string | null
           organization_type?: string | null
+          payment_amount?: number | null
+          payment_date?: string | null
+          payment_status?: string | null
           platform_fee_percentage?: number | null
+          pricing_locked?: boolean | null
+          selected_frequency?: string | null
           terms_accepted?: boolean | null
           updated_at?: string
+          updated_platform_fee_percentage?: number | null
           user_id?: string | null
         }
         Relationships: []
