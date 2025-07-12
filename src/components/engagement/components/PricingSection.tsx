@@ -2,6 +2,7 @@
 import React from 'react';
 import { formatCurrency, getBothMemberAndNonMemberPricing, getDisplayAmount } from '@/utils/membershipPricingUtils';
 import { PricingConfig } from '@/types/pricing';
+import { PaaSPricingDisplay } from './PaaSPricingDisplay';
 
 interface PricingSectionProps {
   selectedEngagementModel: string;
@@ -12,6 +13,7 @@ interface PricingSectionProps {
   organizationType: string;
   isMarketplace: boolean;
   isPaaS: boolean;
+  onFrequencyChange?: (frequency: string) => void;
 }
 
 export const PricingSection: React.FC<PricingSectionProps> = ({
@@ -22,7 +24,8 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   country,
   organizationType,
   isMarketplace,
-  isPaaS
+  isPaaS,
+  onFrequencyChange
 }) => {
   // Debug logging for PaaS pricing issues
   if (isPaaS) {
@@ -80,6 +83,20 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           No pricing configuration found for {selectedEngagementModel}
         </div>
       </div>
+    );
+  }
+
+  // For PaaS models, show all frequency options with pricing immediately
+  if (isPaaS && onFrequencyChange) {
+    return (
+      <PaaSPricingDisplay
+        selectedFrequency={selectedFrequency}
+        onFrequencyChange={onFrequencyChange}
+        membershipStatus={membershipStatus}
+        currentPricing={currentPricing}
+        memberConfig={memberConfig}
+        nonMemberConfig={nonMemberConfig}
+      />
     );
   }
 

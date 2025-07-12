@@ -214,6 +214,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
           organizationType={organizationType}
           isMarketplace={isMarketplace}
           isPaaS={isPaaS}
+          onFrequencyChange={onFrequencyChange}
         />
 
         {/* Action Buttons */}
