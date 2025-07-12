@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { useSimpleEngagementState } from '@/hooks/useSimpleEngagementState';
 import { useMembershipPricingData } from '@/hooks/useMembershipPricingData';
+import { useEngagementActivationStatus } from '@/hooks/useEngagementActivationStatus';
 import { MembershipPlanSelection } from './MembershipPlanSelection';
 import { EngagementModelSelection } from './EngagementModelSelection';
 import { MembershipPaymentCard } from './MembershipPaymentCard';
@@ -47,6 +48,9 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
     entityType,
     country
   );
+
+  // Check activation status to prevent model changes after activation
+  const activationStatus = useEngagementActivationStatus(organizationId);
 
   // Engagement functionality restored
   const [submittedMembershipType, setSubmittedMembershipType] = useState<string | null>(null);
@@ -187,6 +191,7 @@ const MembershipPricingSystem: React.FC<MembershipPricingSystemProps> = ({
           selectedEngagementModel={state.selected_engagement_model}
           engagementModels={engagementModels}
           onEngagementModelChange={updateEngagementModel}
+          activationStatus={activationStatus}
         />
 
         {/* Engagement Payment Card - Adjacent to Engagement Models */}
