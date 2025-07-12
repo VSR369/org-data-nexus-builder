@@ -65,7 +65,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     }
   };
 
-  const formatCurrency = (amount: number) => `₹${amount.toLocaleString()}`;
+  const formatCurrency = (amount: number | undefined | null) => `₹${(amount || 0).toLocaleString()}`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   return (
@@ -87,15 +87,15 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
             </div>
             <div>
               <span className="text-muted-foreground">Last Payment:</span>
-              <p className="font-medium">{formatCurrency(activationData.payment_amount)}</p>
+              <p className="font-medium">{formatCurrency(activationData?.payment_amount)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Payment Date:</span>
-              <p className="font-medium">{formatDate(activationData.payment_date)}</p>
+              <p className="font-medium">{activationData?.payment_date ? formatDate(activationData.payment_date) : 'N/A'}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Total Payments:</span>
-              <p className="font-medium">{formatCurrency(activationData.total_payments_made || activationData.payment_amount)}</p>
+              <p className="font-medium">{formatCurrency(activationData?.total_payments_made || activationData?.payment_amount)}</p>
             </div>
           </div>
         </CardContent>
@@ -122,7 +122,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
                       <div>
                         <p className="font-medium capitalize">{frequency.replace('_', ' ')}</p>
                         <p className="text-sm text-muted-foreground">
-                          {amount ? formatCurrency(amount.amount) : 'Price not available'}
+                          {amount?.amount ? formatCurrency(amount.amount) : 'Price not available'}
                         </p>
                       </div>
                       {isCurrentFrequency && (
@@ -130,7 +130,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
                       )}
                     </div>
                     
-                    {!isCurrentFrequency && amount && (
+                    {!isCurrentFrequency && amount?.amount && (
                       <Button
                         onClick={() => handleFrequencyPayment(frequency)}
                         disabled={loading}
@@ -150,14 +150,14 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
           <Separator />
           
           {/* Payment History */}
-          {activationData.frequency_change_history && activationData.frequency_change_history.length > 0 && (
+          {activationData?.frequency_change_history && Array.isArray(activationData.frequency_change_history) && activationData.frequency_change_history.length > 0 && (
             <div>
               <h4 className="font-medium text-sm mb-2">Frequency Change History</h4>
               <div className="space-y-2">
                 {activationData.frequency_change_history.map((change: any, index: number) => (
                   <div key={index} className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
-                    <p>Changed to <span className="font-medium capitalize">{change.to_frequency}</span></p>
-                    <p>Amount: {formatCurrency(change.amount)} • {formatDate(change.date)}</p>
+                    <p>Changed to <span className="font-medium capitalize">{change?.to_frequency || 'Unknown'}</span></p>
+                    <p>Amount: {formatCurrency(change?.amount)} • {change?.date ? formatDate(change.date) : 'N/A'}</p>
                   </div>
                 ))}
               </div>
