@@ -35,80 +35,49 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
   engagementActivationStatus = 'idle',
   membershipFees
 }) => {
+  // ALL HOOKS MUST BE CALLED FIRST - before any conditional returns
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [paasAgreementAccepted, setPaasAgreementAccepted] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(false);
   const [activationData, setActivationData] = useState<any>(null);
 
-  // Check if no engagement model is selected
-  if (!selectedEngagementModel) {
-    return <NoEngagementSelected />;
-  }
+  // Calculate values for hook parameters (safe defaults for null case)
+  const engagementModel = selectedEngagementModel || '';
+  const isPaaS = selectedEngagementModel ? isPaaSModel(selectedEngagementModel) : false;
+  const isMarketplace = selectedEngagementModel ? isMarketplaceModel(selectedEngagementModel) : false;
 
-  const isPaaS = isPaaSModel(selectedEngagementModel);
-  const isMarketplace = isMarketplaceModel(selectedEngagementModel);
-
-  console.log('🔍 EngagementPaymentCard Debug:', {
-    selectedEngagementModel,
-    isPaaS,
-    isMarketplace,
-    selectedFrequency,
-    membershipStatus,
-    availableConfigs: pricingConfigs.length
-  });
-
-  // Get both member and non-member pricing for discount display
-  const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
-    selectedEngagementModel,
-    pricingConfigs,
-    country,
-    organizationType
-  );
-
-  console.log('💰 Pricing configs found:', {
-    memberConfig: memberConfig ? {
-      id: memberConfig.id,
-      platformFee: memberConfig.platformFeePercentage,
-      quarterlyFee: memberConfig.quarterlyFee,
-      membershipStatus: memberConfig.membershipStatus
-    } : null,
-    nonMemberConfig: nonMemberConfig ? {
-      id: nonMemberConfig.id,
-      platformFee: nonMemberConfig.platformFeePercentage,
-      quarterlyFee: nonMemberConfig.quarterlyFee,
-      membershipStatus: nonMemberConfig.membershipStatus
-    } : null
-  });
-
-  // Determine which config to use based on membership status
-  const isMembershipPaid = membershipStatus === 'member_paid';
-  const currentPricing = isMembershipPaid && memberConfig ? memberConfig : nonMemberConfig;
-
-  // Calculate display amounts
+  let currentPricing = null;
   let currentAmount = null;
 
-  if (isMarketplace && currentPricing && currentPricing.platformFeePercentage) {
-    currentAmount = { amount: currentPricing.platformFeePercentage, isPercentage: true };
-  } else if (isPaaS && selectedFrequency && currentPricing) {
-    const amount = getDisplayAmount(selectedFrequency, currentPricing, membershipStatus);
-    currentAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
+  if (selectedEngagementModel) {
+    // Get both member and non-member pricing for discount display
+    const { memberConfig, nonMemberConfig } = getBothMemberAndNonMemberPricing(
+      selectedEngagementModel,
+      pricingConfigs,
+      country,
+      organizationType
+    );
+
+    // Determine which config to use based on membership status
+    const isMembershipPaid = membershipStatus === 'member_paid';
+    currentPricing = isMembershipPaid && memberConfig ? memberConfig : nonMemberConfig;
+
+    // Calculate display amounts
+    if (isMarketplace && currentPricing && currentPricing.platformFeePercentage) {
+      currentAmount = { amount: currentPricing.platformFeePercentage, isPercentage: true };
+    } else if (isPaaS && selectedFrequency && currentPricing) {
+      const amount = getDisplayAmount(selectedFrequency, currentPricing, membershipStatus);
+      currentAmount = amount ? { amount: amount.amount, isPercentage: false } : null;
+    }
   }
 
-  console.log('💸 Display amounts:', {
-    currentAmount,
-    isMembershipPaid,
-    selectedFrequency
-  });
-
-  // Initialize engagement data storage hook
+  // Initialize engagement data storage hook with safe defaults
   const {
     loading: activationLoading,
     activateEngagement,
-    payEngagementFee,
-    isMarketplaceModel: isMarketplaceModelHook,
-    isPaaSModel: isPaaSModelHook
+    payEngagementFee
   } = useEngagementDataStorage({
-    selectedEngagementModel,
+    selectedEngagementModel: engagementModel,
     selectedFrequency,
     membershipStatus,
     pricingConfigs,
@@ -117,6 +86,20 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
     currentPricing,
     currentAmount: currentAmount?.amount || 0,
     membershipFees
+  });
+
+  // NOW we can do conditional returns after all hooks are called
+  if (!selectedEngagementModel) {
+    return <NoEngagementSelected />;
+  }
+
+  console.log('🔍 EngagementPaymentCard Debug:', {
+    selectedEngagementModel,
+    isPaaS,
+    isMarketplace,
+    selectedFrequency,
+    membershipStatus,
+    availableConfigs: pricingConfigs.length
   });
 
   const handleActivateEngagement = async () => {
@@ -158,6 +141,8 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
       />
     );
   }
+
+  const isMembershipPaid = membershipStatus === 'member_paid';
 
   return (
     <Card className="w-full">
