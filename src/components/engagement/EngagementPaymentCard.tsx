@@ -122,6 +122,7 @@ export const EngagementPaymentCard: React.FC<EngagementPaymentCardProps> = ({
       setActivationData({
         model: selectedEngagementModel,
         frequency: selectedFrequency,
+        platformFee: currentPricing?.platformFeePercentage,
         amount: currentAmount?.amount,
         membershipStatus,
         paymentDate: new Date().toISOString()
