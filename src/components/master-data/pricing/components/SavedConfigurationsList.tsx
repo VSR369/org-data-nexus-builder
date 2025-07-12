@@ -17,24 +17,24 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
   onEdit,
   onDelete
 }) => {
-  // Calculate discounted price based on discount percentage
-  const calculateDiscountedPrice = (originalPrice: number, discount: number) => {
-    const discountedPrice = originalPrice - (originalPrice * discount / 100);
-    return Math.round(discountedPrice * 10) / 10; // Round to 1 decimal place
-  };
-
   // Check if engagement model is Platform as a Service (PaaS)
   const isPaaSModel = (engagementModel: string) => {
-    return engagementModel.toLowerCase().includes('platform as a service') || 
-           engagementModel.toLowerCase().includes('paas');
+    return engagementModel === 'Platform as a Service';
+  };
+
+  // Check if engagement model uses single platform fee (non-PaaS models)
+  const isMarketplaceBasedModel = (engagementModel: string) => {
+    return engagementModel === 'Market Place' || 
+           engagementModel === 'Market Place & Aggregator' || 
+           engagementModel === 'Aggregator';
   };
 
   // Format fee display based on engagement model
   const formatFeeDisplay = (fee: number, currency: string, engagementModel: string) => {
-    if (isPaaSModel(engagementModel)) {
-      return `${currency} ${fee.toLocaleString()}`;
+    if (isMarketplaceBasedModel(engagementModel)) {
+      return `${fee}%`;
     }
-    return `${fee}%`;
+    return `${currency} ${fee.toLocaleString()}`;
   };
 
   if (configs.length === 0) {
@@ -48,6 +48,10 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
       </Card>
     );
   }
+
+  // Determine if we have any marketplace-based configurations
+  const hasMarketplaceConfigs = configs.some(config => isMarketplaceBasedModel(config.engagementModel));
+  const hasPaaSConfigs = configs.some(config => isPaaSModel(config.engagementModel));
 
   return (
     <Card>
@@ -66,18 +70,20 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                 <TableHead>Engagement Model</TableHead>
                 <TableHead>Membership Status</TableHead>
                 <TableHead>Discount (%)</TableHead>
-                <TableHead>Quarterly Fee</TableHead>
-                <TableHead>Half Yearly Fee</TableHead>
-                <TableHead>Annual Fee</TableHead>
+                {/* Conditional headers based on engagement model type */}
+                {hasMarketplaceConfigs && <TableHead>Platform Fee</TableHead>}
+                {hasPaaSConfigs && <TableHead>Quarterly Fee</TableHead>}
+                {hasPaaSConfigs && <TableHead>Half Yearly Fee</TableHead>}
+                {hasPaaSConfigs && <TableHead>Annual Fee</TableHead>}
                 <TableHead>Created</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {configs.map((config) => {
-                const discount = config.discountPercentage || 0;
-                const hasDiscount = config.membershipStatus === 'active' && discount > 0;
                 const isPaaS = isPaaSModel(config.engagementModel);
+                const isMarketplaceBased = isMarketplaceBasedModel(config.engagementModel);
+                const discount = config.discountPercentage || 0;
 
                 return (
                   <TableRow key={config.id}>
@@ -93,79 +99,63 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
                       <Badge variant="outline">{config.engagementModel}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={config.membershipStatus === 'active' ? 'default' : 'secondary'}>
-                        {config.membershipStatus === 'active' ? 'Active' : 
-                         config.membershipStatus === 'inactive' ? 'Inactive' : 'Not a Member'}
+                      <Badge variant={config.membershipStatus === 'member' ? 'default' : 'secondary'}>
+                        {config.membershipStatus === 'member' ? 'Member' : 'Not a Member'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {discount > 0 ? `${discount}%` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {config.quarterlyFee !== undefined ? (
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel)}
-                          </div>
-                          {hasDiscount && (
-                            <div className="text-xs text-green-600">
-                              After discount: {isPaaS ? 
-                                `${config.currency} ${calculateDiscountedPrice(config.quarterlyFee, discount).toLocaleString()}` : 
-                                `${calculateDiscountedPrice(config.quarterlyFee, discount)}%`}
-                            </div>
-                          )}
-                        </div>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {config.halfYearlyFee !== undefined ? (
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel)}
-                          </div>
-                          {hasDiscount && (
-                            <div className="text-xs text-green-600">
-                              After discount: {isPaaS ? 
-                                `${config.currency} ${calculateDiscountedPrice(config.halfYearlyFee, discount).toLocaleString()}` : 
-                                `${calculateDiscountedPrice(config.halfYearlyFee, discount)}%`}
-                            </div>
-                          )}
-                        </div>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {config.annualFee !== undefined ? (
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {formatFeeDisplay(config.annualFee, config.currency, config.engagementModel)}
-                          </div>
-                          {hasDiscount && (
-                            <div className="text-xs text-green-600">
-                              After discount: {isPaaS ? 
-                                `${config.currency} ${calculateDiscountedPrice(config.annualFee, discount).toLocaleString()}` : 
-                                `${calculateDiscountedPrice(config.annualFee, discount)}%`}
-                            </div>
-                          )}
-                        </div>
-                      ) : '-'}
-                    </TableCell>
+                    <TableCell>{discount > 0 ? `${discount}%` : '-'}</TableCell>
+                    
+                    {/* Conditional pricing columns based on engagement model type */}
+                    {hasMarketplaceConfigs && (
+                      <TableCell>
+                        {isMarketplaceBased && config.platformFeePercentage !== undefined ? 
+                          formatFeeDisplay(config.platformFeePercentage, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                    )}
+                    {hasPaaSConfigs && (
+                      <TableCell>
+                        {isPaaS && config.quarterlyFee !== undefined ? 
+                          formatFeeDisplay(config.quarterlyFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                    )}
+                    {hasPaaSConfigs && (
+                      <TableCell>
+                        {isPaaS && config.halfYearlyFee !== undefined ? 
+                          formatFeeDisplay(config.halfYearlyFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                    )}
+                    {hasPaaSConfigs && (
+                      <TableCell>
+                        {isPaaS && config.annualFee !== undefined ? 
+                          formatFeeDisplay(config.annualFee, config.currency, config.engagementModel) : 
+                          '-'}
+                      </TableCell>
+                    )}
+                    
                     <TableCell>{config.createdAt}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(config)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDelete(config.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {config.membershipStatus !== 'member' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onEdit(config)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onDelete(config.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

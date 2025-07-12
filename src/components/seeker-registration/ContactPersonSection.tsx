@@ -141,18 +141,6 @@ const ContactPersonSection: React.FC<ContactPersonSectionProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="userId" className={errors.userId ? "text-red-500" : ""}>User ID *</Label>
-          <Input
-            id="userId"
-            value={formData.userId}
-            onChange={(e) => onInputChange('userId', e.target.value)}
-            placeholder="Enter user ID"
-            className={errors.userId ? "border-red-500 focus:ring-red-500" : ""}
-          />
-          {errors.userId && <p className="text-sm text-red-500">{errors.userId}</p>}
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="password" className={errors.password ? "text-red-500" : ""}>Password *</Label>
           <Input
             id="password"

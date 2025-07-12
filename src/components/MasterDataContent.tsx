@@ -1,5 +1,5 @@
-
 import React from "react";
+import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfig from "./master-data/CountryConfig";
 import CurrencyConfig from "./master-data/CurrencyConfig";
 import IndustrySegmentConfig from "./master-data/IndustrySegmentConfig";
@@ -17,7 +17,12 @@ import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
 import PricingConfig from "./master-data/PricingConfig";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
-import SolutionSeekersValidation from "./master-data/SolutionSeekersValidation";
+import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
+import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
+import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
+import CustomDataManager from "./master-data/CustomDataManager";
+import DataProtectionPanel from "./master-data/DataProtectionPanel";
+import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -29,6 +34,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'custom-data-manager':
+        return <CustomDataManager />;
       case 'countries':
         return <CountryConfig />;
       case 'currencies':
@@ -61,19 +68,32 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <PricingConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
-      case 'solution-seekers-validation':
-        return <SolutionSeekersValidation />;
       case 'global-cache-manager':
         return <GlobalCacheManager />;
+      case 'localstorage-debug':
+        return <LocalStorageDebugPanel />;
+      case 'master-data-diagnostics':
+        return <MasterDataDiagnostics />;
+      case 'admin-creation':
+        return <AdminCreationDiagnostic />;
+      case 'data-protection':
+        return <DataProtectionPanel />;
+      case 'solution-seekers-validation':
+        return <SeekingOrgValidationDashboard />;
       default:
-        return <DomainGroupsConfig />;
+        return <CustomDataManager />;
     }
   };
 
   return (
-    <div className="p-6">
+    <ResponsiveDashboardWrapper
+      layout="stack"
+      padding="md"
+      showBackground={true}
+      className="min-h-screen"
+    >
       {renderContent()}
-    </div>
+    </ResponsiveDashboardWrapper>
   );
 };
 

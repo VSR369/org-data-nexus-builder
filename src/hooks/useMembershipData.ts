@@ -58,65 +58,100 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
       const debug: string[] = [];
 
       try {
+        // First check raw localStorage data to see what's available
+        const rawData = localStorage.getItem('master_data_seeker_membership_fees');
+        console.log('🗂️ Raw membership data in localStorage:', rawData);
+        
         // Load user-created membership fees using the new persistence system
         const membershipFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig);
         
         debug.push(`User membership data exists: ${!!membershipFees}`);
         debug.push(`User membership fees count: ${membershipFees?.length || 0}`);
         
+        // If no user data, try loading from raw localStorage
+        let allMembershipFees = membershipFees;
         if (!membershipFees || membershipFees.length === 0) {
-          const errorMsg = 'No user-created membership fee configurations found. Please configure membership fees in the Master Data Portal first.';
-          debug.push('ERROR: No user-created membership fees data');
+          try {
+            const rawDataParsed = rawData ? JSON.parse(rawData) : null;
+            if (rawDataParsed && Array.isArray(rawDataParsed)) {
+              allMembershipFees = rawDataParsed;
+              debug.push(`Loaded ${rawDataParsed.length} membership fees from raw storage`);
+              console.log('📊 Available membership configs from raw data:', rawDataParsed.map(f => `${f.country}/${f.organizationType}/${f.entityType}`));
+            }
+          } catch (parseError) {
+            console.error('❌ Error parsing raw membership data:', parseError);
+          }
+        }
+        
+        if (!allMembershipFees || allMembershipFees.length === 0) {
+          const errorMsg = 'No membership fee configurations found. Please configure membership fees in the Master Data Portal first.';
+          debug.push('ERROR: No membership fees data found');
           setError(errorMsg);
           setDebugInfo(debug);
           setLoading(false);
           return;
         }
 
-        debug.push(`Available user configs: ${membershipFees.map(f => `${f.entityType}/${f.organizationType}/${f.country}`).join(', ')}`);
+        debug.push(`Available configs: ${allMembershipFees.map(f => `${f.country || f.organizationType}/${f.organizationType}/${f.entityType}`).join(', ')}`);
+        console.log('🔍 Searching for exact match:', { country, organizationType, entityType });
 
-        // Find exact match for user data
-        let matchingFee = membershipFees.find(fee => 
+        // Find exact match first
+        let matchingFee = allMembershipFees.find(fee => 
+          (fee.country === country || fee.country === 'IN' && country === 'India') &&
           fee.entityType === entityType && 
-          fee.country === country &&
           fee.organizationType === organizationType
         );
 
         if (!matchingFee) {
-          debug.push('No exact match found, trying case-insensitive matching...');
+          debug.push('No exact country match, trying case-insensitive matching...');
           
           // Try case-insensitive matching
-          matchingFee = membershipFees.find(fee => 
-            fee.entityType?.toLowerCase() === entityType?.toLowerCase() && 
-            fee.country?.toLowerCase() === country?.toLowerCase() &&
+          matchingFee = allMembershipFees.find(fee => 
+            (fee.country?.toLowerCase() === country?.toLowerCase() || 
+             (fee.country === 'IN' && country?.toLowerCase() === 'india')) &&
+            fee.entityType?.toLowerCase() === entityType?.toLowerCase() &&
             fee.organizationType?.toLowerCase() === organizationType?.toLowerCase()
           );
           
           if (matchingFee) {
-            debug.push('Found case-insensitive match in user data');
+            debug.push('Found case-insensitive match');
+            console.log('✅ Found case-insensitive match:', matchingFee);
           }
         }
 
         if (!matchingFee) {
-          // Try entity type and organization type match from user data
-          const entityOrgMatches = membershipFees.filter(fee => 
+          // Try entity type and organization type match from any country
+          const entityOrgMatches = allMembershipFees.filter(fee => 
             fee.entityType?.toLowerCase() === entityType?.toLowerCase() &&
             fee.organizationType?.toLowerCase() === organizationType?.toLowerCase()
           );
           
           if (entityOrgMatches.length > 0) {
-            debug.push(`Found ${entityOrgMatches.length} user entity/org type matches for different countries`);
-            matchingFee = entityOrgMatches[0]; // Use first available user config
-            debug.push(`Using user fallback config for ${matchingFee.country}`);
+            debug.push(`Found ${entityOrgMatches.length} entity/org type matches for different countries`);
+            matchingFee = entityOrgMatches[0]; // Use first available config
+            debug.push(`Using fallback config for ${matchingFee.country}`);
+            console.log('✅ Using fallback config:', matchingFee);
           }
         }
 
         if (!matchingFee) {
-          const availableConfigs = membershipFees
-            .filter(fee => fee.isUserCreated)
-            .map(fee => `${fee.entityType} - ${fee.organizationType} (${fee.country})`)
+          // Final fallback - use any matching organization type
+          const orgTypeMatches = allMembershipFees.filter(fee => 
+            fee.organizationType?.toLowerCase() === organizationType?.toLowerCase()
+          );
+          
+          if (orgTypeMatches.length > 0) {
+            matchingFee = orgTypeMatches[0];
+            debug.push(`Using organization type fallback: ${matchingFee.organizationType}`);
+            console.log('✅ Using org type fallback:', matchingFee);
+          }
+        }
+
+        if (!matchingFee) {
+          const availableConfigs = allMembershipFees
+            .map(fee => `${fee.country || 'Unknown'} - ${fee.organizationType} - ${fee.entityType}`)
             .join(', ');
-          const errorMsg = `No user-created membership fee configuration found for ${entityType} - ${organizationType} in ${country}. Available user configurations: ${availableConfigs}`;
+          const errorMsg = `No membership fee configuration found for ${entityType} - ${organizationType} in ${country}. Available configurations: ${availableConfigs}`;
           debug.push(`ERROR: ${errorMsg}`);
           setError(errorMsg);
           setDebugInfo(debug);
@@ -124,10 +159,11 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
           return;
         }
 
-        debug.push(`Using user config: ${matchingFee.entityType}/${matchingFee.organizationType}/${matchingFee.country}`);
-        debug.push(`User config created: ${matchingFee.createdAt}`);
+        debug.push(`Using config: ${matchingFee.country}/${matchingFee.organizationType}/${matchingFee.entityType}`);
+        debug.push(`Config created: ${matchingFee.createdAt}`);
+        console.log('✅ Final membership config selected:', matchingFee);
 
-        // Convert the user membership fee data to the expected format
+        // Convert the membership fee data to the expected format
         const membershipConfig: MembershipConfig = {
           organizationType: organizationType || '',
           marketplaceFee: 0,
@@ -143,7 +179,7 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
           }]
         };
 
-        debug.push('Successfully created membership config from user data');
+        debug.push('Successfully created membership config from data');
         
         setMembershipData(membershipConfig);
         setCountryPricing(membershipConfig.internalPaasPricing[0]);
@@ -151,8 +187,8 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
 
       } catch (error) {
         debug.push(`Unexpected error: ${error}`);
-        console.error('Failed to load user membership information:', error);
-        setError('Failed to load user membership information. Please ensure configurations are created properly.');
+        console.error('Failed to load membership information:', error);
+        setError('Failed to load membership information. Please ensure configurations are created properly.');
         setDebugInfo(debug);
       } finally {
         setLoading(false);

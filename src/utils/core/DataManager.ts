@@ -34,23 +34,34 @@ export class DataManager<T> {
     this.isLoading = true;
     
     try {
-      // Check if IndexedDB is available and initialized
-      if (await indexedDBManager.isInitialized()) {
-        const stored = localStorage.getItem(this.config.key);
-        const data = stored ? JSON.parse(stored) : null;
-        
-        if (data === null || data === undefined) {
-          console.log(`📂 No data found for ${this.config.key}, using defaults`);
-          this.cache = this.config.defaultData;
-          await this.saveData(this.config.defaultData);
-        } else {
-          this.cache = data;
+      // Always prioritize localStorage data over defaults
+      const stored = localStorage.getItem(this.config.key);
+      
+      if (stored && stored !== 'null' && stored !== '[]' && stored !== 'undefined') {
+        try {
+          const parsedData = JSON.parse(stored) as T;
+          // Additional validation for arrays - make sure they're not empty
+          if (Array.isArray(parsedData) && parsedData.length === 0) {
+            console.log(`📂 Found empty array for ${this.config.key}, checking if this is intentional...`);
+            // For some data like domain groups, empty arrays might be valid user state
+            if (this.config.preserveUserData !== false) {
+              this.cache = parsedData;
+              return parsedData;
+            }
+          } else if (parsedData && (Array.isArray(parsedData) ? parsedData.length > 0 : typeof parsedData === 'object' && Object.keys(parsedData).length > 0)) {
+            console.log(`✅ Loading existing user data for ${this.config.key}`);
+            this.cache = parsedData;
+            return parsedData;
+          }
+        } catch (parseError) {
+          console.warn(`⚠️ Error parsing stored data for ${this.config.key}:`, parseError);
         }
-      } else {
-        // Fallback to localStorage if IndexedDB not available
-        const stored = localStorage.getItem(this.config.key);
-        this.cache = stored ? JSON.parse(stored) : this.config.defaultData;
       }
+      
+      // Only use defaults if no valid user data exists
+      console.log(`📦 No valid user data found for ${this.config.key}, using defaults`);
+      this.cache = this.config.defaultData;
+      await this.saveData(this.config.defaultData);
       
       return this.cache;
     } catch (error) {
@@ -71,15 +82,27 @@ export class DataManager<T> {
     // Try to load from localStorage synchronously
     try {
       const stored = localStorage.getItem(this.config.key);
-      if (stored) {
-        this.cache = JSON.parse(stored);
-        return this.cache;
+      if (stored && stored !== 'null' && stored !== '[]' && stored !== 'undefined') {
+        const parsedData = JSON.parse(stored) as T;
+        // Validate the data before using it
+        if (Array.isArray(parsedData) && parsedData.length === 0) {
+          // Empty arrays might be valid user state for some data types
+          if (this.config.preserveUserData !== false) {
+            this.cache = parsedData;
+            return parsedData;
+          }
+        } else if (parsedData && (Array.isArray(parsedData) ? parsedData.length > 0 : typeof parsedData === 'object' && Object.keys(parsedData).length > 0)) {
+          console.log(`✅ Loading existing user data (sync) for ${this.config.key}`);
+          this.cache = parsedData;
+          return parsedData;
+        }
       }
     } catch (error) {
       console.warn(`⚠️ Error loading sync data for ${this.config.key}:`, error);
     }
     
     // Return default if no cached data
+    console.log(`📦 No valid user data found (sync) for ${this.config.key}, using defaults`);
     this.cache = this.config.defaultData;
     return this.config.defaultData;
   }

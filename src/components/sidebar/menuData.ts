@@ -14,8 +14,18 @@ import {
   Award,
   FileText,
   UserCheck,
-  Key
+  Key,
+  Download
 } from 'lucide-react';
+
+export const customDataMenuItems = [
+  {
+    id: 'custom-data-manager',
+    title: 'Custom Data Manager',
+    icon: Download,
+    description: 'Extract and preserve only your custom configured data'
+  }
+];
 
 export const foundationMenuItems = [
   {
@@ -131,22 +141,16 @@ export const validationMenuItems = [
     title: 'Solution Seekers Validation',
     icon: CheckCircle,
     description: 'Validate seeker registrations'
-  },
-  {
-    id: 'solution-voting-assessment',
-    title: 'Solution Voting Assessment',
-    icon: CheckCircle,
-    description: 'Configure voting mechanisms'
-  },
-  {
-    id: 'membership-fee-validator',
-    title: 'Membership Fee Validator',
-    icon: DollarSign,
-    description: 'Validate membership fees'
   }
 ];
 
 export const administrationMenuItems = [
+  {
+    id: 'master-data-diagnostics',
+    title: 'Master Data Diagnostics',
+    icon: Database,
+    description: 'Comprehensive health check for all master data'
+  },
   {
     id: 'global-cache-manager',
     title: 'Global Cache Manager',
@@ -164,5 +168,23 @@ export const administrationMenuItems = [
     title: 'Admin Creation',
     icon: Key,
     description: 'Create administrator accounts'
+  },
+  {
+    id: 'admin-recovery',
+    title: 'Admin Data Recovery',
+    icon: Shield,
+    description: 'Recover corrupted administrator data'
+  },
+  {
+    id: 'complete-data-reset',
+    title: 'Complete Data Reset',
+    icon: Settings,
+    description: 'Reset all organization data'
+  },
+  {
+    id: 'localstorage-debug',
+    title: 'localStorage Debug Panel',
+    icon: Database,
+    description: 'Analyze and verify localStorage data'
   }
 ];

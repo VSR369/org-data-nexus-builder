@@ -1,6 +1,7 @@
 
 import { LegacyDataManager } from '@/utils/core/DataManager';
 import { IndustrySegmentData } from '@/types/industrySegments';
+import { IndustrySegmentService } from '@/utils/masterData/industrySegmentService';
 
 const defaultIndustrySegmentData: IndustrySegmentData = {
   industrySegments: [
@@ -24,6 +25,13 @@ const defaultIndustrySegmentData: IndustrySegmentData = {
 
 class IndustrySegmentDataManager extends LegacyDataManager<IndustrySegmentData> {
   loadData(): IndustrySegmentData {
+    // CHECK FOR CUSTOM-ONLY MODE FIRST
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    if (isCustomMode) {
+      console.log('🎯 Custom-only mode detected, using IndustrySegmentService...');
+      return IndustrySegmentService.getIndustrySegments();
+    }
+    
     const rawData = super.loadData();
     
     // If we get an array (legacy data), convert to new format
@@ -42,6 +50,19 @@ class IndustrySegmentDataManager extends LegacyDataManager<IndustrySegmentData> 
     }
     
     return rawData;
+  }
+
+  saveData(data: IndustrySegmentData): void {
+    // CHECK FOR CUSTOM-ONLY MODE FIRST
+    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
+    if (isCustomMode) {
+      console.log('🎯 Custom-only mode detected, using IndustrySegmentService for save...');
+      IndustrySegmentService.saveIndustrySegments(data);
+      return;
+    }
+    
+    // Use parent class method for mixed mode
+    super.saveData(data);
   }
 }
 

@@ -4,27 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X, MessageSquare, ExternalLink } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { LegacyDataManager } from '@/utils/core/DataManager';
-
-interface CommunicationChannel {
-  id: string;
-  name: string;
-  link: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const defaultChannels: CommunicationChannel[] = [];
-
-const channelsDataManager = new LegacyDataManager<CommunicationChannel[]>({
-  key: 'master_data_communication_channels',
-  defaultData: defaultChannels,
-  version: 1
-});
+import { CommunicationTypeService, CommunicationChannel } from '@/utils/masterData/communicationTypeService';
 
 const CommunicationTypeConfig = () => {
   const { toast } = useToast();
@@ -33,18 +15,24 @@ const CommunicationTypeConfig = () => {
   const [editingLink, setEditingLink] = useState('');
   const [newChannel, setNewChannel] = useState({ name: '', link: '' });
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // Load data on component mount
   useEffect(() => {
-    const loadedChannels = channelsDataManager.loadData();
+    const loadedChannels = CommunicationTypeService.getCommunicationChannels();
+    console.log('🔍 CommunicationTypeConfig - Loaded channels from service:', loadedChannels);
     setChannels(loadedChannels);
+    setIsInitialized(true);
   }, []);
 
   // Save data whenever channels change
   useEffect(() => {
-    if (channels.length >= 0) {
-      channelsDataManager.saveData(channels);
+    if (!isInitialized) {
+      return;
     }
-  }, [channels]);
+    console.log('💾 CommunicationTypeConfig - Saving channels to service:', channels.length);
+    CommunicationTypeService.saveCommunicationChannels(channels);
+  }, [channels, isInitialized]);
 
   const addChannel = () => {
     if (newChannel.name && newChannel.link) {
@@ -95,16 +83,6 @@ const CommunicationTypeConfig = () => {
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingLink('');
-  };
-
-  const toggleActive = (id: string) => {
-    setChannels(prev => prev.map(channel => 
-      channel.id === id ? { ...channel, isActive: !channel.isActive, updatedAt: new Date().toISOString() } : channel
-    ));
-    toast({
-      title: "Success",
-      description: "Channel status updated successfully",
-    });
   };
 
   const deleteChannel = (id: string) => {
@@ -210,9 +188,6 @@ const CommunicationTypeConfig = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{channel.name}</span>
-                            <Badge variant={channel.isActive ? "default" : "secondary"}>
-                              {channel.isActive ? "Active" : "Inactive"}
-                            </Badge>
                           </div>
                           {channel.link ? (
                             <div className="flex items-center gap-2 mt-1">
@@ -231,33 +206,26 @@ const CommunicationTypeConfig = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => toggleActive(channel.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {channel.isActive ? "Deactivate" : "Activate"}
-                        </Button>
-                        <Button
-                          onClick={() => handleEdit(channel)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="w-3 h-3" />
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => deleteChannel(channel.id)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </Button>
-                      </div>
+                       <div className="flex gap-2">
+                         <Button
+                           onClick={() => handleEdit(channel)}
+                           variant="outline"
+                           size="sm"
+                           className="flex items-center gap-1"
+                         >
+                           <Edit className="w-3 h-3" />
+                           Edit
+                         </Button>
+                         <Button
+                           onClick={() => deleteChannel(channel.id)}
+                           variant="destructive"
+                           size="sm"
+                           className="flex items-center gap-1"
+                         >
+                           <Trash2 className="w-3 h-3" />
+                           Delete
+                         </Button>
+                       </div>
                     </>
                   )}
                 </div>

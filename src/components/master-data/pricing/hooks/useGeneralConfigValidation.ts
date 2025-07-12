@@ -50,21 +50,38 @@ export const useGeneralConfigValidation = () => {
       return false;
     }
 
-    // Validate at least one fee is provided
-    const hasQuarterlyFee = config.quarterlyFee !== undefined && config.quarterlyFee > 0;
-    const hasHalfYearlyFee = config.halfYearlyFee !== undefined && config.halfYearlyFee > 0;
-    const hasAnnualFee = config.annualFee !== undefined && config.annualFee > 0;
+    // Check if this is a marketplace-based model
+    const isMarketplaceBasedModel = config.engagementModel === 'Market Place' || 
+                                  config.engagementModel === 'Market Place & Aggregator' || 
+                                  config.engagementModel === 'Aggregator';
 
-    if (!hasQuarterlyFee && !hasHalfYearlyFee && !hasAnnualFee) {
-      toast({
-        title: "Validation Error",
-        description: "Please provide at least one engagement model fee (quarterly, half yearly, or annual).",
-        variant: "destructive",
-      });
-      return false;
+    if (isMarketplaceBasedModel) {
+      // For marketplace models, validate platform fee percentage
+      if (!config.platformFeePercentage || config.platformFeePercentage <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide the platform fee percentage.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } else {
+      // For PaaS models, validate at least one fee is provided
+      const hasQuarterlyFee = config.quarterlyFee !== undefined && config.quarterlyFee > 0;
+      const hasHalfYearlyFee = config.halfYearlyFee !== undefined && config.halfYearlyFee > 0;
+      const hasAnnualFee = config.annualFee !== undefined && config.annualFee > 0;
+
+      if (!hasQuarterlyFee && !hasHalfYearlyFee && !hasAnnualFee) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide at least one engagement model fee (quarterly, half yearly, or annual).",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
-    if (config.membershipStatus === 'active' && (config.discountPercentage === undefined || config.discountPercentage < 0)) {
+    if (config.membershipStatus === 'member' && (config.discountPercentage === undefined || config.discountPercentage < 0)) {
       toast({
         title: "Validation Error",
         description: "Please provide a valid discount percentage for active members.",

@@ -4,66 +4,102 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSeekingOrgAdminAuth } from '@/hooks/useSeekingOrgAdminAuth';
 
 const SeekingOrgAdminLoginForm = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading } = useSeekingOrgAdminAuth();
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const { login, isLoading, getRememberMeData } = useSeekingOrgAdminAuth();
 
-  // Clear form data on component mount to ensure fresh state
+  // Load remember me data on component mount
   useEffect(() => {
-    setEmail('');
-    setPassword('');
-    setShowPassword(false);
-    
-    // Clear any browser autofill data
-    const emailInput = document.getElementById('org-email') as HTMLInputElement;
-    const passwordInput = document.getElementById('org-password') as HTMLInputElement;
-    
-    if (emailInput) {
-      emailInput.value = '';
-      emailInput.autocomplete = 'off';
+    const rememberData = getRememberMeData();
+    if (rememberData) {
+      setIdentifier(rememberData.email || rememberData.userId || '');
+      setRememberMe(true);
     }
-    if (passwordInput) {
-      passwordInput.value = '';
-      passwordInput.autocomplete = 'off';
-    }
-  }, []);
+    
+    // Clear any error when component mounts
+    setError('');
+  }, [getRememberMeData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
+    setError('');
     
-    // Clear form after submission attempt
-    if (success) {
-      setEmail('');
-      setPassword('');
-      setShowPassword(false);
+    console.log('🔄 FORM SUBMIT TRIGGERED with identifier:', identifier);
+    console.log('🔄 Password length:', password.length);
+    console.log('🔄 Remember me checked:', rememberMe);
+    
+    // Check if localStorage has any administrators
+    const adminData = localStorage.getItem('administrators');
+    console.log('🔍 Raw administrator data in localStorage:', adminData);
+    
+    if (!identifier.trim() || !password.trim()) {
+      console.log('❌ Form validation failed - missing fields');
+      setError('Please enter both email/user ID and password.');
+      return;
+    }
+    
+    console.log('✅ Form validation passed, calling login function...');
+    try {
+      const result = await login(identifier.trim(), password, rememberMe);
+      console.log('📋 Login result received:', result);
+      
+      if (!result.success && result.error) {
+        console.log('❌ Login failed, setting error message:', result.error);
+        setError(result.error);
+      } else if (result.success) {
+        console.log('✅ Login successful, clearing form...');
+        setIdentifier('');
+        setPassword('');
+        setShowPassword(false);
+        setError('');
+      } else {
+        console.log('⚠️ Unexpected result format:', result);
+        setError('Login failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('💥 Login function threw an error:', error);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 
   return (
     <CardContent className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="org-email" className="text-sm font-medium text-gray-700">
-            Organization Email
+          <Label htmlFor="org-identifier" className="text-sm font-medium text-gray-700">
+            Email or User ID
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="org-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="org-identifier"
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="pl-10"
-              placeholder="Enter organization email"
-              autoComplete="off"
+              placeholder="Enter your email or user ID"
+              autoComplete="username"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck="false"
               required
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -81,8 +117,9 @@ const SeekingOrgAdminLoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10"
               placeholder="Enter your password"
-              autoComplete="off"
+              autoComplete="current-password"
               required
+              disabled={isLoading}
             />
             <button
               type="button"
@@ -100,25 +137,34 @@ const SeekingOrgAdminLoginForm = () => {
               id="remember-org"
               name="remember-org"
               type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+              disabled={isLoading}
             />
-            <Label htmlFor="remember-org" className="ml-2 block text-sm text-gray-400">
-              Remember me (disabled)
+            <Label htmlFor="remember-org" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+              Remember me for 30 days
             </Label>
           </div>
-          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-            Forgot password?
-          </Link>
+          <div className="text-sm">
+            <span className="text-gray-500">Need help?</span>
+          </div>
         </div>
 
         <Button
           type="submit"
-          className="w-full bg-green-600 hover:bg-green-700"
+          className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
           size="lg"
-          disabled={isLoading}
+          disabled={isLoading || !identifier.trim() || !password.trim()}
         >
-          {isLoading ? 'Signing in...' : 'Sign In to Organization'}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            'Sign In to Administrator Portal'
+          )}
         </Button>
       </form>
 

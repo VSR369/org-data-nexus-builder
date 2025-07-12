@@ -98,11 +98,11 @@ const PaasPricingForm: React.FC<PaasPricingFormProps> = ({
           <Label>Membership Status *</Label>
           <Select
             value={newCountryPricing.membershipStatus}
-            onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+            onValueChange={(value: 'member' | 'not-a-member') => {
               setNewCountryPricing(prev => ({ 
                 ...prev, 
                 membershipStatus: value,
-                discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+                discountPercentage: value === 'member' ? prev.discountPercentage : undefined
               }));
             }}
           >
@@ -110,15 +110,14 @@ const PaasPricingForm: React.FC<PaasPricingFormProps> = ({
               <SelectValue placeholder="Select membership status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="member">Member</SelectItem>
               <SelectItem value="not-a-member">Not a Member</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {newCountryPricing.membershipStatus === 'active' && (
+      {newCountryPricing.membershipStatus === 'member' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div>
             <Label>Discount (%) *</Label>

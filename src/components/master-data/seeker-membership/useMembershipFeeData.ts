@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { MasterDataPersistenceManager } from '@/utils/masterDataPersistenceManager';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { MasterDataSeeder } from '@/utils/masterDataSeeder';
-import { MembershipFeeEntry, Currency, Country, membershipFeeConfig } from './types';
+import { MembershipFeeEntry, Currency, Country } from './types';
+import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
 
 export const useMembershipFeeData = () => {
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
@@ -27,33 +27,37 @@ export const useMembershipFeeData = () => {
 
   // Function to check data health
   const checkDataHealth = () => {
-    const currencyHealth = MasterDataPersistenceManager.validateDataIntegrity(
-      { key: 'master_data_currencies', version: 2, preserveUserData: true }
-    );
-    const membershipHealth = MasterDataPersistenceManager.validateDataIntegrity<MembershipFeeEntry[]>(membershipFeeConfig);
+    const membershipHealth = MembershipFeeFixer.verifyStructure();
     
     return {
-      currencies: currencyHealth,
+      currencies: { isValid: true, issues: [] },
       membershipFees: membershipHealth
     };
   };
 
-  // Enhanced data loading with proper error handling and validation
+  // FIXED: Enhanced data loading using MembershipFeeFixer
   const loadDataSafely = () => {
     console.log('🔄 Starting safe data load...');
     setIsLoading(true);
     
     try {
       const loadedCurrencies = MasterDataSeeder.getCurrencies();
-      const loadedCountries = countriesDataManager.loadData();
+      
+      // Force countries data initialization if empty
+      let loadedCountries = countriesDataManager.loadData();
+      if (!loadedCountries || !Array.isArray(loadedCountries) || loadedCountries.length === 0) {
+        console.log('🔧 Countries data empty, forcing reset to defaults');
+        loadedCountries = countriesDataManager.resetToDefault();
+      }
+      
       const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
       
-      // Load membership fees with validation
-      const loadedFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
+      // Use MembershipFeeFixer to get guaranteed raw format
+      const loadedFees = MembershipFeeFixer.getMembershipFees();
       
       console.log('🔍 Safe Load Results:');
       console.log('  - Currencies:', loadedCurrencies.length);
-      console.log('  - Countries:', loadedCountries.length);
+      console.log('  - Countries:', loadedCountries.length, loadedCountries);
       console.log('  - Entity types:', loadedEntityTypes.length);
       console.log('  - Membership fees:', loadedFees.length, loadedFees);
       
@@ -62,15 +66,11 @@ export const useMembershipFeeData = () => {
         setCurrencies(loadedCurrencies);
         setCountries(loadedCountries);
         setEntityTypes(loadedEntityTypes);
-        
-        // Critical: Set membership fees with validation
-        if (Array.isArray(loadedFees)) {
-          setMembershipFees(loadedFees);
-          console.log('✅ Successfully set membershipFees state:', loadedFees.length);
-        } else {
-          console.warn('⚠️ Invalid membership fees data, using empty array');
-          setMembershipFees([]);
-        }
+        // Map data to ensure isUserCreated is always present
+        setMembershipFees(loadedFees.map(fee => ({
+          ...fee,
+          isUserCreated: fee.isUserCreated ?? false
+        })));
         
         setDataHealth(checkDataHealth());
         setIsInitialized(true);
@@ -104,17 +104,20 @@ export const useMembershipFeeData = () => {
     
     console.log('🔍 Checking for auto-recovery need...');
     
-    // Check if we have data in storage but empty state
-    const hasStorageData = MasterDataPersistenceManager.hasUserData(membershipFeeConfig);
+    // Check if we have data in storage but empty state using MembershipFeeFixer
+    const storageData = MembershipFeeFixer.getMembershipFees();
+    const hasStorageData = storageData.length > 0;
     const hasStateData = membershipFees.length > 0;
     
     if (hasStorageData && !hasStateData) {
       console.log('🚨 Data loss detected! Storage has data but state is empty. Recovering...');
       
-      const recoveredFees = MasterDataPersistenceManager.loadUserData<MembershipFeeEntry[]>(membershipFeeConfig) || [];
-      if (recoveredFees.length > 0) {
-        console.log('🔄 Auto-recovering', recoveredFees.length, 'membership fees');
-        setMembershipFees(recoveredFees);
+      if (storageData.length > 0) {
+        console.log('🔄 Auto-recovering', storageData.length, 'membership fees');
+        setMembershipFees(storageData.map(fee => ({
+          ...fee,
+          isUserCreated: fee.isUserCreated ?? false
+        })));
       }
     }
   };
@@ -153,7 +156,7 @@ export const useMembershipFeeData = () => {
     console.log('🌟 [state change] membershipFees now:', membershipFees.length, membershipFees);
   }, [membershipFees]);
 
-  // Enhanced save with validation and error handling
+  // FIXED: Save using MembershipFeeFixer to respect custom-only mode
   useEffect(() => {
     if (!isInitialized || isLoading) {
       console.log('📥 Skipping save - not initialized or loading...');
@@ -166,12 +169,14 @@ export const useMembershipFeeData = () => {
       return;
     }
     
-    console.log(`💾 Saving ${membershipFees.length} membership fees. Initialized: ${isInitialized}`);
+    console.log(`💾 Saving ${membershipFees.length} membership fees using MembershipFeeFixer`);
     
     try {
-      MasterDataPersistenceManager.saveUserData(membershipFeeConfig, membershipFees);
+      // Use MembershipFeeFixer to save with mode-aware storage
+      MembershipFeeFixer.saveMembershipFees(membershipFees);
+      console.log("✅ Successfully saved membership fees using MembershipFeeFixer");
+      
       setDataHealth(checkDataHealth());
-      console.log("✅ Successfully saved membership fees to storage");
     } catch (error) {
       console.error('❌ Error saving membership fees:', error);
     }

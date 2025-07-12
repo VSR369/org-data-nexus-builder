@@ -1,14 +1,11 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Building } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useUnifiedRegistration } from '@/hooks/useUnifiedRegistration';
-import OrganizationInfoSection from './OrganizationInfoSection';
-import DocumentUploadSection from './DocumentUploadSection';
-import ContactInfoSection from './ContactInfoSection';
+import { Progress } from "@/components/ui/progress";
+import { useSeekerRegistration } from '@/hooks/useSeekerRegistration';
+import RobustOrganizationForm from './RobustOrganizationForm';
 import ContactPersonSection from './ContactPersonSection';
+import ContactInfoSection from './ContactInfoSection';
+import DocumentUploadSection from './DocumentUploadSection';
 
 const SeekerRegistrationForm = () => {
   const {
@@ -23,75 +20,75 @@ const SeekerRegistrationForm = () => {
     handleFileUpload,
     handleFileRemove,
     handleSubmit
-  } = useUnifiedRegistration();
+  } = useSeekerRegistration();
+
+  const progress = Object.keys(formData).filter(key => {
+    const value = formData[key as keyof typeof formData];
+    return value && value !== '';
+  }).length / Object.keys(formData).length * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        <Card className="shadow-xl border-0">
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <Link to="/signup">
-                <Button variant="outline" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <div className="flex items-center gap-3">
-                <Building className="h-8 w-8 text-blue-600" />
-                <div>
-                  <CardTitle className="text-2xl font-bold">Solution Seeking Organization Details</CardTitle>
-                  <p className="text-muted-foreground">Register your organization to start seeking solutions</p>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <OrganizationInfoSection
-                formData={formData}
-                industrySegments={industrySegments}
-                organizationTypes={organizationTypes}
-                entityTypes={entityTypes}
-                errors={errors}
-                onInputChange={handleInputChange}
-              />
-
-              <DocumentUploadSection
-                formData={formData}
-                requiresRegistrationDocuments={requiresRegistrationDocuments}
-                onFileUpload={handleFileUpload}
-                onFileRemove={handleFileRemove}
-              />
-
-              <ContactInfoSection
-                formData={formData}
-                countries={countries}
-                errors={errors}
-                onInputChange={handleInputChange}
-              />
-
-              <ContactPersonSection
-                formData={formData}
-                countries={countries}
-                errors={errors}
-                onInputChange={handleInputChange}
-              />
-
-              <div className="flex gap-4 pt-6">
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  Register Organization
-                </Button>
-                <Link to="/signup">
-                  <Button type="button" variant="outline" className="px-8">
-                    Back
-                  </Button>
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+    <div className="max-w-2xl mx-auto p-6 bg-white">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-gray-800 mb-2">Solution Seeking Organization Details</h1>
+        <p className="text-sm text-gray-600">Register your organization to access our platform</p>
+        
+        {/* Progress Bar */}
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-gray-600 mb-1">
+            <span>Progress</span>
+            <span>{Math.round(progress)}% Complete</span>
+          </div>
+          <Progress value={progress} className="h-1" />
+        </div>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Organization Information */}
+        <RobustOrganizationForm
+          formData={formData}
+          errors={errors}
+          onInputChange={handleInputChange}
+        />
+
+        {/* Company Documents */}
+        <DocumentUploadSection
+          formData={formData}
+          requiresRegistrationDocuments={requiresRegistrationDocuments}
+          onFileUpload={handleFileUpload}
+          onFileRemove={handleFileRemove}
+        />
+
+        {/* Contact & Location Information */}
+        <ContactInfoSection
+          formData={formData}
+          countries={countries}
+          errors={errors}
+          onInputChange={handleInputChange}
+        />
+
+        {/* Contact Person Details */}
+        <ContactPersonSection
+          formData={formData}
+          countries={countries}
+          errors={errors}
+          onInputChange={handleInputChange}
+        />
+
+        {/* Submit Buttons */}
+        <div className="flex justify-between pt-6">
+          <Button type="button" variant="outline" onClick={() => window.history.back()}>
+            Back
+          </Button>
+          <Button 
+            type="submit" 
+            className="px-8 bg-blue-600 hover:bg-blue-700"
+          >
+            Register Organization
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

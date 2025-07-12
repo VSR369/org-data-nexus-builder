@@ -24,7 +24,7 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
   const { toast } = useToast();
   const { validateConfig, checkForDuplicates } = useGeneralConfigValidation();
 
-  const handleSaveConfig = () => {
+  const handleSaveConfig = async () => {
     // Validate configuration
     if (!validateConfig(currentConfig)) {
       return;
@@ -35,9 +35,15 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       return;
     }
 
-    // Create configuration to save
-    const configToSave = {
-      id: currentConfig.id || Date.now().toString(),
+    // Generate unique base ID using timestamp + random suffix to avoid duplicates
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = new Date().toISOString().split('T')[0];
+    const configsToSave: PricingConfig[] = [];
+
+    // Always create the Not-a-Member base configuration
+    const notMemberConfig = {
+      id: `${uniqueId}-base`,
+      configId: `${uniqueId}-base`,
       country: currentConfig.country!,
       currency: currentConfig.currency || '',
       organizationType: currentConfig.organizationType!,
@@ -46,45 +52,110 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       quarterlyFee: currentConfig.quarterlyFee,
       halfYearlyFee: currentConfig.halfYearlyFee,
       annualFee: currentConfig.annualFee,
-      membershipStatus: currentConfig.membershipStatus!,
-      discountPercentage: currentConfig.membershipStatus === 'active' ? currentConfig.discountPercentage! : undefined,
+      platformFeePercentage: currentConfig.platformFeePercentage,
+      membershipStatus: 'not-a-member' as const,
+      discountPercentage: undefined,
       internalPaasPricing: currentConfig.internalPaasPricing || [],
       version: (currentConfig.version || 0) + 1,
-      createdAt: currentConfig.createdAt || new Date().toISOString().split('T')[0],
+      createdAt: timestamp,
     } as PricingConfig;
 
-    console.log('✅ Configuration to save:', configToSave);
+    configsToSave.push(notMemberConfig);
 
-    // Update configs state
-    if (currentConfig.id) {
-      // Update existing
-      setConfigs(prev => prev.map(config => 
-        config.id === currentConfig.id ? configToSave : config
-      ));
-    } else {
-      // Add new
-      setConfigs(prev => [...prev, configToSave]);
+    // If user selected member status with discount, create member configuration
+    if (currentConfig.membershipStatus === 'member' && currentConfig.discountPercentage) {
+      const discountMultiplier = (1 - currentConfig.discountPercentage / 100);
+      
+      const memberConfig = {
+        ...notMemberConfig,
+        id: `${uniqueId}-member`,
+        configId: `${uniqueId}-member`,
+        membershipStatus: 'member' as const,
+        discountPercentage: currentConfig.discountPercentage,
+        // Apply discount to all relevant fees
+        quarterlyFee: currentConfig.quarterlyFee ? Math.round(currentConfig.quarterlyFee * discountMultiplier * 100) / 100 : undefined,
+        halfYearlyFee: currentConfig.halfYearlyFee ? Math.round(currentConfig.halfYearlyFee * discountMultiplier * 100) / 100 : undefined,
+        annualFee: currentConfig.annualFee ? Math.round(currentConfig.annualFee * discountMultiplier * 100) / 100 : undefined,
+        platformFeePercentage: currentConfig.platformFeePercentage ? Math.round(currentConfig.platformFeePercentage * discountMultiplier * 10) / 10 : undefined,
+      } as PricingConfig;
+
+      configsToSave.push(memberConfig);
     }
 
-    toast({
-      title: "Success",
-      description: "General configuration saved successfully.",
-    });
+    console.log('✅ Configurations to save:', configsToSave);
 
-    // Clear form after saving
-    setCurrentConfig({});
+    try {
+      // Save to Supabase first to check for conflicts
+      const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+      
+      console.log('🔄 Attempting to save to database...');
+      
+      // Get current configs from database to avoid conflicts
+      const currentDbConfigs = [...configs];
+      const allConfigs = [...currentDbConfigs, ...configsToSave];
+      
+      await savePricingConfigsAsync(allConfigs);
+      console.log('✅ Successfully saved to database');
+      
+      // Update local state only after successful database save
+      setConfigs(allConfigs);
+
+      toast({
+        title: "Success",
+        description: `${configsToSave.length} configuration(s) saved to database successfully.`,
+      });
+
+      console.log('✅ Configuration saved to Supabase successfully');
+      
+      // Clear form after successful save
+      setCurrentConfig({});
+      
+    } catch (error: any) {
+      console.error('❌ Database save failed:', error);
+      
+      // Check if it's a specific Supabase error
+      const errorMessage = error?.message || error?.error?.message || 'Unknown error';
+      console.error('❌ Error details:', errorMessage);
+      
+      toast({
+        title: "Database Error",
+        description: `Failed to save to database: ${errorMessage}. Please try again.`,
+        variant: "destructive",
+      });
+      
+      // Don't clear form on error so user can retry
+    }
   };
 
   const handleEdit = (config: PricingConfig) => {
     setCurrentConfig(config);
   };
 
-  const handleDelete = (configId: string) => {
-    setConfigs(prev => prev.filter(config => config.id !== configId));
-    toast({
-      title: "Success",
-      description: "Configuration deleted successfully.",
-    });
+  const handleDelete = async (configId: string) => {
+    try {
+      // Delete from database permanently
+      const { deletePricingConfigFromDatabase } = await import('@/utils/pricing/pricingCore');
+      await deletePricingConfigFromDatabase(configId);
+      
+      // Update local state
+      const updatedConfigs = configs.filter(config => config.id !== configId);
+      setConfigs(updatedConfigs);
+      
+      toast({
+        title: "Success",
+        description: "Configuration permanently deleted from database.",
+      });
+      
+      console.log('✅ Configuration permanently deleted');
+    } catch (error) {
+      console.error('❌ Failed to permanently delete from database:', error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to delete configuration permanently. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClear = () => {

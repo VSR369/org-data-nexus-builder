@@ -5,7 +5,6 @@ import { RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { EngagementModel } from '@/components/master-data/engagement-models/types';
 import { PricingConfig } from '@/types/pricing';
-import { PricingDisplaySection } from './PricingDisplaySection';
 import { ModelInfoSection } from './ModelInfoSection';
 import { ModelSelectionIndicator } from './ModelSelectionIndicator';
 
@@ -32,10 +31,20 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
   currentSelectedModel
 }) => {
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      console.warn('⚠️ formatCurrency: Invalid amount:', amount);
+      return 'Contact for pricing';
+    }
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency || 'USD',
+      }).format(amount);
+    } catch (error) {
+      console.error('❌ formatCurrency error:', error);
+      return `${currency || 'USD'} ${amount}`;
+    }
   };
 
   const isFeeBasedModel = (modelName: string) => {
@@ -45,7 +54,15 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
 
   const getEngagementModelFeePercentage = (pricing: PricingConfig | null) => {
     if (!pricing) return 0;
-    return pricing.engagementModelFee || pricing.quarterlyFee || 0;
+    
+    const fee = pricing.engagementModelFee || pricing.quarterlyFee || 0;
+    
+    if (typeof fee !== 'number' || isNaN(fee)) {
+      console.warn('⚠️ getEngagementModelFeePercentage: Invalid fee value:', fee, 'for model:', pricing.engagementModel);
+      return 0;
+    }
+    
+    return fee;
   };
 
   const formatPricing = (amount: number, currency: string = 'USD', modelName: string, pricing: PricingConfig | null = null) => {
@@ -57,43 +74,129 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
   };
 
   const getCurrentPrice = () => {
-    if (!item.pricing || !selectedPricingPlan) return 0;
+    if (!item.pricing || !selectedPricingPlan) {
+      console.warn('⚠️ getCurrentPrice: Missing pricing data or plan:', { 
+        hasPricing: !!item.pricing, 
+        selectedPlan: selectedPricingPlan,
+        modelName: item.model.name 
+      });
+      return 0;
+    }
 
-    let basePrice = 0;
+    let price = 0;
     switch (selectedPricingPlan) {
       case 'quarterly':
-        basePrice = item.pricing.quarterlyFee || 0;
+        price = item.pricing.quarterlyFee || 0;
         break;
       case 'halfyearly':
-        basePrice = item.pricing.halfYearlyFee || 0;
+        price = item.pricing.halfYearlyFee || 0;
         break;
       case 'annual':
-        basePrice = item.pricing.annualFee || 0;
+        price = item.pricing.annualFee || 0;
         break;
       default:
+        console.warn('⚠️ getCurrentPrice: Unknown pricing plan:', selectedPricingPlan);
         return 0;
     }
 
-    if (membershipStatus === 'active' && item.pricing.discountPercentage) {
-      return basePrice * (1 - item.pricing.discountPercentage / 100);
+    if (typeof price !== 'number' || isNaN(price)) {
+      console.warn('⚠️ getCurrentPrice: Invalid price:', price, 'for plan:', selectedPricingPlan);
+      return 0;
     }
 
-    return basePrice;
+    console.log('💰 getCurrentPrice calculation:', {
+      modelName: item.model.name,
+      selectedPlan: selectedPricingPlan,
+      price,
+      membershipStatus: item.pricing.membershipStatus,
+      note: 'Database already contains correct member/non-member pricing'
+    });
+
+    return price;
   };
 
   const getOriginalPrice = () => {
-    if (!item.pricing || !selectedPricingPlan) return 0;
+    if (!item.pricing || !selectedPricingPlan) {
+      console.warn('⚠️ getOriginalPrice: Missing pricing data or plan:', { 
+        hasPricing: !!item.pricing, 
+        selectedPlan: selectedPricingPlan,
+        modelName: item.model.name 
+      });
+      return 0;
+    }
 
+    let originalPrice = 0;
     switch (selectedPricingPlan) {
       case 'quarterly':
-        return item.pricing.quarterlyFee || 0;
+        originalPrice = item.pricing.quarterlyFee || 0;
+        break;
       case 'halfyearly':
-        return item.pricing.halfYearlyFee || 0;
+        originalPrice = item.pricing.halfYearlyFee || 0;
+        break;
       case 'annual':
-        return item.pricing.annualFee || 0;
+        originalPrice = item.pricing.annualFee || 0;
+        break;
       default:
+        console.warn('⚠️ getOriginalPrice: Unknown pricing plan:', selectedPricingPlan);
         return 0;
     }
+
+    if (typeof originalPrice !== 'number' || isNaN(originalPrice)) {
+      console.warn('⚠️ getOriginalPrice: Invalid original price:', originalPrice, 'for plan:', selectedPricingPlan);
+      return 0;
+    }
+
+    return originalPrice;
+  };
+
+  // Simple inline pricing display component
+  const PricingDisplay = () => {
+    if (!item.pricing || !selectedPricingPlan) {
+      return (
+        <div className="text-right min-w-[200px]">
+          <div className="text-sm text-gray-500">No pricing available</div>
+        </div>
+      );
+    }
+
+    const currentPrice = getCurrentPrice();
+    const originalPrice = getOriginalPrice();
+
+    if (isFeeBasedModel(item.model.name)) {
+      return (
+        <div className="text-right min-w-[200px]">
+          <div className="text-lg font-bold text-primary">
+            {formatPricing(0, item.pricing.currency || 'USD', item.model.name, item.pricing)}
+          </div>
+        </div>
+      );
+    }
+
+    const hasDiscount = membershipStatus === 'active' && 
+                       item.pricing.discountPercentage && 
+                       currentPrice < originalPrice;
+
+    return (
+      <div className="text-right min-w-[200px]">
+        {hasDiscount ? (
+          <div>
+            <div className="text-lg font-bold text-green-600">
+              {formatPricing(currentPrice, item.pricing.currency, item.model.name, item.pricing)}
+            </div>
+            <div className="text-sm text-gray-500 line-through">
+              {formatPricing(originalPrice, item.pricing.currency, item.model.name, item.pricing)}
+            </div>
+            <div className="text-xs text-green-600">
+              {item.pricing.discountPercentage}% member discount
+            </div>
+          </div>
+        ) : (
+          <div className="text-lg font-bold text-gray-900">
+            {formatPricing(currentPrice, item.pricing.currency || 'USD', item.model.name, item.pricing)}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const isSelected = selectedModelId === item.model.id;
@@ -114,18 +217,7 @@ export const EngagementModelCard: React.FC<EngagementModelCardProps> = ({
                     currentSelectedModel={currentSelectedModel}
                   />
                   
-                  <div className="text-right min-w-[200px]">
-                    <PricingDisplaySection
-                      pricing={item.pricing}
-                      selectedPricingPlan={selectedPricingPlan}
-                      modelName={item.model.name}
-                      membershipStatus={membershipStatus}
-                      getCurrentPrice={getCurrentPrice}
-                      getOriginalPrice={getOriginalPrice}
-                      formatPricing={(amount, currency, modelName) => formatPricing(amount, currency, modelName, item.pricing)}
-                      isFeeBasedModel={isFeeBasedModel}
-                    />
-                  </div>
+                  <PricingDisplay />
                 </div>
                 
                 <ModelSelectionIndicator isSelected={isSelected} />

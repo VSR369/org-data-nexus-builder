@@ -28,7 +28,6 @@ export interface FormData {
   email: string;
   countryCode: string;
   phoneNumber: string;
-  userId: string;
   password: string;
   confirmPassword: string;
 }

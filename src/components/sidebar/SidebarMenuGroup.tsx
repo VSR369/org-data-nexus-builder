@@ -38,9 +38,15 @@ export const SidebarMenuGroup: React.FC<SidebarMenuGroupProps> = ({
           {items.map((item) => (
             <SidebarMenuItem key={item.id}>
               <SidebarMenuButton 
-                onClick={() => onItemClick(item.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🖱️ SidebarMenuButton clicked:', item.id);
+                  onItemClick(item.id);
+                }}
                 isActive={activeSection === item.id && isOnMasterDataPortal}
-                className="w-full justify-start cursor-pointer"
+                className="w-full justify-start cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                style={{ pointerEvents: 'auto' }}
               >
                 <item.icon className="w-4 h-4" />
                 <span className="font-medium">{item.title}</span>

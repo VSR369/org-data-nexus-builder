@@ -20,7 +20,7 @@ const DiscountSection: React.FC<DiscountSectionProps> = ({
     }));
   };
 
-  if (currentConfig.membershipStatus !== 'active') {
+  if (currentConfig.membershipStatus !== 'member') {
     return null;
   }
 

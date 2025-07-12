@@ -48,11 +48,10 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
             {config.entityType && (
               <Badge variant="outline">{config.entityType}</Badge>
             )}
-            <Badge variant={config.membershipStatus === 'active' ? 'default' : 'secondary'}>
-              {config.membershipStatus === 'active' ? 'Active Member' : 
-               config.membershipStatus === 'inactive' ? 'Inactive Member' : 'Not a Member'}
+            <Badge variant={config.membershipStatus === 'member' ? 'default' : 'secondary'}>
+              {config.membershipStatus === 'member' ? 'Member' : 'Not a Member'}
             </Badge>
-            {config.membershipStatus === 'active' && config.discountPercentage && (
+            {config.membershipStatus === 'member' && config.discountPercentage && (
               <Badge variant="outline">{config.discountPercentage}% Discount</Badge>
             )}
           </div>
@@ -114,7 +113,7 @@ const ConfigurationCard: React.FC<ConfigurationCardProps> = ({
       </div>
 
       {/* Active Member Pricing (if discount exists) */}
-      {config.membershipStatus === 'active' && discount > 0 && (
+      {config.membershipStatus === 'member' && discount > 0 && (
         <div>
           <h4 className="text-sm font-medium mb-2 text-green-600">Active Member Pricing (After {discount}% Discount)</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -12,7 +12,6 @@ export { AsyncDataManager } from './core/AsyncDataManager';
 export type { AsyncDataManagerConfig } from './core/AsyncDataManager';
 export { IndexedDBService } from './storage/IndexedDBService';
 export { indexedDBManager } from './storage/IndexedDBManager';
-export { appInitializationService } from './storage/AppInitializationService';
 
 // Initialize the universal persistence system
 console.log('🚀 Universal Data Persistence System Initialized (with IndexedDB support)');

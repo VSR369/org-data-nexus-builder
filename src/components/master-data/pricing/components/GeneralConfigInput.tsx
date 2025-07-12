@@ -16,9 +16,9 @@ import { EntityTypeService } from '@/utils/masterData/entityTypeService';
 const engagementModelsDataManager = new LegacyDataManager<any[]>({
   key: 'master_data_engagement_models',
   defaultData: [
-    { id: '1', name: 'Marketplace', isActive: true },
+    { id: '1', name: 'Market Place', isActive: true },
     { id: '2', name: 'Aggregator', isActive: true },
-    { id: '3', name: 'Marketplace+Aggregator', isActive: true },
+    { id: '3', name: 'Market Place & Aggregator', isActive: true },
     { id: '4', name: 'Platform as a Service', isActive: true }
   ],
   version: 1
@@ -75,9 +75,9 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     const safeEngagementModels = Array.isArray(loadedEngagementModels) 
       ? loadedEngagementModels.filter(model => model && model.name && model.isActive)
       : [
-          { id: '1', name: 'Marketplace', isActive: true },
+          { id: '1', name: 'Market Place', isActive: true },
           { id: '2', name: 'Aggregator', isActive: true },
-          { id: '3', name: 'Marketplace+Aggregator', isActive: true },
+          { id: '3', name: 'Market Place & Aggregator', isActive: true },
           { id: '4', name: 'Platform as a Service', isActive: true }
         ];
     console.log('🤝 GeneralConfigInput: Loaded engagement models:', safeEngagementModels);
@@ -114,15 +114,21 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
 
   // Check if engagement model is Platform as a Service (PaaS)
   const isPaaSModel = (engagementModel: string) => {
-    return engagementModel?.toLowerCase().includes('platform as a service') || 
-           engagementModel?.toLowerCase().includes('paas');
+    return engagementModel === 'Platform as a Service';
+  };
+
+  // Check if engagement model uses single platform fee (non-PaaS models)
+  const isMarketplaceBasedModel = (engagementModel: string) => {
+    return engagementModel === 'Market Place' || 
+           engagementModel === 'Market Place & Aggregator' || 
+           engagementModel === 'Aggregator';
   };
 
   const isCurrentModelPaaS = isPaaSModel(currentConfig.engagementModel || '');
+  const isCurrentModelMarketplaceBased = isMarketplaceBasedModel(currentConfig.engagementModel || '');
 
   const membershipStatuses = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
+    { value: 'member', label: 'Member' },
     { value: 'not-a-member', label: 'Not a Member' }
   ];
 
@@ -205,11 +211,11 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
             <Label htmlFor="membershipStatus">Membership Status *</Label>
             <Select 
               value={currentConfig.membershipStatus || ""} 
-              onValueChange={(value: 'active' | 'inactive' | 'not-a-member') => {
+              onValueChange={(value: 'member' | 'not-a-member') => {
                 setCurrentConfig(prev => ({ 
                   ...prev, 
                   membershipStatus: value,
-                  discountPercentage: value === 'active' ? prev.discountPercentage : undefined
+                  discountPercentage: value === 'member' ? prev.discountPercentage : undefined
                 }));
               }}
             >
@@ -227,8 +233,8 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
           </div>
         </div>
 
-        {/* Member Discount Section - Only show if membership status is active */}
-        {currentConfig.membershipStatus === 'active' && (
+        {/* Member Discount Section - Only show if membership status is member */}
+        {currentConfig.membershipStatus === 'member' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="discountPercentage">Member Discount (%) *</Label>
@@ -242,13 +248,21 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
                 onChange={(e) => handleInputChange('discountPercentage', e.target.value)}
                 placeholder="0"
               />
+              <p className="text-sm text-muted-foreground mt-1">
+                Discount applied to base rates to calculate member pricing
+              </p>
             </div>
           </div>
         )}
 
         {/* Engagement Model Pricing Configuration */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Engagement Model Pricing Configuration</h3>
+          <h3 className="text-lg font-medium">
+            {isCurrentModelMarketplaceBased ? 
+              "Platform Fee as a Percentage of Solution Fee by Seeker" : 
+              "Engagement Model Pricing Configuration"
+            }
+          </h3>
           
           {/* Engagement Model Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -274,55 +288,77 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
 
           {/* Fee Configuration - Show only if engagement model is selected */}
           {currentConfig.engagementModel && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="quarterlyFee">
-                  Quarterly Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
-                </Label>
-                <Input
-                  id="quarterlyFee"
-                  type="number"
-                  min="0"
-                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
-                  max={isCurrentModelPaaS ? undefined : "100"}
-                  value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
-                  onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
-                  placeholder={isCurrentModelPaaS ? "1000" : "15"}
-                />
-              </div>
+            <>
+              {isCurrentModelMarketplaceBased ? (
+                // Single Platform Fee for Marketplace-based models
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="platformFee">Platform Fee (%) - Base Rate (Not-a-Member) *</Label>
+                    <Input
+                      id="platformFee"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      max="100"
+                      value={currentConfig.platformFeePercentage !== undefined ? currentConfig.platformFeePercentage.toString() : ''}
+                      onChange={(e) => handleInputChange('platformFeePercentage', e.target.value)}
+                      placeholder="15"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Base platform fee percentage for not-a-member. Member rates auto-calculated with discount.
+                    </p>
+                  </div>
+                </div>
+              ) : isCurrentModelPaaS ? (
+                // Frequency-based pricing for PaaS models
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="quarterlyFee">
+                      Quarterly Fee - Base Rate (Not-a-Member) {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
+                    </Label>
+                    <Input
+                      id="quarterlyFee"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={currentConfig.quarterlyFee !== undefined ? currentConfig.quarterlyFee.toString() : ''}
+                      onChange={(e) => handleInputChange('quarterlyFee', e.target.value)}
+                      placeholder="1000"
+                    />
+                  </div>
 
-              <div>
-                <Label htmlFor="halfYearlyFee">
-                  Half Yearly Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
-                </Label>
-                <Input
-                  id="halfYearlyFee"
-                  type="number"
-                  min="0"
-                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
-                  max={isCurrentModelPaaS ? undefined : "100"}
-                  value={currentConfig.halfYearlyFee !== undefined ? currentConfig.halfYearlyFee.toString() : ''}
-                  onChange={(e) => handleInputChange('halfYearlyFee', e.target.value)}
-                  placeholder={isCurrentModelPaaS ? "1800" : "12"}
-                />
-              </div>
+                  <div>
+                    <Label htmlFor="halfYearlyFee">
+                      Half Yearly Fee - Base Rate (Not-a-Member) {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
+                    </Label>
+                    <Input
+                      id="halfYearlyFee"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={currentConfig.halfYearlyFee !== undefined ? currentConfig.halfYearlyFee.toString() : ''}
+                      onChange={(e) => handleInputChange('halfYearlyFee', e.target.value)}
+                      placeholder="1800"
+                    />
+                  </div>
 
-              <div>
-                <Label htmlFor="annualFee">
-                  Annual Fee {isCurrentModelPaaS && currentConfig.currency ? `(${currentConfig.currency})` : '(%)'} *
-                </Label>
-                <Input
-                  id="annualFee"
-                  type="number"
-                  min="0"
-                  step={isCurrentModelPaaS ? "0.01" : "0.1"}
-                  max={isCurrentModelPaaS ? undefined : "100"}
-                  value={currentConfig.annualFee !== undefined ? currentConfig.annualFee.toString() : ''}
-                  onChange={(e) => handleInputChange('annualFee', e.target.value)}
-                  placeholder={isCurrentModelPaaS ? "3000" : "10"}
-                />
-              </div>
-            </div>
+                  <div>
+                    <Label htmlFor="annualFee">
+                      Annual Fee - Base Rate (Not-a-Member) {currentConfig.currency ? `(${currentConfig.currency})` : ''} *
+                    </Label>
+                    <Input
+                      id="annualFee"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={currentConfig.annualFee !== undefined ? currentConfig.annualFee.toString() : ''}
+                      onChange={(e) => handleInputChange('annualFee', e.target.value)}
+                      placeholder="3000"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
 

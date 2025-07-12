@@ -19,7 +19,7 @@ const SeekingOrgAdminGuard: React.FC<SeekingOrgAdminGuardProps> = ({ children })
     if (!isLoggedIn) {
       navigate('/signin');
     }
-  }, [checkAuthStatus, navigate]);
+  }, [navigate]); // Removed checkAuthStatus to prevent infinite loop
 
   if (!isAuthenticated || !currentAdmin) {
     return (
