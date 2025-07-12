@@ -89,7 +89,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
               Processing...
             </>
           ) : (
-            `Pay Fee - ₹${currentAmount || 0}`
+            `Pay Fee - ₹${currentAmount?.amount || currentAmount || 0}`
           )}
         </Button>
       )}
