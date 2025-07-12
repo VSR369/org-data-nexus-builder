@@ -2,30 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Save } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LegacyDataManager } from '@/utils/core/DataManager';
+import { fetchData, postData, putData, deleteData } from '@/utils/apiClient';
 
 const entityTypesDataManager = new LegacyDataManager<string[]>({
   key: 'master_data_entity_types',
-  defaultData: [
-    'Commercial',
-    'Non-Profit Organization',
-    'Society',
-    'Trust'
-  ],
+  defaultData: [],
   version: 1
 });
 
 const EntityTypeConfig = () => {
-  const [entityTypes, setEntityTypes] = useState<string[]>([]);
+  const [entityTypes, setEntityTypes] = useState<any[]>([]);
   const [newEntityType, setNewEntityType] = useState('');
   const { toast } = useToast();
 
   // Load data on component mount
   useEffect(() => {
-    const loadedEntityTypes = entityTypesDataManager.loadData();
-    setEntityTypes(loadedEntityTypes);
+    fetchEntityTypes();
   }, []);
 
   // Save data whenever entityTypes change
@@ -35,7 +30,72 @@ const EntityTypeConfig = () => {
     }
   }, [entityTypes]);
 
-  const addEntityType = () => {
+  const fetchEntityTypes = async () => {
+    const loadedEntityTypes = await fetchData('entityTypes');
+    console.log("+++++++++++++++++++++");
+    console.log(loadedEntityTypes.data);
+    setEntityTypes(loadedEntityTypes.data);
+  }
+
+  const saveEntityType = async (newEntityType : string) => {
+    try {
+      await postData('entityTypes', {"name" : newEntityType});
+      toast({
+        title: "Success",
+        description: "Entity type saved successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error saving entity type:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      await fetchEntityTypes();
+    }
+  }
+
+  const updateEntityType = async (newEntityType : string, id : string) => {
+    try {
+      await putData('entityTypes', {"name" : newEntityType}, id);
+      toast({
+        title: "Success",
+        description: "Entity type updated successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error updating entity type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update entity type.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  const deleteEntityType = async (entityID : string) => {
+    try {
+      await deleteData('entityTypes', entityID);
+      toast({
+        title: "Success",
+        description: "Entity type deleted successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error deleting entity type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete entity type.",
+        variant: "destructive",
+      });
+    } finally {
+      await fetchEntityTypes();
+    }
+  }
+  
+  const addEntityType = async () => {
     if (newEntityType.trim() !== '') {
       if (entityTypes.includes(newEntityType.trim())) {
         toast({
@@ -45,12 +105,7 @@ const EntityTypeConfig = () => {
         });
         return;
       }
-      setEntityTypes([...entityTypes, newEntityType.trim()]);
-      setNewEntityType('');
-      toast({
-        title: "Entity Type Added",
-        description: `${newEntityType.trim()} has been added to the list.`,
-      });
+      await saveEntityType(newEntityType.trim())
     } else {
       toast({
         title: "Input Required",
@@ -60,15 +115,13 @@ const EntityTypeConfig = () => {
     }
   };
 
-  const removeEntityType = (index: number) => {
-    const entityTypeToRemove = entityTypes[index];
-    const updatedEntityTypes = [...entityTypes];
-    updatedEntityTypes.splice(index, 1);
-    setEntityTypes(updatedEntityTypes);
-    toast({
-      title: "Entity Type Removed",
-      description: `${entityTypeToRemove} has been removed from the list.`,
-    });
+  const removeEntityType = async (id: string) => {
+    console.log("---------");
+    console.log(id)
+    await deleteEntityType(id);
+    // const updatedEntityTypes = [...entityTypes];
+    // updatedEntityTypes.splice(index, 1);
+    // setEntityTypes(updatedEntityTypes);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -114,9 +167,9 @@ const EntityTypeConfig = () => {
         <CardContent>
           <ul className="list-none space-y-2">
             {entityTypes.map((entityType, index) => (
-              <li key={index} className="flex items-center justify-between py-2 border-b border-gray-200">
-                <span>{entityType}</span>
-                <Button variant="destructive" size="icon" onClick={() => removeEntityType(index)}>
+              <li key={entityType._id} className="flex items-center justify-between py-2 border-b border-gray-200">
+                <span>{entityType.name}</span>
+                <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType._id)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </li>
