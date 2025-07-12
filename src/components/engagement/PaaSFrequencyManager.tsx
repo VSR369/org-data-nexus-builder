@@ -45,10 +45,28 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     fetchFreshData();
   }, [activationData?.id]);
 
+  // Convert database membership status to pricing config format
+  const convertMembershipStatus = (dbStatus: string): string => {
+    console.log('🔍 PaaSFrequencyManager: Converting membership status:', dbStatus);
+    
+    switch (dbStatus) {
+      case 'member_paid':
+        return 'member';
+      case 'inactive':
+        return 'not-a-member';
+      default:
+        // If already in correct format, return as is
+        return dbStatus;
+    }
+  };
+
+  const convertedMembershipStatus = convertMembershipStatus(membershipStatus);
+  
   // Use enhanced EngagementModelMapper to get pricing config from master data
   console.log('🔍 PaaSFrequencyManager: Input parameters:', {
     selectedEngagementModel,
-    membershipStatus,
+    originalMembershipStatus: membershipStatus,
+    convertedMembershipStatus,
     country,
     organizationType,
     activationData: activationData?.id || 'None'
@@ -59,7 +77,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     selectedEngagementModel,
     country,
     organizationType,
-    membershipStatus
+    convertedMembershipStatus
   );
 
   console.log('🔍 PaaSFrequencyManager: Current pricing config:', currentPricing);
@@ -71,12 +89,12 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
   } = useEngagementDataStorage({
     selectedEngagementModel,
     selectedFrequency: selectedNewFrequency,
-    membershipStatus,
+    membershipStatus: convertedMembershipStatus,
     pricingConfigs,
     country,
     organizationType,
     currentPricing,
-    currentAmount: selectedNewFrequency && currentPricing ? getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus)?.amount || 0 : 0,
+    currentAmount: selectedNewFrequency && currentPricing ? getDisplayAmount(selectedNewFrequency, currentPricing, convertedMembershipStatus)?.amount || 0 : 0,
     membershipFees
   });
 
@@ -185,7 +203,13 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
                   <p className="font-medium">Selected: {selectedNewFrequency.replace('-', ' ')}</p>
                   <p className="text-sm text-muted-foreground">
                     {(() => {
-                      const amount = getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus);
+                      const amount = getDisplayAmount(selectedNewFrequency, currentPricing, convertedMembershipStatus);
+                      console.log('🔍 PaaSFrequencyManager: Pricing calculation:', {
+                        frequency: selectedNewFrequency,
+                        membershipStatus: convertedMembershipStatus,
+                        amount: amount?.amount,
+                        discountApplied: amount?.discountApplied
+                      });
                       return amount?.amount ? formatAmount(amount.amount) : 'Price not available';
                     })()}
                   </p>
@@ -197,7 +221,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
                 >
                   <Wallet className="h-4 w-4" />
                   {paymentLoading ? 'Processing...' : `Pay Fee - ${(() => {
-                    const amount = getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus);
+                    const amount = getDisplayAmount(selectedNewFrequency, currentPricing, convertedMembershipStatus);
                     return amount?.amount ? formatAmount(amount.amount) : 'N/A';
                   })()}`}
                 </Button>

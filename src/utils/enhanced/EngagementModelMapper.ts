@@ -11,10 +11,10 @@ export class EngagementModelMapper {
     'Platform as a Service': ['Platform as a Service', 'platform-service', 'PaaS', 'Platform Service']
   };
 
-  // Membership status mapping
+  // Membership status mapping - handle both database and pricing config formats
   private static readonly MEMBERSHIP_STATUS_MAPPINGS = {
     'not-a-member': ['not-a-member', 'inactive', 'non-member'],
-    'member': ['member', 'active']
+    'member': ['member', 'member_paid', 'active']
   };
 
   // Enhanced lookup with proper model name, country and membership status matching
