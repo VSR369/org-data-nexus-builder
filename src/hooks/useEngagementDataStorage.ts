@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isPaaSModel, isMarketplaceModel } from '@/utils/membershipPricingUtils';
 
 interface EngagementDataStorageProps {
   selectedEngagementModel: string;
@@ -17,14 +18,6 @@ interface EngagementDataStorageProps {
 export const useEngagementDataStorage = (props: EngagementDataStorageProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-
-  const isMarketplaceModel = (model: string) => {
-    return ['Market Place', 'Market Place & Aggregator', 'Aggregator'].includes(model);
-  };
-
-  const isPaaSModel = (model: string) => {
-    return model === 'PaaS';
-  };
 
   const activateEngagement = async () => {
     if (!isMarketplaceModel(props.selectedEngagementModel)) {
