@@ -40,7 +40,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     config.membership_status === membershipStatus &&
     config.country === country &&
     config.organization_type === organizationType
-  );
+  ) || null;
 
   const {
     loading,
@@ -53,7 +53,7 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
     country,
     organizationType,
     currentPricing,
-    currentAmount: selectedNewFrequency ? getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus)?.amount || 0 : 0,
+    currentAmount: selectedNewFrequency && currentPricing ? getDisplayAmount(selectedNewFrequency, currentPricing, membershipStatus)?.amount || 0 : 0,
     membershipFees
   });
 
@@ -110,9 +110,14 @@ export const PaaSFrequencyManager: React.FC<PaaSFrequencyManagerProps> = ({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!currentPricing && (
+            <div className="p-3 border border-yellow-200 bg-yellow-50 rounded-lg">
+              <p className="text-sm text-yellow-800">No pricing configuration found for your current membership status and location.</p>
+            </div>
+          )}
           <div className="grid gap-3">
             {frequencies.map((frequency) => {
-              const amount = getDisplayAmount(frequency, currentPricing, membershipStatus);
+              const amount = currentPricing ? getDisplayAmount(frequency, currentPricing, membershipStatus) : null;
               const isCurrentFrequency = frequency === currentFrequency;
               
               return (

@@ -146,9 +146,15 @@ export const calculateDiscountedPrice = (baseAmount: number, discountPercentage:
 // Get display amount directly from database (no additional discount calculation needed)
 export const getDisplayAmount = (
   frequency: string, 
-  pricing: PricingConfig, 
+  pricing: PricingConfig | null, 
   membershipStatus: string
-): { amount: number; discountApplied: boolean } => {
+): { amount: number; discountApplied: boolean } | null => {
+  // Check if pricing is null or undefined
+  if (!pricing) {
+    console.warn('⚠️ getDisplayAmount: No pricing config provided');
+    return null;
+  }
+
   const feeKey = frequency === 'half-yearly' ? 'halfYearlyFee' : `${frequency}Fee` as keyof PricingConfig;
   const amount = pricing[feeKey] as number;
   
