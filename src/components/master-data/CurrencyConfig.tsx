@@ -132,7 +132,11 @@ const CurrencyConfig = () => {
       ));
       console.log("Update");
       console.log(currentCurrency)
-      await updateCurrencyData(currentCurrency);
+      await updateCurrencyData({
+        ...currentCurrency as Currency,
+        updatedAt: now,
+        isUserCreated: true
+      });
       toast({
         title: "Success",
         description: "Currency updated successfully.",

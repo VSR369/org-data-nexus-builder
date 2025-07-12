@@ -6,9 +6,9 @@ import { Country } from '@/types/seekerRegistration';
 export const countriesDataManager = new LegacyDataManager<Country[]>({
   key: 'master_data_countries',
   defaultData: [
-    { _id: '1', name: 'India', code: 'IN', region: 'Asia' },
-    { _id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-    { _id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
+    { id: '1', name: 'India', code: 'IN', region: 'Asia' },
+    { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
+    { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
   ],
   version: 1
 });

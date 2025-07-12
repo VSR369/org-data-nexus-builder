@@ -1,10 +1,11 @@
 
 export interface Currency {
-  id?: string;
+  id: string;
   code: string;
   name: string;
   symbol: string;
-  country_id: string;
+  country?: string;
+  country_id?: string;
   countryName?: string;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +17,7 @@ export interface Country {
   name: string;
   code: string;
   region?: string;
+  isUserCreated?: boolean;
 }
 
 export interface StorageConfig {
