@@ -78,7 +78,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -98,7 +98,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       // Should start loading
       expect(result.current.loading).toBe(true)
@@ -125,7 +125,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -151,7 +151,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -178,7 +178,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -206,7 +206,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
@@ -233,7 +233,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)

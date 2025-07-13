@@ -249,10 +249,10 @@ describe('Parent-Child Relationship Testing', () => {
 
       // Check for dependent currencies before deleting country
       const dependentCurrencies = await service.getItems('master_currencies')
-      const countryDependencies = dependentCurrencies.filter(c => c.country === country.name)
+      const countryDependencies = dependentCurrencies.filter(c => (c as any).country === country.name)
 
       expect(countryDependencies).toHaveLength(1)
-      expect(countryDependencies[0].country).toBe(country.name)
+      expect((countryDependencies[0] as any).country).toBe(country.name)
 
       // In real implementation, would prevent deletion or handle cascade
       expect(countryDependencies.length > 0).toBe(true)

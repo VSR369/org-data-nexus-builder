@@ -32,6 +32,10 @@ const customRender = (
 export * from '@testing-library/react'
 export { customRender as render }
 
+// Re-export screen and fireEvent using require for compatibility
+export const screen = require('@testing-library/react').screen
+export const fireEvent = require('@testing-library/react').fireEvent
+
 // Create a simple waitFor implementation for testing
 export const waitFor = async (callback: () => void | Promise<void>, options?: { timeout?: number }) => {
   const timeout = options?.timeout || 1000
