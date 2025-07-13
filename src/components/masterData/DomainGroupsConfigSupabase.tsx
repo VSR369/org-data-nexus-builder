@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import SupabaseWizard from './wizard/SupabaseWizard';
+import ExcelUploadSupabase from './upload/ExcelUploadSupabase';
 
 interface DomainGroup {
   id: string;
@@ -58,6 +60,7 @@ const DomainGroupsConfigSupabase = () => {
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showDirectEntry, setShowDirectEntry] = useState(false);
 
   // Form states for direct entry
@@ -277,6 +280,32 @@ const DomainGroupsConfigSupabase = () => {
     return <div className="flex items-center justify-center h-64">Loading hierarchy data...</div>;
   }
 
+  // Show wizard if requested
+  if (showWizard) {
+    return (
+      <SupabaseWizard 
+        onCancel={() => setShowWizard(false)} 
+        onComplete={() => {
+          setShowWizard(false);
+          fetchData();
+        }} 
+      />
+    );
+  }
+
+  // Show Excel upload if requested
+  if (showExcelUpload) {
+    return (
+      <ExcelUploadSupabase 
+        onCancel={() => setShowExcelUpload(false)} 
+        onComplete={() => {
+          setShowExcelUpload(false);
+          fetchData();
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -343,6 +372,7 @@ const DomainGroupsConfigSupabase = () => {
               </div>
             </Button>
             <Button
+              onClick={() => setShowExcelUpload(true)}
               className="flex items-center gap-2 h-auto p-4 flex-col"
               variant="outline"
             >
