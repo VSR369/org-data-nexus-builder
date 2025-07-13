@@ -18,7 +18,7 @@ const PricingConfig = () => {
   // Use Supabase hooks for master data
   const { items: organizationTypes, loading: orgTypesLoading } = useOrganizationTypes();
 
-  // Load data on component mount
+  // Load data on component mount only
   useEffect(() => {
     console.log('🔄 PricingConfig: Initializing with clean state...');
     
@@ -51,18 +51,6 @@ const PricingConfig = () => {
     
     console.log('✅ PricingConfig: Comprehensive pricing data loaded');
   }, []);
-
-  // Save configurations whenever they change (only if user explicitly makes changes)
-  useEffect(() => {
-    if (configs.length > 0) { // Only save when there are actual configs
-      console.log('💾 PricingConfig: Saving configurations to Supabase');
-      
-      // Use async PricingDataManager to save to Supabase
-      PricingDataManager.saveConfigurations(configs).catch(error => {
-        console.error('❌ Failed to save to Supabase:', error);
-      });
-    }
-  }, [configs]);
 
   return (
     <div className="space-y-6">

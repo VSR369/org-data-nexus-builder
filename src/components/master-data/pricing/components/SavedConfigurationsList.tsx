@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,24 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
   onEdit,
   onDelete
 }) => {
+  // Client-side deduplication as a safety measure
+  const deduplicatedConfigs = useMemo(() => {
+    const seen = new Set<string>();
+    const unique: PricingConfig[] = [];
+    
+    for (const config of configs) {
+      const key = `${config.country}-${config.organizationType}-${config.engagementModel}-${config.membershipStatus}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(config);
+      } else {
+        console.warn('🔍 Client-side deduplication: Filtering duplicate config:', key);
+      }
+    }
+    
+    return unique;
+  }, [configs]);
+
   // Check if engagement model is Platform as a Service (PaaS)
   const isPaaSModel = (engagementModel: string) => {
     return engagementModel === 'Platform as a Service';
@@ -37,7 +55,7 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
     return `${currency} ${fee.toLocaleString()}`;
   };
 
-  if (configs.length === 0) {
+  if (deduplicatedConfigs.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -50,13 +68,18 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
   }
 
   // Determine if we have any marketplace-based configurations
-  const hasMarketplaceConfigs = configs.some(config => isMarketplaceBasedModel(config.engagementModel));
-  const hasPaaSConfigs = configs.some(config => isPaaSModel(config.engagementModel));
+  const hasMarketplaceConfigs = deduplicatedConfigs.some(config => isMarketplaceBasedModel(config.engagementModel));
+  const hasPaaSConfigs = deduplicatedConfigs.some(config => isPaaSModel(config.engagementModel));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Saved Configurations ({configs.length})</CardTitle>
+        <CardTitle>Saved Configurations ({deduplicatedConfigs.length})</CardTitle>
+        {deduplicatedConfigs.length < configs.length && (
+          <p className="text-sm text-muted-foreground">
+            Note: {configs.length - deduplicatedConfigs.length} duplicate configurations were filtered out
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -80,7 +103,7 @@ const SavedConfigurationsList: React.FC<SavedConfigurationsListProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {configs.map((config) => {
+              {deduplicatedConfigs.map((config) => {
                 const isPaaS = isPaaSModel(config.engagementModel);
                 const isMarketplaceBased = isMarketplaceBasedModel(config.engagementModel);
                 const discount = config.discountPercentage || 0;

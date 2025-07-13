@@ -69,37 +69,80 @@ export class PricingDataManager {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      for (const config of configs) {
-        const { error } = await supabase
-          .from('pricing_configs')
-          .upsert({
-            config_id: config.id,
-            country: config.country,
-            currency: config.currency,
-            organization_type: config.organizationType,
-            entity_type: config.entityType,
-            engagement_model: config.engagementModel,
-            membership_status: config.membershipStatus,
-            quarterly_fee: config.quarterlyFee,
-            half_yearly_fee: config.halfYearlyFee,
-            annual_fee: config.annualFee,
-            platform_fee_percentage: config.platformFeePercentage,
-            discount_percentage: config.discountPercentage,
-            internal_paas_pricing: JSON.stringify(Array.isArray(config.internalPaasPricing) ? config.internalPaasPricing : []),
-            version: config.version || 1,
-            updated_at: new Date().toISOString()
-          });
-        
-        if (error) throw error;
+      // Deduplicate configs based on business uniqueness before saving
+      const deduplicatedConfigs = this.deduplicateConfigs(configs);
+      console.log('🔍 Deduplicated configs:', deduplicatedConfigs.length, 'from original:', configs.length);
+      
+      for (const config of deduplicatedConfigs) {
+        try {
+          const { error } = await supabase
+            .from('pricing_configs')
+            .upsert({
+              config_id: config.id,
+              country: config.country,
+              currency: config.currency,
+              organization_type: config.organizationType,
+              entity_type: config.entityType,
+              engagement_model: config.engagementModel,
+              membership_status: config.membershipStatus,
+              quarterly_fee: config.quarterlyFee,
+              half_yearly_fee: config.halfYearlyFee,
+              annual_fee: config.annualFee,
+              platform_fee_percentage: config.platformFeePercentage,
+              discount_percentage: config.discountPercentage,
+              internal_paas_pricing: JSON.stringify(Array.isArray(config.internalPaasPricing) ? config.internalPaasPricing : []),
+              version: config.version || 1,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'country,organization_type,engagement_model,membership_status',
+              ignoreDuplicates: false
+            });
+          
+          if (error) {
+            if (error.code === '23505') { // Unique constraint violation
+              console.warn('⚠️ Duplicate configuration detected for:', {
+                country: config.country,
+                organizationType: config.organizationType,
+                engagementModel: config.engagementModel,
+                membershipStatus: config.membershipStatus
+              });
+              // Skip this duplicate and continue with others
+              continue;
+            }
+            throw error;
+          }
+        } catch (configError: any) {
+          console.error('❌ Error saving individual config:', configError);
+          if (configError.code !== '23505') {
+            throw configError; // Re-throw non-duplicate errors
+          }
+        }
       }
       
-      this.cachedConfigs = configs;
+      // Refresh cache from database to get the current state
+      await this.loadConfigurationsAsync();
       console.log('✅ CRUD TEST - Pricing configurations saved to Supabase successfully');
     } catch (error) {
       console.error('❌ Error saving pricing configurations to Supabase:', error);
-      // No fallbacks - Supabase is single source of truth
       throw error;
     }
+  }
+
+  private static deduplicateConfigs(configs: PricingConfig[]): PricingConfig[] {
+    const seen = new Set<string>();
+    const deduplicated: PricingConfig[] = [];
+    
+    for (const config of configs) {
+      const key = `${config.country}-${config.organizationType}-${config.engagementModel}-${config.membershipStatus}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(config);
+      } else {
+        console.warn('🔍 Skipping duplicate config:', key);
+      }
+    }
+    
+    return deduplicated;
   }
 
   static getPricingForCountryOrgTypeAndEngagement(country: string, orgType: string, engagement: string): PricingConfig | null {

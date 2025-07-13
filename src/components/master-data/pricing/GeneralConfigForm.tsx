@@ -30,20 +30,32 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       return;
     }
 
-    // Check for duplicates
-    if (checkForDuplicates(currentConfig, configs)) {
+    // Check for duplicates before proceeding
+    const duplicateCheck = (existingConfig: PricingConfig) => 
+      existingConfig.country === currentConfig.country &&
+      existingConfig.organizationType === currentConfig.organizationType &&
+      existingConfig.engagementModel === currentConfig.engagementModel &&
+      existingConfig.membershipStatus === currentConfig.membershipStatus;
+
+    const existingConfig = configs.find(duplicateCheck);
+    if (existingConfig) {
+      toast({
+        title: "Duplicate Configuration",
+        description: `A configuration already exists for ${currentConfig.country}, ${currentConfig.organizationType}, ${currentConfig.engagementModel}, ${currentConfig.membershipStatus}. Please edit the existing one or choose different parameters.`,
+        variant: "destructive",
+      });
       return;
     }
 
-    // Generate unique base ID using timestamp + random suffix to avoid duplicates
-    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const timestamp = new Date().toISOString().split('T')[0];
+    // Generate stable unique ID using business keys to prevent timing-based duplicates
+    const businessKey = `${currentConfig.country}-${currentConfig.organizationType}-${currentConfig.engagementModel}`;
+    const timestamp = Date.now();
     const configsToSave: PricingConfig[] = [];
 
     // Always create the Not-a-Member base configuration
     const notMemberConfig = {
-      id: `${uniqueId}-base`,
-      configId: `${uniqueId}-base`,
+      id: `${businessKey}-${timestamp}-base`,
+      configId: `${businessKey}-${timestamp}-base`,
       country: currentConfig.country!,
       currency: currentConfig.currency || '',
       organizationType: currentConfig.organizationType!,
@@ -57,19 +69,36 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
       discountPercentage: undefined,
       internalPaasPricing: currentConfig.internalPaasPricing || [],
       version: (currentConfig.version || 0) + 1,
-      createdAt: timestamp,
+      createdAt: new Date().toISOString(),
     } as PricingConfig;
 
     configsToSave.push(notMemberConfig);
 
     // If user selected member status with discount, create member configuration
     if (currentConfig.membershipStatus === 'member' && currentConfig.discountPercentage) {
+      // Also check for member duplicate
+      const memberDuplicateCheck = (existingConfig: PricingConfig) => 
+        existingConfig.country === currentConfig.country &&
+        existingConfig.organizationType === currentConfig.organizationType &&
+        existingConfig.engagementModel === currentConfig.engagementModel &&
+        existingConfig.membershipStatus === 'member';
+
+      const existingMemberConfig = configs.find(memberDuplicateCheck);
+      if (existingMemberConfig) {
+        toast({
+          title: "Duplicate Member Configuration",
+          description: `A member configuration already exists for ${currentConfig.country}, ${currentConfig.organizationType}, ${currentConfig.engagementModel}. Please edit the existing one.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const discountMultiplier = (1 - currentConfig.discountPercentage / 100);
       
       const memberConfig = {
         ...notMemberConfig,
-        id: `${uniqueId}-member`,
-        configId: `${uniqueId}-member`,
+        id: `${businessKey}-${timestamp}-member`,
+        configId: `${businessKey}-${timestamp}-member`,
         membershipStatus: 'member' as const,
         discountPercentage: currentConfig.discountPercentage,
         // Apply discount to all relevant fees
@@ -85,27 +114,28 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     console.log('✅ Configurations to save:', configsToSave);
 
     try {
-      // Save to Supabase first to check for conflicts
-      const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
+      // Use PricingDataManager directly to handle deduplication
+      const { PricingDataManager } = await import('@/utils/pricing/PricingDataManager');
       
       console.log('🔄 Attempting to save to database...');
       
-      // Get current configs from database to avoid conflicts
-      const currentDbConfigs = [...configs];
+      // Get fresh data from database first
+      const currentDbConfigs = await PricingDataManager.getAllConfigurationsAsync();
       const allConfigs = [...currentDbConfigs, ...configsToSave];
       
-      await savePricingConfigsAsync(allConfigs);
+      await PricingDataManager.saveConfigurations(allConfigs);
       console.log('✅ Successfully saved to database');
       
-      // Update local state only after successful database save
-      setConfigs(allConfigs);
+      // Refresh configs from database to get the actual saved state
+      const refreshedConfigs = await PricingDataManager.getAllConfigurationsAsync();
+      setConfigs(refreshedConfigs);
 
       toast({
         title: "Success",
-        description: `${configsToSave.length} configuration(s) saved to database successfully.`,
+        description: `${configsToSave.length} configuration(s) saved successfully.`,
       });
 
-      console.log('✅ Configuration saved to Supabase successfully');
+      console.log('✅ Configuration saved successfully');
       
       // Clear form after successful save
       setCurrentConfig({});
@@ -113,17 +143,24 @@ const GeneralConfigForm: React.FC<GeneralConfigFormProps> = ({
     } catch (error: any) {
       console.error('❌ Database save failed:', error);
       
-      // Check if it's a specific Supabase error
+      // Check if it's a duplicate constraint error
       const errorMessage = error?.message || error?.error?.message || 'Unknown error';
+      
+      if (errorMessage.includes('unique constraint') || errorMessage.includes('duplicate key')) {
+        toast({
+          title: "Duplicate Configuration",
+          description: "A configuration with these parameters already exists. Please check existing configurations.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Database Error",
+          description: `Failed to save to database: ${errorMessage}. Please try again.`,
+          variant: "destructive",
+        });
+      }
+      
       console.error('❌ Error details:', errorMessage);
-      
-      toast({
-        title: "Database Error",
-        description: `Failed to save to database: ${errorMessage}. Please try again.`,
-        variant: "destructive",
-      });
-      
-      // Don't clear form on error so user can retry
     }
   };
 
