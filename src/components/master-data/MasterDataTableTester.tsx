@@ -3,7 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Database, Eye, CheckCircle, XCircle, ArrowRight, Users, Settings, Workflow } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, Database, Eye, CheckCircle, XCircle, ArrowRight, Users, Settings, Workflow, Search, FileText, BarChart3, AlertCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,6 +33,9 @@ interface TableData {
 const MasterDataTableTester = () => {
   const [tables, setTables] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedTableData, setSelectedTableData] = useState<any[]>([]);
+  const [loadingTableData, setLoadingTableData] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   const masterDataTables = [
@@ -313,6 +318,60 @@ const MasterDataTableTester = () => {
     return { unmappedFrontendFields, unmappedDbColumns };
   };
 
+  // Function to load full table data for individual table view
+  const loadFullTableData = async (tableName: string) => {
+    setLoadingTableData(true);
+    try {
+      const { data, error } = await supabase
+        .from(tableName as any)
+        .select('*')
+        .limit(100); // Limit to prevent overwhelming UI
+
+      if (error) {
+        console.error(`Error loading data for ${tableName}:`, error);
+        toast({
+          title: "Error",
+          description: `Failed to load data for ${tableName}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSelectedTableData(data || []);
+    } catch (error) {
+      console.error(`Error loading data for ${tableName}:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to load table data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingTableData(false);
+    }
+  };
+
+  // Filter tables based on search term
+  const filteredTables = tables.filter(table => 
+    table.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    table.tableName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Data analysis functions
+  const getDataAnalysis = () => {
+    const emptyTables = tables.filter(t => t.recordCount === 0);
+    const minimalTables = tables.filter(t => t.recordCount > 0 && t.recordCount < 5);
+    const populatedTables = tables.filter(t => t.recordCount >= 5);
+    
+    return {
+      empty: emptyTables,
+      minimal: minimalTables,
+      populated: populatedTables,
+      totalRecords: tables.reduce((sum, t) => sum + t.recordCount, 0)
+    };
+  };
+
+  const analysis = getDataAnalysis();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -371,10 +430,12 @@ const MasterDataTableTester = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="data-analysis">Data Analysis</TabsTrigger>
+          <TabsTrigger value="table-data">Table Data</TabsTrigger>
           <TabsTrigger value="relationships">Relationships</TabsTrigger>
-          <TabsTrigger value="structure">Table Structure</TabsTrigger>
+          <TabsTrigger value="structure">Structure</TabsTrigger>
           <TabsTrigger value="mapping">Field Mapping</TabsTrigger>
         </TabsList>
 
@@ -428,6 +489,226 @@ const MasterDataTableTester = () => {
                 </Card>
               );
             })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="data-analysis">
+          <div className="space-y-6">
+            {/* Data Completeness Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    Empty Tables
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-500">{analysis.empty.length}</div>
+                  <p className="text-sm text-muted-foreground">No data stored</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-yellow-500" />
+                    Minimal Data
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-500">{analysis.minimal.length}</div>
+                  <p className="text-sm text-muted-foreground">&lt; 5 records</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    Well Populated
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-500">{analysis.populated.length}</div>
+                  <p className="text-sm text-muted-foreground">≥ 5 records</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Total Records
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analysis.totalRecords}</div>
+                  <p className="text-sm text-muted-foreground">Across all tables</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Empty Tables Detail */}
+            {analysis.empty.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-red-600">
+                    <XCircle className="w-5 h-5" />
+                    Empty Tables ({analysis.empty.length})
+                  </CardTitle>
+                  <CardDescription>
+                    These tables have no data and may need to be populated with master data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2">
+                    {analysis.empty.map((table) => (
+                      <div key={table.tableName} className="flex items-center justify-between p-3 border rounded-lg border-red-200 bg-red-50">
+                        <div className="flex items-center gap-3">
+                          <Database className="w-4 h-4 text-red-600" />
+                          <div>
+                            <div className="font-medium text-red-800">{table.displayName}</div>
+                            <div className="text-sm text-red-600">{table.tableName}</div>
+                          </div>
+                        </div>
+                        <Badge variant="destructive">0 records</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Minimal Data Tables */}
+            {analysis.minimal.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-yellow-600">
+                    <AlertCircle className="w-5 h-5" />
+                    Tables with Minimal Data ({analysis.minimal.length})
+                  </CardTitle>
+                  <CardDescription>
+                    These tables have some data but may need more records
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2">
+                    {analysis.minimal.map((table) => (
+                      <div key={table.tableName} className="flex items-center justify-between p-3 border rounded-lg border-yellow-200 bg-yellow-50">
+                        <div className="flex items-center gap-3">
+                          <Database className="w-4 h-4 text-yellow-600" />
+                          <div>
+                            <div className="font-medium text-yellow-800">{table.displayName}</div>
+                            <div className="text-sm text-yellow-600">{table.tableName}</div>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">{table.recordCount} records</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="table-data">
+          <div className="space-y-6">
+            {/* Search and Table Selection */}
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tables..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Table Data Viewer */}
+            <div className="grid gap-4">
+              {filteredTables.map((table) => (
+                <Card key={table.tableName}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Database className="w-5 h-5" />
+                          {table.displayName}
+                        </CardTitle>
+                        <CardDescription>
+                          {table.tableName} • {table.recordCount} records • {table.structure.length} columns
+                        </CardDescription>
+                      </div>
+                      <Button
+                        onClick={() => loadFullTableData(table.tableName)}
+                        disabled={loadingTableData || table.recordCount === 0}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {loadingTableData ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                        View Data
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  
+                  {selectedTableData.length > 0 && (
+                    <CardContent>
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto max-h-96">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                {Object.keys(selectedTableData[0] || {}).slice(0, 6).map((column) => (
+                                  <TableHead key={column} className="font-medium">
+                                    {column}
+                                  </TableHead>
+                                ))}
+                                {Object.keys(selectedTableData[0] || {}).length > 6 && (
+                                  <TableHead>...</TableHead>
+                                )}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedTableData.slice(0, 10).map((row, index) => (
+                                <TableRow key={index}>
+                                  {Object.values(row).slice(0, 6).map((value: any, cellIndex) => (
+                                    <TableCell key={cellIndex} className="max-w-32 truncate">
+                                      {value === null ? (
+                                        <span className="text-muted-foreground italic">null</span>
+                                      ) : typeof value === 'object' ? (
+                                        <span className="text-muted-foreground">JSON</span>
+                                      ) : (
+                                        String(value)
+                                      )}
+                                    </TableCell>
+                                  ))}
+                                  {Object.keys(row).length > 6 && (
+                                    <TableCell className="text-muted-foreground">...</TableCell>
+                                  )}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        {selectedTableData.length > 10 && (
+                          <div className="p-3 bg-muted text-center text-sm text-muted-foreground">
+                            Showing first 10 of {selectedTableData.length} records
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </div>
           </div>
         </TabsContent>
 
