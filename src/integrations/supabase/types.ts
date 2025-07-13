@@ -299,48 +299,43 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
-          hierarchy_path: string | null
+          description: string | null
+          hierarchy: Json | null
           id: string
+          is_active: boolean
           is_user_created: boolean | null
-          level: number
           name: string
-          parent_id: string | null
+          organization_id: string | null
           updated_at: string | null
           version: number | null
         }
         Insert: {
           created_at?: string | null
           created_by?: string | null
-          hierarchy_path?: string | null
+          description?: string | null
+          hierarchy?: Json | null
           id?: string
+          is_active?: boolean
           is_user_created?: boolean | null
-          level?: number
           name?: string
-          parent_id?: string | null
+          organization_id?: string | null
           updated_at?: string | null
           version?: number | null
         }
         Update: {
           created_at?: string | null
           created_by?: string | null
-          hierarchy_path?: string | null
+          description?: string | null
+          hierarchy?: Json | null
           id?: string
+          is_active?: boolean
           is_user_created?: boolean | null
-          level?: number
           name?: string
-          parent_id?: string | null
+          organization_id?: string | null
           updated_at?: string | null
           version?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "master_departments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "master_departments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       master_domain_groups: {
         Row: {
