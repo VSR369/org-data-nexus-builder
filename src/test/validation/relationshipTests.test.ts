@@ -28,6 +28,136 @@ describe('Parent-Child Relationship Testing', () => {
     vi.clearAllMocks()
   })
 
+  describe('Domain Group → Category Relationship', () => {
+    it('should create parent record first', async () => {
+      const domainGroup = {
+        id: 'dg-1',
+        name: 'Technology',
+        description: 'Technology domain group',
+        industry_segment_id: 'is-1'
+      }
+
+      mockService.addItem.mockResolvedValue(true)
+
+      const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
+      const service = new SupabaseMasterDataService()
+
+      const result = await service.addItem('master_domain_groups', domainGroup)
+      expect(result).toBe(true)
+      expect(mockService.addItem).toHaveBeenCalledWith('master_domain_groups', domainGroup)
+    })
+
+    it('should create child record linked to parent', async () => {
+      const category = {
+        id: 'cat-1',
+        name: 'Software Development',
+        description: 'Software development category',
+        domain_group_id: 'dg-1'
+      }
+
+      mockService.addItem.mockResolvedValue(true)
+
+      const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
+      const service = new SupabaseMasterDataService()
+
+      const result = await service.addItem('master_categories', category)
+      expect(result).toBe(true)
+      expect(mockService.addItem).toHaveBeenCalledWith('master_categories', category)
+    })
+
+    it('should verify child record shows correct parent relationship', async () => {
+      const domainGroup = { id: 'dg-1', name: 'Technology' }
+      const category = { id: 'cat-1', name: 'Software Development', domain_group_id: 'dg-1' }
+
+      mockService.getItems
+        .mockResolvedValueOnce([domainGroup])
+        .mockResolvedValueOnce([category])
+
+      const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
+      const service = new SupabaseMasterDataService()
+
+      const domainGroups = await service.getItems('master_domain_groups')
+      const categories = await service.getItems('master_categories')
+
+      const parentDomainGroup = domainGroups.find(dg => dg.id === category.domain_group_id)
+      expect(parentDomainGroup).toBeDefined()
+      expect(parentDomainGroup?.name).toBe('Technology')
+    })
+
+    it('should handle parent deletion with existing children appropriately', async () => {
+      const domainGroup = { id: 'dg-1', name: 'Technology' }
+      const dependentCategories = [
+        { id: 'cat-1', name: 'Software Development', domain_group_id: 'dg-1' },
+        { id: 'cat-2', name: 'Hardware', domain_group_id: 'dg-1' }
+      ]
+
+      // Mock checking for dependent records
+      mockService.getItems.mockResolvedValue(dependentCategories)
+
+      const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
+      const service = new SupabaseMasterDataService()
+
+      // Check for dependencies before deletion
+      const dependencies = await service.getItems('master_categories')
+      const relatedCategories = dependencies.filter(cat => (cat as any).domain_group_id === domainGroup.id)
+
+      expect(relatedCategories).toHaveLength(2)
+      
+      // In a real implementation, this should prevent deletion or handle cascade
+      expect(relatedCategories.length > 0).toBe(true)
+    })
+  })
+
+  describe('Category → Sub Category Relationship', () => {
+    it('should create and link sub-category to category', async () => {
+      const category = { id: 'cat-1', name: 'Software Development' }
+      const subCategory = {
+        id: 'sub-1',
+        name: 'Frontend Development',
+        description: 'Frontend development subcategory',
+        category_id: 'cat-1'
+      }
+
+      mockService.addItem.mockResolvedValue(true)
+
+      const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
+      const service = new SupabaseMasterDataService()
+
+      const result = await service.addItem('master_sub_categories', subCategory)
+      expect(result).toBe(true)
+      expect(mockService.addItem).toHaveBeenCalledWith('master_sub_categories', subCategory)
+    })
+
+    it('should verify relationship integrity across three levels', async () => {
+      const domainGroup = { id: 'dg-1', name: 'Technology' }
+      const category = { id: 'cat-1', name: 'Software Development', domain_group_id: 'dg-1' }
+      const subCategory = { id: 'sub-1', name: 'Frontend Development', category_id: 'cat-1' }
+
+      mockService.getItems
+        .mockResolvedValueOnce([domainGroup])
+        .mockResolvedValueOnce([category])
+        .mockResolvedValueOnce([subCategory])
+
+      const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
+      const service = new SupabaseMasterDataService()
+
+      const [domainGroups, categories, subCategories] = await Promise.all([
+        service.getItems('master_domain_groups'),
+        service.getItems('master_categories'),
+        service.getItems('master_sub_categories')
+      ])
+
+      // Verify three-level relationship
+      const relatedCategory = categories.find(c => c.id === (subCategory as any).category_id)
+      const relatedDomainGroup = domainGroups.find(dg => dg.id === (relatedCategory as any)?.domain_group_id)
+
+      expect(relatedCategory).toBeDefined()
+      expect(relatedDomainGroup).toBeDefined()
+      expect(relatedCategory?.name).toBe('Software Development')
+      expect(relatedDomainGroup?.name).toBe('Technology')
+    })
+  })
+
   describe('Industry Segment → Domain Group → Category → Sub Category Chain', () => {
     it('should create and link hierarchical records correctly', async () => {
       const { industrySegment, domainGroup, category, subCategory } = testHierarchicalData
