@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { MasterDataSeeder } from '@/utils/masterDataSeeder';
 import { MembershipFeeEntry, Currency, Country } from './types';
 
 interface MembershipFeeFormProps {
@@ -61,7 +60,16 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
   const handleCountryChange = (selectedCountry: string) => {
     console.log('🌍 Country selected:', selectedCountry);
     
-    const countryCurrency = MasterDataSeeder.getCurrencyByCountry(selectedCountry);
+    // Find currency directly from the currencies prop using Supabase data
+    const countryCurrency = currencies.find(currency => {
+      // Direct match first
+      if (currency.country === selectedCountry) return true;
+      
+      // Case-insensitive match
+      if (currency.country?.toLowerCase() === selectedCountry.toLowerCase()) return true;
+      
+      return false;
+    });
     
     if (countryCurrency) {
       setCurrentEntry(prev => ({
@@ -83,7 +91,7 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
       
       toast({
         title: "No Currency Found",
-        description: `No currency mapping found for ${selectedCountry}. Please create the currency in Currency Configuration first.`,
+        description: `No currency mapping found for ${selectedCountry}. Please ensure currency is configured in master data.`,
         variant: "destructive",
       });
     }

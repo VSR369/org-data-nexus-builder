@@ -4,6 +4,8 @@ export interface Currency {
   code: string;
   name: string;
   symbol: string;
+  country?: string;
+  country_code?: string;
   isUserCreated?: boolean;
 }
 
