@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Upload, Eye, EyeOff, X } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { useSeekerMasterData } from '@/hooks/useSeekerMasterData';
+import { useSupabaseMasterData } from '@/hooks/useSupabaseMasterData';
 import { useSeekerValidation } from '@/hooks/useSeekerValidation';
 import { generateOrganizationId } from '@/utils/seekerUserStorage';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 
 interface FormData {
   // Organization Information
-  industrySegment: string;
   organizationName: string;
   organizationId: string;
   organizationType: string;
@@ -49,14 +48,13 @@ const SignUpForm = () => {
   const navigate = useNavigate();
   const {
     countries,
-    industrySegments,
     organizationTypes,
     entityTypes,
-    isLoading: masterDataLoading
-  } = useSeekerMasterData();
+    isLoading: masterDataLoading,
+    error: masterDataError
+  } = useSupabaseMasterData();
 
   const [formData, setFormData] = useState<FormData>({
-    industrySegment: '',
     organizationName: '',
     organizationId: generateOrganizationId(),
     organizationType: '',
@@ -178,7 +176,6 @@ const SignUpForm = () => {
         organizationId: formData.organizationId,
         organizationType: formData.organizationType,
         entityType: formData.entityType,
-        industrySegment: formData.industrySegment,
         contactPersonName: formData.contactPersonName,
         country: formData.country,
         countryCode: formData.countryCode,
@@ -223,6 +220,22 @@ const SignUpForm = () => {
     );
   }
 
+  if (masterDataError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading master data: {masterDataError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-blue-600 hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       {/* Header with Progress */}
@@ -248,23 +261,6 @@ const SignUpForm = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="industrySegment" className={errors.industrySegment ? "text-red-500" : ""}>Industry Segment *</Label>
-              <Select value={formData.industrySegment} onValueChange={(value) => handleInputChange('industrySegment', value)}>
-                <SelectTrigger className={errors.industrySegment ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select industry segment" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                  {industrySegments.map((segment) => (
-                    <SelectItem key={segment.id} value={segment.id} className="hover:bg-gray-50">
-                      {segment.industrySegment}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.industrySegment && <p className="text-sm text-red-500">{errors.industrySegment}</p>}
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="organizationName" className={errors.organizationName ? "text-red-500" : ""}>Organization Name *</Label>
               <Input
@@ -465,9 +461,9 @@ const SignUpForm = () => {
                 <SelectTrigger className={errors.country ? "border-red-500" : ""}>
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                 <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
                   {countries.map((country) => (
-                    <SelectItem key={country.id} value={country.name} className="hover:bg-gray-50">
+                    <SelectItem key={country.code} value={country.name} className="hover:bg-gray-50">
                       {country.name}
                     </SelectItem>
                   ))}
