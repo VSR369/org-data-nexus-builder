@@ -1,63 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Category {
-  id?: string;
+  id: string;
   name: string;
   description?: string;
   domain_group_id: string;
-  is_active?: boolean;
-  is_user_created?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  is_active: boolean;
 }
 
 interface DomainGroup {
   id: string;
   name: string;
-  description?: string;
 }
 
-export default function CategoriesConfigSupabase() {
+const CategoriesConfigSupabase = () => {
+  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    domain_group_id: ''
+  const [newCategory, setNewCategory] = useState({ 
+    name: '', 
+    description: '', 
+    domain_group_id: '', 
+    is_active: true 
   });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState({ 
+    name: '', 
+    description: '', 
+    domain_group_id: '', 
+    is_active: true 
+  });
+  const [isAdding, setIsAdding] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const loadCategories = async () => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('master_categories')
-        .select(`
-          *,
-          master_domain_groups(name)
-        `)
-        .order('name');
       
-      if (error) throw error;
-      setCategories(data || []);
+      // Fetch categories and domain groups
+      const [categoriesResult, domainGroupsResult] = await Promise.all([
+        supabase.from('master_categories').select('*').order('name'),
+        supabase.from('master_domain_groups').select('id, name').order('name')
+      ]);
+
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (domainGroupsResult.error) throw domainGroupsResult.error;
+
+      setCategories(categoriesResult.data || []);
+      setDomainGroups(domainGroupsResult.data || []);
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: "Error",
-        description: "Failed to load categories",
+        description: "Failed to load categories and domain groups.",
         variant: "destructive",
       });
     } finally {
@@ -65,175 +73,111 @@ export default function CategoriesConfigSupabase() {
     }
   };
 
-  const loadDomainGroups = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('master_domain_groups')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      setDomainGroups(data || []);
-    } catch (error) {
-      console.error('Error loading domain groups:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load domain groups",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    loadCategories();
-    loadDomainGroups();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.domain_group_id) {
-      toast({
-        title: "Error",
-        description: "Category name and domain group are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      const categoryData = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        domain_group_id: formData.domain_group_id,
-        is_active: true,
-        is_user_created: true
-      };
-
-      if (editingCategory) {
+  const handleAddCategory = async () => {
+    if (newCategory.name.trim() && newCategory.domain_group_id) {
+      try {
         const { error } = await supabase
           .from('master_categories')
-          .update(categoryData)
-          .eq('id', editingCategory.id);
-        
+          .insert([{
+            name: newCategory.name.trim(),
+            description: newCategory.description.trim() || null,
+            domain_group_id: newCategory.domain_group_id,
+            is_active: newCategory.is_active
+          }]);
+
         if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Category updated successfully",
-        });
-      } else {
-        const { error } = await supabase
-          .from('master_categories')
-          .insert([categoryData]);
-        
-        if (error) throw error;
-        
+
+        setNewCategory({ name: '', description: '', domain_group_id: '', is_active: true });
+        setIsAdding(false);
+        fetchData();
         toast({
           title: "Success",
           description: "Category added successfully",
         });
+      } catch (error) {
+        console.error('Error adding category:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add category.",
+          variant: "destructive",
+        });
       }
-      
-      resetForm();
-      await loadCategories();
-    } catch (error: any) {
-      console.error('Error saving category:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save category",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleEdit = (category: Category) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name || '',
-      description: category.description || '',
-      domain_group_id: category.domain_group_id || ''
-    });
-    setIsDialogOpen(true);
+  const getDomainGroupName = (domainGroupId: string) => {
+    const group = domainGroups.find(g => g.id === domainGroupId);
+    return group ? group.name : 'Unknown';
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category? All related sub-categories will also be deleted.')) return;
-
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('master_categories')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Category deleted successfully",
-      });
-      
-      await loadCategories();
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete category",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      domain_group_id: ''
-    });
-    setEditingCategory(null);
-    setIsDialogOpen(false);
-  };
+  if (loading) {
+    return <div>Loading categories...</div>;
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Categories Configuration</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory ? 'Edit Category' : 'Add New Category'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Categories</CardTitle>
+            <CardDescription>
+              Configure categories linked to domain groups
+            </CardDescription>
+          </div>
+          <Button
+            onClick={fetchData}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Current Categories ({categories.length})</h3>
+          <Button 
+            onClick={() => setIsAdding(true)} 
+            disabled={isAdding}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Category
+          </Button>
+        </div>
+
+        {isAdding && (
+          <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
+            <div className="flex-1 space-y-2">
               <div>
-                <Label htmlFor="name">Category Name*</Label>
+                <Label htmlFor="new-category-name">Category Name</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Technology"
-                  required
+                  id="new-category-name"
+                  value={newCategory.name}
+                  onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                  placeholder="Enter category name"
+                  className="mt-1"
                 />
               </div>
-              
               <div>
-                <Label htmlFor="domain_group_id">Domain Group*</Label>
-                <Select value={formData.domain_group_id} onValueChange={(value) => setFormData(prev => ({ ...prev, domain_group_id: value }))}>
-                  <SelectTrigger>
+                <Label htmlFor="new-category-description">Description</Label>
+                <Input
+                  id="new-category-description"
+                  value={newCategory.description}
+                  onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+                  placeholder="Enter description (optional)"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-category-domain-group">Domain Group</Label>
+                <Select
+                  value={newCategory.domain_group_id}
+                  onValueChange={(value) => setNewCategory({...newCategory, domain_group_id: value})}
+                >
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select domain group" />
                   </SelectTrigger>
                   <SelectContent>
@@ -245,88 +189,44 @@ export default function CategoriesConfigSupabase() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="flex gap-2 items-end">
+              <Button onClick={handleAddCategory} size="sm" className="flex items-center gap-1">
+                <Save className="w-3 h-3" />
+                Save
+              </Button>
+              <Button onClick={() => setIsAdding(false)} variant="outline" size="sm" className="flex items-center gap-1">
+                <X className="w-3 h-3" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Category description..."
-                  rows={3}
-                />
+        <div className="grid gap-2">
+          {categories.map((category, index) => (
+            <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary">{index + 1}</Badge>
+                <div>
+                  <div className="font-medium">{category.name}</div>
+                  {category.description && (
+                    <div className="text-sm text-muted-foreground">{category.description}</div>
+                  )}
+                  <div className="text-sm text-muted-foreground">
+                    Domain: {getDomainGroupName(category.domain_group_id)}
+                  </div>
+                </div>
+                <Badge variant={category.is_active ? "default" : "secondary"}>
+                  {category.is_active ? "Active" : "Inactive"}
+                </Badge>
               </div>
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Saving...' : editingCategory ? 'Update' : 'Add'} Category
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="border rounded-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b bg-muted/50">
-              <tr>
-                <th className="text-left p-4 font-medium">Name</th>
-                <th className="text-left p-4 font-medium">Domain Group</th>
-                <th className="text-left p-4 font-medium">Description</th>
-                <th className="text-left p-4 font-medium">Status</th>
-                <th className="text-left p-4 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                    {loading ? 'Loading categories...' : 'No categories found. Add your first category above.'}
-                  </td>
-                </tr>
-              ) : (
-                categories.map((category) => (
-                  <tr key={category.id} className="border-b hover:bg-muted/25">
-                    <td className="p-4 font-medium">{category.name}</td>
-                    <td className="p-4">{(category as any).master_domain_groups?.name || '-'}</td>
-                    <td className="p-4 max-w-xs truncate">{category.description || '-'}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        category.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {category.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(category)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(category.id!)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+            </div>
+          ))}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default CategoriesConfigSupabase;
