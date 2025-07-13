@@ -107,6 +107,51 @@ export type Database = {
         }
         Relationships: []
       }
+      master_capability_levels: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          max_score: number
+          min_score: number
+          name: string
+          order_index: number
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          max_score: number
+          min_score: number
+          name: string
+          order_index?: number
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          max_score?: number
+          min_score?: number
+          name?: string
+          order_index?: number
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_categories: {
         Row: {
           created_at: string

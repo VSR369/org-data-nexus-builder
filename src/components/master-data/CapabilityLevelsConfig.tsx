@@ -10,17 +10,9 @@ import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface CapabilityLevel {
-  id: string;
-  name: string;
-  min_score: number;
-  max_score: number;
-  color: string;
-  order_index: number;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+import { Tables } from "@/integrations/supabase/types";
+
+type CapabilityLevel = Tables<"master_capability_levels">;
 
 interface FormData {
   name: string;
