@@ -40,7 +40,7 @@ export default function OrganizationSignIn() {
 
       if (data.user) {
         toast.success('Successfully signed in!');
-        navigate('/');
+        navigate('/organization-dashboard');
       }
     } catch (err) {
       console.error('Sign in error:', err);

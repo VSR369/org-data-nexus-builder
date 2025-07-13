@@ -15,11 +15,10 @@ const Index = () => {
     await signOut();
   };
 
-  // If user is authenticated, show their organization dashboard with membership grid
+  // If user is authenticated, redirect them to their dashboard
   if (isAuthenticated && profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 overflow-x-hidden">
-        {/* Header */}
         <header className="bg-white border-b shadow-sm w-full">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -30,197 +29,53 @@ const Index = () => {
                 <h1 className="text-xl font-bold text-gray-900">CoInnovator Platform</h1>
               </div>
               
-              <div className="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
-                <User className="h-4 w-4 text-green-600" />
-                <div className="text-sm">
-                  <div className="font-medium text-green-800">
-                    {profile.contact_person_name}
+              <div className="flex items-center space-x-3">
+                <Link to="/organization-dashboard">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <div className="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                  <User className="h-4 w-4 text-green-600" />
+                  <div className="text-sm">
+                    <div className="font-medium text-green-800">
+                      {profile.contact_person_name}
+                    </div>
+                    <div className="text-green-600 text-xs">
+                      {profile.organization_name}
+                    </div>
                   </div>
-                  <div className="text-green-600 text-xs">
-                    {profile.organization_name}
-                  </div>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="outline"
+                    size="sm"
+                    className="text-green-700 border-green-300 hover:bg-green-100"
+                  >
+                    <LogOut className="h-4 w-4 mr-1" />
+                    Sign Out
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="text-green-700 border-green-300 hover:bg-green-100"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Sign Out
-                </Button>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Main Dashboard Content */}
         <main className="max-w-7xl mx-auto px-4 py-12">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Welcome back, {profile.contact_person_name}!
             </h1>
-            <p className="text-lg text-gray-600">
-              Organization Dashboard for {profile.organization_name}
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+              You are signed in to {profile.organization_name}. Access your organization dashboard to manage your account and view all features.
             </p>
-          </div>
-
-          {/* Organization Details Card */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-blue-600" />
-                  Organization Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Organization Name</label>
-                  <p className="text-base font-medium">{profile.organization_name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Organization Type</label>
-                  <p className="text-base">{profile.organization_type}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Entity Type</label>
-                  <p className="text-base">{profile.entity_type}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Country</label>
-                  <p className="text-base">{profile.country}</p>
-                </div>
-                {profile.industry_segment && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Industry Segment</label>
-                    <p className="text-base">{profile.industry_segment}</p>
-                  </div>
-                )}
-                <div className="pt-4">
-                  <Button variant="outline" className="w-full">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Edit Organization Profile
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-green-600" />
-                  Contact Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Contact Person</label>
-                  <p className="text-base font-medium">{profile.contact_person_name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-base">{user?.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">User ID</label>
-                  <p className="text-base font-mono text-sm">{profile.custom_user_id}</p>
-                </div>
-                {profile.phone_number && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Phone</label>
-                    <p className="text-base">{profile.phone_number}</p>
-                  </div>
-                )}
-                {profile.website && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Website</label>
-                    <p className="text-base">
-                      <a href={profile.website} target="_blank" rel="noopener noreferrer" 
-                         className="text-blue-600 hover:underline">
-                        {profile.website}
-                      </a>
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Membership & Engagement System - 4 Column Grid */}
-          <div className="mb-8">
-            <MembershipPricingSystem
-              organizationType={profile.organization_type}
-              entityType={profile.entity_type}
-              country={profile.country}
-              organizationId={profile.custom_user_id}
-              organizationName={profile.organization_name}
-            />
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-lg">Post a Challenge</CardTitle>
-                <CardDescription>
-                  Create new innovation challenges for contributors
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  Create Challenge
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-lg">View Solutions</CardTitle>
-                <CardDescription>
-                  Review submitted solutions and proposals
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Browse Solutions
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Link to="/master-data-portal">
-              <Card className="hover:shadow-lg transition-shadow h-full">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Database className="h-5 w-5 text-green-600" />
-                    Master Data Portal
-                  </CardTitle>
-                  <CardDescription>
-                    Access platform configuration and data management
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full bg-green-600 hover:bg-green-700">
-                    Access Portal
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
+            <Link to="/organization-dashboard">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                <Building className="mr-2 h-5 w-5" />
+                Go to Organization Dashboard
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </Link>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-lg text-red-600">Testing Tools</CardTitle>
-                <CardDescription>
-                  Clear all data for fresh testing (enables email reuse)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DataCleanupButton />
-              </CardContent>
-            </Card>
           </div>
         </main>
       </div>
@@ -349,16 +204,22 @@ const Index = () => {
                       ✓ You are already signed in!
                     </p>
                     <p className="text-xs text-blue-600 mt-1">
-                      You can now access organization features or sign out to use a different account.
+                      Access your organization dashboard or sign out to use a different account.
                     </p>
                   </div>
+                  <Link to="/organization-dashboard" className="w-full block">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      <Building className="mr-2 h-4 w-4" />
+                      Go to Dashboard
+                    </Button>
+                  </Link>
                   <Button 
                     onClick={handleSignOut}
                     variant="outline" 
                     className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out to Use Different Account
+                    Sign Out
                   </Button>
                 </div>
               ) : (
