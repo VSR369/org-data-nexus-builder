@@ -15,6 +15,9 @@ export interface MembershipFeeEntry {
   annualAmount?: number;
   annualCurrency?: string;
   description?: string;
+  createdAt: string;
+  updatedAt: string;
+  isUserCreated: boolean;
 }
 
 export interface Currency {
@@ -73,7 +76,10 @@ export const useMembershipFeeDataSupabase = () => {
         halfYearlyCurrency: fee.half_yearly_currency,
         annualAmount: fee.annual_amount,
         annualCurrency: fee.annual_currency,
-        description: fee.description
+        description: fee.description,
+        createdAt: fee.created_at || new Date().toISOString(),
+        updatedAt: fee.updated_at || new Date().toISOString(),
+        isUserCreated: fee.is_user_created || false
       })) || [];
 
       const loadedCurrencies: Currency[] = currenciesResult.data?.map(curr => ({

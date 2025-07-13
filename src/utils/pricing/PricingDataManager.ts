@@ -4,9 +4,21 @@ import { getPricingConfigs, savePricingConfigs, resetDeletedConfigsTracking } fr
 import { normalizeCountryName } from './pricingUtils';
 
 export class PricingDataManager {
-  static async getAllConfigurations(): Promise<PricingConfig[]> {
-    console.log('✅ CRUD TEST - Loading pricing configurations from Supabase');
+  private static cachedConfigs: PricingConfig[] = [];
+  private static isLoading = false;
+
+  static getAllConfigurations(): PricingConfig[] {
+    // Return cached data for synchronous calls, load async in background
+    this.loadConfigurationsAsync();
+    return this.cachedConfigs;
+  }
+
+  private static async loadConfigurationsAsync(): Promise<void> {
+    if (this.isLoading) return;
+    
+    this.isLoading = true;
     try {
+      console.log('✅ CRUD TEST - Loading pricing configurations from Supabase');
       const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('pricing_configs')
@@ -34,34 +46,15 @@ export class PricingDataManager {
         updatedAt: config.updated_at || new Date().toISOString()
       })) || [];
 
+      this.cachedConfigs = configs;
       console.log('✅ CRUD TEST - Pricing configurations loaded:', configs.length);
-      return configs;
     } catch (error) {
       console.error('❌ Error loading pricing configurations from Supabase:', error);
       // Fallback to localStorage method
       const configs = getPricingConfigs();
-    
-      // Clean up data: ensure marketplace models only have platformFeePercentage
-      // and PaaS models only have frequency fees
-      return configs.map(config => {
-        const isMarketplace = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
-        const isPaaS = config.engagementModel === 'Platform as a Service';
-        
-        if (isMarketplace) {
-          // Remove frequency fields from marketplace models
-          const { quarterlyFee, halfYearlyFee, annualFee, ...cleanConfig } = config;
-          return cleanConfig;
-        }
-        
-        if (isPaaS) {
-          // Remove platformFeePercentage from PaaS models
-          const { platformFeePercentage, ...cleanConfig } = config;
-          return cleanConfig;
-        }
-        
-        return config;
-      });
+      this.cachedConfigs = configs;
     }
+    this.isLoading = false;
   }
 
   static async saveConfigurations(configs: PricingConfig[]): Promise<void> {
@@ -93,6 +86,7 @@ export class PricingDataManager {
         if (error) throw error;
       }
       
+      this.cachedConfigs = configs;
       console.log('✅ CRUD TEST - Pricing configurations saved to Supabase successfully');
     } catch (error) {
       console.error('❌ Error saving pricing configurations to Supabase:', error);
