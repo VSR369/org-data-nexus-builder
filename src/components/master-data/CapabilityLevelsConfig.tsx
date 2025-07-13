@@ -57,6 +57,7 @@ const CapabilityLevelsConfig = () => {
         .order('order_index', { ascending: true });
 
       if (error) throw error;
+      console.log('Loaded capability levels from Supabase:', data);
       setLevels(data || []);
     } catch (error) {
       console.error('Error loading capability levels:', error);
