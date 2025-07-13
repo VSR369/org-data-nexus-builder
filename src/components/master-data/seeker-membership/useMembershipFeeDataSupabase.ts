@@ -194,6 +194,17 @@ export const useMembershipFeeDataSupabase = () => {
     countries.some(country => country.name === currency.country)
   );
 
+  const dataHealth = {
+    currencies: {
+      hasUserData: currencies.length > 0,
+      count: currencies.length
+    },
+    membershipFees: {
+      hasUserData: membershipFees.length > 0,
+      count: membershipFees.length
+    }
+  };
+
   return {
     membershipFees,
     currencies,
@@ -206,6 +217,6 @@ export const useMembershipFeeDataSupabase = () => {
     saveMembershipFee,
     deleteMembershipFee,
     reloadMasterData: loadAllData,
-    dataHealth: { isHealthy: true, issues: [] }
+    dataHealth
   };
 };
