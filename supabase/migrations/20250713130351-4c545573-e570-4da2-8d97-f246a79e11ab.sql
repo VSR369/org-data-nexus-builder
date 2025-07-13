@@ -1,0 +1,2 @@
+-- Clear all default pricing configurations to start with empty database
+DELETE FROM pricing_configs WHERE config_id LIKE 'marketplace-%' OR config_id LIKE 'aggregator-%' OR config_id LIKE 'platform-%';
