@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
+import { waitFor } from '../utils/testUtils'
 import { useMasterDataCRUD } from '@/hooks/useMasterDataCRUD'
 import { testCountries } from '../fixtures/masterDataFixtures'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -55,7 +56,7 @@ describe('useMasterDataCRUD', () => {
       const { SupabaseMasterDataService } = await import('@/services/SupabaseMasterDataService')
       ;(SupabaseMasterDataService as any).mockImplementation(() => mockService)
 
-      const { result } = renderHook(() => useMasterDataCRUD('master_countries'), { wrapper })
+      const { result } = renderHook(() => useMasterDataCRUD('master_countries' as any), { wrapper })
 
       // Wait for initial load
       await waitFor(() => {

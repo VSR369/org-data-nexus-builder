@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '../utils/testUtils'
 import userEvent from '@testing-library/user-event'
 import { testCountries, testCurrencies, testMembershipFees } from '../fixtures/masterDataFixtures'
 import { createMockUseMasterDataCRUD } from '../utils/mockHelpers'
+import React from 'react'
 
 // Mock the CRUD hook
 const mockCRUDHook = createMockUseMasterDataCRUD()
