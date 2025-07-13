@@ -1,6 +1,7 @@
 import React from "react";
 import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfig from "./master-data/CountryConfig";
+import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
 import CurrencyConfig from "./master-data/CurrencyConfig";
 import IndustrySegmentsConfig from "./master-data/IndustrySegmentsConfig";
 import DepartmentsConfig from "./master-data/DepartmentsConfig";
@@ -41,7 +42,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'custom-data-manager':
         return <CustomDataManager />;
       case 'countries':
-        return <CountryConfig />;
+        return <CountryConfigSupabase />;
       case 'currencies':
         return <CurrencyConfig />;
       case 'industry-segments':
