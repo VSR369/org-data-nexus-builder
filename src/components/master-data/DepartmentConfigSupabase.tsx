@@ -276,15 +276,27 @@ export default function DepartmentConfigSupabase() {
   const createDepartmentFromRow = async (row: any) => {
     if (!row['Department Name']) return null;
 
+    // Check if department already exists
+    const { data: existingDept } = await supabase
+      .from('master_departments')
+      .select('*')
+      .eq('name', row['Department Name'])
+      .maybeSingle();
+
+    if (existingDept) {
+      return existingDept;
+    }
+
+    // Create new department
     const { data, error } = await supabase
       .from('master_departments')
-      .upsert({
+      .insert({
         name: row['Department Name'],
         description: row['Department Description'] || null,
         organization_id: row['Organization ID'] || null,
         organization_name: row['Organization Name'] || null,
         is_user_created: true
-      }, { onConflict: 'name' })
+      })
       .select()
       .single();
 
@@ -294,6 +306,18 @@ export default function DepartmentConfigSupabase() {
 
   const createSubDepartmentFromRow = async (row: any, departmentId: string) => {
     if (!row['Sub Department Name']) return null;
+
+    // Check if sub department already exists for this department
+    const { data: existingSubDept } = await supabase
+      .from('master_sub_departments')
+      .select('*')
+      .eq('name', row['Sub Department Name'])
+      .eq('department_id', departmentId)
+      .maybeSingle();
+
+    if (existingSubDept) {
+      return existingSubDept;
+    }
 
     const { data, error } = await supabase
       .from('master_sub_departments')
@@ -312,6 +336,18 @@ export default function DepartmentConfigSupabase() {
 
   const createTeamUnitFromRow = async (row: any, subDepartmentId: string) => {
     if (!row['Team/Unit Name']) return null;
+
+    // Check if team unit already exists for this sub department
+    const { data: existingTeam } = await supabase
+      .from('master_team_units')
+      .select('*')
+      .eq('name', row['Team/Unit Name'])
+      .eq('sub_department_id', subDepartmentId)
+      .maybeSingle();
+
+    if (existingTeam) {
+      return existingTeam;
+    }
 
     const { data, error } = await supabase
       .from('master_team_units')
