@@ -219,65 +219,45 @@ const SupabaseWizard: React.FC<SupabaseWizardProps> = ({ onCancel, onComplete })
   const saveToDatabase = async () => {
     setSaving(true);
     try {
-      // 1. Create Domain Group
+      // Build hierarchy structure with categories and sub-categories
+      const categories = wizardData.categories.map((category, categoryIndex) => {
+        const subCategories = wizardData.subCategories
+          .filter(sub => sub.categoryIndex === categoryIndex)
+          .filter(sub => sub.name.trim())
+          .map(sub => ({
+            id: crypto.randomUUID(),
+            name: sub.name.trim(),
+            description: sub.description.trim() || undefined
+          }));
+
+        return {
+          id: crypto.randomUUID(),
+          name: category.name.trim(),
+          description: category.description.trim() || undefined,
+          subCategories
+        };
+      }).filter(cat => cat.name);
+
+      // Create Domain Group with hierarchy
       const { data: domainGroupData, error: domainGroupError } = await supabase
         .from('master_domain_groups')
         .insert([{
           name: wizardData.domainGroup.name.trim(),
           description: wizardData.domainGroup.description.trim() || null,
           industry_segment_id: wizardData.domainGroup.industry_segment_id || null,
-          is_active: true
+          is_active: true,
+          hierarchy: { categories }
         }])
         .select()
         .single();
 
       if (domainGroupError) throw domainGroupError;
 
-      const domainGroupId = domainGroupData.id;
-
-      // 2. Create Categories
-      const categoriesData = [];
-      for (let i = 0; i < wizardData.categories.length; i++) {
-        const category = wizardData.categories[i];
-        if (category.name.trim()) {
-          const { data: categoryData, error: categoryError } = await supabase
-            .from('master_domain_groups')
-            .insert([{
-              name: category.name.trim(),
-              description: category.description.trim() || null,
-              domain_group_id: domainGroupId,
-              is_active: true
-            }])
-            .select()
-            .single();
-
-          if (categoryError) throw categoryError;
-          categoriesData.push({ ...categoryData, originalIndex: i });
-        }
-      }
-
-      // 3. Create Sub-Categories
-      for (const subCategory of wizardData.subCategories) {
-        if (subCategory.name.trim()) {
-          const parentCategory = categoriesData.find(cat => cat.originalIndex === subCategory.categoryIndex);
-          if (parentCategory) {
-            const { error: subCategoryError } = await supabase
-              .from('master_domain_groups')
-              .insert([{
-                name: subCategory.name.trim(),
-                description: subCategory.description.trim() || null,
-                category_id: parentCategory.id,
-                is_active: true
-              }]);
-
-            if (subCategoryError) throw subCategoryError;
-          }
-        }
-      }
+      const totalSubCategories = categories.reduce((sum, cat) => sum + cat.subCategories.length, 0);
 
       toast({
         title: "Success!",
-        description: `Created domain group "${wizardData.domainGroup.name}" with ${categoriesData.length} categories and ${wizardData.subCategories.filter(sub => sub.name.trim()).length} sub-categories`,
+        description: `Created domain group "${wizardData.domainGroup.name}" with ${categories.length} categories and ${totalSubCategories} sub-categories`,
       });
 
       onComplete();

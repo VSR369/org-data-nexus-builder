@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SupabaseWizard from './wizard/SupabaseWizard';
 import ExcelUploadSupabase from './upload/ExcelUploadSupabase';
+import DomainGroupHierarchyDisplay from './components/DomainGroupHierarchyDisplay';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +43,18 @@ interface DomainGroup {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+  hierarchy?: {
+    categories: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      subCategories: Array<{
+        id: string;
+        name: string;
+        description?: string;
+      }>;
+    }>;
+  };
 }
 
 interface IndustrySegment {
@@ -89,7 +102,19 @@ const DomainGroupsConfigSupabase = () => {
       if (domainGroupsResult.error) throw domainGroupsResult.error;
       if (industrySegmentsResult.error) throw industrySegmentsResult.error;
 
-      setDomainGroups(domainGroupsResult.data || []);
+      // Transform the data to match our interface
+      const transformedDomainGroups: DomainGroup[] = (domainGroupsResult.data || []).map(dg => ({
+        id: dg.id,
+        name: dg.name,
+        description: dg.description,
+        industry_segment_id: dg.industry_segment_id,
+        is_active: dg.is_active,
+        created_at: dg.created_at,
+        updated_at: dg.updated_at,
+        hierarchy: dg.hierarchy ? (typeof dg.hierarchy === 'string' ? JSON.parse(dg.hierarchy) : dg.hierarchy) : undefined
+      }));
+
+      setDomainGroups(transformedDomainGroups);
       setIndustrySegments(industrySegmentsResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -499,46 +524,14 @@ const DomainGroupsConfigSupabase = () => {
               </div>
             ) : (
               filteredDomainGroups.map((domainGroup) => (
-                <div key={domainGroup.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <Target className="w-5 h-5 text-primary" />
-                      <div>
-                        <h3 className="font-semibold">{domainGroup.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {getIndustrySegmentName(domainGroup.industry_segment_id)}
-                          {domainGroup.description && ` • ${domainGroup.description}`}
-                        </p>
-                      </div>
-                      <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
-                        {domainGroup.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={domainGroup.is_active}
-                        onCheckedChange={() => handleToggleStatus(domainGroup)}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(domainGroup)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setDeleteDialog({
-                          open: true,
-                          item: domainGroup
-                        })}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <DomainGroupHierarchyDisplay
+                  key={domainGroup.id}
+                  domainGroup={domainGroup}
+                  industrySegmentName={getIndustrySegmentName(domainGroup.industry_segment_id)}
+                  onEdit={handleEdit}
+                  onDelete={(item) => setDeleteDialog({ open: true, item })}
+                  onToggleStatus={handleToggleStatus}
+                />
               ))
             )}
           </div>

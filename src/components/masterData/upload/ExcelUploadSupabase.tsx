@@ -229,74 +229,48 @@ const ExcelUploadSupabase: React.FC<ExcelUploadSupabaseProps> = ({ onCancel, onC
 
     setUploading(true);
     setProgress(0);
-    let totalOperations = 0;
     let completedOperations = 0;
+    const totalOperations = processedData.domainGroups.length;
 
     try {
-      // Count total operations for progress
-      totalOperations = processedData.domainGroups.length + 
-        processedData.domainGroups.reduce((sum, dg) => sum + dg.categories.length, 0) +
-        processedData.domainGroups.reduce((sum, dg) => 
-          sum + dg.categories.reduce((catSum, cat) => catSum + cat.subCategories.length, 0), 0
-        );
-
-      const updateProgress = () => {
-        completedOperations++;
-        setProgress((completedOperations / totalOperations) * 100);
-      };
-
-      // Create domain groups
+      // Create domain groups with hierarchy
       for (const domainGroup of processedData.domainGroups) {
-        const { data: dgData, error: dgError } = await supabase
+        // Build hierarchy structure
+        const categories = domainGroup.categories.map(category => ({
+          id: crypto.randomUUID(),
+          name: category.name,
+          description: category.description || undefined,
+          subCategories: category.subCategories.map(subCategory => ({
+            id: crypto.randomUUID(),
+            name: subCategory.name,
+            description: subCategory.description || undefined
+          }))
+        }));
+
+        const { error: dgError } = await supabase
           .from('master_domain_groups')
           .insert([{
             name: domainGroup.name,
             description: domainGroup.description || null,
             industry_segment_id: domainGroup.industry_segment_id || null,
-            is_active: true
-          }])
-          .select()
-          .single();
+            is_active: true,
+            hierarchy: { categories }
+          }]);
 
         if (dgError) throw dgError;
-        updateProgress();
 
-        // Create categories for this domain group
-        for (const category of domainGroup.categories) {
-          const { data: catData, error: catError } = await supabase
-            .from('master_domain_groups')
-            .insert([{
-              name: category.name,
-              description: category.description || null,
-              domain_group_id: dgData.id,
-              is_active: true
-            }])
-            .select()
-            .single();
-
-          if (catError) throw catError;
-          updateProgress();
-
-          // Create sub-categories for this category
-          for (const subCategory of category.subCategories) {
-            const { error: subCatError } = await supabase
-              .from('master_domain_groups')
-              .insert([{
-                name: subCategory.name,
-                description: subCategory.description || null,
-                category_id: catData.id,
-                is_active: true
-              }]);
-
-            if (subCatError) throw subCatError;
-            updateProgress();
-          }
-        }
+        completedOperations++;
+        setProgress((completedOperations / totalOperations) * 100);
       }
+
+      const totalCategories = processedData.domainGroups.reduce((sum, dg) => sum + dg.categories.length, 0);
+      const totalSubCategories = processedData.domainGroups.reduce((sum, dg) => 
+        sum + dg.categories.reduce((catSum, cat) => catSum + cat.subCategories.length, 0), 0
+      );
 
       toast({
         title: "Upload Successful!",
-        description: `Successfully uploaded all hierarchy data to Supabase`,
+        description: `Successfully uploaded ${processedData.domainGroups.length} domain groups with ${totalCategories} categories and ${totalSubCategories} sub-categories`,
       });
 
       onComplete();

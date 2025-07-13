@@ -327,6 +327,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          hierarchy: Json | null
           id: string
           industry_segment_id: string | null
           is_active: boolean
@@ -339,6 +340,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          hierarchy?: Json | null
           id?: string
           industry_segment_id?: string | null
           is_active?: boolean
@@ -351,6 +353,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          hierarchy?: Json | null
           id?: string
           industry_segment_id?: string | null
           is_active?: boolean
