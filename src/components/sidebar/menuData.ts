@@ -84,9 +84,9 @@ export const organizationMenuItems = [
   },
   {
     id: 'competency-capabilities',
-    title: 'Competency & Capability',
+    title: 'Capability Levels',
     icon: Award,
-    description: 'Define skills and capabilities'
+    description: 'Manage capability level ranges and scoring'
   }
 ];
 
