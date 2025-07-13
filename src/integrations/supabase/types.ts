@@ -107,53 +107,6 @@ export type Database = {
         }
         Relationships: []
       }
-      master_categories: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          description: string | null
-          domain_group_id: string
-          id: string
-          is_active: boolean
-          is_user_created: boolean | null
-          name: string
-          updated_at: string
-          version: number | null
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          domain_group_id: string
-          id?: string
-          is_active?: boolean
-          is_user_created?: boolean | null
-          name: string
-          updated_at?: string
-          version?: number | null
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          domain_group_id?: string
-          id?: string
-          is_active?: boolean
-          is_user_created?: boolean | null
-          name?: string
-          updated_at?: string
-          version?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "master_categories_domain_group_id_fkey"
-            columns: ["domain_group_id"]
-            isOneToOne: false
-            referencedRelation: "master_domain_groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       master_challenge_statuses: {
         Row: {
           created_at: string | null
@@ -680,60 +633,6 @@ export type Database = {
           version?: number | null
         }
         Relationships: []
-      }
-      master_sub_categories: {
-        Row: {
-          category_id: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          is_active: boolean
-          is_user_created: boolean | null
-          name: string
-          updated_at: string
-          version: number | null
-        }
-        Insert: {
-          category_id: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          is_user_created?: boolean | null
-          name: string
-          updated_at?: string
-          version?: number | null
-        }
-        Update: {
-          category_id?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          is_user_created?: boolean | null
-          name?: string
-          updated_at?: string
-          version?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_master_sub_categories_category"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "master_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "master_sub_categories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "master_categories"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       pricing_configs: {
         Row: {

@@ -241,7 +241,7 @@ const SupabaseWizard: React.FC<SupabaseWizardProps> = ({ onCancel, onComplete })
         const category = wizardData.categories[i];
         if (category.name.trim()) {
           const { data: categoryData, error: categoryError } = await supabase
-            .from('master_categories')
+            .from('master_domain_groups')
             .insert([{
               name: category.name.trim(),
               description: category.description.trim() || null,
@@ -262,7 +262,7 @@ const SupabaseWizard: React.FC<SupabaseWizardProps> = ({ onCancel, onComplete })
           const parentCategory = categoriesData.find(cat => cat.originalIndex === subCategory.categoryIndex);
           if (parentCategory) {
             const { error: subCategoryError } = await supabase
-              .from('master_sub_categories')
+              .from('master_domain_groups')
               .insert([{
                 name: subCategory.name.trim(),
                 description: subCategory.description.trim() || null,

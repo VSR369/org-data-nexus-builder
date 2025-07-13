@@ -264,7 +264,7 @@ const ExcelUploadSupabase: React.FC<ExcelUploadSupabaseProps> = ({ onCancel, onC
         // Create categories for this domain group
         for (const category of domainGroup.categories) {
           const { data: catData, error: catError } = await supabase
-            .from('master_categories')
+            .from('master_domain_groups')
             .insert([{
               name: category.name,
               description: category.description || null,
@@ -280,7 +280,7 @@ const ExcelUploadSupabase: React.FC<ExcelUploadSupabaseProps> = ({ onCancel, onC
           // Create sub-categories for this category
           for (const subCategory of category.subCategories) {
             const { error: subCatError } = await supabase
-              .from('master_sub_categories')
+              .from('master_domain_groups')
               .insert([{
                 name: subCategory.name,
                 description: subCategory.description || null,

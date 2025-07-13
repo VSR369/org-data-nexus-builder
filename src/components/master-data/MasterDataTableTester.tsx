@@ -88,7 +88,7 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_reward_types',
       displayName: 'Reward Types',
-      frontendFields: ['id', 'name', 'description', 'type', 'currency', 'amount', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      frontendFields: ['id', 'name', 'description', 'type', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
@@ -107,18 +107,6 @@ const MasterDataTableTester = () => {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
       frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
-    },
-    {
-      tableName: 'master_categories',
-      displayName: 'Categories',
-      frontendFields: ['id', 'name', 'description', 'domain_group_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
-    },
-    {
-      tableName: 'master_sub_categories',
-      displayName: 'Sub Categories',
-      frontendFields: ['id', 'name', 'description', 'category_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {

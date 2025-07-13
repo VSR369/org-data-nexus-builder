@@ -2,8 +2,6 @@ import React from "react";
 import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
 import CurrencyConfigSupabase from "./masterData/CurrencyConfigSupabase";
-import CategoriesConfigSupabase from "./masterData/CategoriesConfigSupabase";
-import SubCategoriesConfigSupabase from "./masterData/SubCategoriesConfigSupabase";
 import DomainGroupsConfigSupabase from "./masterData/DomainGroupsConfigSupabase";
 import IndustrySegmentsConfigSupabase from "./master-data/IndustrySegmentsConfigSupabase";
 import DepartmentsConfigSupabase from "./master-data/DepartmentsConfigSupabase";
@@ -48,10 +46,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <CountryConfigSupabase />;
       case 'currencies':
         return <CurrencyConfigSupabase />;
-      case 'categories':
-        return <CategoriesConfigSupabase />;
-      case 'sub-categories':
-        return <SubCategoriesConfigSupabase />;
       case 'domain-groups':
         return <DomainGroupsConfigSupabase />;
       case 'industry-segments':

@@ -83,18 +83,6 @@ export const organizationMenuItems = [
     description: 'Manage domain hierarchies'
   },
   {
-    id: 'categories',
-    title: 'Categories',
-    icon: Folder,
-    description: 'Manage category master data'
-  },
-  {
-    id: 'sub-categories',
-    title: 'Sub-Categories',
-    icon: FolderOpen,
-    description: 'Manage sub-category hierarchies'
-  },
-  {
     id: 'competency-capabilities',
     title: 'Competency & Capability',
     icon: Award,
