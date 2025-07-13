@@ -88,27 +88,74 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('👤 Fetching profile for user:', userId);
-      const { data, error } = await supabase
+      
+      // First try to get from profiles table
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ Error fetching profile:', error);
+      if (profileData && !profileError) {
+        console.log('✅ Profile fetched from profiles table:', {
+          name: profileData.contact_person_name,
+          organization: profileData.organization_name,
+          email: profileData.id
+        });
+        setProfile(profileData);
         return;
       }
 
-      if (data) {
-        console.log('✅ Profile fetched successfully:', {
-          name: data.contact_person_name,
-          organization: data.organization_name,
-          email: data.id
+      // If no profile found, try to get from organizations table and create profile
+      console.log('ℹ️ No profile found, checking organizations table...');
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select(`
+          *,
+          organization_types:master_organization_types(name),
+          entity_types:master_entity_types(name),
+          countries:master_countries(name),
+          industry_segments:master_industry_segments(name)
+        `)
+        .eq('user_id', userId)
+        .single();
+
+      if (orgData && !orgError) {
+        console.log('✅ Organization data found, creating profile structure:', {
+          name: orgData.contact_person_name,
+          organization: orgData.organization_name
         });
-        setProfile(data);
-      } else {
-        console.log('ℹ️ No profile found for user');
+        
+        // Create a profile-like structure from organization data
+        const profileFromOrg = {
+          id: userId,
+          custom_user_id: orgData.organization_id,
+          organization_name: orgData.organization_name,
+          organization_id: orgData.organization_id,
+          contact_person_name: orgData.contact_person_name,
+          organization_type: orgData.organization_types?.name || 'Unknown',
+          entity_type: orgData.entity_types?.name || 'Unknown',
+          country: orgData.countries?.name || 'Unknown',
+          country_code: orgData.country_code,
+          industry_segment: orgData.industry_segments?.name,
+          address: orgData.address,
+          phone_number: orgData.phone_number,
+          website: orgData.website
+        };
+        
+        setProfile(profileFromOrg);
+        
+        // Try to create the profile record for future use
+        try {
+          await supabase.from('profiles').insert(profileFromOrg);
+          console.log('✅ Profile record created successfully');
+        } catch (insertError) {
+          console.log('ℹ️ Could not create profile record, but continuing with organization data');
+        }
+        return;
       }
+
+      console.log('ℹ️ No organization or profile found for user');
     } catch (error) {
       console.error('❌ Error fetching profile:', error);
     }
