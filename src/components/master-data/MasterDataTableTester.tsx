@@ -33,8 +33,8 @@ interface TableData {
 const MasterDataTableTester = () => {
   const [tables, setTables] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedTableData, setSelectedTableData] = useState<any[]>([]);
-  const [loadingTableData, setLoadingTableData] = useState(false);
+  const [tableDataMap, setTableDataMap] = useState<Record<string, any[]>>({});
+  const [loadingTables, setLoadingTables] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -320,7 +320,9 @@ const MasterDataTableTester = () => {
 
   // Function to load full table data for individual table view
   const loadFullTableData = async (tableName: string) => {
-    setLoadingTableData(true);
+    // Add table to loading set
+    setLoadingTables(prev => new Set([...prev, tableName]));
+    
     try {
       const { data, error } = await supabase
         .from(tableName as any)
@@ -337,7 +339,16 @@ const MasterDataTableTester = () => {
         return;
       }
 
-      setSelectedTableData(data || []);
+      // Store data for this specific table
+      setTableDataMap(prev => ({
+        ...prev,
+        [tableName]: data || []
+      }));
+      
+      toast({
+        title: "Data Loaded",
+        description: `Loaded ${data?.length || 0} records for ${tableName}`,
+      });
     } catch (error) {
       console.error(`Error loading data for ${tableName}:`, error);
       toast({
@@ -346,7 +357,12 @@ const MasterDataTableTester = () => {
         variant: "destructive",
       });
     } finally {
-      setLoadingTableData(false);
+      // Remove table from loading set
+      setLoadingTables(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tableName);
+        return newSet;
+      });
     }
   };
 
@@ -645,39 +661,39 @@ const MasterDataTableTester = () => {
                       </div>
                       <Button
                         onClick={() => loadFullTableData(table.tableName)}
-                        disabled={loadingTableData || table.recordCount === 0}
+                        disabled={loadingTables.has(table.tableName) || table.recordCount === 0}
                         variant="outline"
                         size="sm"
                       >
-                        {loadingTableData ? (
+                        {loadingTables.has(table.tableName) ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
                         ) : (
                           <Eye className="w-4 h-4" />
                         )}
-                        View Data
+                        {tableDataMap[table.tableName] ? 'Refresh Data' : 'View Data'}
                       </Button>
                     </div>
                   </CardHeader>
                   
-                  {selectedTableData.length > 0 && (
+                  {tableDataMap[table.tableName] && tableDataMap[table.tableName].length > 0 && (
                     <CardContent>
                       <div className="border rounded-lg overflow-hidden">
                         <div className="overflow-x-auto max-h-96">
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                {Object.keys(selectedTableData[0] || {}).slice(0, 6).map((column) => (
+                                {Object.keys(tableDataMap[table.tableName][0] || {}).slice(0, 6).map((column) => (
                                   <TableHead key={column} className="font-medium">
                                     {column}
                                   </TableHead>
                                 ))}
-                                {Object.keys(selectedTableData[0] || {}).length > 6 && (
+                                {Object.keys(tableDataMap[table.tableName][0] || {}).length > 6 && (
                                   <TableHead>...</TableHead>
                                 )}
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {selectedTableData.slice(0, 10).map((row, index) => (
+                              {tableDataMap[table.tableName].slice(0, 10).map((row, index) => (
                                 <TableRow key={index}>
                                   {Object.values(row).slice(0, 6).map((value: any, cellIndex) => (
                                     <TableCell key={cellIndex} className="max-w-32 truncate">
@@ -685,6 +701,10 @@ const MasterDataTableTester = () => {
                                         <span className="text-muted-foreground italic">null</span>
                                       ) : typeof value === 'object' ? (
                                         <span className="text-muted-foreground">JSON</span>
+                                      ) : typeof value === 'boolean' ? (
+                                        <Badge variant={value ? "default" : "secondary"}>
+                                          {String(value)}
+                                        </Badge>
                                       ) : (
                                         String(value)
                                       )}
@@ -698,11 +718,20 @@ const MasterDataTableTester = () => {
                             </TableBody>
                           </Table>
                         </div>
-                        {selectedTableData.length > 10 && (
+                        {tableDataMap[table.tableName].length > 10 && (
                           <div className="p-3 bg-muted text-center text-sm text-muted-foreground">
-                            Showing first 10 of {selectedTableData.length} records
+                            Showing first 10 of {tableDataMap[table.tableName].length} records
                           </div>
                         )}
+                      </div>
+                    </CardContent>
+                  )}
+                  
+                  {tableDataMap[table.tableName] && tableDataMap[table.tableName].length === 0 && (
+                    <CardContent>
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No data found in this table</p>
                       </div>
                     </CardContent>
                   )}
