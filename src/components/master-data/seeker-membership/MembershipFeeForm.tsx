@@ -140,7 +140,8 @@ const MembershipFeeForm: React.FC<MembershipFeeFormProps> = ({
     const now = new Date().toISOString();
     const entry = {
       ...currentEntry,
-      id: currentEntry.id || `user_${Date.now()}`,
+      // Let the database generate the UUID automatically - don't provide an id for new entries
+      ...(currentEntry.id ? { id: currentEntry.id } : {}),
       // Set default values for quarterly and half yearly to maintain data structure
       quarterlyAmount: 0,
       quarterlyCurrency: currentEntry.annualCurrency || '',
