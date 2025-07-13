@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 interface SolutionStatus {
   id?: string;
   name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const defaultStatuses = [
@@ -33,35 +36,35 @@ const SolutionStatusConfigSupabase = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   // Load data on component mount
   useEffect(() => {
-    fetchSolutionStatuses();
+    loadStatuses();
   }, []);
 
-  const fetchSolutionStatuses = async () => {
+  const loadStatuses = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('master_solution_statuses')
         .select('*')
         .order('name');
-
+      
       if (error) throw error;
-
-      setSolutionStatuses(data || []);
       
       // If no data exists, insert default data
       if (!data || data.length === 0) {
         await insertDefaultData();
+      } else {
+        setSolutionStatuses(data);
       }
     } catch (error) {
-      console.error('Error fetching solution statuses:', error);
+      console.error('Error loading solution statuses:', error);
       toast({
         title: "Error",
-        description: "Failed to load solution statuses.",
+        description: "Failed to load solution statuses",
         variant: "destructive",
       });
     } finally {
@@ -71,44 +74,39 @@ const SolutionStatusConfigSupabase = () => {
 
   const insertDefaultData = async () => {
     try {
+      const defaultData = defaultStatuses.map(name => ({ name }));
       const { error } = await supabase
         .from('master_solution_statuses')
-        .insert(defaultStatuses.map(name => ({ name })));
-
-      if (error) throw error;
+        .insert(defaultData);
       
-      fetchSolutionStatuses();
+      if (error) throw error;
+      loadStatuses();
     } catch (error) {
-      console.error('Error inserting default solution statuses:', error);
+      console.error('Error inserting default data:', error);
     }
   };
 
   const addStatus = async () => {
     if (newStatus.trim() !== '') {
+      if (solutionStatuses.some(status => status.name === newStatus.trim())) {
+        toast({
+          title: "Error",
+          description: "This status already exists.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       try {
-        // Check for duplicates
-        const duplicate = solutionStatuses.find(s => 
-          s.name.toLowerCase() === newStatus.trim().toLowerCase()
-        );
-        
-        if (duplicate) {
-          toast({
-            title: "Error",
-            description: "This status already exists.",
-            variant: "destructive",
-          });
-          return;
-        }
-
         const { error } = await supabase
           .from('master_solution_statuses')
-          .insert([{ name: newStatus.trim() }]);
+          .insert({ name: newStatus.trim() });
 
         if (error) throw error;
-
+        
         setNewStatus('');
         setIsAdding(false);
-        fetchSolutionStatuses();
+        loadStatuses();
         toast({
           title: "Status Added",
           description: `${newStatus.trim()} has been added to the list.`,
@@ -117,7 +115,7 @@ const SolutionStatusConfigSupabase = () => {
         console.error('Error adding status:', error);
         toast({
           title: "Error",
-          description: "Failed to add status.",
+          description: "Failed to add status",
           variant: "destructive",
         });
       }
@@ -132,25 +130,24 @@ const SolutionStatusConfigSupabase = () => {
 
   const removeStatus = async (index: number) => {
     try {
-      const statusToRemove = solutionStatuses[index];
-      
+      const statusToDelete = solutionStatuses[index];
       const { error } = await supabase
         .from('master_solution_statuses')
         .delete()
-        .eq('id', statusToRemove.id);
+        .eq('id', statusToDelete.id);
 
       if (error) throw error;
-
-      fetchSolutionStatuses();
+      
+      loadStatuses();
       toast({
         title: "Status Removed",
-        description: `${statusToRemove.name} has been removed from the list.`,
+        description: `${statusToDelete.name} has been removed from the list.`,
       });
     } catch (error) {
       console.error('Error removing status:', error);
       toast({
         title: "Error",
-        description: "Failed to remove status.",
+        description: "Failed to remove status",
         variant: "destructive",
       });
     }
@@ -165,17 +162,16 @@ const SolutionStatusConfigSupabase = () => {
     if (editingValue.trim() && editingIndex !== null) {
       try {
         const statusToUpdate = solutionStatuses[editingIndex];
-        
         const { error } = await supabase
           .from('master_solution_statuses')
           .update({ name: editingValue.trim() })
           .eq('id', statusToUpdate.id);
 
         if (error) throw error;
-
+        
         setEditingIndex(null);
         setEditingValue('');
-        fetchSolutionStatuses();
+        loadStatuses();
         toast({
           title: "Success",
           description: "Solution status updated successfully",
@@ -184,7 +180,7 @@ const SolutionStatusConfigSupabase = () => {
         console.error('Error updating status:', error);
         toast({
           title: "Error",
-          description: "Failed to update status.",
+          description: "Failed to update status",
           variant: "destructive",
         });
       }
@@ -204,25 +200,25 @@ const SolutionStatusConfigSupabase = () => {
   const resetToDefault = async () => {
     try {
       // Clear existing data
-      await supabase.from('master_solution_statuses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      // Insert default data
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('master_solution_statuses')
-        .insert(defaultStatuses.map(name => ({ name })));
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
-      fetchSolutionStatuses();
+      // Insert default data
+      await insertDefaultData();
+      
       toast({
         title: "Reset Complete",
         description: "Solution statuses have been reset to the default workflow.",
       });
     } catch (error) {
-      console.error('Error resetting statuses:', error);
+      console.error('Error resetting to default:', error);
       toast({
         title: "Error",
-        description: "Failed to reset statuses.",
+        description: "Failed to reset to default",
         variant: "destructive",
       });
     }
@@ -250,10 +246,6 @@ const SolutionStatusConfigSupabase = () => {
     }
   };
 
-  if (loading) {
-    return <div>Loading solution statuses...</div>;
-  }
-
   return (
     <div className="space-y-6">
       <div className="text-left">
@@ -277,13 +269,14 @@ const SolutionStatusConfigSupabase = () => {
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
+                disabled={loading}
               >
                 <RotateCcw className="h-4 w-4" />
                 Reset to Default
               </Button>
               <Button 
                 onClick={() => setIsAdding(true)} 
-                disabled={isAdding}
+                disabled={isAdding || loading}
                 className="flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -306,7 +299,7 @@ const SolutionStatusConfigSupabase = () => {
                 />
               </div>
               <div className="flex gap-2 items-end">
-                <Button onClick={addStatus} size="sm" className="flex items-center gap-1">
+                <Button onClick={addStatus} size="sm" className="flex items-center gap-1" disabled={loading}>
                   <Save className="w-3 h-3" />
                   Save
                 </Button>
@@ -319,68 +312,77 @@ const SolutionStatusConfigSupabase = () => {
           )}
           
           <div className="space-y-2">
-            {solutionStatuses.map((status, index) => {
-              const phase = getStatusPhase(status.name);
-              const phaseColor = getPhaseColor(phase);
-              
-              return (
-                <div key={status.id} className={`flex items-center justify-between py-3 px-4 border rounded-lg ${phaseColor} hover:bg-muted/50 transition-colors`}>
-                  {editingIndex === index ? (
-                    <div className="flex gap-2 flex-1">
-                      <Input
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
-                        <Save className="w-3 h-3" />
-                        Save
-                      </Button>
-                      <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
-                        <X className="w-3 h-3" />
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">{index + 1}</Badge>
-                        <span className="font-medium">{status.name}</span>
-                        <Badge variant="outline" className="capitalize">{phase}</Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleEditStatus(index)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="w-3 h-3" />
-                          Edit
+            {loading ? (
+              <p className="text-muted-foreground text-center py-8">Loading...</p>
+            ) : solutionStatuses.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No solution statuses configured.</p>
+                <p className="text-sm mt-1">Click "Reset to Default" to load the standard workflow statuses.</p>
+              </div>
+            ) : (
+              solutionStatuses.map((status, index) => {
+                const phase = getStatusPhase(status.name);
+                const phaseColor = getPhaseColor(phase);
+                
+                return (
+                  <div key={status.id} className={`flex items-center justify-between py-3 px-4 border rounded-lg ${phaseColor} hover:bg-muted/50 transition-colors`}>
+                    {editingIndex === index ? (
+                      <div className="flex gap-2 flex-1">
+                        <Input
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1" disabled={loading}>
+                          <Save className="w-3 h-3" />
+                          Save
                         </Button>
-                        <Button
-                          onClick={() => removeStatus(index)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
+                        <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
+                          <X className="w-3 h-3" />
+                          Cancel
                         </Button>
                       </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary">{index + 1}</Badge>
+                          <span className="font-medium">{status.name}</span>
+                          <Badge variant="outline" className="capitalize">{phase}</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleEditStatus(index)}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            disabled={loading}
+                          >
+                            <Edit className="w-3 h-3" />
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => removeStatus(index)}
+                            variant="destructive"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            disabled={loading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
           
-          {solutionStatuses.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No solution statuses configured.</p>
-              <p className="text-sm mt-1">Click "Reset to Default" to load the standard workflow statuses.</p>
-            </div>
-          )}
+          <Button onClick={() => toast({ title: "All Changes Saved", description: "Changes are automatically saved to the database." })} className="w-full">
+            <Save className="h-4 w-4 mr-2" />
+            Save All Changes
+          </Button>
         </CardContent>
       </Card>
     </div>
