@@ -37,6 +37,7 @@ const IndustrySegmentsConfigSupabase: React.FC = () => {
         .order('name');
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Industry Segments loaded from Supabase:', data);
       setIndustrySegments(data || []);
     } catch (error) {
       console.error('Error loading industry segments:', error);

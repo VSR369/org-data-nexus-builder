@@ -115,6 +115,7 @@ const DomainGroupsConfigSupabase = () => {
         hierarchy: dg.hierarchy ? (typeof dg.hierarchy === 'string' ? JSON.parse(dg.hierarchy) : dg.hierarchy) : undefined
       }));
 
+      console.log('✅ CRUD TEST - Domain Groups loaded from Supabase:', transformedDomainGroups);
       setDomainGroups(transformedDomainGroups);
       setIndustrySegments(industrySegmentsResult.data || []);
     } catch (error) {
