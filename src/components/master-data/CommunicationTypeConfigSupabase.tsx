@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Save, X, MessageSquare } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, MessageSquare, ExternalLink } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,6 +11,7 @@ interface CommunicationType {
   id?: string;
   name: string;
   description?: string;
+  link?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -21,7 +22,8 @@ const CommunicationTypeConfigSupabase = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
-  const [newType, setNewType] = useState({ name: '', description: '' });
+  const [editingLink, setEditingLink] = useState('');
+  const [newType, setNewType] = useState({ name: '', description: '', link: '' });
   const [loading, setLoading] = useState(false);
 
   // Load data on component mount
@@ -58,12 +60,13 @@ const CommunicationTypeConfigSupabase = () => {
           .from('master_communication_types')
           .insert({
             name: newType.name,
-            description: newType.description || undefined
+            description: newType.description || undefined,
+            link: newType.link || undefined
           });
 
         if (error) throw error;
         
-        setNewType({ name: '', description: '' });
+        setNewType({ name: '', description: '', link: '' });
         loadTypes();
         toast({
           title: "Success",
@@ -90,6 +93,7 @@ const CommunicationTypeConfigSupabase = () => {
     setEditingId(type.id!);
     setEditingName(type.name);
     setEditingDescription(type.description || '');
+    setEditingLink(type.link || '');
   };
 
   const handleSaveEdit = async () => {
@@ -99,7 +103,8 @@ const CommunicationTypeConfigSupabase = () => {
           .from('master_communication_types')
           .update({ 
             name: editingName,
-            description: editingDescription || undefined
+            description: editingDescription || undefined,
+            link: editingLink || undefined
           })
           .eq('id', editingId);
 
@@ -108,6 +113,7 @@ const CommunicationTypeConfigSupabase = () => {
         setEditingId(null);
         setEditingName('');
         setEditingDescription('');
+        setEditingLink('');
         loadTypes();
         toast({
           title: "Success",
@@ -128,6 +134,7 @@ const CommunicationTypeConfigSupabase = () => {
     setEditingId(null);
     setEditingName('');
     setEditingDescription('');
+    setEditingLink('');
   };
 
   const deleteType = async (id: string) => {
@@ -186,6 +193,16 @@ const CommunicationTypeConfigSupabase = () => {
                 placeholder="Enter the description for this communication type"
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="type-link">Link (Optional)</Label>
+              <Input
+                id="type-link"
+                value={newType.link}
+                onChange={(e) => setNewType(prev => ({ ...prev, link: e.target.value }))}
+                placeholder="e.g., https://youtube.com/channel/example, https://blog.example.com"
+                type="url"
+              />
+            </div>
             <Button onClick={addType} className="w-fit" disabled={loading}>
               <Plus className="w-4 h-4 mr-2" />
               Add Communication Type
@@ -241,6 +258,19 @@ const CommunicationTypeConfigSupabase = () => {
                             className="mt-1"
                           />
                         </div>
+                        <div>
+                          <Label htmlFor={`link-${type.id}`} className="text-sm font-medium">
+                            Link
+                          </Label>
+                          <Input
+                            id={`link-${type.id}`}
+                            value={editingLink}
+                            onChange={(e) => setEditingLink(e.target.value)}
+                            placeholder="Enter link (optional)"
+                            type="url"
+                            className="mt-1"
+                          />
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1" disabled={loading}>
@@ -257,12 +287,28 @@ const CommunicationTypeConfigSupabase = () => {
                     <>
                       <div className="flex items-center gap-3 flex-1">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{type.name}</span>
-                          </div>
-                          {type.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
-                          )}
+                           <div className="flex items-center gap-2">
+                             <span className="font-medium">{type.name}</span>
+                             {type.link && (
+                               <a
+                                 href={type.link}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="text-primary hover:text-primary/80 transition-colors"
+                                 title="Visit link"
+                               >
+                                 <ExternalLink className="w-4 h-4" />
+                               </a>
+                             )}
+                           </div>
+                           {type.description && (
+                             <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                           )}
+                           {type.link && (
+                             <p className="text-xs text-muted-foreground mt-1">
+                               <span className="font-medium">Link:</span> {type.link}
+                             </p>
+                           )}
                         </div>
                       </div>
                        <div className="flex gap-2">
