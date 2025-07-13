@@ -124,9 +124,9 @@ const DomainGroupHierarchyManager: React.FC<DomainGroupHierarchyManagerProps> = 
     });
   };
 
-  const handleIntegrateToMasterData = () => {
+  const handleIntegrateToMasterData = async () => {
     try {
-      const result = convertToMasterDataFormat(hierarchyData, savedDocument);
+      const result = await convertToMasterDataFormat(hierarchyData, savedDocument);
       
       toast({
         title: "Success",

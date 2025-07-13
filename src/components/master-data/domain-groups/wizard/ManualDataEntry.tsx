@@ -28,9 +28,13 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
 
   useEffect(() => {
     // Load existing domain groups data
-    const loadedData = domainGroupsDataManager.loadData();
-    setData(loadedData);
-    console.log('ManualDataEntry: Loaded existing data:', loadedData);
+    const loadData = async () => {
+      const loadedData = await domainGroupsDataManager.loadData();
+      setData(loadedData);
+      console.log('ManualDataEntry: Loaded existing data:', loadedData);
+    };
+    
+    loadData();
   }, []);
 
   useEffect(() => {

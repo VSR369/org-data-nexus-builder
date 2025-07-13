@@ -39,12 +39,12 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
     loadDomainGroupsData();
   }, []);
 
-  const loadDomainGroupsData = () => {
+  const loadDomainGroupsData = async () => {
     console.log('CompetencyAssessmentTab - Enhanced data loading...');
     setIsLoading(true);
     
     try {
-      const data = domainGroupsDataManager.loadData();
+      const data = await domainGroupsDataManager.loadData();
       console.log('CompetencyAssessmentTab - Enhanced loaded data:', data);
       
       // Validate data structure

@@ -28,11 +28,15 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
 
   useEffect(() => {
     // Load industry segments and existing domain groups
-    const industryData = industrySegmentDataManager.loadData();
-    const domainData = domainGroupsDataManager.loadData();
+    const loadData = async () => {
+      const industryData = industrySegmentDataManager.loadData();
+      const domainData = await domainGroupsDataManager.loadData();
+      
+      setIndustrySegments(industryData.industrySegments || []);
+      setExistingData(domainData);
+    };
     
-    setIndustrySegments(industryData.industrySegments || []);
-    setExistingData(domainData);
+    loadData();
   }, []);
 
   useEffect(() => {

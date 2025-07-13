@@ -14,10 +14,10 @@ interface IntegrationResult {
   createdIndustrySegments: number;
 }
 
-export const convertToMasterDataFormat = (
+export const convertToMasterDataFormat = async (
   hierarchyData: HierarchyData, 
   savedDocument: SavedExcelDocument | null
-): IntegrationResult => {
+): Promise<IntegrationResult> => {
   console.log('🔄 Starting Excel to Master Data conversion...');
   console.log('📊 Input hierarchy data:', hierarchyData);
 
@@ -26,7 +26,7 @@ export const convertToMasterDataFormat = (
   }
 
   // Load existing data
-  const existingData = domainGroupsDataManager.loadData();
+  const existingData = await domainGroupsDataManager.loadData();
   let industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
   
   console.log('📦 Existing domain groups data:', existingData);

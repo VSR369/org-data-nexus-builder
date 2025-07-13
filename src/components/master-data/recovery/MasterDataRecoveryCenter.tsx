@@ -48,12 +48,12 @@ const MasterDataRecoveryCenter: React.FC = () => {
     loadBackupSettings();
   }, []);
 
-  const checkDataHealth = () => {
+  const checkDataHealth = async () => {
     const status: DataHealthStatus = {};
 
     // Check domain groups
     try {
-      const domainData = domainGroupsDataManager.loadData();
+      const domainData = await domainGroupsDataManager.loadData();
       status.domainGroups = {
         status: domainData.domainGroups.length > 0 ? 'healthy' : 'warning',
         message: `${domainData.domainGroups.length} domain groups found`,
