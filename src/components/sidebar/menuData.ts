@@ -15,10 +15,17 @@ import {
   FileText,
   UserCheck,
   Key,
-  Download
+  Download,
+  Table
 } from 'lucide-react';
 
 export const customDataMenuItems = [
+  {
+    id: 'table-tester',
+    title: 'Table Tester',
+    icon: Table,
+    description: 'View master data table structures and field mappings'
+  },
   {
     id: 'custom-data-manager',
     title: 'Custom Data Manager',
