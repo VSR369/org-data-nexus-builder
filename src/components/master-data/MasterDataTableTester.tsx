@@ -8,11 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TableStructure {
-  table_name: string;
   column_name: string;
   data_type: string;
   is_nullable: string;
   column_default: string | null;
+  ordinal_position: number;
 }
 
 interface TableData {
@@ -135,6 +135,26 @@ const MasterDataTableTester = () => {
     }
   ];
 
+  // Function to get actual table schema from PostgreSQL information_schema
+  const getTableSchema = async (tableName: string): Promise<TableStructure[]> => {
+    try {
+      const { data, error } = await supabase.rpc('get_table_schema', { 
+        table_name: tableName 
+      });
+
+      if (error) {
+        console.error(`Error fetching schema for ${tableName}:`, error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error(`Error getting schema for ${tableName}:`, error);
+      return [];
+    }
+  };
+
+  // Function to load table data using actual database schema
   const loadTableData = async () => {
     setLoading(true);
     try {
@@ -148,88 +168,10 @@ const MasterDataTableTester = () => {
 
           if (tableInfo.isSupabaseEnabled) {
             try {
-              // First try to get sample data to see what fields actually exist
-              const { data: tableData, error: tableError } = await supabase
-                .from(tableInfo.tableName as any)
-                .select('*')
-                .limit(1);
+              // Get actual table structure from PostgreSQL information_schema
+              structure = await getTableSchema(tableInfo.tableName);
 
-              if (!tableError && tableData && tableData.length > 0) {
-                // Extract actual table structure from sample data
-                const sampleObj = tableData[0];
-                structure = Object.keys(sampleObj).map(key => {
-                  const value = sampleObj[key];
-                  let dataType = 'text';
-                  
-                  // Improved type inference based on field name patterns and values
-                  if (key === 'id' || key.endsWith('_id')) {
-                    dataType = 'uuid';
-                  } else if (key.includes('date') || key.includes('time') || key.includes('at')) {
-                    dataType = 'timestamp with time zone';
-                  } else if (key.includes('amount') || key.includes('percentage') || key.includes('fee')) {
-                    dataType = 'numeric';
-                  } else if (key === 'version') {
-                    dataType = 'integer';
-                  } else if (key.startsWith('is_') || key === 'active' || typeof value === 'boolean') {
-                    dataType = 'boolean';
-                  } else if (key === 'hierarchy' || (typeof value === 'object' && value !== null && !Array.isArray(value))) {
-                    dataType = 'jsonb';
-                  } else if (Array.isArray(value)) {
-                    dataType = 'ARRAY';
-                  } else if (typeof value === 'number') {
-                    dataType = Number.isInteger(value) ? 'integer' : 'numeric';
-                  } else if (typeof value === 'string') {
-                    // Check if it looks like a timestamp
-                    if (value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
-                      dataType = 'timestamp with time zone';
-                    } else {
-                      dataType = 'text';
-                    }
-                  }
-                  
-                  return {
-                    table_name: tableInfo.tableName,
-                    column_name: key,
-                    data_type: dataType,
-                    is_nullable: value === null ? 'YES' : 'NO',
-                    column_default: key === 'id' ? 'gen_random_uuid()' : null
-                  };
-                });
-              } else {
-                // If no data exists, create structure based on frontend field mapping
-                structure = tableInfo.frontendFields.map(field => {
-                  let dataType = 'text';
-                  let defaultValue = null;
-                  
-                  if (field === 'id' || field.endsWith('_id')) {
-                    dataType = 'uuid';
-                    defaultValue = field === 'id' ? 'gen_random_uuid()' : null;
-                  } else if (field.includes('date') || field.includes('time') || field.includes('at')) {
-                    dataType = 'timestamp with time zone';
-                    defaultValue = field.includes('created_at') || field.includes('updated_at') ? 'now()' : null;
-                  } else if (field.includes('amount') || field.includes('percentage') || field.includes('fee')) {
-                    dataType = 'numeric';
-                  } else if (field === 'version') {
-                    dataType = 'integer';
-                    defaultValue = '1';
-                  } else if (field.startsWith('is_') || field === 'active') {
-                    dataType = 'boolean';
-                    defaultValue = field === 'is_active' ? 'true' : 'false';
-                  } else if (field === 'hierarchy') {
-                    dataType = 'jsonb';
-                  }
-                  
-                  return {
-                    table_name: tableInfo.tableName,
-                    column_name: field,
-                    data_type: dataType,
-                    is_nullable: field === 'id' || field === 'name' ? 'NO' : 'YES',
-                    column_default: defaultValue
-                  };
-                });
-              }
-
-              // Get sample data
+              // Get sample data for preview (separate from structure)
               const { data, error: dataError } = await supabase
                 .from(tableInfo.tableName as any)
                 .select('*')
@@ -237,6 +179,8 @@ const MasterDataTableTester = () => {
 
               if (!dataError) {
                 sampleData = data || [];
+              } else {
+                console.log(`Error fetching sample data for ${tableInfo.tableName}:`, dataError);
               }
 
               // Get record count
@@ -244,45 +188,12 @@ const MasterDataTableTester = () => {
                 .from(tableInfo.tableName as any)
                 .select('*', { count: 'exact', head: true });
 
-              if (!countError) count = recordCount || 0;
-
-              // If no structure from schema queries, fallback to sample data structure
-              if (structure.length === 0 && sampleData.length > 0) {
-                const sampleObj = sampleData[0];
-                structure = Object.keys(sampleObj).map(key => {
-                  const value = sampleObj[key];
-                  let dataType: string = typeof value;
-                  
-                  // Better type inference
-                  if (value === null) {
-                    dataType = 'nullable';
-                  } else if (typeof value === 'string') {
-                    if (key.includes('date') || key.includes('time') || value.match(/^\d{4}-\d{2}-\d{2}/)) {
-                      dataType = 'timestamp with time zone';
-                    } else if (key === 'id' || key.endsWith('_id')) {
-                      dataType = 'uuid';
-                    } else {
-                      dataType = 'text';
-                    }
-                  } else if (typeof value === 'number') {
-                    dataType = Number.isInteger(value) ? 'integer' : 'numeric';
-                  } else if (typeof value === 'boolean') {
-                    dataType = 'boolean';
-                  } else if (Array.isArray(value)) {
-                    dataType = 'ARRAY';
-                  } else if (typeof value === 'object') {
-                    dataType = 'jsonb';
-                  }
-                  
-                  return {
-                    table_name: tableInfo.tableName,
-                    column_name: key,
-                    data_type: dataType,
-                    is_nullable: value === null ? 'YES' : 'NO',
-                    column_default: null
-                  };
-                });
+              if (!countError) {
+                count = recordCount || 0;
+              } else {
+                console.log(`Error getting count for ${tableInfo.tableName}:`, countError);
               }
+
             } catch (error) {
               console.log(`Error accessing table ${tableInfo.tableName}:`, error);
             }
@@ -308,7 +219,7 @@ const MasterDataTableTester = () => {
       setTables(tableData);
       toast({
         title: "Table Analysis Complete",
-        description: `Analyzed ${tableData.length} master data tables`,
+        description: `Analyzed ${tableData.length} master data tables using actual database schema`,
       });
     } catch (error) {
       console.error('Error loading table data:', error);

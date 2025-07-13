@@ -874,7 +874,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_table_schema: {
+        Args: { table_name: string }
+        Returns: {
+          column_name: string
+          data_type: string
+          is_nullable: string
+          column_default: string
+          ordinal_position: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
