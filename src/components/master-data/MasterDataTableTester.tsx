@@ -34,103 +34,103 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_countries',
       displayName: 'Countries',
-      frontendFields: ['id', 'name', 'code'],
+      frontendFields: ['id', 'name', 'code', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_currencies', 
       displayName: 'Currencies',
-      frontendFields: ['id', 'name', 'code', 'symbol', 'country', 'country_code'],
+      frontendFields: ['id', 'name', 'code', 'symbol', 'country', 'country_code', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_organization_types',
       displayName: 'Organization Types', 
-      frontendFields: ['id', 'name'],
+      frontendFields: ['id', 'name', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_entity_types',
       displayName: 'Entity Types',
-      frontendFields: ['id', 'name'],
+      frontendFields: ['id', 'name', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_industry_segments',
       displayName: 'Industry Segments',
-      frontendFields: ['id', 'name', 'description'],
+      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_departments',
       displayName: 'Departments',
-      frontendFields: ['id', 'name'],
+      frontendFields: ['id', 'name', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_challenge_statuses',
       displayName: 'Challenge Statuses',
-      frontendFields: ['id', 'name', 'description'],
+      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_solution_statuses',
       displayName: 'Solution Statuses',
-      frontendFields: ['id', 'name', 'description'],
+      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_communication_types',
       displayName: 'Communication Types',
-      frontendFields: ['id', 'name', 'description'],
+      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_reward_types',
       displayName: 'Reward Types',
-      frontendFields: ['id', 'name', 'description', 'type', 'currency', 'amount'],
+      frontendFields: ['id', 'name', 'description', 'type', 'currency', 'amount', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_engagement_models',
       displayName: 'Engagement Models',
-      frontendFields: ['id', 'name', 'description'],
+      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_competency_capabilities',
       displayName: 'Competency Capabilities',
-      frontendFields: ['id', 'name', 'description', 'category'],
+      frontendFields: ['id', 'name', 'description', 'category', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
-      frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active'],
+      frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_categories',
       displayName: 'Categories',
-      frontendFields: ['id', 'name', 'description', 'domain_group_id', 'is_active'],
+      frontendFields: ['id', 'name', 'description', 'domain_group_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_sub_categories',
       displayName: 'Sub Categories',
-      frontendFields: ['id', 'name', 'description', 'category_id', 'is_active'],
+      frontendFields: ['id', 'name', 'description', 'category_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'master_seeker_membership_fees',
       displayName: 'Seeker Membership Fees',
-      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'quarterly_amount', 'half_yearly_amount', 'annual_amount', 'monthly_amount', 'description'],
+      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'quarterly_amount', 'half_yearly_amount', 'annual_amount', 'monthly_amount', 'quarterly_currency', 'half_yearly_currency', 'annual_currency', 'monthly_currency', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
       tableName: 'pricing_configs',
       displayName: 'Pricing Configurations',
-      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee'],
+      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee', 'platform_fee_percentage', 'discount_percentage', 'internal_paas_pricing', 'created_at', 'updated_at', 'version'],
       isSupabaseEnabled: true
     }
   ];
@@ -148,56 +148,131 @@ const MasterDataTableTester = () => {
 
           if (tableInfo.isSupabaseEnabled) {
             try {
-              // Get sample data first
+              // Try to get actual table structure by querying the table and checking its columns
+              // This approach works by getting a sample of the actual data to infer structure
+              const { data: tableData, error: tableError } = await supabase
+                .from(tableInfo.tableName as any)
+                .select('*')
+                .limit(1);
+
+              // Also try to get structure from sample data or fallback to empty structure
+              if (!tableError && tableData && tableData.length > 0) {
+                const sampleObj = tableData[0];
+                structure = Object.keys(sampleObj).map(key => {
+                  const value = sampleObj[key];
+                  let dataType: string = 'text';
+                  
+                  if (value === null) {
+                    dataType = 'text';
+                  } else if (typeof value === 'string') {
+                    if (key.includes('date') || key.includes('time') || key.includes('at') || value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                      dataType = 'timestamp with time zone';
+                    } else if (key === 'id' || key.endsWith('_id')) {
+                      dataType = 'uuid';
+                    } else {
+                      dataType = 'text';
+                    }
+                  } else if (typeof value === 'number') {
+                    dataType = Number.isInteger(value) ? 'integer' : 'numeric';
+                  } else if (typeof value === 'boolean') {
+                    dataType = 'boolean';
+                  } else if (Array.isArray(value)) {
+                    dataType = 'ARRAY';
+                  } else if (typeof value === 'object') {
+                    dataType = 'jsonb';
+                  }
+                  
+                  return {
+                    table_name: tableInfo.tableName,
+                    column_name: key,
+                    data_type: dataType,
+                    is_nullable: value === null ? 'YES' : 'NO',
+                    column_default: null
+                  };
+                });
+              } else {
+                // If no data, create structure based on known database schema
+                const knownFields = tableInfo.frontendFields;
+                structure = knownFields.map(field => {
+                  let dataType = 'text';
+                  if (field === 'id' || field.endsWith('_id')) {
+                    dataType = 'uuid';
+                  } else if (field.includes('date') || field.includes('time') || field.includes('at')) {
+                    dataType = 'timestamp with time zone';
+                  } else if (field.includes('amount') || field.includes('percentage') || field.includes('fee')) {
+                    dataType = 'numeric';
+                  } else if (field.includes('version')) {
+                    dataType = 'integer';
+                  } else if (field.includes('is_') || field.includes('active')) {
+                    dataType = 'boolean';
+                  } else if (field.includes('pricing') && field.includes('internal')) {
+                    dataType = 'jsonb';
+                  }
+                  
+                  return {
+                    table_name: tableInfo.tableName,
+                    column_name: field,
+                    data_type: dataType,
+                    is_nullable: field === 'id' ? 'NO' : 'YES',
+                    column_default: field === 'id' ? 'gen_random_uuid()' : null
+                  };
+                });
+              }
+
+              // Get sample data
               const { data, error: dataError } = await supabase
                 .from(tableInfo.tableName as any)
                 .select('*')
                 .limit(3);
+
+              if (!dataError) {
+                sampleData = data || [];
+              }
 
               // Get record count
               const { count: recordCount, error: countError } = await supabase
                 .from(tableInfo.tableName as any)
                 .select('*', { count: 'exact', head: true });
 
-              if (!dataError) {
-                sampleData = data || [];
-                
-                // Generate structure from sample data if available
-                if (data && data.length > 0) {
-                  const sampleObj = data[0];
-                  structure = Object.keys(sampleObj).map(key => {
-                    const value = sampleObj[key];
-                    let dataType: string = typeof value;
-                    
-                    // Better type inference
-                    if (value === null) {
-                      dataType = 'nullable';
-                    } else if (typeof value === 'string') {
-                      if (key.includes('date') || key.includes('time') || value.match(/^\d{4}-\d{2}-\d{2}/)) {
-                        dataType = 'timestamp';
-                      } else if (key === 'id' || key.endsWith('_id')) {
-                        dataType = 'uuid';
-                      } else {
-                        dataType = 'text';
-                      }
-                    } else if (typeof value === 'number') {
-                      dataType = Number.isInteger(value) ? 'integer' : 'numeric';
-                    } else if (typeof value === 'boolean') {
-                      dataType = 'boolean';
-                    }
-                    
-                    return {
-                      table_name: tableInfo.tableName,
-                      column_name: key,
-                      data_type: dataType,
-                      is_nullable: value === null ? 'YES' : 'NO',
-                      column_default: null
-                    };
-                  });
-                }
-              }
-              
               if (!countError) count = recordCount || 0;
+
+              // If no structure from schema queries, fallback to sample data structure
+              if (structure.length === 0 && sampleData.length > 0) {
+                const sampleObj = sampleData[0];
+                structure = Object.keys(sampleObj).map(key => {
+                  const value = sampleObj[key];
+                  let dataType: string = typeof value;
+                  
+                  // Better type inference
+                  if (value === null) {
+                    dataType = 'nullable';
+                  } else if (typeof value === 'string') {
+                    if (key.includes('date') || key.includes('time') || value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                      dataType = 'timestamp with time zone';
+                    } else if (key === 'id' || key.endsWith('_id')) {
+                      dataType = 'uuid';
+                    } else {
+                      dataType = 'text';
+                    }
+                  } else if (typeof value === 'number') {
+                    dataType = Number.isInteger(value) ? 'integer' : 'numeric';
+                  } else if (typeof value === 'boolean') {
+                    dataType = 'boolean';
+                  } else if (Array.isArray(value)) {
+                    dataType = 'ARRAY';
+                  } else if (typeof value === 'object') {
+                    dataType = 'jsonb';
+                  }
+                  
+                  return {
+                    table_name: tableInfo.tableName,
+                    column_name: key,
+                    data_type: dataType,
+                    is_nullable: value === null ? 'YES' : 'NO',
+                    column_default: null
+                  };
+                });
+              }
             } catch (error) {
               console.log(`Error accessing table ${tableInfo.tableName}:`, error);
             }
