@@ -6,17 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Pencil, Trash2, Plus, Download, Search, Upload, FileSpreadsheet } from 'lucide-react';
+import { Pencil, Trash2, Plus, Download, Search, Upload, FileSpreadsheet, ChevronRight, Building, Users, User } from 'lucide-react';
 import ResponsiveDashboardWrapper from '@/components/layout/ResponsiveDashboardWrapper';
 import * as XLSX from 'xlsx';
 
 interface Department {
   id: string;
-  department_name: string;
-  sub_department_name: string | null;
-  team_unit_name: string | null;
+  name: string;
+  parent_id: string | null;
+  level: number;
+  hierarchy_path: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -25,25 +27,23 @@ interface Department {
 }
 
 interface NewDepartment {
-  department_name: string;
-  sub_department_name: string;
-  team_unit_name: string;
+  name: string;
+  parent_id: string | null;
 }
 
 const DepartmentConfigSupabase = () => {
   const [formData, setFormData] = useState<NewDepartment>({
-    department_name: '',
-    sub_department_name: '',
-    team_unit_name: ''
+    name: '',
+    parent_id: null
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<NewDepartment>({
-    department_name: '',
-    sub_department_name: '',
-    team_unit_name: ''
+    name: '',
+    parent_id: null
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const queryClient = useQueryClient();
 
   const { data: departments = [], isLoading, error } = useQuery({
@@ -52,7 +52,7 @@ const DepartmentConfigSupabase = () => {
       const { data, error } = await supabase
         .from('master_departments')
         .select('*')
-        .order('department_name');
+        .order('hierarchy_path');
       
       if (error) throw error;
       return data as Department[];
@@ -65,9 +65,7 @@ const DepartmentConfigSupabase = () => {
         .from('master_departments')
         .insert([{ 
           ...departmentData, 
-          is_user_created: true,
-          sub_department_name: departmentData.sub_department_name || null,
-          team_unit_name: departmentData.team_unit_name || null
+          is_user_created: true
         }])
         .select()
         .single();
@@ -77,7 +75,7 @@ const DepartmentConfigSupabase = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
-      setFormData({ department_name: '', sub_department_name: '', team_unit_name: '' });
+      setFormData({ name: '', parent_id: null });
       toast({
         title: 'Success',
         description: 'Department added successfully',
@@ -97,11 +95,7 @@ const DepartmentConfigSupabase = () => {
     mutationFn: async ({ id, data }: { id: string; data: NewDepartment }) => {
       const { data: result, error } = await supabase
         .from('master_departments')
-        .update({ 
-          ...data,
-          sub_department_name: data.sub_department_name || null,
-          team_unit_name: data.team_unit_name || null
-        })
+        .update(data)
         .eq('id', id)
         .select()
         .single();
@@ -112,7 +106,7 @@ const DepartmentConfigSupabase = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       setEditingId(null);
-      setEditingData({ department_name: '', sub_department_name: '', team_unit_name: '' });
+      setEditingData({ name: '', parent_id: null });
       toast({
         title: 'Success',
         description: 'Department updated successfully',
@@ -130,6 +124,16 @@ const DepartmentConfigSupabase = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Check if department has children
+      const { data: children } = await supabase
+        .from('master_departments')
+        .select('id')
+        .eq('parent_id', id);
+      
+      if (children && children.length > 0) {
+        throw new Error('Cannot delete department with sub-departments or teams. Please delete child items first.');
+      }
+
       const { error } = await supabase
         .from('master_departments')
         .delete()
@@ -147,7 +151,7 @@ const DepartmentConfigSupabase = () => {
     onError: (error) => {
       toast({
         title: 'Error',
-        description: 'Failed to delete department',
+        description: error.message || 'Failed to delete department',
         variant: 'destructive',
       });
       console.error('Error deleting department:', error);
@@ -155,26 +159,104 @@ const DepartmentConfigSupabase = () => {
   });
 
   const bulkUploadMutation = useMutation({
-    mutationFn: async (departments: NewDepartment[]) => {
-      const { data, error } = await supabase
-        .from('master_departments')
-        .insert(departments.map(dept => ({
-          ...dept,
-          is_user_created: true,
-          sub_department_name: dept.sub_department_name || null,
-          team_unit_name: dept.team_unit_name || null
-        })))
-        .select();
-      
-      if (error) throw error;
-      return data;
+    mutationFn: async (departmentRows: { department: string; subDepartment?: string; teamUnit?: string }[]) => {
+      const departmentMap = new Map<string, string>();
+      const subDepartmentMap = new Map<string, string>();
+      const insertData: NewDepartment[] = [];
+
+      // Process departments first
+      for (const row of departmentRows) {
+        if (row.department && !departmentMap.has(row.department)) {
+          insertData.push({
+            name: row.department,
+            parent_id: null
+          });
+        }
+      }
+
+      // Insert departments first
+      if (insertData.length > 0) {
+        const { data: insertedDepts, error } = await supabase
+          .from('master_departments')
+          .insert(insertData.map(dept => ({ ...dept, is_user_created: true })))
+          .select();
+        
+        if (error) throw error;
+        
+        // Map department names to IDs
+        insertedDepts?.forEach((dept) => {
+          departmentMap.set(dept.name, dept.id);
+        });
+      }
+
+      // Process sub-departments
+      const subDeptInserts: NewDepartment[] = [];
+      for (const row of departmentRows) {
+        if (row.subDepartment) {
+          const key = `${row.department}>${row.subDepartment}`;
+          if (!subDepartmentMap.has(key)) {
+            const parentId = departmentMap.get(row.department);
+            if (parentId) {
+              subDeptInserts.push({
+                name: row.subDepartment,
+                parent_id: parentId
+              });
+              subDepartmentMap.set(key, 'pending');
+            }
+          }
+        }
+      }
+
+      // Insert sub-departments
+      if (subDeptInserts.length > 0) {
+        const { data: insertedSubDepts, error } = await supabase
+          .from('master_departments')
+          .insert(subDeptInserts.map(dept => ({ ...dept, is_user_created: true })))
+          .select();
+        
+        if (error) throw error;
+        
+        // Map sub-department names to IDs
+        insertedSubDepts?.forEach((dept) => {
+          const key = `${departments.find(d => d.id === dept.parent_id)?.name}>${dept.name}`;
+          subDepartmentMap.set(key, dept.id);
+        });
+      }
+
+      // Process teams/units
+      const teamInserts: NewDepartment[] = [];
+      for (const row of departmentRows) {
+        if (row.teamUnit) {
+          const subDeptKey = `${row.department}>${row.subDepartment}`;
+          const parentId = subDepartmentMap.get(subDeptKey);
+          if (parentId && parentId !== 'pending') {
+            teamInserts.push({
+              name: row.teamUnit,
+              parent_id: parentId
+            });
+          }
+        }
+      }
+
+      // Insert teams/units
+      if (teamInserts.length > 0) {
+        const { data, error } = await supabase
+          .from('master_departments')
+          .insert(teamInserts.map(dept => ({ ...dept, is_user_created: true })))
+          .select();
+        
+        if (error) throw error;
+        return data;
+      }
+
+      return [];
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       setSelectedFile(null);
       toast({
         title: 'Success',
-        description: `${data.length} departments uploaded successfully`,
+        description: 'Departments uploaded successfully',
       });
     },
     onError: (error) => {
@@ -189,13 +271,13 @@ const DepartmentConfigSupabase = () => {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.department_name.trim()) {
+    if (formData.name.trim()) {
       addMutation.mutate(formData);
     }
   };
 
   const handleUpdate = (id: string) => {
-    if (editingData.department_name.trim()) {
+    if (editingData.name.trim()) {
       updateMutation.mutate({ id, data: editingData });
     }
   };
@@ -203,15 +285,14 @@ const DepartmentConfigSupabase = () => {
   const startEdit = (department: Department) => {
     setEditingId(department.id);
     setEditingData({
-      department_name: department.department_name,
-      sub_department_name: department.sub_department_name || '',
-      team_unit_name: department.team_unit_name || ''
+      name: department.name,
+      parent_id: department.parent_id
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditingData({ department_name: '', sub_department_name: '', team_unit_name: '' });
+    setEditingData({ name: '', parent_id: null });
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,20 +315,20 @@ const DepartmentConfigSupabase = () => {
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         // Skip header row and process data
-        const departments: NewDepartment[] = [];
+        const departmentRows: { department: string; subDepartment?: string; teamUnit?: string }[] = [];
         for (let i = 1; i < jsonData.length; i++) {
           const row = jsonData[i] as any[];
-          if (row[0]) { // At least department name is required
-            departments.push({
-              department_name: row[0]?.toString().trim() || '',
-              sub_department_name: row[1]?.toString().trim() || '',
-              team_unit_name: row[2]?.toString().trim() || ''
+          if (row[0]) {
+            departmentRows.push({
+              department: row[0]?.toString().trim() || '',
+              subDepartment: row[1]?.toString().trim() || undefined,
+              teamUnit: row[2]?.toString().trim() || undefined
             });
           }
         }
 
-        if (departments.length > 0) {
-          bulkUploadMutation.mutate(departments);
+        if (departmentRows.length > 0) {
+          bulkUploadMutation.mutate(departmentRows);
         } else {
           toast({
             title: 'Error',
@@ -268,11 +349,14 @@ const DepartmentConfigSupabase = () => {
   };
 
   const handleExport = () => {
-    const exportData = departments.map(dept => [
-      dept.department_name,
-      dept.sub_department_name || '',
-      dept.team_unit_name || ''
-    ]);
+    const exportData = departments.map(dept => {
+      const parts = dept.hierarchy_path?.split(' > ') || [dept.name];
+      return [
+        parts[0] || '',           // Department
+        parts[1] || '',           // Sub Department
+        parts[2] || ''            // Team/Unit
+      ];
+    });
     
     const ws = XLSX.utils.aoa_to_sheet([
       ['Department Name', 'Sub Department Name', 'Team/Unit Name'],
@@ -281,14 +365,44 @@ const DepartmentConfigSupabase = () => {
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Departments');
-    XLSX.writeFile(wb, 'departments.xlsx');
+    XLSX.writeFile(wb, 'departments_hierarchy.xlsx');
   };
 
-  const filteredDepartments = departments.filter(dept =>
-    dept.department_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dept.sub_department_name && dept.sub_department_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (dept.team_unit_name && dept.team_unit_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredDepartments = departments.filter(dept => {
+    const matchesSearch = dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (dept.hierarchy_path && dept.hierarchy_path.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesLevel = selectedLevel === 'all' || dept.level.toString() === selectedLevel;
+    
+    return matchesSearch && matchesLevel;
+  });
+
+  const getAvailableParents = (excludeId?: string) => {
+    return departments.filter(dept => {
+      // Can't be its own parent
+      if (excludeId && dept.id === excludeId) return false;
+      // Only departments and sub-departments can be parents (levels 1 and 2)
+      return dept.level < 3;
+    });
+  };
+
+  const getLevelIcon = (level: number) => {
+    switch (level) {
+      case 1: return <Building className="h-4 w-4" />;
+      case 2: return <Users className="h-4 w-4" />;
+      case 3: return <User className="h-4 w-4" />;
+      default: return null;
+    }
+  };
+
+  const getLevelText = (level: number) => {
+    switch (level) {
+      case 1: return 'Department';
+      case 2: return 'Sub-Department';
+      case 3: return 'Team/Unit';
+      default: return 'Unknown';
+    }
+  };
 
   if (error) {
     return (
@@ -305,9 +419,9 @@ const DepartmentConfigSupabase = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Departments Master Data</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Departments Hierarchy</h1>
             <p className="text-muted-foreground">
-              Manage organizational departments with hierarchical structure
+              Manage organizational structure: Department → Sub-Department → Team/Unit
             </p>
           </div>
           <Button onClick={handleExport} variant="outline" className="gap-2">
@@ -321,49 +435,48 @@ const DepartmentConfigSupabase = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Add New Department
+              Add New Item
             </CardTitle>
             <CardDescription>
-              Add a new department with hierarchical structure
+              Add a department, sub-department, or team/unit to the hierarchy
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdd} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="department_name">Department Name *</Label>
+                  <Label htmlFor="name">Name *</Label>
                   <Input
-                    id="department_name"
+                    id="name"
                     type="text"
-                    value={formData.department_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, department_name: e.target.value }))}
-                    placeholder="Enter department name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter name"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="sub_department_name">Sub Department Name</Label>
-                  <Input
-                    id="sub_department_name"
-                    type="text"
-                    value={formData.sub_department_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, sub_department_name: e.target.value }))}
-                    placeholder="Enter sub department name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="team_unit_name">Team/Unit Name</Label>
-                  <Input
-                    id="team_unit_name"
-                    type="text"
-                    value={formData.team_unit_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, team_unit_name: e.target.value }))}
-                    placeholder="Enter team/unit name"
-                  />
+                  <Label htmlFor="parent_id">Parent (optional - leave empty for top-level department)</Label>
+                  <Select 
+                    value={formData.parent_id || 'none'} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, parent_id: value === 'none' ? null : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select parent department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Parent (Top-level Department)</SelectItem>
+                      {getAvailableParents().map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.hierarchy_path || dept.name} ({getLevelText(dept.level)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <Button type="submit" disabled={addMutation.isPending}>
-                {addMutation.isPending ? 'Adding...' : 'Add Department'}
+                {addMutation.isPending ? 'Adding...' : 'Add Item'}
               </Button>
             </form>
           </CardContent>
@@ -377,7 +490,7 @@ const DepartmentConfigSupabase = () => {
               Excel Upload
             </CardTitle>
             <CardDescription>
-              Upload department data from Excel file. Expected columns: Department Name, Sub Department Name, Team/Unit Name
+              Upload hierarchical department data. Columns: Department Name, Sub Department Name, Team/Unit Name
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -400,21 +513,34 @@ const DepartmentConfigSupabase = () => {
           </CardContent>
         </Card>
 
-        {/* Search and Departments Table */}
+        {/* Search and Filter */}
         <Card>
           <CardHeader>
-            <CardTitle>Departments List</CardTitle>
+            <CardTitle>Department Hierarchy</CardTitle>
             <CardDescription>
-              {departments.length} departments configured
+              {departments.length} items configured
             </CardDescription>
-            <div className="flex items-center gap-2 mt-4">
-              <Search className="h-4 w-4" />
-              <Input
-                placeholder="Search departments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                <Input
+                  placeholder="Search departments..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="1">Departments Only</SelectItem>
+                  <SelectItem value="2">Sub-Departments Only</SelectItem>
+                  <SelectItem value="3">Teams/Units Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardHeader>
           <CardContent>
@@ -422,15 +548,15 @@ const DepartmentConfigSupabase = () => {
               <div className="text-center py-8">Loading departments...</div>
             ) : filteredDepartments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {searchTerm ? 'No departments found matching your search.' : 'No departments configured yet.'}
+                {searchTerm || selectedLevel !== 'all' ? 'No departments found matching your criteria.' : 'No departments configured yet.'}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Department Name</TableHead>
-                    <TableHead>Sub Department</TableHead>
-                    <TableHead>Team/Unit</TableHead>
+                    <TableHead>Name & Hierarchy</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Full Path</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Source</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -441,34 +567,45 @@ const DepartmentConfigSupabase = () => {
                     <TableRow key={department.id}>
                       <TableCell>
                         {editingId === department.id ? (
-                          <Input
-                            value={editingData.department_name}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, department_name: e.target.value }))}
-                            autoFocus
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              value={editingData.name}
+                              onChange={(e) => setEditingData(prev => ({ ...prev, name: e.target.value }))}
+                              autoFocus
+                            />
+                            <Select 
+                              value={editingData.parent_id || 'none'} 
+                              onValueChange={(value) => setEditingData(prev => ({ ...prev, parent_id: value === 'none' ? null : value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No Parent</SelectItem>
+                                {getAvailableParents(department.id).map((dept) => (
+                                  <SelectItem key={dept.id} value={dept.id}>
+                                    {dept.hierarchy_path || dept.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         ) : (
-                          <span className="font-medium">{department.department_name}</span>
+                          <div className="flex items-center gap-2">
+                            {getLevelIcon(department.level)}
+                            <span className="font-medium">{department.name}</span>
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
-                        {editingId === department.id ? (
-                          <Input
-                            value={editingData.sub_department_name}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, sub_department_name: e.target.value }))}
-                          />
-                        ) : (
-                          <span>{department.sub_department_name || '-'}</span>
-                        )}
+                        <Badge variant={department.level === 1 ? "default" : department.level === 2 ? "secondary" : "outline"}>
+                          {getLevelText(department.level)}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {editingId === department.id ? (
-                          <Input
-                            value={editingData.team_unit_name}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, team_unit_name: e.target.value }))}
-                          />
-                        ) : (
-                          <span>{department.team_unit_name || '-'}</span>
-                        )}
+                        <span className="text-sm text-muted-foreground">
+                          {department.hierarchy_path || department.name}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {new Date(department.created_at).toLocaleDateString()}
