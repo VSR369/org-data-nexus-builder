@@ -348,15 +348,23 @@ export default function DepartmentConfigSupabase() {
   const createDepartmentFromRow = async (row: any) => {
     if (!row['Department Name']) return null;
 
-    // Check if department already exists
-    const { data: existingDept } = await supabase
+    const orgId = row['Organization ID'] || null;
+    
+    // Check if department already exists for this organization
+    const { data: existingDept, error: queryError } = await supabase
       .from('master_departments')
       .select('*')
       .eq('name', row['Department Name'])
-      .maybeSingle();
+      .eq('organization_id', orgId)
+      .limit(1);
 
-    if (existingDept) {
-      return existingDept;
+    if (queryError) {
+      console.error('Error checking existing department:', queryError);
+      throw queryError;
+    }
+
+    if (existingDept && existingDept.length > 0) {
+      return existingDept[0];
     }
 
     // Create new department
@@ -365,14 +373,17 @@ export default function DepartmentConfigSupabase() {
       .insert({
         name: row['Department Name'],
         description: row['Department Description'] || null,
-        organization_id: row['Organization ID'] || null,
+        organization_id: orgId,
         organization_name: row['Organization Name'] || null,
         is_user_created: true
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating department:', error);
+      throw error;
+    }
     return data;
   };
 
@@ -380,15 +391,20 @@ export default function DepartmentConfigSupabase() {
     if (!row['Sub Department Name']) return null;
 
     // Check if sub department already exists for this department
-    const { data: existingSubDept } = await supabase
+    const { data: existingSubDept, error: queryError } = await supabase
       .from('master_sub_departments')
       .select('*')
       .eq('name', row['Sub Department Name'])
       .eq('department_id', departmentId)
-      .maybeSingle();
+      .limit(1);
 
-    if (existingSubDept) {
-      return existingSubDept;
+    if (queryError) {
+      console.error('Error checking existing sub department:', queryError);
+      throw queryError;
+    }
+
+    if (existingSubDept && existingSubDept.length > 0) {
+      return existingSubDept[0];
     }
 
     const { data, error } = await supabase
@@ -402,7 +418,10 @@ export default function DepartmentConfigSupabase() {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating sub department:', error);
+      throw error;
+    }
     return data;
   };
 
@@ -410,15 +429,20 @@ export default function DepartmentConfigSupabase() {
     if (!row['Team/Unit Name']) return null;
 
     // Check if team unit already exists for this sub department
-    const { data: existingTeam } = await supabase
+    const { data: existingTeam, error: queryError } = await supabase
       .from('master_team_units')
       .select('*')
       .eq('name', row['Team/Unit Name'])
       .eq('sub_department_id', subDepartmentId)
-      .maybeSingle();
+      .limit(1);
 
-    if (existingTeam) {
-      return existingTeam;
+    if (queryError) {
+      console.error('Error checking existing team unit:', queryError);
+      throw queryError;
+    }
+
+    if (existingTeam && existingTeam.length > 0) {
+      return existingTeam[0];
     }
 
     const { data, error } = await supabase
@@ -432,7 +456,10 @@ export default function DepartmentConfigSupabase() {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating team unit:', error);
+      throw error;
+    }
     return data;
   };
 
