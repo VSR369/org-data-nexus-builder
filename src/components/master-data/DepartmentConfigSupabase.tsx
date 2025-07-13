@@ -67,6 +67,7 @@ export default function DepartmentConfigSupabase() {
   const [deletingItem, setDeletingItem] = useState<any>(null);
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
   const [expandedSubDepartments, setExpandedSubDepartments] = useState<Set<string>>(new Set());
+  const [expandedOrganizations, setExpandedOrganizations] = useState<Set<string>>(new Set());
 
   // Form state
   const [formData, setFormData] = useState({
@@ -141,7 +142,28 @@ export default function DepartmentConfigSupabase() {
         organizationMap.get(orgKey)!.departments.push(deptHierarchy);
       });
 
-      setOrganizationHierarchy(Array.from(organizationMap.values()));
+      const orgHierarchyArray = Array.from(organizationMap.values());
+      setOrganizationHierarchy(orgHierarchyArray);
+
+      // Auto-expand all departments and sub-departments for better visibility
+      const allDepartmentIds = new Set<string>();
+      const allSubDepartmentIds = new Set<string>();
+      const allOrganizationIds = new Set<string>();
+
+      orgHierarchyArray.forEach(org => {
+        allOrganizationIds.add(org.organizationId || 'no-org');
+        org.departments.forEach(dept => {
+          allDepartmentIds.add(dept.department.id);
+          dept.subDepartments.forEach(sub => {
+            allSubDepartmentIds.add(sub.id);
+          });
+        });
+      });
+
+      setExpandedOrganizations(allOrganizationIds);
+      setExpandedDepartments(allDepartmentIds);
+      setExpandedSubDepartments(allSubDepartmentIds);
+
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
@@ -593,6 +615,48 @@ export default function DepartmentConfigSupabase() {
     setExpandedSubDepartments(newExpanded);
   };
 
+  const toggleOrganizationExpansion = (orgId: string) => {
+    const newExpanded = new Set(expandedOrganizations);
+    if (newExpanded.has(orgId)) {
+      newExpanded.delete(orgId);
+    } else {
+      newExpanded.add(orgId);
+    }
+    setExpandedOrganizations(newExpanded);
+  };
+
+  const toggleExpandAll = () => {
+    const allDepartmentIds = new Set<string>();
+    const allSubDepartmentIds = new Set<string>();
+    const allOrganizationIds = new Set<string>();
+
+    organizationHierarchy.forEach(org => {
+      allOrganizationIds.add(org.organizationId || 'no-org');
+      org.departments.forEach(dept => {
+        allDepartmentIds.add(dept.department.id);
+        dept.subDepartments.forEach(sub => {
+          allSubDepartmentIds.add(sub.id);
+        });
+      });
+    });
+
+    const areAllExpanded = expandedDepartments.size === allDepartmentIds.size &&
+                          expandedSubDepartments.size === allSubDepartmentIds.size &&
+                          expandedOrganizations.size === allOrganizationIds.size;
+
+    if (areAllExpanded) {
+      // Collapse all
+      setExpandedOrganizations(new Set());
+      setExpandedDepartments(new Set());
+      setExpandedSubDepartments(new Set());
+    } else {
+      // Expand all
+      setExpandedOrganizations(allOrganizationIds);
+      setExpandedDepartments(allDepartmentIds);
+      setExpandedSubDepartments(allSubDepartmentIds);
+    }
+  };
+
   const filteredHierarchy = organizationHierarchy.map(orgHierarchy => ({
     ...orgHierarchy,
     departments: orgHierarchy.departments.filter(deptHierarchy =>
@@ -605,7 +669,15 @@ export default function DepartmentConfigSupabase() {
   })).filter(orgHierarchy => orgHierarchy.departments.length > 0 || searchTerm === '');
 
   if (loading) {
-    return <div className="flex items-center justify-center p-8">Loading departments...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-2">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-lg font-medium">Loading Department Hierarchy...</p>
+          <p className="text-sm text-muted-foreground">Fetching departments, sub-departments, and team units from Supabase</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -615,6 +687,10 @@ export default function DepartmentConfigSupabase() {
           <CardTitle className="flex items-center justify-between">
             <span>Department Master Data</span>
             <div className="flex gap-2">
+              <Button onClick={toggleExpandAll} variant="outline" size="sm">
+                <Target className="h-4 w-4 mr-2" />
+                {expandedDepartments.size > 0 ? 'Collapse All' : 'Expand All'}
+              </Button>
               <Button onClick={fetchData} variant="outline" size="sm">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -709,29 +785,60 @@ export default function DepartmentConfigSupabase() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {filteredHierarchy.length === 0 && organizationHierarchy.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Building className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground mb-2">No Department Data Found</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Get started by creating your first department hierarchy</p>
+                    <Button onClick={() => setShowDirectEntry(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Department
+                    </Button>
+                  </div>
+                ) : filteredHierarchy.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground mb-2">No Matching Results</h3>
+                    <p className="text-sm text-muted-foreground">Try adjusting your search terms</p>
+                  </div>
+                ) : (
                 <div className="space-y-4">
                   {filteredHierarchy.map((orgHierarchy) => (
-                    <div key={orgHierarchy.organizationId || 'no-org'} className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-                      {/* Organization Header */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Globe className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-blue-900">
-                            {orgHierarchy.organizationId ? `[${orgHierarchy.organizationId}] ` : ''}
-                            {orgHierarchy.organizationName}
-                          </h3>
-                          <p className="text-sm text-blue-700">
-                            {orgHierarchy.departments.length} Departments • {' '}
-                            {orgHierarchy.departments.reduce((sum, dept) => sum + dept.subDepartments.length, 0)} Sub-Departments • {' '}
-                            {orgHierarchy.departments.reduce((sum, dept) => 
-                              sum + dept.subDepartments.reduce((subSum, sub) => subSum + sub.teamUnits.length, 0), 0)} Team/Units
-                          </p>
-                        </div>
-                      </div>
+                    <div key={orgHierarchy.organizationId || 'no-org'} className="border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <Collapsible 
+                        open={expandedOrganizations.has(orgHierarchy.organizationId || 'no-org')}
+                        onOpenChange={() => toggleOrganizationExpansion(orgHierarchy.organizationId || 'no-org')}
+                      >
+                        <CollapsibleTrigger className="w-full p-4 text-left hover:bg-blue-100/50 rounded-t-lg">
+                          {/* Organization Header */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Globe className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-blue-900">
+                                {orgHierarchy.organizationId ? `[${orgHierarchy.organizationId}] ` : ''}
+                                {orgHierarchy.organizationName}
+                              </h3>
+                              <p className="text-sm text-blue-700">
+                                {orgHierarchy.departments.length} Departments • {' '}
+                                {orgHierarchy.departments.reduce((sum, dept) => sum + dept.subDepartments.length, 0)} Sub-Departments • {' '}
+                                {orgHierarchy.departments.reduce((sum, dept) => 
+                                  sum + dept.subDepartments.reduce((subSum, sub) => subSum + sub.teamUnits.length, 0), 0)} Team/Units
+                              </p>
+                            </div>
+                            <div className="ml-auto">
+                              {expandedOrganizations.has(orgHierarchy.organizationId || 'no-org') ? (
+                                <ChevronDown className="w-5 h-5 text-blue-600" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-blue-600" />
+                              )}
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
 
-                      {/* Departments */}
+                        <CollapsibleContent className="px-4 pb-4">
+                          {/* Departments */}
                       <div className="space-y-3">
                         {orgHierarchy.departments.map((deptHierarchy) => (
                           <div key={deptHierarchy.department.id} className="bg-white border rounded-lg">
@@ -888,11 +995,14 @@ export default function DepartmentConfigSupabase() {
                               </CollapsibleContent>
                             </Collapsible>
                           </div>
-                        ))}
-                      </div>
+                         ))}
+                       </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     </div>
-                  ))}
-                </div>
+                   ))}
+                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
