@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Database, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, Database, Eye, CheckCircle, XCircle, ArrowRight, Users, Settings, Workflow } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +23,9 @@ interface TableData {
   recordCount: number;
   frontendFields: string[];
   isSupabaseEnabled: boolean;
+  parentTable?: string;
+  childTables?: string[];
+  relationshipType?: 'master' | 'hierarchy' | 'configuration' | 'operational';
 }
 
 const MasterDataTableTester = () => {
@@ -31,107 +34,149 @@ const MasterDataTableTester = () => {
   const { toast } = useToast();
 
   const masterDataTables = [
+    // Master Reference Tables
     {
       tableName: 'master_countries',
       displayName: 'Countries',
       frontendFields: ['id', 'name', 'code', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const,
+      childTables: ['master_currencies']
     },
     {
       tableName: 'master_currencies', 
       displayName: 'Currencies',
       frontendFields: ['id', 'name', 'code', 'symbol', 'country', 'country_code', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const,
+      parentTable: 'master_countries'
     },
     {
       tableName: 'master_organization_types',
       displayName: 'Organization Types', 
       frontendFields: ['id', 'name', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_entity_types',
       displayName: 'Entity Types',
       frontendFields: ['id', 'name', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_industry_segments',
       displayName: 'Industry Segments',
       frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const,
+      childTables: ['master_domain_groups']
     },
+    // Department Hierarchy (Parent → Child → Grandchild)
     {
       tableName: 'master_departments',
-      displayName: 'Departments',
+      displayName: 'Departments (Level 1)',
       frontendFields: ['id', 'name', 'description', 'organization_id', 'organization_name', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'hierarchy' as const,
+      childTables: ['master_sub_departments']
     },
     {
       tableName: 'master_challenge_statuses',
       displayName: 'Challenge Statuses',
       frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_solution_statuses',
       displayName: 'Solution Statuses',
       frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_communication_types',
       displayName: 'Communication Types',
       frontendFields: ['id', 'name', 'description', 'link', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_reward_types',
       displayName: 'Reward Types',
       frontendFields: ['id', 'name', 'description', 'type', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_engagement_models',
       displayName: 'Engagement Models',
       frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_competency_capabilities',
       displayName: 'Competency Capabilities',
       frontendFields: ['id', 'name', 'description', 'category', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
     },
     {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
       frontendFields: ['id', 'name', 'description', 'hierarchy', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'hierarchy' as const,
+      parentTable: 'master_industry_segments'
     },
     {
       tableName: 'master_seeker_membership_fees',
       displayName: 'Seeker Membership Fees',
       frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'quarterly_amount', 'half_yearly_amount', 'annual_amount', 'monthly_amount', 'quarterly_currency', 'half_yearly_currency', 'annual_currency', 'monthly_currency', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'configuration' as const
     },
     {
       tableName: 'pricing_configs',
       displayName: 'Pricing Configurations',
       frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee', 'platform_fee_percentage', 'discount_percentage', 'internal_paas_pricing', 'created_at', 'updated_at', 'version'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'configuration' as const
     },
     {
       tableName: 'master_sub_departments',
-      displayName: 'Sub Departments',
+      displayName: 'Sub Departments (Level 2)',
       frontendFields: ['id', 'name', 'description', 'department_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'hierarchy' as const,
+      parentTable: 'master_departments',
+      childTables: ['master_team_units']
     },
     {
       tableName: 'master_team_units',
-      displayName: 'Team Units',
+      displayName: 'Team Units (Level 3)',
       frontendFields: ['id', 'name', 'description', 'sub_department_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true
+      isSupabaseEnabled: true,
+      relationshipType: 'hierarchy' as const,
+      parentTable: 'master_sub_departments'
+    },
+    // Missing Tables - Now Added
+    {
+      tableName: 'engagement_activations',
+      displayName: 'Engagement Activations',
+      frontendFields: ['id', 'user_id', 'organization_type', 'country', 'engagement_model', 'membership_status', 'selected_frequency', 'payment_amount', 'currency', 'activation_status', 'created_at', 'updated_at'],
+      isSupabaseEnabled: true,
+      relationshipType: 'operational' as const
+    },
+    {
+      tableName: 'profiles',
+      displayName: 'User Profiles',
+      frontendFields: ['id', 'custom_user_id', 'contact_person_name', 'organization_name', 'organization_type', 'entity_type', 'country', 'industry_segment', 'phone_number', 'website', 'address', 'created_at', 'updated_at'],
+      isSupabaseEnabled: true,
+      relationshipType: 'operational' as const
     }
   ];
 
@@ -308,37 +353,178 @@ const MasterDataTableTester = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="relationships">Relationships</TabsTrigger>
           <TabsTrigger value="structure">Table Structure</TabsTrigger>
           <TabsTrigger value="mapping">Field Mapping</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <div className="grid gap-4">
-            {tables.map((table) => (
-              <Card key={table.tableName}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="w-5 h-5" />
-                      {table.displayName}
+            {['master', 'hierarchy', 'configuration', 'operational'].map((type) => {
+              const filteredTables = tables.filter(t => t.relationshipType === type);
+              if (filteredTables.length === 0) return null;
+              
+              const getTypeIcon = (type: string) => {
+                switch(type) {
+                  case 'master': return <Database className="w-5 h-5" />;
+                  case 'hierarchy': return <Workflow className="w-5 h-5" />;
+                  case 'configuration': return <Settings className="w-5 h-5" />;
+                  case 'operational': return <Users className="w-5 h-5" />;
+                  default: return <Database className="w-5 h-5" />;
+                }
+              };
+              
+              return (
+                <Card key={type}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 capitalize">
+                      {getTypeIcon(type)}
+                      {type} Tables ({filteredTables.length})
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={table.isSupabaseEnabled ? "default" : "secondary"}>
-                        {table.isSupabaseEnabled ? "Supabase" : "Local Storage"}
-                      </Badge>
-                      <Badge variant="outline">
-                        {table.recordCount} records
-                      </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3">
+                      {filteredTables.map((table) => (
+                        <div key={table.tableName} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Database className="w-4 h-4" />
+                            <div>
+                              <div className="font-medium">{table.displayName}</div>
+                              <div className="text-sm text-muted-foreground">{table.tableName}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{table.recordCount} records</Badge>
+                            <Badge variant="secondary">{table.structure.length} columns</Badge>
+                            {table.parentTable && <Badge variant="outline">Child of {table.parentTable}</Badge>}
+                            {table.childTables && table.childTables.length > 0 && 
+                              <Badge variant="outline">Parent to {table.childTables.length} tables</Badge>
+                            }
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="relationships">
+          <div className="space-y-6">
+            {/* Department Hierarchy */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Workflow className="w-5 h-5" />
+                  Department Hierarchy (3-Level Structure)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                  <div className="text-center">
+                    <div className="font-semibold">Departments</div>
+                    <div className="text-sm text-muted-foreground">Level 1</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_departments')?.recordCount || 0} records</Badge>
                   </div>
-                  <CardDescription>
-                    Table: {table.tableName} | Columns: {table.structure.length} | Frontend Fields: {table.frontendFields.length}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
+                  <ArrowRight className="w-5 h-5" />
+                  <div className="text-center">
+                    <div className="font-semibold">Sub Departments</div>
+                    <div className="text-sm text-muted-foreground">Level 2</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_sub_departments')?.recordCount || 0} records</Badge>
+                  </div>
+                  <ArrowRight className="w-5 h-5" />
+                  <div className="text-center">
+                    <div className="font-semibold">Team Units</div>
+                    <div className="text-sm text-muted-foreground">Level 3</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_team_units')?.recordCount || 0} records</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Industry Hierarchy */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Workflow className="w-5 h-5" />
+                  Industry Hierarchy
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                  <div className="text-center">
+                    <div className="font-semibold">Industry Segments</div>
+                    <div className="text-sm text-muted-foreground">Parent</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_industry_segments')?.recordCount || 0} records</Badge>
+                  </div>
+                  <ArrowRight className="w-5 h-5" />
+                  <div className="text-center">
+                    <div className="font-semibold">Domain Groups</div>
+                    <div className="text-sm text-muted-foreground">Child</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_domain_groups')?.recordCount || 0} records</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Country-Currency Relationship */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="w-5 h-5" />
+                  Reference Data Relationships
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                  <div className="text-center">
+                    <div className="font-semibold">Countries</div>
+                    <div className="text-sm text-muted-foreground">Master Reference</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_countries')?.recordCount || 0} records</Badge>
+                  </div>
+                  <ArrowRight className="w-5 h-5" />
+                  <div className="text-center">
+                    <div className="font-semibold">Currencies</div>
+                    <div className="text-sm text-muted-foreground">References Countries</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_currencies')?.recordCount || 0} records</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* All Relationships Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Complete Table Relationships</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {tables.filter(t => t.parentTable || (t.childTables && t.childTables.length > 0)).map((table) => (
+                    <div key={table.tableName} className="flex items-center gap-2 text-sm">
+                      <Badge variant="outline">{table.tableName}</Badge>
+                      {table.parentTable && (
+                        <>
+                          <span className="text-muted-foreground">child of</span>
+                          <Badge variant="secondary">{table.parentTable}</Badge>
+                        </>
+                      )}
+                      {table.childTables && table.childTables.length > 0 && (
+                        <>
+                          <span className="text-muted-foreground">parent to</span>
+                          {table.childTables.map(child => (
+                            <Badge key={child} variant="secondary">{child}</Badge>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -354,24 +540,42 @@ const MasterDataTableTester = () => {
                   {table.structure.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-muted">
-                            <th className="border border-gray-300 px-4 py-2 text-left">Column</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">Type</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">Nullable</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">Default</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {table.structure.map((column, idx) => (
-                            <tr key={idx}>
-                              <td className="border border-gray-300 px-4 py-2 font-mono">{column.column_name}</td>
-                              <td className="border border-gray-300 px-4 py-2">{column.data_type}</td>
-                              <td className="border border-gray-300 px-4 py-2">{column.is_nullable}</td>
-                              <td className="border border-gray-300 px-4 py-2 text-sm">{column.column_default || 'None'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
+                         <thead>
+                           <tr className="bg-muted">
+                             <th className="border border-gray-300 px-4 py-2 text-left">Column</th>
+                             <th className="border border-gray-300 px-4 py-2 text-left">Type</th>
+                             <th className="border border-gray-300 px-4 py-2 text-left">Nullable</th>
+                             <th className="border border-gray-300 px-4 py-2 text-left">Default</th>
+                             <th className="border border-gray-300 px-4 py-2 text-left">Relationship</th>
+                           </tr>
+                         </thead>
+                         <tbody>
+                           {table.structure.map((column, idx) => {
+                             const isForeignKey = column.column_name.endsWith('_id') && column.column_name !== 'id';
+                             const isParentRef = table.parentTable && column.column_name.includes(table.parentTable.replace('master_', '').slice(0, -1));
+                             
+                             return (
+                               <tr key={idx} className={isForeignKey ? 'bg-blue-50' : ''}>
+                                 <td className="border border-gray-300 px-4 py-2 font-mono">
+                                   {column.column_name}
+                                   {isForeignKey && <Badge variant="outline" className="ml-2 text-xs">FK</Badge>}
+                                 </td>
+                                 <td className="border border-gray-300 px-4 py-2">{column.data_type}</td>
+                                 <td className="border border-gray-300 px-4 py-2">{column.is_nullable}</td>
+                                 <td className="border border-gray-300 px-4 py-2 text-sm">{column.column_default || 'None'}</td>
+                                 <td className="border border-gray-300 px-4 py-2 text-sm">
+                                   {isForeignKey ? (
+                                     <Badge variant="secondary">Foreign Key</Badge>
+                                   ) : isParentRef ? (
+                                     <Badge variant="outline">References Parent</Badge>
+                                   ) : (
+                                     'Regular Field'
+                                   )}
+                                 </td>
+                               </tr>
+                             );
+                           })}
+                         </tbody>
                       </table>
                     </div>
                   ) : (
