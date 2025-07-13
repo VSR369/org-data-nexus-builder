@@ -8,12 +8,14 @@ import MembershipFeeForm from './seeker-membership/MembershipFeeForm';
 import MembershipConfigsList from './seeker-membership/MembershipConfigsList';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from 'lucide-react';
-import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
 
 const SeekerMembershipFeeConfig = () => {
   const [editingEntry, setEditingEntry] = useState<MembershipFeeEntry | null>(null);
-  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const { toast } = useToast();
+  
+  // Use Supabase hooks for master data
+  const { items: organizationTypesItems, loading: orgTypesLoading } = useOrganizationTypes();
   
   const {
     membershipFees,
@@ -30,12 +32,8 @@ const SeekerMembershipFeeConfig = () => {
     dataHealth
   } = useMembershipFeeDataSupabase();
 
-  // Load organization types from master data
-  useEffect(() => {
-    const loadedOrgTypes = organizationTypesDataManager.loadData();
-    console.log('🔄 Loading organization types:', loadedOrgTypes);
-    setOrganizationTypes(loadedOrgTypes);
-  }, []);
+  // Convert organization types to string array for compatibility
+  const organizationTypes = organizationTypesItems.map(item => item.name);
 
   // Load data on component mount only if not already initialized
   useEffect(() => {

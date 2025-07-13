@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { FormData } from '../types';
 import { cn } from "@/lib/utils";
-import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
+import { useSupabaseMasterData } from '@/hooks/useSupabaseMasterData';
 
 interface OrganizationFormProps {
   formData: FormData;
@@ -23,23 +24,17 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({
   countries: propCountries,
   invalidFields = new Set()
 }) => {
-  const [organizationTypes, setOrganizationTypes] = useState<string[]>(propOrgTypes);
-  const [countries, setCountries] = useState<any[]>([]);
-
-  // Load data from master data instead of props
-  useEffect(() => {
-    console.log('🔄 OrganizationForm: Loading data from master data...');
-    
-    // Load organization types from master data
-    const loadedOrgTypes = organizationTypesDataManager.loadData();
-    console.log('✅ OrganizationForm: Loaded organization types:', loadedOrgTypes);
-    setOrganizationTypes(loadedOrgTypes);
-
-    // Load countries from master data
-    const loadedCountries = countriesDataManager.loadData();
-    console.log('✅ OrganizationForm: Loaded countries:', loadedCountries);
-    setCountries(loadedCountries);
-  }, []);
+  // Use Supabase hooks for master data
+  const { items: organizationTypesItems } = useOrganizationTypes();
+  const { countries: countriesData } = useSupabaseMasterData();
+  
+  // Convert to compatible formats, fallback to props if Supabase data not loaded
+  const organizationTypes = organizationTypesItems.length > 0 
+    ? organizationTypesItems.map(item => item.name) 
+    : propOrgTypes;
+  const countries = countriesData.length > 0 
+    ? countriesData.map(country => ({ id: country.name, name: country.name, code: country.code }))
+    : propCountries.map(name => ({ id: name, name, code: '' }));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

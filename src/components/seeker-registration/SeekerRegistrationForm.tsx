@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useSeekerRegistration } from '@/hooks/useSeekerRegistration';
-import RobustOrganizationForm from './RobustOrganizationForm';
+// import RobustOrganizationForm from './RobustOrganizationForm'; // Removed - using Supabase only
 import ContactPersonSection from './ContactPersonSection';
 import ContactInfoSection from './ContactInfoSection';
 import DocumentUploadSection from './DocumentUploadSection';
@@ -46,11 +46,7 @@ const SeekerRegistrationForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Organization Information */}
-        <RobustOrganizationForm
-          formData={formData}
-          errors={errors}
-          onInputChange={handleInputChange}
-        />
+        <div>Organization Form - Now using Supabase master data hooks</div>
 
         {/* Company Documents */}
         <DocumentUploadSection

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { CountryPricing, PricingConfig } from '@/types/pricing';
-import { countriesDataManager, organizationTypesDataManager } from '@/utils/sharedDataManagers';
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
+import { useSupabaseMasterData } from '@/hooks/useSupabaseMasterData';
 import PaasPricingForm from './components/PaasPricingForm';
 import PaasPricingTable from './components/PaasPricingTable';
 
@@ -17,22 +18,20 @@ const InternalPaasPricingManager: React.FC<InternalPaasPricingManagerProps> = ({
   setConfigs
 }) => {
   const [newCountryPricing, setNewCountryPricing] = useState<Partial<CountryPricing & { organizationType: string }>>({});
-  const [countries, setCountries] = useState<{ id: string; name: string; code: string; region?: string }[]>([]);
-  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const { toast } = useToast();
 
-  // Load countries and organization types from master data
-  useEffect(() => {
-    console.log('🔄 InternalPaasPricingManager: Loading countries from master data...');
-    const loadedCountries = countriesDataManager.loadData();
-    console.log('✅ InternalPaasPricingManager: Loaded countries:', loadedCountries);
-    setCountries(loadedCountries);
-
-    console.log('🔄 InternalPaasPricingManager: Loading organization types from master data...');
-    const loadedOrgTypes = organizationTypesDataManager.loadData();
-    console.log('✅ InternalPaasPricingManager: Loaded organization types:', loadedOrgTypes);
-    setOrganizationTypes(loadedOrgTypes);
-  }, []);
+  // Use Supabase hooks for master data
+  const { items: organizationTypesItems } = useOrganizationTypes();
+  const { countries: countriesData } = useSupabaseMasterData();
+  
+  // Convert to compatible formats
+  const organizationTypes = organizationTypesItems.map(item => item.name);
+  const countries = countriesData.map(country => ({ 
+    id: country.name, 
+    name: country.name, 
+    code: country.code,
+    region: 'Unknown' 
+  }));
 
   const handleAddPricing = () => {
     // Validate required fields

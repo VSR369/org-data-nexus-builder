@@ -7,14 +7,16 @@ import { PricingConfig as PricingConfigType } from '@/types/pricing';
 import GeneralConfigForm from './pricing/GeneralConfigForm';
 import ExistingConfigsList from './pricing/ExistingConfigsList';
 import InternalPaasPricingManager from './pricing/InternalPaasPricingManager';
-import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
 import { PricingDataManager } from '@/utils/pricingDataManager';
 import { BrowserStorageCleaner } from '@/utils/core/BrowserStorageCleaner';
 
 const PricingConfig = () => {
   const [configs, setConfigs] = useState<PricingConfigType[]>([]);
-  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [currentGeneralConfig, setCurrentGeneralConfig] = useState<Partial<PricingConfigType>>({});
+  
+  // Use Supabase hooks for master data
+  const { items: organizationTypes, loading: orgTypesLoading } = useOrganizationTypes();
 
   // Load data on component mount
   useEffect(() => {
@@ -46,10 +48,6 @@ const PricingConfig = () => {
     };
     
     initializeFromSupabase().catch(console.error);
-    
-    // Load organization types
-    const loadedOrgTypes = organizationTypesDataManager.loadData();
-    setOrganizationTypes(loadedOrgTypes);
     
     console.log('✅ PricingConfig: Comprehensive pricing data loaded');
   }, []);
@@ -111,7 +109,7 @@ const PricingConfig = () => {
               <GeneralConfigForm
                 currentConfig={currentGeneralConfig}
                 setCurrentConfig={setCurrentGeneralConfig}
-                organizationTypes={organizationTypes}
+                organizationTypes={organizationTypes.map(item => item.name)}
                 configs={configs}
                 setConfigs={setConfigs}
               />

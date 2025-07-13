@@ -6,7 +6,7 @@ import { RefreshCw, AlertTriangle, CheckCircle, Database, Download, Upload, Shie
 import { useToast } from "@/hooks/use-toast";
 import { seedingService } from '@/utils/core/UniversalSeedingService';
 import { domainGroupsDataManager } from '../domain-groups/domainGroupsDataManager';
-import MasterDataRecoveryCenter from '../recovery/MasterDataRecoveryCenter';
+// import MasterDataRecoveryCenter from '../recovery/MasterDataRecoveryCenter'; // Removed - using Supabase only
 
 const DataHealthPanel: React.FC = () => {
   const [healthData, setHealthData] = useState<any>({});
@@ -124,7 +124,7 @@ const DataHealthPanel: React.FC = () => {
         >
           ← Back to Health Panel
         </Button>
-        <MasterDataRecoveryCenter />
+        <div>Recovery Center - Now using Supabase directly</div>
       </div>
     );
   }

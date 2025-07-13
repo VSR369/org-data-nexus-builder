@@ -9,7 +9,8 @@ import { LegacyDataManager } from '@/utils/core/DataManager';
 import { Country } from '@/types/seekerRegistration';
 import { PricingConfig } from '@/types/pricing';
 import { getCurrencyByCountry } from '../utils/currencyUtils';
-import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
+import { useSupabaseMasterData } from '@/hooks/useSupabaseMasterData';
 import { EntityTypeService } from '@/utils/masterData/entityTypeService';
 
 // Engagement Models Data Manager
@@ -39,38 +40,26 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
   onSave,
   onClear
 }) => {
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [organizationTypesFromMaster, setOrganizationTypesFromMaster] = useState<string[]>([]);
-  const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [engagementModels, setEngagementModels] = useState<any[]>([]);
 
+  // Use Supabase hooks for master data
+  const { items: organizationTypesItems } = useOrganizationTypes();
+  const { countries: countriesData, entityTypes: entityTypesData } = useSupabaseMasterData();
+  
+  // Convert to compatible formats
+  const organizationTypesFromMaster = organizationTypesItems.map(item => item.name);
+  const countries = countriesData.map(country => ({ 
+    id: country.name, 
+    name: country.name, 
+    code: country.code,
+    region: 'Unknown' 
+  }));
+  const entityTypes = entityTypesData;
+
   useEffect(() => {
-    console.log('🔄 GeneralConfigInput: Loading master data...');
+    console.log('🔄 GeneralConfigInput: Loading engagement models...');
     
-    // Load countries
-    const loadedCountries = countriesDataManager.loadData();
-    const safeCountries = Array.isArray(loadedCountries) 
-      ? loadedCountries.filter(country => country && country.code && country.name)
-      : [
-          { id: '1', name: 'India', code: 'IN', region: 'Asia' },
-          { id: '2', name: 'United States of America', code: 'US', region: 'North America' },
-          { id: '3', name: 'United Arab Emirates', code: 'AE', region: 'Middle East' }
-        ];
-    console.log('🌍 GeneralConfigInput: Loaded countries:', safeCountries);
-    setCountries(safeCountries);
-    
-    // Load organization types from master data
-    const loadedOrgTypes = organizationTypesDataManager.loadData();
-    const safeOrgTypes = Array.isArray(loadedOrgTypes) ? loadedOrgTypes : [];
-    console.log('🏢 GeneralConfigInput: Loaded organization types:', safeOrgTypes);
-    setOrganizationTypesFromMaster(safeOrgTypes);
-    
-    // Load entity types from master data
-    const loadedEntityTypes = EntityTypeService.getEntityTypesSync();
-    console.log('🏛️ GeneralConfigInput: Loaded entity types:', loadedEntityTypes);
-    setEntityTypes(loadedEntityTypes);
-    
-    // Load engagement models from master data
+    // Load engagement models from master data (still using legacy for this one)
     const loadedEngagementModels = engagementModelsDataManager.loadData();
     const safeEngagementModels = Array.isArray(loadedEngagementModels) 
       ? loadedEngagementModels.filter(model => model && model.name && model.isActive)

@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { FormData } from './types';
-import { organizationTypesDataManager, countriesDataManager } from '@/utils/sharedDataManagers';
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
+import { useSupabaseMasterData } from '@/hooks/useSupabaseMasterData';
 import { useDepartmentData } from './hooks/useDepartmentData';
 import OrganizationForm from './components/OrganizationForm';
 import DepartmentSelector from './components/DepartmentSelector';
@@ -27,20 +28,15 @@ const InstitutionDetailsSection: React.FC<InstitutionDetailsSectionProps> = ({
   providerType,
   invalidFields = new Set()
 }) => {
-  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
-  const [countries, setCountries] = useState<string[]>([]);
   const departmentData = useDepartmentData();
 
-  useEffect(() => {
-    // Load organization types
-    const orgTypes = organizationTypesDataManager.loadData() as string[];
-    setOrganizationTypes(orgTypes);
-
-    // Load countries and transform Country[] to string[]
-    const countryData = countriesDataManager.loadData() as Country[];
-    const countryNames = countryData.map(country => country.name);
-    setCountries(countryNames);
-  }, []);
+  // Use Supabase hooks for master data
+  const { items: organizationTypesItems } = useOrganizationTypes();
+  const { countries: countriesData } = useSupabaseMasterData();
+  
+  // Convert to compatible formats
+  const organizationTypes = organizationTypesItems.map(item => item.name);
+  const countries = countriesData.map(country => country.name);
 
   // Only show institution details for organization provider type
   if (providerType !== 'organization') {

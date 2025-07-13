@@ -20,7 +20,6 @@ import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
 import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
-import CustomDataManager from "./master-data/CustomDataManager";
 import DataProtectionPanel from "./master-data/DataProtectionPanel";
 import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
 import MigrationTester from "./MigrationTester";
@@ -41,7 +40,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'migration-tester':
         return <MigrationTester />;
       case 'custom-data-manager':
-        return <CustomDataManager />;
+        return <MasterDataDiagnostics />;
       case 'countries':
         return <CountryConfigSupabase />;
       case 'currencies':
@@ -87,7 +86,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'solution-seekers-validation':
         return <SeekingOrgValidationDashboard />;
       default:
-        return <CustomDataManager />;
+        return <MasterDataDiagnostics />;
     }
   };
 
