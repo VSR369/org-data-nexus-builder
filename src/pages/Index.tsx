@@ -289,8 +289,8 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Access Cards - Fixed Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {/* Access Cards - Dynamic Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {/* Master Data Portal */}
           <Card className="hover:shadow-lg transition-shadow h-full">
             <CardHeader className="text-center pb-4">
@@ -409,6 +409,37 @@ const Index = () => {
                   </Button>
                 </Link>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Data Cleanup Testing Tool */}
+          <Card className="hover:shadow-lg transition-shadow h-full border-red-200">
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-orange-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
+                <Database className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl text-red-700">Testing Tools</CardTitle>
+              <CardDescription>
+                Clear all solution-seeking organization data for fresh testing
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center flex-1 flex flex-col">
+              <div className="space-y-2 text-sm text-gray-600 mb-6 flex-1">
+                <p>• Clear Database Records</p>
+                <p>• Reset Auth Users</p>
+                <p>• Enable Email Reuse</p>
+                <p>• Preserve Master Data</p>
+                <p>• Complete Fresh Start</p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4">
+                <p className="text-xs text-yellow-700 font-medium">
+                  ⚠️ Testing Mode Only
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  This will permanently delete all organization data but preserve platform configurations.
+                </p>
+              </div>
+              <DataCleanupButton />
             </CardContent>
           </Card>
         </div>

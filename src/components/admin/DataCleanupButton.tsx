@@ -9,6 +9,7 @@ import { dataCleanupService } from '@/utils/dataCleanup';
 const DataCleanupButton: React.FC = () => {
   const [isClearing, setIsClearing] = useState(false);
   const [dataCounts, setDataCounts] = useState({ profiles: 0, activations: 0, authUsers: 0, configs: 0 });
+  const [preCleanupCounts, setPreCleanupCounts] = useState({ profiles: 0, activations: 0, authUsers: 0, configs: 0 });
 
   useEffect(() => {
     const loadDataCounts = async () => {
@@ -29,6 +30,10 @@ const DataCleanupButton: React.FC = () => {
     try {
       console.log('🗑️ Starting data cleanup process...');
       
+      // Store pre-cleanup counts for popup
+      const preCountsSnapshot = await dataCleanupService.getDataCounts();
+      setPreCleanupCounts(preCountsSnapshot);
+      
       // Clear all organization data
       await dataCleanupService.clearAllSolutionSeekingOrganizationData();
       
@@ -36,13 +41,41 @@ const DataCleanupButton: React.FC = () => {
       const verification = await dataCleanupService.verifyDataCleanup();
       
       if (verification.userProfilesCleared && verification.localStorageCleared && verification.databaseCleared) {
-        toast.success(`✅ Complete cleanup successful! Database: ${verification.databaseCounts.profiles} profiles, ${verification.databaseCounts.activations} activations, ${verification.databaseCounts.authUsers} auth users remaining. Master data preserved: ${verification.databaseCounts.configs} configs.`);
+        // Show detailed before/after popup
+        const cleanupDetails = `
+🎯 CLEANUP COMPLETED SUCCESSFULLY!
+
+📊 BEFORE CLEANUP:
+• Profiles: ${preCleanupCounts.profiles}
+• Auth Users: ${preCleanupCounts.authUsers}  
+• Activations: ${preCleanupCounts.activations}
+• Configs: ${preCleanupCounts.configs}
+
+📊 AFTER CLEANUP:
+• Profiles: ${verification.databaseCounts.profiles}
+• Auth Users: ${verification.databaseCounts.authUsers}
+• Activations: ${verification.databaseCounts.activations}
+• Configs: ${verification.databaseCounts.configs} (preserved)
+
+✅ You can now reuse your test email addresses!
+        `;
+        
+        toast.success(cleanupDetails, {
+          duration: 8000,
+          style: { 
+            maxWidth: '500px',
+            whiteSpace: 'pre-line',
+            fontFamily: 'monospace',
+            fontSize: '12px'
+          }
+        });
+        
         console.log('✅ Data cleanup completed successfully');
         
         // Reload the page to reflect changes
         setTimeout(() => {
           window.location.reload();
-        }, 1500);
+        }, 2000);
       } else {
         toast.warning('Data cleanup completed with some remaining items. Check console for details.');
         console.log('⚠️ Cleanup completed but some data may remain:', verification);
