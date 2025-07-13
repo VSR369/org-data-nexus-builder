@@ -4,6 +4,7 @@ import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Hom
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
+import { MembershipPricingCard } from "@/components/dashboard/MembershipPricingCard";
 
 const OrganizationDashboard = () => {
   const { user, profile, signOut, loading } = useSupabaseAuth();
@@ -100,8 +101,8 @@ const OrganizationDashboard = () => {
           </p>
         </div>
 
-        {/* Organization Information Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Organization Information and Pricing Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
           {/* Organization Details Card */}
           <Card className="h-full">
             <CardHeader>
@@ -227,6 +228,9 @@ const OrganizationDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Membership Pricing Card - Right Side */}
+          <MembershipPricingCard profile={profile} />
         </div>
 
         {/* Organization Overview */}
