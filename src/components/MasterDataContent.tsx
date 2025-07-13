@@ -70,7 +70,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'engagement-models':
         return <EngagementModelsConfig />;
       case 'pricing':
-        return <PricingConfig />;
+        return <PricingTemplatesManager />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
       case 'global-cache-manager':

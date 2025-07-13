@@ -1276,6 +1276,223 @@ export type Database = {
           },
         ]
       }
+      pricing_overrides: {
+        Row: {
+          country_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          engagement_model_id: string | null
+          entity_type_id: string | null
+          id: string
+          is_active: boolean | null
+          membership_status: string | null
+          organization_type_id: string | null
+          override_currency: string | null
+          override_field: string
+          override_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          country_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          engagement_model_id?: string | null
+          entity_type_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          membership_status?: string | null
+          organization_type_id?: string | null
+          override_currency?: string | null
+          override_field: string
+          override_value: number
+          updated_at?: string | null
+        }
+        Update: {
+          country_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          engagement_model_id?: string | null
+          entity_type_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          membership_status?: string | null
+          organization_type_id?: string | null
+          override_currency?: string | null
+          override_field?: string
+          override_value?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_overrides_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_overrides_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "pricing_overrides_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_overrides_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_overrides_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_overrides_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_overrides_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
+          },
+        ]
+      }
+      pricing_rules: {
+        Row: {
+          adjustment_type: string
+          adjustment_value: number
+          condition_type: string
+          condition_value: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          target_field: string
+          updated_at: string | null
+        }
+        Insert: {
+          adjustment_type: string
+          adjustment_value: number
+          condition_type: string
+          condition_value: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          target_field: string
+          updated_at?: string | null
+        }
+        Update: {
+          adjustment_type?: string
+          adjustment_value?: number
+          condition_type?: string
+          condition_value?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          target_field?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pricing_templates: {
+        Row: {
+          base_annual_fee: number | null
+          base_currency: string | null
+          base_half_yearly_fee: number | null
+          base_platform_fee_percentage: number | null
+          base_quarterly_fee: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          engagement_model: string
+          engagement_model_id: string
+          id: string
+          internal_paas_pricing: Json | null
+          is_active: boolean | null
+          template_name: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_annual_fee?: number | null
+          base_currency?: string | null
+          base_half_yearly_fee?: number | null
+          base_platform_fee_percentage?: number | null
+          base_quarterly_fee?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          engagement_model: string
+          engagement_model_id: string
+          id?: string
+          internal_paas_pricing?: Json | null
+          is_active?: boolean | null
+          template_name: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_annual_fee?: number | null
+          base_currency?: string | null
+          base_half_yearly_fee?: number | null
+          base_platform_fee_percentage?: number | null
+          base_quarterly_fee?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          engagement_model?: string
+          engagement_model_id?: string
+          id?: string
+          internal_paas_pricing?: Json | null
+          is_active?: boolean | null
+          template_name?: string
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_templates_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null

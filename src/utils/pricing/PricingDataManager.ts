@@ -1,6 +1,6 @@
-// PricingDataManager Class - Main interface for pricing operations
+// PricingDataManager Class - Updated to use template-based system
 import { PricingConfig } from '@/types/pricing';
-import { getPricingConfigs, savePricingConfigs, resetDeletedConfigsTracking } from './pricingCore';
+import { NewPricingDataManager } from './NewPricingDataManager';
 import { normalizeCountryName } from './pricingUtils';
 
 export class PricingDataManager {
@@ -22,144 +22,25 @@ export class PricingDataManager {
     
     this.isLoading = true;
     try {
-      // Clear any localStorage fallbacks first to ensure clean state
-      const { GlobalCacheManager } = await import('../core/GlobalCacheManager');
-      GlobalCacheManager.clearAllCache();
+      console.log('✅ Loading pricing configurations using new template system...');
       
-      console.log('✅ CRUD TEST - Loading pricing configurations from Supabase (single source of truth)');
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data, error } = await supabase
-        .from('pricing_configs')
-        .select('*')
-        .order('country, organization_type, engagement_model');
-
-      if (error) throw error;
-
-      const configs: PricingConfig[] = data?.map(config => ({
-        id: config.id,
-        country: config.country,
-        currency: config.currency,
-        organizationType: config.organization_type,
-        entityType: config.entity_type,
-        engagementModel: config.engagement_model,
-        membershipStatus: (config.membership_status as "member" | "not-a-member") || "not-a-member",
-        quarterlyFee: config.quarterly_fee,
-        halfYearlyFee: config.half_yearly_fee,
-        annualFee: config.annual_fee,
-        platformFeePercentage: config.platform_fee_percentage,
-        discountPercentage: config.discount_percentage,
-        version: config.version || 1,
-        internalPaasPricing: Array.isArray(config.internal_paas_pricing) ? config.internal_paas_pricing.map((item: any) => item) : [],
-        createdAt: config.created_at || new Date().toISOString(),
-        updatedAt: config.updated_at || new Date().toISOString()
-      })) || [];
-
-      this.cachedConfigs = configs;
-      console.log('✅ CRUD TEST - Pricing configurations loaded:', configs.length);
+      // Use the new template-based system to generate all configurations
+      this.cachedConfigs = await NewPricingDataManager.generateAllConfigurations();
+      
+      console.log('✅ Pricing configurations loaded from templates:', this.cachedConfigs.length);
     } catch (error) {
-      console.error('❌ Error loading pricing configurations from Supabase:', error);
-      // No fallbacks - Supabase is single source of truth
+      console.error('❌ Error loading pricing configurations:', error);
       this.cachedConfigs = [];
     }
     this.isLoading = false;
   }
 
   static async saveConfigurations(configs: PricingConfig[]): Promise<void> {
-    console.log('✅ CRUD TEST - Saving pricing configurations to Supabase:', configs.length);
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      // Deduplicate configs based on business uniqueness before saving
-      const deduplicatedConfigs = this.deduplicateConfigs(configs);
-      console.log('🔍 Deduplicated configs:', deduplicatedConfigs.length, 'from original:', configs.length);
-      
-      for (const config of deduplicatedConfigs) {
-        try {
-          // Get foreign key IDs first
-          const [countryResult, orgTypeResult, entityTypeResult, engagementResult] = await Promise.all([
-            supabase.from('master_countries').select('id').eq('name', config.country).single(),
-            supabase.from('master_organization_types').select('id').eq('name', config.organizationType).single(),
-            supabase.from('master_entity_types').select('id').eq('name', config.entityType).single(),
-            supabase.from('master_engagement_models').select('id').eq('name', config.engagementModel).single()
-          ]);
-
-          if (countryResult.error || orgTypeResult.error || entityTypeResult.error || engagementResult.error) {
-            console.warn('⚠️ Skipping config due to missing master data:', config.id);
-            continue;
-          }
-
-          const { error } = await supabase
-            .from('pricing_configs')
-            .upsert({
-              config_id: config.id,
-              country: config.country,
-              country_id: countryResult.data.id,
-              currency: config.currency,
-              organization_type: config.organizationType,
-              organization_type_id: orgTypeResult.data.id,
-              entity_type: config.entityType,
-              entity_type_id: entityTypeResult.data.id,
-              engagement_model: config.engagementModel,
-              engagement_model_id: engagementResult.data.id,
-              membership_status: config.membershipStatus,
-              quarterly_fee: config.quarterlyFee,
-              half_yearly_fee: config.halfYearlyFee,
-              annual_fee: config.annualFee,
-              platform_fee_percentage: config.platformFeePercentage,
-              discount_percentage: config.discountPercentage,
-              internal_paas_pricing: JSON.stringify(Array.isArray(config.internalPaasPricing) ? config.internalPaasPricing : []),
-              version: config.version || 1,
-              updated_at: new Date().toISOString()
-            }, {
-              onConflict: 'country,organization_type,engagement_model,membership_status',
-              ignoreDuplicates: false
-            });
-          
-          if (error) {
-            if (error.code === '23505') { // Unique constraint violation
-              console.warn('⚠️ Duplicate configuration detected for:', {
-                country: config.country,
-                organizationType: config.organizationType,
-                engagementModel: config.engagementModel,
-                membershipStatus: config.membershipStatus
-              });
-              // Skip this duplicate and continue with others
-              continue;
-            }
-            throw error;
-          }
-        } catch (configError: any) {
-          console.error('❌ Error saving individual config:', configError);
-          if (configError.code !== '23505') {
-            throw configError; // Re-throw non-duplicate errors
-          }
-        }
-      }
-      
-      // Refresh cache from database to get the current state
-      await this.loadConfigurationsAsync();
-      console.log('✅ CRUD TEST - Pricing configurations saved to Supabase successfully');
-    } catch (error) {
-      console.error('❌ Error saving pricing configurations to Supabase:', error);
-      throw error;
-    }
-  }
-
-  private static deduplicateConfigs(configs: PricingConfig[]): PricingConfig[] {
-    const seen = new Set<string>();
-    const deduplicated: PricingConfig[] = [];
+    console.log('✅ Template-based system: Saving configurations is no longer needed');
+    console.log('💡 Use the Master Data Portal to manage pricing templates and rules instead');
     
-    for (const config of configs) {
-      const key = `${config.country}-${config.organizationType}-${config.engagementModel}-${config.membershipStatus}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduplicated.push(config);
-      } else {
-        console.warn('🔍 Skipping duplicate config:', key);
-      }
-    }
-    
-    return deduplicated;
+    // Refresh the cache to get the latest calculated configurations
+    await this.loadConfigurationsAsync();
   }
 
   static getPricingForCountryOrgTypeAndEngagement(country: string, orgType: string, engagement: string): PricingConfig | null {
@@ -167,38 +48,16 @@ export class PricingDataManager {
     const normalizedCountry = normalizeCountryName(country);
     
     console.log(`🔍 Looking for pricing config - Country: "${normalizedCountry}", OrgType: "${orgType}", Engagement: "${engagement}"`);
-    console.log('📋 Available configs:', configs.map(c => ({
-      id: c.id,
-      country: c.country,
-      normalizedCountry: normalizeCountryName(c.country || ''),
-      orgType: c.organizationType,
-      engagement: c.engagementModel,
-      quarterlyFee: c.quarterlyFee,
-      halfYearlyFee: c.halfYearlyFee,
-      annualFee: c.annualFee
-    })));
     
     // First try exact match with normalized country
     let foundConfig = configs.find(c => 
       normalizeCountryName(c.country || '') === normalizedCountry &&
-      (c.organizationType === orgType || c.organizationType === 'All') &&
-      (c.engagementModel === engagement || c.engagementModel?.toLowerCase() === engagement.toLowerCase())
+      c.organizationType === orgType &&
+      c.engagementModel === engagement
     );
     
     if (foundConfig) {
       console.log('✅ Found exact country match:', foundConfig);
-      return foundConfig;
-    }
-    
-    // Try without country restriction (Global configs)
-    foundConfig = configs.find(c => 
-      (!c.country || c.country === 'Global' || c.country === 'All') &&
-      (c.organizationType === orgType || c.organizationType === 'All') &&
-      (c.engagementModel === engagement || c.engagementModel?.toLowerCase() === engagement.toLowerCase())
-    );
-    
-    if (foundConfig) {
-      console.log('✅ Found global config:', foundConfig);
       return foundConfig;
     }
     
@@ -212,50 +71,51 @@ export class PricingDataManager {
     console.log(`🔍 Looking for config by OrgType: "${orgType}", EngagementModel: "${engagementModel}"`);
     
     const foundConfig = configs.find(c => 
-      (c.organizationType === orgType || c.organizationType === 'All') &&
-      (c.engagementModel === engagementModel || c.engagementModel?.toLowerCase() === engagementModel.toLowerCase())
+      c.organizationType === orgType &&
+      c.engagementModel === engagementModel
     );
     
     console.log(foundConfig ? '✅ Found config by org type and engagement' : '❌ No config found by org type and engagement');
     return foundConfig || null;
   }
 
-  static getPricingForEngagementModel(engagementModel: string): PricingConfig | null {
-    const { EnhancedPricingDataManager } = eval('require')('../enhancedPricingDataManager');
-    return EnhancedPricingDataManager.getPricingForEngagementModel(engagementModel);
+  // Method to refresh pricing configurations
+  static async refreshCache(): Promise<void> {
+    await NewPricingDataManager.refreshCache();
+    await this.loadConfigurationsAsync();
   }
 
-  // New method to get pricing by country specifically
+  // Legacy methods for backward compatibility
+  static getPricingForEngagementModel(engagementModel: string): PricingConfig | null {
+    const configs = this.cachedConfigs;
+    return configs.find(c => c.engagementModel === engagementModel) || null;
+  }
+
   static getPricingForCountry(country: string, organizationType?: string, entityType?: string): PricingConfig[] {
     const configs = this.cachedConfigs;
     const normalizedCountry = normalizeCountryName(country);
     
-    console.log(`🔍 Looking for pricing configs for country: "${normalizedCountry}"`);
-    
-    const matchingConfigs = configs.filter(c => {
+    return configs.filter(c => {
       const configCountry = normalizeCountryName(c.country || '');
-      const countryMatch = configCountry === normalizedCountry || configCountry === 'Global' || configCountry === 'All' || !configCountry;
+      const countryMatch = configCountry === normalizedCountry;
       
       let orgTypeMatch = true;
       let entityTypeMatch = true;
       
       if (organizationType) {
-        orgTypeMatch = c.organizationType === organizationType || c.organizationType === 'All';
+        orgTypeMatch = c.organizationType === organizationType;
       }
       
       if (entityType) {
-        entityTypeMatch = c.entityType === entityType || c.entityType === 'All';
+        entityTypeMatch = c.entityType === entityType;
       }
       
       return countryMatch && orgTypeMatch && entityTypeMatch;
     });
-    
-    console.log(`✅ Found ${matchingConfigs.length} pricing configs for "${normalizedCountry}"`);
-    return matchingConfigs;
   }
 
-  // Method to reset deleted configurations tracking (for admin use)
+  // Remove deduplication method as it's no longer needed
   static resetDeletedConfigsTracking(): void {
-    resetDeletedConfigsTracking();
+    console.log('💡 Deleted configs tracking is no longer applicable with template-based system');
   }
 }
