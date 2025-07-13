@@ -667,10 +667,12 @@ export type Database = {
           annual_amount: number | null
           annual_currency: string | null
           country: string
+          country_id: string
           created_at: string
           created_by: string | null
           description: string | null
           entity_type: string
+          entity_type_id: string
           half_yearly_amount: number | null
           half_yearly_currency: string | null
           id: string
@@ -678,6 +680,7 @@ export type Database = {
           monthly_amount: number | null
           monthly_currency: string | null
           organization_type: string
+          organization_type_id: string
           quarterly_amount: number | null
           quarterly_currency: string | null
           updated_at: string
@@ -687,10 +690,12 @@ export type Database = {
           annual_amount?: number | null
           annual_currency?: string | null
           country: string
+          country_id: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           entity_type: string
+          entity_type_id: string
           half_yearly_amount?: number | null
           half_yearly_currency?: string | null
           id?: string
@@ -698,6 +703,7 @@ export type Database = {
           monthly_amount?: number | null
           monthly_currency?: string | null
           organization_type: string
+          organization_type_id: string
           quarterly_amount?: number | null
           quarterly_currency?: string | null
           updated_at?: string
@@ -707,10 +713,12 @@ export type Database = {
           annual_amount?: number | null
           annual_currency?: string | null
           country?: string
+          country_id?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           entity_type?: string
+          entity_type_id?: string
           half_yearly_amount?: number | null
           half_yearly_currency?: string | null
           id?: string
@@ -718,12 +726,35 @@ export type Database = {
           monthly_amount?: number | null
           monthly_currency?: string | null
           organization_type?: string
+          organization_type_id?: string
           quarterly_amount?: number | null
           quarterly_currency?: string | null
           updated_at?: string
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "master_seeker_membership_fees_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_seeker_membership_fees_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_seeker_membership_fees_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       master_solution_statuses: {
         Row: {
@@ -1037,16 +1068,20 @@ export type Database = {
           annual_fee: number | null
           config_id: string
           country: string
+          country_id: string
           created_at: string | null
           currency: string | null
           discount_percentage: number | null
           engagement_model: string
+          engagement_model_id: string
           entity_type: string
+          entity_type_id: string
           half_yearly_fee: number | null
           id: string
           internal_paas_pricing: Json | null
           membership_status: string
           organization_type: string
+          organization_type_id: string
           platform_fee_percentage: number | null
           quarterly_fee: number | null
           updated_at: string | null
@@ -1056,16 +1091,20 @@ export type Database = {
           annual_fee?: number | null
           config_id: string
           country: string
+          country_id: string
           created_at?: string | null
           currency?: string | null
           discount_percentage?: number | null
           engagement_model: string
+          engagement_model_id: string
           entity_type: string
+          entity_type_id: string
           half_yearly_fee?: number | null
           id?: string
           internal_paas_pricing?: Json | null
           membership_status: string
           organization_type: string
+          organization_type_id: string
           platform_fee_percentage?: number | null
           quarterly_fee?: number | null
           updated_at?: string | null
@@ -1075,22 +1114,55 @@ export type Database = {
           annual_fee?: number | null
           config_id?: string
           country?: string
+          country_id?: string
           created_at?: string | null
           currency?: string | null
           discount_percentage?: number | null
           engagement_model?: string
+          engagement_model_id?: string
           entity_type?: string
+          entity_type_id?: string
           half_yearly_fee?: number | null
           id?: string
           internal_paas_pricing?: Json | null
           membership_status?: string
           organization_type?: string
+          organization_type_id?: string
           platform_fee_percentage?: number | null
           quarterly_fee?: number | null
           updated_at?: string | null
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pricing_configs_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configs_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configs_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configs_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
