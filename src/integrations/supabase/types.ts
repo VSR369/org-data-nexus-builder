@@ -107,6 +107,53 @@ export type Database = {
         }
         Relationships: []
       }
+      master_categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          domain_group_id: string
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          domain_group_id: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          domain_group_id?: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_categories_domain_group_id_fkey"
+            columns: ["domain_group_id"]
+            isOneToOne: false
+            referencedRelation: "master_domain_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_challenge_statuses: {
         Row: {
           created_at: string | null
@@ -308,6 +355,53 @@ export type Database = {
         }
         Relationships: []
       }
+      master_domain_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          industry_segment_id: string | null
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          industry_segment_id?: string | null
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          industry_segment_id?: string | null
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_domain_groups_industry_segment_id_fkey"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "master_industry_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_engagement_models: {
         Row: {
           created_at: string | null
@@ -467,6 +561,60 @@ export type Database = {
         }
         Relationships: []
       }
+      master_seeker_membership_fees: {
+        Row: {
+          annual_amount: number | null
+          annual_currency: string | null
+          country: string
+          created_at: string
+          created_by: string | null
+          entity_type: string
+          half_yearly_amount: number | null
+          half_yearly_currency: string | null
+          id: string
+          is_user_created: boolean | null
+          organization_type: string
+          quarterly_amount: number | null
+          quarterly_currency: string | null
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          annual_amount?: number | null
+          annual_currency?: string | null
+          country: string
+          created_at?: string
+          created_by?: string | null
+          entity_type: string
+          half_yearly_amount?: number | null
+          half_yearly_currency?: string | null
+          id?: string
+          is_user_created?: boolean | null
+          organization_type: string
+          quarterly_amount?: number | null
+          quarterly_currency?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          annual_amount?: number | null
+          annual_currency?: string | null
+          country?: string
+          created_at?: string
+          created_by?: string | null
+          entity_type?: string
+          half_yearly_amount?: number | null
+          half_yearly_currency?: string | null
+          id?: string
+          is_user_created?: boolean | null
+          organization_type?: string
+          quarterly_amount?: number | null
+          quarterly_currency?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_solution_statuses: {
         Row: {
           created_at: string | null
@@ -499,6 +647,53 @@ export type Database = {
           version?: number | null
         }
         Relationships: []
+      }
+      master_sub_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_sub_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "master_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_configs: {
         Row: {
