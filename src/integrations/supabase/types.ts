@@ -297,42 +297,42 @@ export type Database = {
       }
       master_departments: {
         Row: {
-          created_at: string | null
+          created_at: string
           created_by: string | null
           description: string | null
-          hierarchy: Json | null
           id: string
           is_active: boolean
           is_user_created: boolean | null
           name: string
           organization_id: string | null
-          updated_at: string | null
+          organization_name: string | null
+          updated_at: string
           version: number | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           created_by?: string | null
           description?: string | null
-          hierarchy?: Json | null
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
-          name?: string
+          name: string
           organization_id?: string | null
-          updated_at?: string | null
+          organization_name?: string | null
+          updated_at?: string
           version?: number | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           created_by?: string | null
           description?: string | null
-          hierarchy?: Json | null
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
           name?: string
           organization_id?: string | null
-          updated_at?: string | null
+          organization_name?: string | null
+          updated_at?: string
           version?: number | null
         }
         Relationships: []
@@ -651,6 +651,100 @@ export type Database = {
           version?: number | null
         }
         Relationships: []
+      }
+      master_sub_departments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department_id: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_sub_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "master_departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_team_units: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          sub_department_id: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          sub_department_id: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          sub_department_id?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_team_units_sub_department_id_fkey"
+            columns: ["sub_department_id"]
+            isOneToOne: false
+            referencedRelation: "master_sub_departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_configs: {
         Row: {

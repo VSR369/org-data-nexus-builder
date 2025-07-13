@@ -1,1001 +1,845 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Pencil, Trash2, Plus, Download, Search, Upload, FileSpreadsheet, ChevronDown, ChevronRight, Building, Users, User } from 'lucide-react';
-import ResponsiveDashboardWrapper from '@/components/layout/ResponsiveDashboardWrapper';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Edit, ChevronDown, ChevronRight, Download, Upload, RefreshCw, Search, Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 
-interface TeamUnit {
+interface Department {
   id: string;
   name: string;
+  description?: string;
+  organization_id?: string;
+  organization_name?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface SubDepartment {
   id: string;
   name: string;
-  teams: TeamUnit[];
-}
-
-interface Department {
-  id: string;
-  name: string;
-  subDepartments: SubDepartment[];
-}
-
-interface DepartmentHierarchy {
-  categories: Department[];
-}
-
-interface DepartmentConfig {
-  id: string;
-  name: string;
-  organization_id: string | null;
-  hierarchy: DepartmentHierarchy;
-  description: string | null;
+  description?: string;
+  department_id: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  is_user_created: boolean;
-  version: number;
 }
 
-interface OrganizationInfo {
+interface TeamUnit {
   id: string;
   name: string;
+  description?: string;
+  sub_department_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-const DepartmentConfigSupabase = () => {
-  const [selectedConfig, setSelectedConfig] = useState<DepartmentConfig | null>(null);
-  const [newConfigName, setNewConfigName] = useState('');
-  const [newConfigOrgId, setNewConfigOrgId] = useState('');
-  const [organizationName, setOrganizationName] = useState('');
-  const [newConfigDescription, setNewConfigDescription] = useState('');
-  const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
-  const [editingConfigData, setEditingConfigData] = useState({ name: '', organization_id: '', description: '' });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [editingItem, setEditingItem] = useState<{ type: string; id: string; value: string } | null>(null);
-  const queryClient = useQueryClient();
+interface DepartmentHierarchy {
+  department: Department;
+  subDepartments: (SubDepartment & { teamUnits: TeamUnit[] })[];
+}
 
-  const { data: departmentConfigs = [], isLoading, error } = useQuery({
-    queryKey: ['departmentConfigs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
+export default function DepartmentConfigSupabase() {
+  const [departmentHierarchy, setDepartmentHierarchy] = useState<DepartmentHierarchy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDirectEntry, setShowDirectEntry] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editDialog, setEditDialog] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<any>(null);
+  const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
+  const [expandedSubDepartments, setExpandedSubDepartments] = useState<Set<string>>(new Set());
+
+  // Form state
+  const [formData, setFormData] = useState({
+    organizationId: '',
+    organizationName: '',
+    departmentName: '',
+    departmentDescription: '',
+    subDepartmentName: '',
+    subDepartmentDescription: '',
+    teamUnitName: '',
+    teamUnitDescription: ''
+  });
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch departments
+      const { data: departments, error: deptError } = await supabase
         .from('master_departments')
         .select('*')
         .order('name');
-      
-      if (error) throw error;
-      return (data || []).map(item => ({
-        ...item,
-        hierarchy: (item.hierarchy as any) || { categories: [] }
-      })) as DepartmentConfig[];
-    },
-  });
 
-  // Auto-populate organization name when ID is entered
-  useEffect(() => {
-    const fetchOrganizationName = async () => {
-      if (newConfigOrgId.trim()) {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('organization_name')
-            .eq('organization_id', newConfigOrgId.trim())
-            .limit(1)
-            .maybeSingle();
-          
-          if (data && !error) {
-            setOrganizationName(data.organization_name);
-          } else {
-            setOrganizationName('');
-          }
-        } catch (error) {
-          setOrganizationName('');
-        }
-      } else {
-        setOrganizationName('');
+      if (deptError) throw deptError;
+
+      // Fetch sub departments
+      const { data: subDepartments, error: subDeptError } = await supabase
+        .from('master_sub_departments')
+        .select('*')
+        .order('name');
+
+      if (subDeptError) throw subDeptError;
+
+      // Fetch team units
+      const { data: teamUnits, error: teamError } = await supabase
+        .from('master_team_units')
+        .select('*')
+        .order('name');
+
+      if (teamError) throw teamError;
+
+      // Build hierarchy
+      const hierarchy: DepartmentHierarchy[] = departments?.map(dept => ({
+        department: dept,
+        subDepartments: subDepartments?.filter(sub => sub.department_id === dept.id).map(sub => ({
+          ...sub,
+          teamUnits: teamUnits?.filter(team => team.sub_department_id === sub.id) || []
+        })) || []
+      })) || [];
+
+      setDepartmentHierarchy(hierarchy);
+    } catch (error: any) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch department data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOrganizationIdChange = async (value: string) => {
+    setFormData(prev => ({ ...prev, organizationId: value }));
+    
+    if (value.trim()) {
+      // Auto-populate organization name (placeholder logic)
+      setFormData(prev => ({ ...prev, organizationName: `Organization ${value}` }));
+    } else {
+      setFormData(prev => ({ ...prev, organizationName: '' }));
+    }
+  };
+
+  const handleDirectEntry = async () => {
+    try {
+      if (!formData.departmentName.trim()) {
+        toast({
+          title: "Error",
+          description: "Department name is required",
+          variant: "destructive"
+        });
+        return;
       }
-    };
 
-    fetchOrganizationName();
-  }, [newConfigOrgId]);
-
-  const addConfigMutation = useMutation({
-    mutationFn: async (configData: { name: string; organization_id?: string; description?: string }) => {
-      const { data, error } = await supabase
+      // Create department
+      const { data: department, error: deptError } = await supabase
         .from('master_departments')
-        .insert([{ 
-          ...configData,
-          organization_id: configData.organization_id || null,
-          hierarchy: { categories: [] },
+        .insert({
+          name: formData.departmentName,
+          description: formData.departmentDescription || null,
+          organization_id: formData.organizationId || null,
+          organization_name: formData.organizationName || null,
           is_user_created: true
-        }])
+        })
         .select()
         .single();
-      
-      if (error) throw error;
-      return { ...data, hierarchy: (data.hierarchy as any) || { categories: [] } } as DepartmentConfig;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['departmentConfigs'] });
-      setNewConfigName('');
-      setNewConfigOrgId('');
-      setNewConfigDescription('');
-      setOrganizationName('');
-      setSelectedConfig(data);
-      toast({
-        title: 'Success',
-        description: 'Department configuration created successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to create department configuration',
-        variant: 'destructive',
-      });
-      console.error('Error creating config:', error);
-    },
-  });
 
-  const updateConfigMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { data: result, error } = await supabase
-        .from('master_departments')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return { ...result, hierarchy: (result.hierarchy as any) || { categories: [] } } as DepartmentConfig;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departmentConfigs'] });
-      setEditingConfigId(null);
-      toast({
-        title: 'Success',
-        description: 'Configuration updated successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to update configuration',
-        variant: 'destructive',
-      });
-      console.error('Error updating config:', error);
-    },
-  });
+      if (deptError) throw deptError;
 
-  const deleteConfigMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('master_departments')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departmentConfigs'] });
-      setSelectedConfig(null);
-      toast({
-        title: 'Success',
-        description: 'Configuration deleted successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete configuration',
-        variant: 'destructive',
-      });
-      console.error('Error deleting config:', error);
-    },
-  });
+      let subDepartment = null;
+      let teamUnit = null;
 
-  const bulkUploadMutation = useMutation({
-    mutationFn: async (hierarchyData: { department: string; subDepartment?: string; teamUnit?: string }[]) => {
-      if (!selectedConfig) throw new Error('No configuration selected');
+      // Create sub department if provided
+      if (formData.subDepartmentName.trim()) {
+        const { data: subDept, error: subDeptError } = await supabase
+          .from('master_sub_departments')
+          .insert({
+            name: formData.subDepartmentName,
+            description: formData.subDepartmentDescription || null,
+            department_id: department.id,
+            is_user_created: true
+          })
+          .select()
+          .single();
 
-      const departmentMap = new Map<string, Department>();
-      const newHierarchy: DepartmentHierarchy = { categories: [] };
+        if (subDeptError) throw subDeptError;
+        subDepartment = subDept;
 
-      // Process the Excel data to create hierarchy
-      hierarchyData.forEach(row => {
-        if (!row.department) return;
+        // Create team unit if provided
+        if (formData.teamUnitName.trim()) {
+          const { data: team, error: teamError } = await supabase
+            .from('master_team_units')
+            .insert({
+              name: formData.teamUnitName,
+              description: formData.teamUnitDescription || null,
+              sub_department_id: subDepartment.id,
+              is_user_created: true
+            })
+            .select()
+            .single();
 
-        // Get or create department
-        let department = departmentMap.get(row.department);
-        if (!department) {
-          department = {
-            id: crypto.randomUUID(),
-            name: row.department,
-            subDepartments: []
-          };
-          departmentMap.set(row.department, department);
-          newHierarchy.categories.push(department);
+          if (teamError) throw teamError;
+          teamUnit = team;
         }
+      }
 
-        if (row.subDepartment) {
-          // Find or create sub-department
-          let subDept = department.subDepartments.find(s => s.name === row.subDepartment);
-          if (!subDept) {
-            subDept = {
-              id: crypto.randomUUID(),
-              name: row.subDepartment,
-              teams: []
-            };
-            department.subDepartments.push(subDept);
-          }
-
-          if (row.teamUnit) {
-            // Add team/unit if it doesn't exist
-            const existingTeam = subDept.teams.find(t => t.name === row.teamUnit);
-            if (!existingTeam) {
-              subDept.teams.push({
-                id: crypto.randomUUID(),
-                name: row.teamUnit
-              });
-            }
-          }
-        }
-      });
-
-      // Update the configuration with new hierarchy
-      const { data, error } = await supabase
-        .from('master_departments')
-        .update({ hierarchy: newHierarchy as any })
-        .eq('id', selectedConfig.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return { ...data, hierarchy: (data.hierarchy as any) || { categories: [] } } as DepartmentConfig;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['departmentConfigs'] });
-      setSelectedConfig(data);
-      setSelectedFile(null);
       toast({
-        title: 'Success',
-        description: 'Department hierarchy uploaded successfully',
+        title: "Success",
+        description: "Department hierarchy created successfully"
       });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to upload hierarchy',
-        variant: 'destructive',
-      });
-      console.error('Error uploading hierarchy:', error);
-    },
-  });
 
-  const handleAddConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newConfigName.trim()) {
-      addConfigMutation.mutate({
-        name: newConfigName.trim(),
-        organization_id: newConfigOrgId.trim() || undefined,
-        description: newConfigDescription.trim() || undefined
+      setFormData({
+        organizationId: '',
+        organizationName: '',
+        departmentName: '',
+        departmentDescription: '',
+        subDepartmentName: '',
+        subDepartmentDescription: '',
+        teamUnitName: '',
+        teamUnitDescription: ''
+      });
+      setShowDirectEntry(false);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error creating department:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create department hierarchy",
+        variant: "destructive"
       });
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExcelUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
-
-  const processExcelFile = () => {
-    if (!selectedFile || !selectedConfig) return;
+    if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        const hierarchyData: { department: string; subDepartment?: string; teamUnit?: string }[] = [];
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i] as any[];
-          if (row[0]) {
-            hierarchyData.push({
-              department: row[0]?.toString().trim() || '',
-              subDepartment: row[1]?.toString().trim() || undefined,
-              teamUnit: row[2]?.toString().trim() || undefined
-            });
-          }
-        }
-
-        if (hierarchyData.length > 0) {
-          bulkUploadMutation.mutate(hierarchyData);
-        } else {
-          toast({
-            title: 'Error',
-            description: 'No valid department data found in the Excel file',
-            variant: 'destructive',
-          });
-        }
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to process Excel file',
-          variant: 'destructive',
-        });
-        console.error('Error processing Excel file:', error);
-      }
-    };
-    reader.readAsBinaryString(selectedFile);
-  };
-
-  const handleExport = () => {
-    if (!selectedConfig) return;
-
-    const exportData: string[][] = [];
-    
-    selectedConfig.hierarchy.categories.forEach(dept => {
-      if (dept.subDepartments.length === 0) {
-        exportData.push([dept.name, '', '']);
-      } else {
-        dept.subDepartments.forEach(subDept => {
-          if (subDept.teams.length === 0) {
-            exportData.push([dept.name, subDept.name, '']);
-          } else {
-            subDept.teams.forEach(team => {
-              exportData.push([dept.name, subDept.name, team.name]);
-            });
-          }
-        });
-      }
-    });
-    
-    const ws = XLSX.utils.aoa_to_sheet([
-      ['Department Name', 'Sub Department Name', 'Team/Unit Name'],
-      ...exportData
-    ]);
-    
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Departments');
-    XLSX.writeFile(wb, `departments_${selectedConfig.name.replace(/\s+/g, '_')}.xlsx`);
-  };
-
-  const toggleExpanded = (id: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedItems(newExpanded);
-  };
-
-  const addDepartment = () => {
-    if (!selectedConfig) return;
-    
-    const newDept: Department = {
-      id: crypto.randomUUID(),
-      name: 'New Department',
-      subDepartments: []
-    };
-
-    const updatedHierarchy = {
-      ...selectedConfig.hierarchy,
-      categories: [...selectedConfig.hierarchy.categories, newDept]
-    };
-
-    updateConfigMutation.mutate({
-      id: selectedConfig.id,
-      data: { hierarchy: updatedHierarchy }
-    });
-  };
-
-  const addSubDepartment = (deptId: string) => {
-    if (!selectedConfig) return;
-
-    const newSubDept: SubDepartment = {
-      id: crypto.randomUUID(),
-      name: 'New Sub Department',
-      teams: []
-    };
-
-    const updatedCategories = selectedConfig.hierarchy.categories.map(dept => {
-      if (dept.id === deptId) {
-        return {
-          ...dept,
-          subDepartments: [...dept.subDepartments, newSubDept]
-        };
-      }
-      return dept;
-    });
-
-    updateConfigMutation.mutate({
-      id: selectedConfig.id,
-      data: { hierarchy: { categories: updatedCategories } }
-    });
-  };
-
-  const addTeamUnit = (deptId: string, subDeptId: string) => {
-    if (!selectedConfig) return;
-
-    const newTeam: TeamUnit = {
-      id: crypto.randomUUID(),
-      name: 'New Team/Unit'
-    };
-
-    const updatedCategories = selectedConfig.hierarchy.categories.map(dept => {
-      if (dept.id === deptId) {
-        return {
-          ...dept,
-          subDepartments: dept.subDepartments.map(sub => {
-            if (sub.id === subDeptId) {
-              return {
-                ...sub,
-                teams: [...sub.teams, newTeam]
-              };
+        for (const row of jsonData) {
+          const department = await createDepartmentFromRow(row);
+          if (department && row['Sub Department Name']) {
+            const subDepartment = await createSubDepartmentFromRow(row, department.id);
+            if (subDepartment && row['Team/Unit Name']) {
+              await createTeamUnitFromRow(row, subDepartment.id);
             }
-            return sub;
-          })
-        };
+          }
+        }
+
+        toast({
+          title: "Success",
+          description: `Uploaded ${jsonData.length} department records`
+        });
+
+        fetchData();
+        setShowExcelUpload(false);
+      } catch (error) {
+        console.error('Error uploading Excel:', error);
+        toast({
+          title: "Error",
+          description: "Failed to upload Excel file",
+          variant: "destructive"
+        });
       }
-      return dept;
-    });
-
-    updateConfigMutation.mutate({
-      id: selectedConfig.id,
-      data: { hierarchy: { categories: updatedCategories } }
-    });
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = '';
   };
 
-  const deleteItem = (type: 'department' | 'subDepartment' | 'team', ids: { deptId: string; subDeptId?: string; teamId?: string }) => {
-    if (!selectedConfig) return;
+  const createDepartmentFromRow = async (row: any) => {
+    if (!row['Department Name']) return null;
 
-    let updatedCategories = [...selectedConfig.hierarchy.categories];
+    const { data, error } = await supabase
+      .from('master_departments')
+      .upsert({
+        name: row['Department Name'],
+        description: row['Department Description'] || null,
+        organization_id: row['Organization ID'] || null,
+        organization_name: row['Organization Name'] || null,
+        is_user_created: true
+      }, { onConflict: 'name' })
+      .select()
+      .single();
 
-    if (type === 'department') {
-      updatedCategories = updatedCategories.filter(dept => dept.id !== ids.deptId);
-    } else if (type === 'subDepartment' && ids.subDeptId) {
-      updatedCategories = updatedCategories.map(dept => {
-        if (dept.id === ids.deptId) {
-          return {
-            ...dept,
-            subDepartments: dept.subDepartments.filter(sub => sub.id !== ids.subDeptId)
-          };
+    if (error) throw error;
+    return data;
+  };
+
+  const createSubDepartmentFromRow = async (row: any, departmentId: string) => {
+    if (!row['Sub Department Name']) return null;
+
+    const { data, error } = await supabase
+      .from('master_sub_departments')
+      .insert({
+        name: row['Sub Department Name'],
+        description: row['Sub Department Description'] || null,
+        department_id: departmentId,
+        is_user_created: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  };
+
+  const createTeamUnitFromRow = async (row: any, subDepartmentId: string) => {
+    if (!row['Team/Unit Name']) return null;
+
+    const { data, error } = await supabase
+      .from('master_team_units')
+      .insert({
+        name: row['Team/Unit Name'],
+        description: row['Team/Unit Description'] || null,
+        sub_department_id: subDepartmentId,
+        is_user_created: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  };
+
+  const exportData = async () => {
+    try {
+      const exportData = [];
+      
+      for (const hierarchy of departmentHierarchy) {
+        for (const subDept of hierarchy.subDepartments) {
+          for (const teamUnit of subDept.teamUnits) {
+            exportData.push({
+              'Organization ID': hierarchy.department.organization_id || '',
+              'Organization Name': hierarchy.department.organization_name || '',
+              'Department Name': hierarchy.department.name,
+              'Department Description': hierarchy.department.description || '',
+              'Sub Department Name': subDept.name,
+              'Sub Department Description': subDept.description || '',
+              'Team/Unit Name': teamUnit.name,
+              'Team/Unit Description': teamUnit.description || ''
+            });
+          }
         }
-        return dept;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Departments');
+      XLSX.writeFile(wb, 'departments.xlsx');
+
+      toast({
+        title: "Success",
+        description: "Department data exported successfully"
       });
-    } else if (type === 'team' && ids.subDeptId && ids.teamId) {
-      updatedCategories = updatedCategories.map(dept => {
-        if (dept.id === ids.deptId) {
-          return {
-            ...dept,
-            subDepartments: dept.subDepartments.map(sub => {
-              if (sub.id === ids.subDeptId) {
-                return {
-                  ...sub,
-                  teams: sub.teams.filter(team => team.id !== ids.teamId)
-                };
-              }
-              return sub;
-            })
-          };
-        }
-        return dept;
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export data",
+        variant: "destructive"
       });
     }
-
-    updateConfigMutation.mutate({
-      id: selectedConfig.id,
-      data: { hierarchy: { categories: updatedCategories } }
-    });
   };
 
-  const updateItemName = (type: 'department' | 'subDepartment' | 'team', ids: { deptId: string; subDeptId?: string; teamId?: string }, newName: string) => {
-    if (!selectedConfig || !newName.trim()) return;
+  const handleEdit = (item: any, type: string) => {
+    setEditingItem({ ...item, type });
+    setEditDialog(true);
+  };
 
-    let updatedCategories = [...selectedConfig.hierarchy.categories];
+  const handleSaveEdit = async () => {
+    try {
+      const table = editingItem.type === 'department' ? 'master_departments' :
+                   editingItem.type === 'subdepartment' ? 'master_sub_departments' : 'master_team_units';
 
-    if (type === 'department') {
-      updatedCategories = updatedCategories.map(dept => {
-        if (dept.id === ids.deptId) {
-          return { ...dept, name: newName.trim() };
-        }
-        return dept;
+      const { error } = await supabase
+        .from(table)
+        .update({
+          name: editingItem.name,
+          description: editingItem.description
+        })
+        .eq('id', editingItem.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Item updated successfully"
       });
-    } else if (type === 'subDepartment' && ids.subDeptId) {
-      updatedCategories = updatedCategories.map(dept => {
-        if (dept.id === ids.deptId) {
-          return {
-            ...dept,
-            subDepartments: dept.subDepartments.map(sub => {
-              if (sub.id === ids.subDeptId) {
-                return { ...sub, name: newName.trim() };
-              }
-              return sub;
-            })
-          };
-        }
-        return dept;
-      });
-    } else if (type === 'team' && ids.subDeptId && ids.teamId) {
-      updatedCategories = updatedCategories.map(dept => {
-        if (dept.id === ids.deptId) {
-          return {
-            ...dept,
-            subDepartments: dept.subDepartments.map(sub => {
-              if (sub.id === ids.subDeptId) {
-                return {
-                  ...sub,
-                  teams: sub.teams.map(team => {
-                    if (team.id === ids.teamId) {
-                      return { ...team, name: newName.trim() };
-                    }
-                    return team;
-                  })
-                };
-              }
-              return sub;
-            })
-          };
-        }
-        return dept;
+
+      setEditDialog(false);
+      setEditingItem(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update item",
+        variant: "destructive"
       });
     }
-
-    updateConfigMutation.mutate({
-      id: selectedConfig.id,
-      data: { hierarchy: { categories: updatedCategories } }
-    });
-
-    setEditingItem(null);
   };
 
-  const filteredConfigs = departmentConfigs.filter(config =>
-    config.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (config.organization_id && config.organization_id.toLowerCase().includes(searchTerm.toLowerCase()))
+  const handleDelete = async () => {
+    try {
+      const table = deletingItem.type === 'department' ? 'master_departments' :
+                   deletingItem.type === 'subdepartment' ? 'master_sub_departments' : 'master_team_units';
+
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', deletingItem.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Item deleted successfully"
+      });
+
+      setDeleteDialog(false);
+      setDeletingItem(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleDepartmentExpansion = (deptId: string) => {
+    const newExpanded = new Set(expandedDepartments);
+    if (newExpanded.has(deptId)) {
+      newExpanded.delete(deptId);
+    } else {
+      newExpanded.add(deptId);
+    }
+    setExpandedDepartments(newExpanded);
+  };
+
+  const toggleSubDepartmentExpansion = (subDeptId: string) => {
+    const newExpanded = new Set(expandedSubDepartments);
+    if (newExpanded.has(subDeptId)) {
+      newExpanded.delete(subDeptId);
+    } else {
+      newExpanded.add(subDeptId);
+    }
+    setExpandedSubDepartments(newExpanded);
+  };
+
+  const filteredHierarchy = departmentHierarchy.filter(hierarchy =>
+    hierarchy.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    hierarchy.subDepartments.some(sub =>
+      sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.teamUnits.some(team => team.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
   );
 
-  if (error) {
-    return (
-      <ResponsiveDashboardWrapper>
-        <div className="text-center py-8">
-          <p className="text-destructive">Error loading department configurations</p>
-        </div>
-      </ResponsiveDashboardWrapper>
-    );
+  if (loading) {
+    return <div className="flex items-center justify-center p-8">Loading departments...</div>;
   }
 
   return (
-    <ResponsiveDashboardWrapper>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Departments Master Data</h1>
-            <p className="text-muted-foreground">
-              Manage hierarchical department configurations: Department → Sub Department → Team/Unit
-            </p>
-          </div>
-          {selectedConfig && (
-            <Button onClick={handleExport} variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export Excel
+    <div className="container mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Department Master Data</span>
+            <div className="flex gap-2">
+              <Button onClick={fetchData} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button onClick={exportData} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button onClick={() => setShowDirectEntry(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Direct Entry
             </Button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Panel - Configuration Management */}
-          <div className="space-y-6">
-            {/* Create New Configuration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Create Department Configuration
-                </CardTitle>
-                <CardDescription>
-                  Create a new department hierarchy configuration
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAddConfig} className="space-y-4">
-                  <div>
-                    <Label htmlFor="configName">Configuration Name *</Label>
-                    <Input
-                      id="configName"
-                      type="text"
-                      value={newConfigName}
-                      onChange={(e) => setNewConfigName(e.target.value)}
-                      placeholder="Enter configuration name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="organizationId">Organization ID (Optional)</Label>
-                    <Input
-                      id="organizationId"
-                      type="text"
-                      value={newConfigOrgId}
-                      onChange={(e) => setNewConfigOrgId(e.target.value)}
-                      placeholder="Enter organization ID"
-                    />
-                    {organizationName && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Organization: <span className="font-medium">{organizationName}</span>
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={newConfigDescription}
-                      onChange={(e) => setNewConfigDescription(e.target.value)}
-                      placeholder="Enter description (optional)"
-                      rows={3}
-                    />
-                  </div>
-                  <Button type="submit" disabled={addConfigMutation.isPending}>
-                    {addConfigMutation.isPending ? 'Creating...' : 'Create Configuration'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Existing Configurations */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Department Configurations</CardTitle>
-                <CardDescription>
-                  {departmentConfigs.length} configurations available
-                </CardDescription>
-                <div className="flex items-center gap-2 mt-4">
-                  <Search className="h-4 w-4" />
-                  <Input
-                    placeholder="Search configurations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">Loading configurations...</div>
-                ) : filteredConfigs.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No configurations found.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredConfigs.map((config) => (
-                      <div
-                        key={config.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedConfig?.id === config.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        onClick={() => setSelectedConfig(config)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">{config.name}</h4>
-                            {config.organization_id && (
-                              <p className="text-sm text-muted-foreground">Org ID: {config.organization_id}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              {config.hierarchy.categories.length} departments
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingConfigId(config.id);
-                                setEditingConfigData({
-                                  name: config.name,
-                                  organization_id: config.organization_id || '',
-                                  description: config.description || ''
-                                });
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteConfigMutation.mutate(config.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <Button variant="outline" onClick={() => setShowExcelUpload(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Excel Upload
+            </Button>
           </div>
 
-          {/* Right Panel - Hierarchy Management */}
-          <div className="space-y-6">
-            {selectedConfig ? (
-              <>
-                {/* Excel Upload */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-5 w-5" />
-                      Excel Upload
-                    </CardTitle>
-                    <CardDescription>
-                      Upload department hierarchy from Excel file
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={handleFileUpload}
-                        className="flex-1"
-                      />
-                      <Button 
-                        onClick={processExcelFile} 
-                        disabled={!selectedFile || bulkUploadMutation.isPending}
-                        className="gap-2"
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search departments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
+              <div>Total Departments: {departmentHierarchy.length}</div>
+              <div>Total Sub Departments: {departmentHierarchy.reduce((acc, h) => acc + h.subDepartments.length, 0)}</div>
+              <div>Total Team/Units: {departmentHierarchy.reduce((acc, h) => acc + h.subDepartments.reduce((subAcc, sub) => subAcc + sub.teamUnits.length, 0), 0)}</div>
+            </div>
+
+            {filteredHierarchy.map((hierarchy) => (
+              <Card key={hierarchy.department.id} className="border-l-4 border-l-primary">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleDepartmentExpansion(hierarchy.department.id)}
                       >
-                        <Upload className="h-4 w-4" />
-                        {bulkUploadMutation.isPending ? 'Uploading...' : 'Upload'}
+                        {expandedDepartments.has(hierarchy.department.id) ? 
+                          <ChevronDown className="h-4 w-4" /> : 
+                          <ChevronRight className="h-4 w-4" />
+                        }
+                      </Button>
+                      <div>
+                        <h3 className="font-semibold">{hierarchy.department.name}</h3>
+                        {hierarchy.department.description && (
+                          <p className="text-sm text-muted-foreground">{hierarchy.department.description}</p>
+                        )}
+                        {hierarchy.department.organization_name && (
+                          <Badge variant="secondary" className="mt-1">
+                            {hierarchy.department.organization_name}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(hierarchy.department, 'department')}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setDeletingItem({ ...hierarchy.department, type: 'department' });
+                          setDeleteDialog(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
 
-                {/* Hierarchy Display */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Department Hierarchy</span>
-                      <Button onClick={addDepartment} size="sm" className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Department
-                      </Button>
-                    </CardTitle>
-                    <CardDescription>
-                      Manage the hierarchical structure of {selectedConfig.name}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {selectedConfig.hierarchy.categories.map((department) => (
-                        <div key={department.id} className="border rounded-lg p-3">
-                          {/* Department Level */}
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleExpanded(department.id)}
-                              className="p-0 h-auto"
-                            >
-                              {expandedItems.has(department.id) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Building className="h-4 w-4 text-primary" />
-                            {editingItem?.type === 'department' && editingItem.id === department.id ? (
-                              <Input
-                                value={editingItem.value}
-                                onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
-                                onBlur={() => updateItemName('department', { deptId: department.id }, editingItem.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    updateItemName('department', { deptId: department.id }, editingItem.value);
-                                  } else if (e.key === 'Escape') {
-                                    setEditingItem(null);
+                  {expandedDepartments.has(hierarchy.department.id) && (
+                    <div className="ml-6 mt-4 space-y-3">
+                      {hierarchy.subDepartments.map((subDept) => (
+                        <Card key={subDept.id} className="border-l-4 border-l-secondary">
+                          <CardContent className="pt-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleSubDepartmentExpansion(subDept.id)}
+                                >
+                                  {expandedSubDepartments.has(subDept.id) ? 
+                                    <ChevronDown className="h-4 w-4" /> : 
+                                    <ChevronRight className="h-4 w-4" />
                                   }
-                                }}
-                                autoFocus
-                                className="flex-1"
-                              />
-                            ) : (
-                              <span className="font-medium flex-1">{department.name}</span>
-                            )}
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setEditingItem({ type: 'department', id: department.id, value: department.name })}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => addSubDepartment(department.id)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => deleteItem('department', { deptId: department.id })}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Sub-Departments */}
-                          {expandedItems.has(department.id) && (
-                            <div className="ml-6 mt-2 space-y-2">
-                              {department.subDepartments.map((subDept) => (
-                                <div key={subDept.id} className="border-l-2 border-gray-200 pl-4">
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => toggleExpanded(subDept.id)}
-                                      className="p-0 h-auto"
-                                    >
-                                      {expandedItems.has(subDept.id) ? (
-                                        <ChevronDown className="h-4 w-4" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                    <Users className="h-4 w-4 text-secondary-foreground" />
-                                    {editingItem?.type === 'subDepartment' && editingItem.id === subDept.id ? (
-                                      <Input
-                                        value={editingItem.value}
-                                        onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
-                                        onBlur={() => updateItemName('subDepartment', { deptId: department.id, subDeptId: subDept.id }, editingItem.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            updateItemName('subDepartment', { deptId: department.id, subDeptId: subDept.id }, editingItem.value);
-                                          } else if (e.key === 'Escape') {
-                                            setEditingItem(null);
-                                          }
-                                        }}
-                                        autoFocus
-                                        className="flex-1"
-                                      />
-                                    ) : (
-                                      <span className="font-medium flex-1">{subDept.name}</span>
-                                    )}
-                                    <div className="flex gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setEditingItem({ type: 'subDepartment', id: subDept.id, value: subDept.name })}
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        <Pencil className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => addTeamUnit(department.id, subDept.id)}
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        <Plus className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={() => deleteItem('subDepartment', { deptId: department.id, subDeptId: subDept.id })}
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
-
-                                  {/* Teams/Units */}
-                                  {expandedItems.has(subDept.id) && (
-                                    <div className="ml-6 mt-2 space-y-1">
-                                      {subDept.teams.map((team) => (
-                                        <div key={team.id} className="flex items-center gap-2">
-                                          <User className="h-4 w-4 text-muted-foreground" />
-                                          {editingItem?.type === 'team' && editingItem.id === team.id ? (
-                                            <Input
-                                              value={editingItem.value}
-                                              onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })}
-                                              onBlur={() => updateItemName('team', { deptId: department.id, subDeptId: subDept.id, teamId: team.id }, editingItem.value)}
-                                              onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                  updateItemName('team', { deptId: department.id, subDeptId: subDept.id, teamId: team.id }, editingItem.value);
-                                                } else if (e.key === 'Escape') {
-                                                  setEditingItem(null);
-                                                }
-                                              }}
-                                              autoFocus
-                                              className="flex-1"
-                                            />
-                                          ) : (
-                                            <span className="flex-1">{team.name}</span>
-                                          )}
-                                          <div className="flex gap-1">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => setEditingItem({ type: 'team', id: team.id, value: team.name })}
-                                              className="h-6 w-6 p-0"
-                                            >
-                                              <Pencil className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="destructive"
-                                              onClick={() => deleteItem('team', { deptId: department.id, subDeptId: subDept.id, teamId: team.id })}
-                                              className="h-6 w-6 p-0"
-                                            >
-                                              <Trash2 className="h-3 w-3" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
+                                </Button>
+                                <div>
+                                  <h4 className="font-medium">{subDept.name}</h4>
+                                  {subDept.description && (
+                                    <p className="text-sm text-muted-foreground">{subDept.description}</p>
                                   )}
                                 </div>
-                              ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEdit(subDept, 'subdepartment')}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setDeletingItem({ ...subDept, type: 'subdepartment' });
+                                    setDeleteDialog(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
 
-                      {selectedConfig.hierarchy.categories.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No departments configured. Add a department to get started.
-                        </div>
-                      )}
+                            {expandedSubDepartments.has(subDept.id) && (
+                              <div className="ml-6 mt-3 space-y-2">
+                                {subDept.teamUnits.map((teamUnit) => (
+                                  <Card key={teamUnit.id} className="border-l-4 border-l-accent">
+                                    <CardContent className="pt-2">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <h5 className="font-medium">{teamUnit.name}</h5>
+                                          {teamUnit.description && (
+                                            <p className="text-sm text-muted-foreground">{teamUnit.description}</p>
+                                          )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleEdit(teamUnit, 'teamunit')}
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              setDeletingItem({ ...teamUnit, type: 'teamunit' });
+                                              setDeleteDialog(true);
+                                            }}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    Select a configuration from the left panel to manage its hierarchy
-                  </p>
+                  )}
                 </CardContent>
               </Card>
-            )}
+            ))}
           </div>
-        </div>
-      </div>
-    </ResponsiveDashboardWrapper>
-  );
-};
+        </CardContent>
+      </Card>
 
-export default DepartmentConfigSupabase;
+      {/* Direct Entry Dialog */}
+      <Dialog open={showDirectEntry} onOpenChange={setShowDirectEntry}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Department Hierarchy</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="orgId">Organization ID (Optional)</Label>
+                <Input
+                  id="orgId"
+                  value={formData.organizationId}
+                  onChange={(e) => handleOrganizationIdChange(e.target.value)}
+                  placeholder="Enter organization ID"
+                />
+              </div>
+              <div>
+                <Label htmlFor="orgName">Organization Name</Label>
+                <Input
+                  id="orgName"
+                  value={formData.organizationName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))}
+                  placeholder="Auto-populated"
+                  disabled
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="deptName">Department Name *</Label>
+                <Input
+                  id="deptName"
+                  value={formData.departmentName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, departmentName: e.target.value }))}
+                  placeholder="Enter department name"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="deptDesc">Department Description</Label>
+                <Textarea
+                  id="deptDesc"
+                  value={formData.departmentDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, departmentDescription: e.target.value }))}
+                  placeholder="Enter department description"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="subDeptName">Sub Department Name</Label>
+                <Input
+                  id="subDeptName"
+                  value={formData.subDepartmentName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, subDepartmentName: e.target.value }))}
+                  placeholder="Enter sub department name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="subDeptDesc">Sub Department Description</Label>
+                <Textarea
+                  id="subDeptDesc"
+                  value={formData.subDepartmentDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, subDepartmentDescription: e.target.value }))}
+                  placeholder="Enter sub department description"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="teamName">Team/Unit Name</Label>
+                <Input
+                  id="teamName"
+                  value={formData.teamUnitName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, teamUnitName: e.target.value }))}
+                  placeholder="Enter team/unit name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="teamDesc">Team/Unit Description</Label>
+                <Textarea
+                  id="teamDesc"
+                  value={formData.teamUnitDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, teamUnitDescription: e.target.value }))}
+                  placeholder="Enter team/unit description"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDirectEntry(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleDirectEntry}>
+                Create Hierarchy
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Excel Upload Dialog */}
+      <Dialog open={showExcelUpload} onOpenChange={setShowExcelUpload}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Excel File</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Upload an Excel file with columns: Organization ID, Organization Name, Department Name, Department Description, 
+              Sub Department Name, Sub Department Description, Team/Unit Name, Team/Unit Description
+            </p>
+            <Input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {editingItem?.type}</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="editName">Name</Label>
+                <Input
+                  id="editName"
+                  value={editingItem.name}
+                  onChange={(e) => setEditingItem(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editDesc">Description</Label>
+                <Textarea
+                  id="editDesc"
+                  value={editingItem.description || ''}
+                  onChange={(e) => setEditingItem(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEdit}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {deletingItem?.type} 
+              and all its related data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
