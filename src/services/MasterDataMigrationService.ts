@@ -36,8 +36,6 @@ export class MasterDataMigrationService {
     try {
       // Define the migration mapping
       const migrations = [
-        { key: 'master_data_countries', table: 'master_countries', fields: ['name', 'code'] },
-        { key: 'master_data_currencies', table: 'master_currencies', fields: ['name', 'code', 'symbol'] },
         { key: 'master_data_organization_types', table: 'master_organization_types', fields: ['name'] },
         { key: 'master_data_entity_types', table: 'master_entity_types', fields: ['name'] },
         { key: 'master_data_departments', table: 'master_departments', fields: ['name'] },
@@ -47,7 +45,9 @@ export class MasterDataMigrationService {
         { key: 'master_data_challenge_statuses', table: 'master_challenge_statuses', fields: ['name', 'description'] },
         { key: 'master_data_solution_statuses', table: 'master_solution_statuses', fields: ['name', 'description'] },
         { key: 'master_data_reward_types', table: 'master_reward_types', fields: ['name', 'description'] },
-        { key: 'master_data_communication_types', table: 'master_communication_types', fields: ['name', 'description'] }
+        { key: 'master_data_communication_types', table: 'master_communication_types', fields: ['name', 'description'] },
+        { key: 'master_data_countries', table: 'master_countries', fields: ['name', 'code'] },
+        { key: 'master_data_currencies', table: 'master_currencies', fields: ['name', 'code', 'symbol'] }
       ];
 
       let migratedCount = 0;

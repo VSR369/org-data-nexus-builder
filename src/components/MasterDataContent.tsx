@@ -23,6 +23,7 @@ import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
 import CustomDataManager from "./master-data/CustomDataManager";
 import DataProtectionPanel from "./master-data/DataProtectionPanel";
 import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
+import MigrationTester from "./MigrationTester";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -34,6 +35,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'migration-tester':
+        return <MigrationTester />;
       case 'custom-data-manager':
         return <CustomDataManager />;
       case 'countries':
