@@ -101,6 +101,21 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
     setCalculatedValue(calculated);
   }, [formData.base_value, formData.membership_discount_percentage]);
 
+  // Auto-populate currency when country is selected
+  useEffect(() => {
+    if (formData.country_id && masterData.countries && masterData.currencies) {
+      const selectedCountry = masterData.countries.find((country: any) => country.id === formData.country_id);
+      if (selectedCountry) {
+        const matchingCurrency = masterData.currencies.find((currency: any) => 
+          currency.country === selectedCountry.name
+        );
+        if (matchingCurrency && matchingCurrency.id !== formData.currency_id) {
+          setFormData(prev => ({ ...prev, currency_id: matchingCurrency.id }));
+        }
+      }
+    }
+  }, [formData.country_id, masterData.countries, masterData.currencies]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
