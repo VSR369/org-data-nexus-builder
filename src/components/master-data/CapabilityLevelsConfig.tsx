@@ -314,10 +314,11 @@ const CapabilityLevelsConfig = () => {
                     <Input
                       id="minScore"
                       type="number"
+                      step="0.00001"
                       min="0"
                       max="10"
                       value={formData.min_score}
-                      onChange={(e) => setFormData({ ...formData, min_score: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setFormData({ ...formData, min_score: parseFloat(e.target.value) || 0 })}
                     />
                   </div>
                   <div>
@@ -325,10 +326,11 @@ const CapabilityLevelsConfig = () => {
                     <Input
                       id="maxScore"
                       type="number"
+                      step="0.00001"
                       min="0"
                       max="10"
                       value={formData.max_score}
-                      onChange={(e) => setFormData({ ...formData, max_score: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setFormData({ ...formData, max_score: parseFloat(e.target.value) || 0 })}
                     />
                   </div>
                   <div>
