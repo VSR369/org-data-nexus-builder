@@ -208,7 +208,12 @@ const DomainGroupHierarchyDisplay: React.FC<DomainGroupHierarchyDisplayProps> = 
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-lg">{domainGroup.name}</h3>
+                  <h3 className="font-semibold text-lg">
+                    {industrySegmentName !== 'No Industry Segment' && (
+                      <span className="text-primary">{industrySegmentName} - </span>
+                    )}
+                    {domainGroup.name}
+                  </h3>
                   <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
                     {domainGroup.is_active ? 'Active' : 'Inactive'}
                   </Badge>
