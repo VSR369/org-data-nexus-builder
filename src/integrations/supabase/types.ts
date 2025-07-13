@@ -899,6 +899,136 @@ export type Database = {
           },
         ]
       }
+      organization_documents: {
+        Row: {
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          organization_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          organization_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          organization_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string
+          contact_person_name: string
+          country_code: string | null
+          country_id: string | null
+          created_at: string
+          email: string
+          entity_type_id: string | null
+          id: string
+          industry_segment_id: string | null
+          organization_id: string
+          organization_name: string
+          organization_type_id: string | null
+          password_hash: string
+          phone_number: string
+          registration_status: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address: string
+          contact_person_name: string
+          country_code?: string | null
+          country_id?: string | null
+          created_at?: string
+          email: string
+          entity_type_id?: string | null
+          id?: string
+          industry_segment_id?: string | null
+          organization_id: string
+          organization_name: string
+          organization_type_id?: string | null
+          password_hash: string
+          phone_number: string
+          registration_status?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          contact_person_name?: string
+          country_code?: string | null
+          country_id?: string | null
+          created_at?: string
+          email?: string
+          entity_type_id?: string | null
+          id?: string
+          industry_segment_id?: string | null
+          organization_id?: string
+          organization_name?: string
+          organization_type_id?: string | null
+          password_hash?: string
+          phone_number?: string
+          registration_status?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_industry_segment_id_fkey"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "master_industry_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_configs: {
         Row: {
           annual_fee: number | null
@@ -1027,6 +1157,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_table_schema: {
         Args: { table_name: string }
         Returns: {
