@@ -14,7 +14,7 @@ interface MasterDataItem {
 type TableName = 'master_organization_types' | 'master_entity_types' | 'master_solution_statuses' | 
   'master_challenge_statuses' | 'master_reward_types' | 'master_communication_types' | 
   'master_departments' | 'master_industry_segments' | 'master_engagement_models' | 
-  'master_competency_capabilities';
+  'master_competency_capabilities' | 'master_currencies' | 'master_countries';
 
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
