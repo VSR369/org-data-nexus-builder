@@ -14,7 +14,7 @@ import CommunicationTypeConfigSupabase from "./master-data/CommunicationTypeConf
 import RewardTypeConfigSupabase from "./master-data/RewardTypeConfigSupabase";
 import SeekerMembershipFeeConfig from "./master-data/SeekerMembershipFeeConfig";
 import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
-import PricingConfig from "./master-data/PricingConfig";
+import { PricingTemplatesManager } from "./master-data/PricingTemplatesManager";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
