@@ -15,17 +15,8 @@ interface RewardType {
   name: string;
   description?: string;
   type?: string;
-  currency?: string;
-  amount?: number;
   created_at?: string;
   updated_at?: string;
-}
-
-interface Currency {
-  id: string;
-  name: string;
-  code: string;
-  symbol?: string;
 }
 
 const RewardTypeConfigSupabase = () => {
@@ -33,18 +24,14 @@ const RewardTypeConfigSupabase = () => {
   const [newRewardType, setNewRewardType] = useState({ 
     type: 'non-monetary' as 'monetary' | 'non-monetary',
     name: '', 
-    description: '',
-    currency: '',
-    amount: ''
+    description: ''
   });
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   // Load data on component mount
   useEffect(() => {
     loadRewardTypes();
-    loadCurrencies();
   }, []);
 
   const loadRewardTypes = async () => {
@@ -69,36 +56,20 @@ const RewardTypeConfigSupabase = () => {
     }
   };
 
-  const loadCurrencies = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('master_currencies')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      setCurrencies(data || []);
-    } catch (error) {
-      console.error('Error loading currencies:', error);
-    }
-  };
-
   const addRewardType = async () => {
     if (newRewardType.type === 'monetary') {
-      if (newRewardType.name && newRewardType.currency && newRewardType.amount) {
+      if (newRewardType.name.trim()) {
         try {
           const { error } = await supabase
             .from('master_reward_types')
             .insert({
               type: 'monetary',
-              name: newRewardType.name,
-              currency: newRewardType.currency,
-              amount: parseFloat(newRewardType.amount)
+              name: newRewardType.name.trim()
             });
 
           if (error) throw error;
           
-          setNewRewardType({ type: 'non-monetary', name: '', description: '', currency: '', amount: '' });
+          setNewRewardType({ type: 'non-monetary', name: '', description: '' });
           loadRewardTypes();
           toast({
             title: "Monetary Reward Type Added",
@@ -115,24 +86,24 @@ const RewardTypeConfigSupabase = () => {
       } else {
         toast({
           title: "Error",
-          description: "Please fill in name, currency, and amount fields.",
+          description: "Please fill in the name field.",
           variant: "destructive",
         });
       }
     } else {
-      if (newRewardType.name && newRewardType.description) {
+      if (newRewardType.name.trim()) {
         try {
           const { error } = await supabase
             .from('master_reward_types')
             .insert({
               type: 'non-monetary',
-              name: newRewardType.name,
-              description: newRewardType.description
+              name: newRewardType.name.trim(),
+              description: newRewardType.description.trim() || null
             });
 
           if (error) throw error;
           
-          setNewRewardType({ type: 'non-monetary', name: '', description: '', currency: '', amount: '' });
+          setNewRewardType({ type: 'non-monetary', name: '', description: '' });
           loadRewardTypes();
           toast({
             title: "Non-Monetary Reward Type Added",
@@ -149,7 +120,7 @@ const RewardTypeConfigSupabase = () => {
       } else {
         toast({
           title: "Error",
-          description: "Please fill in name and description fields.",
+          description: "Please fill in the name field.",
           variant: "destructive",
         });
       }
@@ -213,9 +184,7 @@ const RewardTypeConfigSupabase = () => {
     setNewRewardType({ 
       type: value, 
       name: '', 
-      description: '', 
-      currency: '', 
-      amount: '' 
+      description: ''
     });
   };
 
@@ -248,42 +217,13 @@ const RewardTypeConfigSupabase = () => {
                 value={newRewardType.name}
                 onChange={(e) => setNewRewardType({ ...newRewardType, name: e.target.value })}
                 placeholder="Reward Type Name"
+                required
               />
             </div>
 
-            {newRewardType.type === 'monetary' ? (
-              <>
-                <div className="grid gap-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select value={newRewardType.currency} onValueChange={(value) => setNewRewardType({ ...newRewardType, currency: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((currency) => (
-                        <SelectItem key={currency.id} value={currency.code || currency.name}>
-                          {currency.code} - {currency.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={newRewardType.amount}
-                    onChange={(e) => setNewRewardType({ ...newRewardType, amount: e.target.value })}
-                    placeholder="Reward amount"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </>
-            ) : (
+            {newRewardType.type === 'non-monetary' && (
               <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description (Optional)</Label>
                 <Textarea
                   id="description"
                   placeholder="Non-Monetary Reward Type Description"
@@ -332,11 +272,7 @@ const RewardTypeConfigSupabase = () => {
                           {type.type === 'monetary' ? 'Monetary' : 'Non-Monetary'}
                         </Badge>
                       </div>
-                      {type.type === 'monetary' ? (
-                        <p className="text-sm text-muted-foreground">
-                          {type.currency} {type.amount?.toLocaleString()}
-                        </p>
-                      ) : (
+                      {type.type === 'non-monetary' && type.description && (
                         <p className="text-sm text-muted-foreground">{type.description}</p>
                       )}
                     </div>
@@ -347,8 +283,8 @@ const RewardTypeConfigSupabase = () => {
                       size="icon"
                       onClick={() => {
                         const newName = prompt("Enter new name", type.name);
-                        if (newName) {
-                          updateRewardType(type.id!, { name: newName });
+                        if (newName && newName.trim()) {
+                          updateRewardType(type.id!, { name: newName.trim() });
                         }
                       }}
                       disabled={loading}
