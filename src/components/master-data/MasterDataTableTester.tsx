@@ -40,7 +40,7 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_currencies', 
       displayName: 'Currencies',
-      frontendFields: ['id', 'name', 'code', 'symbol'],
+      frontendFields: ['id', 'name', 'code', 'symbol', 'country', 'country_code'],
       isSupabaseEnabled: true
     },
     {
@@ -95,31 +95,43 @@ const MasterDataTableTester = () => {
       tableName: 'master_engagement_models',
       displayName: 'Engagement Models',
       frontendFields: ['id', 'name', 'description'],
-      isSupabaseEnabled: false
+      isSupabaseEnabled: true
     },
     {
       tableName: 'master_competency_capabilities',
       displayName: 'Competency Capabilities',
       frontendFields: ['id', 'name', 'description', 'category'],
-      isSupabaseEnabled: false
+      isSupabaseEnabled: true
     },
     {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
-      frontendFields: ['id', 'name', 'description', 'industry_segment_id'],
-      isSupabaseEnabled: false
+      frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active'],
+      isSupabaseEnabled: true
+    },
+    {
+      tableName: 'master_categories',
+      displayName: 'Categories',
+      frontendFields: ['id', 'name', 'description', 'domain_group_id', 'is_active'],
+      isSupabaseEnabled: true
+    },
+    {
+      tableName: 'master_sub_categories',
+      displayName: 'Sub Categories',
+      frontendFields: ['id', 'name', 'description', 'category_id', 'is_active'],
+      isSupabaseEnabled: true
     },
     {
       tableName: 'master_seeker_membership_fees',
       displayName: 'Seeker Membership Fees',
-      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'quarterly_amount', 'half_yearly_amount', 'annual_amount'],
-      isSupabaseEnabled: false
+      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'quarterly_amount', 'half_yearly_amount', 'annual_amount', 'monthly_amount', 'description'],
+      isSupabaseEnabled: true
     },
     {
       tableName: 'pricing_configs',
       displayName: 'Pricing Configurations',
-      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status'],
-      isSupabaseEnabled: false
+      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee'],
+      isSupabaseEnabled: true
     }
   ];
 
@@ -130,29 +142,70 @@ const MasterDataTableTester = () => {
 
       for (const tableInfo of masterDataTables) {
         try {
-          // Get sample data and count (skip structure query for now)
           let sampleData: any[] = [];
           let count = 0;
+          let structure: TableStructure[] = [];
 
-          try {
-            const { data, error: dataError } = await supabase
-              .from(tableInfo.tableName as any)
-              .select('*')
-              .limit(3);
+          if (tableInfo.isSupabaseEnabled) {
+            try {
+              // Get sample data first
+              const { data, error: dataError } = await supabase
+                .from(tableInfo.tableName as any)
+                .select('*')
+                .limit(3);
 
-            const { count: recordCount, error: countError } = await supabase
-              .from(tableInfo.tableName as any)
-              .select('*', { count: 'exact', head: true });
+              // Get record count
+              const { count: recordCount, error: countError } = await supabase
+                .from(tableInfo.tableName as any)
+                .select('*', { count: 'exact', head: true });
 
-            if (!dataError) sampleData = data || [];
-            if (!countError) count = recordCount || 0;
-          } catch (error) {
-            console.log(`Table ${tableInfo.tableName} may not exist:`, error);
+              if (!dataError) {
+                sampleData = data || [];
+                
+                // Generate structure from sample data if available
+                if (data && data.length > 0) {
+                  const sampleObj = data[0];
+                  structure = Object.keys(sampleObj).map(key => {
+                    const value = sampleObj[key];
+                    let dataType: string = typeof value;
+                    
+                    // Better type inference
+                    if (value === null) {
+                      dataType = 'nullable';
+                    } else if (typeof value === 'string') {
+                      if (key.includes('date') || key.includes('time') || value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                        dataType = 'timestamp';
+                      } else if (key === 'id' || key.endsWith('_id')) {
+                        dataType = 'uuid';
+                      } else {
+                        dataType = 'text';
+                      }
+                    } else if (typeof value === 'number') {
+                      dataType = Number.isInteger(value) ? 'integer' : 'numeric';
+                    } else if (typeof value === 'boolean') {
+                      dataType = 'boolean';
+                    }
+                    
+                    return {
+                      table_name: tableInfo.tableName,
+                      column_name: key,
+                      data_type: dataType,
+                      is_nullable: value === null ? 'YES' : 'NO',
+                      column_default: null
+                    };
+                  });
+                }
+              }
+              
+              if (!countError) count = recordCount || 0;
+            } catch (error) {
+              console.log(`Error accessing table ${tableInfo.tableName}:`, error);
+            }
           }
 
           tableData.push({
             ...tableInfo,
-            structure: [], // Skip structure for now due to RPC limitations
+            structure,
             sampleData,
             recordCount: count
           });
