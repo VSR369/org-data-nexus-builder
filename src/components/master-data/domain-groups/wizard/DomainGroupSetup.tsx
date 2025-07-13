@@ -51,20 +51,20 @@ const DomainGroupSetup: React.FC<DomainGroupSetupProps> = ({
 
   // Transform domain groups data to include nested categories and subcategories
   const enhancedDomainGroups: DomainGroup[] = existingData.domainGroups.map(dg => {
-    const domainCategories = existingData.categories.filter(cat => cat.domainGroupId === dg.id);
+    const domainCategories = existingData.categories.filter(cat => cat.domain_group_id === dg.id);
     
     return {
       ...dg,
       categories: domainCategories.map(cat => ({
         ...cat,
-        subCategories: existingData.subCategories.filter(sub => sub.categoryId === cat.id)
+        subCategories: existingData.subCategories.filter(sub => sub.category_id === cat.id)
       }))
     };
   });
 
   // Group enhanced domain groups by industry segment
   const groupedDomainGroups = enhancedDomainGroups.reduce((acc, dg) => {
-    const segment = industrySegments.find(is => is.id === dg.industrySegmentId);
+    const segment = industrySegments.find(is => is.id === dg.industry_segment_id);
     if (segment) {
       if (!acc[segment.industrySegment]) {
         acc[segment.industrySegment] = [];

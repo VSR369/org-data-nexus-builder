@@ -62,10 +62,11 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
         id: domainGroupId,
         name: wizardData.selectedDomainGroup,
         description: wizardData.manualData.domainGroupDescription,
-        industrySegmentId: selectedSegment.id,
+        industry_segment_id: selectedSegment.id,
         industrySegmentName: selectedSegment.industrySegment,
-        isActive: true,
-        createdAt: timestamp
+        is_active: true,
+        created_at: timestamp,
+        updated_at: timestamp
       }];
 
       // Create Categories and Sub-Categories
@@ -81,9 +82,10 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
           id: categoryId,
           name: catData.name,
           description: catData.description,
-          domainGroupId: domainGroupId,
-          isActive: true,
-          createdAt: timestamp
+          domain_group_id: domainGroupId,
+          is_active: true,
+          created_at: timestamp,
+          updated_at: timestamp
         });
 
         // Add sub-categories for this category
@@ -93,9 +95,10 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
               id: `sub-${Date.now()}-${catIndex}-${subIndex}-${Math.random().toString(36).substr(2, 9)}`,
               name: subData.name,
               description: subData.description,
-              categoryId: categoryId,
-              isActive: true,
-              createdAt: timestamp
+              category_id: categoryId,
+              is_active: true,
+              created_at: timestamp,
+              updated_at: timestamp
             });
           }
         });
@@ -273,7 +276,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
                 <CollapsibleContent className="mt-4">
                   <div className="space-y-3 ml-6">
                     {processedData.domainGroups.map((domainGroup) => {
-                      const categories = processedData.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+                      const categories = processedData.categories.filter(cat => cat.domain_group_id === domainGroup.id);
                       
                       return (
                         <div key={domainGroup.id} className="bg-white border rounded-lg">
@@ -301,7 +304,7 @@ const ReviewAndSubmit: React.FC<ReviewAndSubmitProps> = ({
                             <CollapsibleContent className="px-4 pb-4">
                               <div className="space-y-2 ml-8">
                                 {categories.map((category) => {
-                                  const subCategories = processedData.subCategories.filter(sub => sub.categoryId === category.id);
+                                  const subCategories = processedData.subCategories.filter(sub => sub.category_id === category.id);
                                   
                                   return (
                                     <div key={category.id} className="border-l-2 border-primary/20 pl-4">

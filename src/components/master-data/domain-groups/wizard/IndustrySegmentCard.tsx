@@ -42,7 +42,7 @@ const IndustrySegmentCard: React.FC<IndustrySegmentCardProps> = ({
       {/* Domain Groups within this Industry Segment */}
       <div className="space-y-4">
         {domainGroups.map((domainGroup) => (
-          <DomainGroupCard key={domainGroup.id} domainGroup={domainGroup} />
+          <DomainGroupCard key={domainGroup.id} domainGroup={domainGroup as any} />
         ))}
       </div>
     </div>

@@ -94,7 +94,7 @@ export const convertToMasterDataFormat = (
       // Check if domain group already exists
       let existingDomainGroup = existingData.domainGroups.find(
         dg => dg.name.toLowerCase().trim() === domainGroupName.toLowerCase().trim() && 
-              dg.industrySegmentId === industrySegment!.id
+              dg.industry_segment_id === industrySegment!.id
       );
       
       let domainGroupId: string;
@@ -110,10 +110,11 @@ export const convertToMasterDataFormat = (
           id: domainGroupId,
           name: domainGroupName,
           description: `Imported from Excel: ${savedDocument?.fileName || 'Unknown file'}`,
-          industrySegmentId: industrySegment!.id,
+          industry_segment_id: industrySegment!.id,
           industrySegmentName: industrySegmentName,
-          isActive: true,
-          createdAt: new Date().toISOString()
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
         newDomainGroups.push(newDomainGroup);
         result.domainGroups++;
@@ -127,7 +128,7 @@ export const convertToMasterDataFormat = (
         // Check if category already exists for this domain group
         let existingCategory = existingData.categories.find(
           cat => cat.name.toLowerCase().trim() === categoryName.toLowerCase().trim() && 
-                 cat.domainGroupId === domainGroupId
+                 cat.domain_group_id === domainGroupId
         );
         
         let categoryId: string;
@@ -143,9 +144,10 @@ export const convertToMasterDataFormat = (
             id: categoryId,
             name: categoryName,
             description: `Imported from Excel: ${savedDocument?.fileName || 'Unknown file'}`,
-            domainGroupId: domainGroupId,
-            isActive: true,
-            createdAt: new Date().toISOString()
+            domain_group_id: domainGroupId,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
           newCategories.push(newCategory);
           result.categories++;
@@ -160,7 +162,7 @@ export const convertToMasterDataFormat = (
           // Check if sub-category already exists for this category
           const existingSubCategory = existingData.subCategories.find(
             sub => sub.name.toLowerCase().trim() === subCategoryName.toLowerCase().trim() && 
-                   sub.categoryId === categoryId
+                   sub.category_id === categoryId
           );
           
           if (existingSubCategory) {
@@ -173,9 +175,10 @@ export const convertToMasterDataFormat = (
               id: subCategoryId,
               name: subCategoryName,
               description: `Imported from Excel: ${savedDocument?.fileName || 'Unknown file'}`,
-              categoryId: categoryId,
-              isActive: true,
-              createdAt: new Date().toISOString()
+              category_id: categoryId,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             };
             newSubCategories.push(newSubCategory);
             result.subCategories++;

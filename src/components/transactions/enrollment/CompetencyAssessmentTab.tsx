@@ -85,7 +85,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
 
   // Filter domain groups by selected industry segment
   const relevantDomainGroups = domainGroupsData.domainGroups.filter(
-    group => group.industrySegmentId === selectedIndustrySegment && group.isActive
+    group => group.industry_segment_id === selectedIndustrySegment && group.is_active
   );
 
   console.log('CompetencyAssessmentTab - selectedIndustrySegment:', selectedIndustrySegment);
@@ -97,7 +97,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
   const getHierarchicalData = () => {
     return relevantDomainGroups.map(domainGroup => {
       const categories = domainGroupsData.categories.filter(
-        cat => cat.domainGroupId === domainGroup.id && cat.isActive
+        cat => cat.domain_group_id === domainGroup.id && cat.is_active
       );
       
       return {
@@ -105,7 +105,7 @@ const CompetencyAssessmentTab: React.FC<CompetencyAssessmentTabProps> = ({
         categories: categories.map(category => {
           // Get subcategories and remove any duplicates by name
           const subCategories = domainGroupsData.subCategories.filter(
-            sub => sub.categoryId === category.id && sub.isActive
+            sub => sub.category_id === category.id && sub.is_active
           );
           
           // Remove duplicates by creating a Map with name as key

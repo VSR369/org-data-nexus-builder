@@ -49,12 +49,12 @@ const ManualDataEntry: React.FC<ManualDataEntryProps> = ({
   // Group hierarchical data by industry segment
   const getGroupedHierarchicalData = () => {
     const hierarchicalData = data.domainGroups.map(domainGroup => {
-      const categories = data.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+      const categories = data.categories.filter(cat => cat.domain_group_id === domainGroup.id);
       return {
         ...domainGroup,
         categories: categories.map(category => ({
           ...category,
-          subCategories: data.subCategories.filter(sub => sub.categoryId === category.id)
+          subCategories: data.subCategories.filter(sub => sub.category_id === category.id)
         }))
       };
     });
