@@ -21,10 +21,10 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
   const handleDelete = (domainGroupId: string) => {
     const updatedData = {
       domainGroups: data.domainGroups.filter(dg => dg.id !== domainGroupId),
-      categories: data.categories.filter(cat => cat.domainGroupId !== domainGroupId),
+      categories: data.categories.filter(cat => cat.domain_group_id !== domainGroupId),
       subCategories: data.subCategories.filter(sub => {
-        const category = data.categories.find(cat => cat.id === sub.categoryId);
-        return category?.domainGroupId !== domainGroupId;
+        const category = data.categories.find(cat => cat.id === sub.category_id);
+        return category?.domain_group_id !== domainGroupId;
       })
     };
     
@@ -40,12 +40,12 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
   // Group hierarchical data by industry segment
   const getGroupedHierarchicalData = () => {
     const hierarchicalData = data.domainGroups.map(domainGroup => {
-      const categories = data.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+      const categories = data.categories.filter(cat => cat.domain_group_id === domainGroup.id);
       return {
         ...domainGroup,
         categories: categories.map(category => ({
           ...category,
-          subCategories: data.subCategories.filter(sub => sub.categoryId === category.id)
+          subCategories: data.subCategories.filter(sub => sub.category_id === category.id)
         }))
       };
     });
@@ -114,8 +114,8 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
                         <div className="flex items-center gap-2 mb-2">
                           <Building2 className="w-5 h-5 text-primary" />
                           <h3 className="text-lg font-semibold">{domainGroup.name}</h3>
-                          <Badge variant={domainGroup.isActive ? "default" : "secondary"}>
-                            {domainGroup.isActive ? 'Active' : 'Inactive'}
+                           <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
+                             {domainGroup.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </div>
                         {domainGroup.description && (
@@ -130,7 +130,7 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
                             {domainGroup.categories.reduce((sum, cat) => sum + cat.subCategories.length, 0)} Sub-Categories
                           </span>
                           <span className="text-xs">
-                            Created: {new Date(domainGroup.createdAt).toLocaleDateString()}
+                            Created: {new Date(domainGroup.created_at).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
@@ -179,7 +179,7 @@ const DomainGroupDisplay: React.FC<DomainGroupDisplayProps> = ({ data, onDataUpd
                                       )}
                                       <div className="flex items-center gap-2 mt-2">
                                         <Badge variant="outline" className="text-xs">
-                                          {subCategory.isActive ? 'Active' : 'Inactive'}
+                                          {subCategory.is_active ? 'Active' : 'Inactive'}
                                         </Badge>
                                         <span className="text-xs text-muted-foreground">
                                           Ready for Evaluation

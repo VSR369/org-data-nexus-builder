@@ -10,19 +10,21 @@ const sampleDomainGroupsData: DomainGroupsData = {
       id: 'sample-dg-1',
       name: 'Digital Banking & Fintech',
       description: 'Digital transformation in banking and financial technology',
-      industrySegmentId: 'bfsi',
+      industry_segment_id: 'bfsi',
       industrySegmentName: 'Banking, Financial Services & Insurance (BFSI)',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     },
     {
       id: 'sample-dg-2',
       name: 'E-commerce & Digital Retail',
       description: 'Online retail platforms and digital commerce solutions',
-      industrySegmentId: 'retail',
+      industry_segment_id: 'retail',
       industrySegmentName: 'Retail & E-Commerce',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
   ],
   categories: [
@@ -30,17 +32,19 @@ const sampleDomainGroupsData: DomainGroupsData = {
       id: 'sample-cat-1',
       name: 'Mobile Banking',
       description: 'Mobile banking applications and services',
-      domainGroupId: 'sample-dg-1',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      domain_group_id: 'sample-dg-1',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     },
     {
       id: 'sample-cat-2',
       name: 'Online Store Development',
       description: 'Building and maintaining e-commerce platforms',
-      domainGroupId: 'sample-dg-2',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      domain_group_id: 'sample-dg-2',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
   ],
   subCategories: [
@@ -48,25 +52,28 @@ const sampleDomainGroupsData: DomainGroupsData = {
       id: 'sample-sub-1',
       name: 'Account Management',
       description: 'Mobile banking account management features',
-      categoryId: 'sample-cat-1',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      category_id: 'sample-cat-1',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     },
     {
       id: 'sample-sub-2',
       name: 'Payment Processing',
       description: 'Mobile payment integration and processing',
-      categoryId: 'sample-cat-1',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      category_id: 'sample-cat-1',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     },
     {
       id: 'sample-sub-3',
       name: 'Shopping Cart',
       description: 'E-commerce shopping cart functionality',
-      categoryId: 'sample-cat-2',
-      isActive: true,
-      createdAt: new Date().toISOString()
+      category_id: 'sample-cat-2',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
   ]
 };
@@ -94,7 +101,7 @@ const validateDomainGroupsData = (data: any): boolean => {
   
   // Additional validation for data integrity
   for (const dg of data.domainGroups) {
-    if (!dg.id || !dg.name || !dg.industrySegmentId) {
+    if (!dg.id || !dg.name || !dg.industry_segment_id) {
       console.log('❌ Invalid domain group:', dg);
       return false;
     }

@@ -35,13 +35,13 @@ const HierarchyDisplay: React.FC<HierarchyDisplayProps> = ({
     });
 
     const hierarchicalData = data.domainGroups.map(domainGroup => {
-      const categories = data.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+      const categories = data.categories.filter(cat => cat.domain_group_id === domainGroup.id);
       console.log(`📂 Domain Group "${domainGroup.name}" has ${categories.length} categories`);
       
       return {
         ...domainGroup,
         categories: categories.map(category => {
-          const subCategories = data.subCategories.filter(sub => sub.categoryId === category.id);
+          const subCategories = data.subCategories.filter(sub => sub.category_id === category.id);
           console.log(`📁 Category "${category.name}" has ${subCategories.length} sub-categories`);
           
           return {

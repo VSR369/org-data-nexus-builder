@@ -17,7 +17,7 @@ interface DomainGroupCardProps {
         id: string;
         name: string;
         description?: string;
-        isActive: boolean;
+        is_active: boolean;
       }>;
     }>;
   };
@@ -48,8 +48,8 @@ const DomainGroupCard: React.FC<DomainGroupCardProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <Building2 className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-semibold">{domainGroup.name}</h3>
-            <Badge variant={domainGroup.isActive ? "default" : "secondary"}>
-              {domainGroup.isActive ? 'Active' : 'Inactive'}
+            <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
+              {domainGroup.is_active ? 'Active' : 'Inactive'}
             </Badge>
           </div>
           {domainGroup.description && (
@@ -64,7 +64,7 @@ const DomainGroupCard: React.FC<DomainGroupCardProps> = ({
               {domainGroup.categories.reduce((sum, cat) => sum + cat.subCategories.length, 0)} Sub-Categories
             </span>
             <span className="text-xs">
-              Created: {new Date(domainGroup.createdAt).toLocaleDateString()}
+              Created: {new Date(domainGroup.created_at).toLocaleDateString()}
             </span>
           </div>
         </div>

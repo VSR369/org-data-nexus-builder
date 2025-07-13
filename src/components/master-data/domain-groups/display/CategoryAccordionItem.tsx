@@ -12,7 +12,7 @@ interface CategoryAccordionItemProps {
       id: string;
       name: string;
       description?: string;
-      isActive: boolean;
+      is_active: boolean;
     }>;
   };
   categoryIndex: number;
@@ -55,7 +55,7 @@ const CategoryAccordionItem: React.FC<CategoryAccordionItemProps> = ({
                 )}
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="text-xs">
-                    {subCategory.isActive ? 'Active' : 'Inactive'}
+                    {subCategory.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     Ready for Evaluation

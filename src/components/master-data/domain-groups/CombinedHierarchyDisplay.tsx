@@ -36,10 +36,10 @@ const CombinedHierarchyDisplay: React.FC<CombinedHierarchyDisplayProps> = ({
   const handleDelete = (domainGroupId: string) => {
     const updatedData = {
       domainGroups: data.domainGroups.filter(dg => dg.id !== domainGroupId),
-      categories: data.categories.filter(cat => cat.domainGroupId !== domainGroupId),
+      categories: data.categories.filter(cat => cat.domain_group_id !== domainGroupId),
       subCategories: data.subCategories.filter(sub => {
-        const category = data.categories.find(cat => cat.id === sub.categoryId);
-        return category?.domainGroupId !== domainGroupId;
+        const category = data.categories.find(cat => cat.id === sub.category_id);
+        return category?.domain_group_id !== domainGroupId;
       })
     };
     
@@ -61,20 +61,20 @@ const CombinedHierarchyDisplay: React.FC<CombinedHierarchyDisplayProps> = ({
     const industrySegments = industrySegmentDataManager.loadData().industrySegments || [];
     
     const hierarchicalData = data.domainGroups.map(domainGroup => {
-      const categories = data.categories.filter(cat => cat.domainGroupId === domainGroup.id);
+      const categories = data.categories.filter(cat => cat.domain_group_id === domainGroup.id);
       
       return {
         ...domainGroup,
         categories: categories.map(category => ({
           ...category,
-          subCategories: data.subCategories.filter(sub => sub.categoryId === category.id)
+          subCategories: data.subCategories.filter(sub => sub.category_id === category.id)
         }))
       };
     });
 
     // Group by industry segment
     const grouped = hierarchicalData.reduce((acc, domainGroup) => {
-      const segment = industrySegments.find(is => is.id === domainGroup.industrySegmentId);
+      const segment = industrySegments.find(is => is.id === domainGroup.industry_segment_id);
       const industryKey = segment?.industrySegment || domainGroup.industrySegmentName || 'Unknown Industry';
       
       if (!acc[industryKey]) {
@@ -122,7 +122,7 @@ const CombinedHierarchyDisplay: React.FC<CombinedHierarchyDisplayProps> = ({
                 {domainGroups.map((domainGroup) => (
                   <DomainGroupCard
                     key={domainGroup.id}
-                    domainGroup={domainGroup}
+                    domainGroup={domainGroup as any}
                     isNew={newlyCreatedIds.has(domainGroup.id)}
                     onDelete={handleDelete}
                   />

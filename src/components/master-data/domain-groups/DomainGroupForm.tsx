@@ -62,7 +62,7 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
 
   // Relaxed validation - only check for used industry segments if validation is specifically needed
   const getUsedIndustrySegmentIds = () => {
-    return new Set(data.domainGroups.map(dg => dg.industrySegmentId));
+    return new Set(data.domainGroups.map(dg => dg.industry_segment_id));
   };
 
   const usedIndustrySegmentIds = getUsedIndustrySegmentIds();
@@ -142,10 +142,11 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
         id: baseId + '_dg',
         name: formData.domainGroupName.trim(),
         description: formData.domainGroupDescription.trim() || undefined,
-        industrySegmentId: selectedIndustrySegment.id,
+        industry_segment_id: selectedIndustrySegment.id,
         industrySegmentName: selectedIndustrySegment.industrySegment,
-        isActive: formData.isActive,
-        createdAt: timestamp
+        is_active: formData.isActive,
+        created_at: timestamp,
+        updated_at: timestamp
       };
       
       // Create Category
@@ -153,9 +154,10 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
         id: baseId + '_cat',
         name: formData.categoryName.trim(),
         description: formData.categoryDescription.trim() || undefined,
-        domainGroupId: domainGroup.id,
-        isActive: formData.isActive,
-        createdAt: timestamp
+        domain_group_id: domainGroup.id,
+        is_active: formData.isActive,
+        created_at: timestamp,
+        updated_at: timestamp
       };
       
       // Create Sub Category
@@ -163,9 +165,10 @@ const DomainGroupForm: React.FC<DomainGroupFormProps> = ({ data, onDataUpdate })
         id: baseId + '_sub',
         name: formData.subCategoryName.trim(),
         description: formData.subCategoryDescription.trim() || undefined,
-        categoryId: category.id,
-        isActive: formData.isActive,
-        createdAt: timestamp
+        category_id: category.id,
+        is_active: formData.isActive,
+        created_at: timestamp,
+        updated_at: timestamp
       };
       
       // Update data
