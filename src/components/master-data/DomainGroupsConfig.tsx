@@ -35,7 +35,7 @@ const DomainGroupsConfig: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const loadedData = domainGroupsDataManager.refreshData();
+      const loadedData = await domainGroupsDataManager.refreshData();
       console.log('✅ DomainGroupsConfig: Loaded data:', loadedData);
       setData(loadedData);
       
@@ -77,9 +77,9 @@ const DomainGroupsConfig: React.FC = () => {
     });
   };
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     try {
-      const exportData = domainGroupsDataManager.exportData();
+      const exportData = await domainGroupsDataManager.exportData();
       const blob = new Blob([exportData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -118,11 +118,11 @@ const DomainGroupsConfig: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const handleDataUpdate = (newData: DomainGroupsData) => {
+  const handleDataUpdate = async (newData: DomainGroupsData) => {
     console.log('💾 Updating domain groups data:', newData);
     
     // Save the data first
-    const saveSuccess = domainGroupsDataManager.saveData(newData);
+    const saveSuccess = await domainGroupsDataManager.saveData(newData);
     
     if (saveSuccess) {
       // Identify newly created domain groups
@@ -230,7 +230,16 @@ const DomainGroupsConfig: React.FC = () => {
     );
   }
 
-  const dataStats = domainGroupsDataManager.getDataStats();
+  const [dataStats, setDataStats] = useState({ domainGroups: 0, categories: 0, subCategories: 0 });
+
+  // Update data stats when data changes
+  useEffect(() => {
+    const updateStats = async () => {
+      const stats = await domainGroupsDataManager.getDataStats();
+      setDataStats(stats);
+    };
+    updateStats();
+  }, [data]);
 
   return (
     <div className="space-y-6">

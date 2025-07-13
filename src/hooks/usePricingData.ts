@@ -9,13 +9,13 @@ export const usePricingData = (organizationType?: string, country?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadPricingData = () => {
+    const loadPricingData = async () => {
       console.log('🔄 usePricingData: Loading pricing configurations...');
       setLoading(true);
       setError(null);
 
       try {
-        const configs = PricingDataManager.getAllConfigurations();
+        const configs = await PricingDataManager.getAllConfigurations();
         setPricingConfigs(configs);
         console.log('✅ usePricingData: Loaded configurations:', configs.length);
       } catch (err) {
@@ -47,8 +47,8 @@ export const usePricingData = (organizationType?: string, country?: string) => {
     error,
     getSpecificPricing,
     getConfigByOrgTypeAndEngagement,
-    refetch: () => {
-      const configs = PricingDataManager.getAllConfigurations();
+    refetch: async () => {
+      const configs = await PricingDataManager.getAllConfigurations();
       setPricingConfigs(configs);
     }
   };

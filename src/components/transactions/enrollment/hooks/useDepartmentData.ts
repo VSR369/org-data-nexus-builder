@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DepartmentData {
   categories: string[];
@@ -15,22 +16,65 @@ export const useDepartmentData = () => {
   });
 
   useEffect(() => {
-    const departmentConfigKey = 'department_master_data';
-    const storedDepartmentData = localStorage.getItem(departmentConfigKey);
-    
-    if (storedDepartmentData) {
+    const loadDepartmentDataFromSupabase = async () => {
       try {
-        const parsedData = JSON.parse(storedDepartmentData);
-        console.log('Loaded structured department data from master data:', parsedData);
-        setDepartmentData(parsedData);
+        console.log('✅ CRUD TEST - Department Data: Loading departments from Supabase');
+        
+        // Load departments from Supabase
+        const { data: departments, error: depError } = await supabase
+          .from('master_departments')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (depError) {
+          console.error('❌ Error loading departments from Supabase:', depError);
+          setDefaultDepartmentData();
+          return;
+        }
+
+        // Load sub-departments from Supabase
+        const { data: subDepartments, error: subDepError } = await supabase
+          .from('master_sub_departments')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (subDepError) {
+          console.error('❌ Error loading sub-departments from Supabase:', subDepError);
+          setDefaultDepartmentData();
+          return;
+        }
+
+        console.log('✅ CRUD TEST - Department Data loaded:', { 
+          departments: departments?.length || 0, 
+          subDepartments: subDepartments?.length || 0 
+        });
+
+        // Transform Supabase data into the expected format
+        const categories = departments?.map(dept => dept.name) || [];
+        const subcategories: { [category: string]: string[] } = {};
+
+        departments?.forEach(dept => {
+          const relatedSubDeps = subDepartments?.filter(subDep => subDep.department_id === dept.id);
+          subcategories[dept.name] = relatedSubDeps?.map(subDep => subDep.name) || [];
+        });
+
+        const transformedData = {
+          categories,
+          subcategories
+        };
+
+        console.log('✅ CRUD TEST - Department Data transformed:', transformedData);
+        setDepartmentData(transformedData);
+
       } catch (error) {
-        console.error('Error parsing department master data:', error);
+        console.error('❌ Error loading department data from Supabase:', error);
         setDefaultDepartmentData();
       }
-    } else {
-      console.log('No structured department data found, using defaults');
-      setDefaultDepartmentData();
-    }
+    };
+
+    loadDepartmentDataFromSupabase();
   }, []);
 
   const setDefaultDepartmentData = () => {

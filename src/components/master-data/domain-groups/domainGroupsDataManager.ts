@@ -138,25 +138,60 @@ class EnhancedDomainGroupsManager {
     this.manager = manager;
   }
 
-  loadData(): DomainGroupsData {
-    console.log('🔄 Enhanced loadData called for domain groups');
+  async loadData(): Promise<DomainGroupsData> {
+    console.log('🔄 Enhanced loadData called for domain groups from Supabase');
     try {
-      const data = this.manager.loadData();
-      console.log('✅ Domain groups data loaded successfully:', {
-        domainGroups: data.domainGroups.length,
-        categories: data.categories.length,
-        subCategories: data.subCategories.length
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Load domain groups from Supabase
+      const { data: domainGroups, error: dgError } = await supabase
+        .from('master_domain_groups')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (dgError) throw dgError;
+
+      // Load categories from Supabase
+      const { data: categories, error: catError } = await supabase
+        .from('master_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (catError) throw catError;
+
+      // Load sub-categories from Supabase
+      const { data: subCategories, error: subCatError } = await supabase
+        .from('master_sub_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (subCatError) throw subCatError;
+
+      const supabaseData: DomainGroupsData = {
+        domainGroups: domainGroups || [],
+        categories: categories || [],
+        subCategories: subCategories || []
+      };
+
+      console.log('✅ CRUD TEST - Domain Groups loaded from Supabase:', {
+        domainGroups: supabaseData.domainGroups.length,
+        categories: supabaseData.categories.length,
+        subCategories: supabaseData.subCategories.length
       });
-      return data;
+
+      return supabaseData;
     } catch (error) {
-      console.error('❌ Error loading domain groups data:', error);
+      console.error('❌ Error loading domain groups data from Supabase:', error);
       console.log('🔄 Attempting to recover with sample data...');
       return sampleDomainGroupsData;
     }
   }
 
-  saveData(data: DomainGroupsData): boolean {
-    console.log('💾 Enhanced saveData called for domain groups:', {
+  async saveData(data: DomainGroupsData): Promise<boolean> {
+    console.log('💾 Enhanced saveData called for domain groups to Supabase:', {
       domainGroups: data.domainGroups.length,
       categories: data.categories.length,
       subCategories: data.subCategories.length
@@ -169,29 +204,68 @@ class EnhancedDomainGroupsManager {
         throw new Error('Invalid data structure for domain groups');
       }
       
-      this.manager.saveData(data);
+      const { supabase } = await import('@/integrations/supabase/client');
       
-      // Verify the save was successful
-      const verificationData = this.manager.loadData();
-      const saveSuccess = verificationData.domainGroups.length === data.domainGroups.length;
-      
-      if (saveSuccess) {
-        console.log('✅ Domain groups data saved and verified successfully');
-        return true;
-      } else {
-        console.error('❌ Save verification failed');
-        return false;
+      // Save domain groups
+      for (const dg of data.domainGroups) {
+        const { error } = await supabase
+          .from('master_domain_groups')
+          .upsert({
+            id: dg.id,
+            name: dg.name,
+            description: dg.description,
+            industry_segment_id: dg.industry_segment_id,
+            is_active: dg.is_active,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
       }
+
+      // Save categories
+      for (const cat of data.categories) {
+        const { error } = await supabase
+          .from('master_categories')
+          .upsert({
+            id: cat.id,
+            name: cat.name,
+            description: cat.description,
+            domain_group_id: cat.domain_group_id,
+            is_active: cat.is_active,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+      }
+
+      // Save sub-categories
+      for (const subCat of data.subCategories) {
+        const { error } = await supabase
+          .from('master_sub_categories')
+          .upsert({
+            id: subCat.id,
+            name: subCat.name,
+            description: subCat.description,
+            category_id: subCat.category_id,
+            is_active: subCat.is_active,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+      }
+
+      console.log('✅ CRUD TEST - Domain Groups saved to Supabase successfully');
+      return true;
     } catch (error) {
-      console.error('❌ Error saving domain groups data:', error);
+      console.error('❌ Error saving domain groups data to Supabase:', error);
       return false;
     }
   }
 
-  refreshData(): DomainGroupsData {
-    console.log('🔄 Force refreshing domain groups data...');
+  async refreshData(): Promise<DomainGroupsData> {
+    console.log('🔄 Force refreshing domain groups data from Supabase...');
     try {
-      const data = this.manager.loadData();
+      const data = await this.loadData();
       console.log('✅ Refreshed data contains:', {
         domainGroups: data.domainGroups.length,
         categories: data.categories.length,
@@ -221,8 +295,8 @@ class EnhancedDomainGroupsManager {
     this.manager.clearAllData();
   }
 
-  getDataStats(): { domainGroups: number; categories: number; subCategories: number } {
-    const data = this.loadData();
+  async getDataStats(): Promise<{ domainGroups: number; categories: number; subCategories: number }> {
+    const data = await this.loadData();
     return {
       domainGroups: data.domainGroups.length,
       categories: data.categories.length,
@@ -234,15 +308,15 @@ class EnhancedDomainGroupsManager {
     return this.manager.getDataHealth();
   }
 
-  exportData(): string {
-    const data = this.loadData();
+  async exportData(): Promise<string> {
+    const data = await this.loadData();
     return JSON.stringify(data, null, 2);
   }
 
-  importData(jsonData: string): boolean {
+  async importData(jsonData: string): Promise<boolean> {
     try {
       const data = JSON.parse(jsonData);
-      return this.saveData(data);
+      return await this.saveData(data);
     } catch (error) {
       console.error('❌ Error importing data:', error);
       return false;

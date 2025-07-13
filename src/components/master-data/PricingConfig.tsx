@@ -17,44 +17,33 @@ const PricingConfig = () => {
 
   // Load data on component mount
   useEffect(() => {
-    console.log('🔄 PricingConfig: Loading comprehensive pricing data...');
+    console.log('🔄 PricingConfig: Loading comprehensive pricing data from Supabase...');
     
-    // Force custom pricing mode to ensure user's custom data is preserved
-    const initializeCustomMode = async () => {
+    // Load directly from Supabase using PricingDataManager
+    const initializeFromSupabase = async () => {
       try {
-        // First try to load from Supabase-integrated pricing system
-        const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
-        console.log('🔍 Loading pricing configurations from database...');
-        const loadedConfigs = await getPricingConfigsAsync();
+        console.log('🔍 Loading pricing configurations from Supabase...');
+        const loadedConfigs = await PricingDataManager.getAllConfigurations();
         
         if (loadedConfigs.length === 0) {
           // If no configs found, initialize with defaults
           console.log('📋 No existing configs found, initializing with defaults...');
           const { defaultPricingConfigs } = await import('@/utils/pricing/pricingDefaults');
-          const { savePricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
-          await savePricingConfigsAsync(defaultPricingConfigs);
+          await PricingDataManager.saveConfigurations(defaultPricingConfigs);
           setConfigs(defaultPricingConfigs);
           console.log('✅ Default pricing configurations initialized:', defaultPricingConfigs.length);
         } else {
           setConfigs(loadedConfigs);
-          console.log('✅ Database pricing configurations loaded:', loadedConfigs.length);
+          console.log('✅ CRUD TEST - Pricing configurations loaded from Supabase:', loadedConfigs.length);
         }
         
-        // Debug the loaded configurations
-        const { debugPricingConfigurations } = await import('@/utils/membershipPricingUtils');
-        debugPricingConfigurations(loadedConfigs.length > 0 ? loadedConfigs : (await import('@/utils/pricing/pricingDefaults')).defaultPricingConfigs);
-        
       } catch (error) {
-        console.error('❌ Failed to load from database, using defaults:', error);
+        console.error('❌ Failed to load from Supabase, using fallback:', error);
         try {
           // Enhanced fallback with proper initialization
           const { defaultPricingConfigs } = await import('@/utils/pricing/pricingDefaults');
           setConfigs(defaultPricingConfigs);
           console.log('✅ Fallback pricing configurations loaded:', defaultPricingConfigs.length);
-          
-          // Debug the fallback configurations
-          const { debugPricingConfigurations } = await import('@/utils/membershipPricingUtils');
-          debugPricingConfigurations(defaultPricingConfigs);
           
         } catch (fallbackError) {
           console.error('❌ All loading methods failed:', fallbackError);
@@ -63,7 +52,7 @@ const PricingConfig = () => {
       }
     };
     
-    initializeCustomMode().catch(console.error);
+    initializeFromSupabase().catch(console.error);
     
     // Load organization types
     const loadedOrgTypes = organizationTypesDataManager.loadData();
@@ -75,18 +64,11 @@ const PricingConfig = () => {
   // Save configurations whenever they change
   useEffect(() => {
     if (configs.length > 0) { // Only save when there are actual configs
-      console.log('💾 PricingConfig: Saving configurations to persistent storage');
+      console.log('💾 PricingConfig: Saving configurations to Supabase');
       
-      // Use our new Supabase-integrated save directly
-      import('@/utils/pricing/pricingCore').then(({ savePricingConfigsAsync }) => {
-        savePricingConfigsAsync(configs).catch(error => {
-          console.error('❌ Failed to save to database:', error);
-          // Fallback to localStorage
-          localStorage.setItem('custom_pricingConfigs', JSON.stringify(configs));
-        });
-      }).catch(() => {
-        // Fallback to original save method
-        PricingDataManager.saveConfigurations(configs);
+      // Use PricingDataManager to save to Supabase
+      PricingDataManager.saveConfigurations(configs).catch(error => {
+        console.error('❌ Failed to save to Supabase:', error);
       });
     }
   }, [configs]);

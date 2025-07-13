@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useMembershipFeeData } from './seeker-membership/useMembershipFeeData';
+import { useMembershipFeeDataSupabase } from './seeker-membership/useMembershipFeeDataSupabase';
 import { MembershipFeeEntry } from './seeker-membership/types';
 import DataHealthStatus from './seeker-membership/DataHealthStatus';
 import MembershipFeeForm from './seeker-membership/MembershipFeeForm';
@@ -17,16 +17,18 @@ const SeekerMembershipFeeConfig = () => {
   
   const {
     membershipFees,
-    setMembershipFees,
     currencies,
     countries,
     entityTypes,
-    dataHealth,
-    reloadMasterData,
     userCurrencies,
     isLoading,
-    isInitialized
-  } = useMembershipFeeData();
+    isInitialized,
+    setMembershipFeesSafely,
+    saveMembershipFee,
+    deleteMembershipFee,
+    reloadMasterData,
+    dataHealth
+  } = useMembershipFeeDataSupabase();
 
   // Load organization types from master data
   useEffect(() => {
@@ -43,37 +45,43 @@ const SeekerMembershipFeeConfig = () => {
     }
   }, [isInitialized, isLoading]);
 
-  const handleSubmit = (entry: MembershipFeeEntry) => {
-    console.log('📝 Submitting entry:', entry);
+  const handleSubmit = async (entry: MembershipFeeEntry) => {
+    const success = await saveMembershipFee(entry);
     
-    if (editingEntry) {
-      setMembershipFees(prev => 
-        prev.map(item => item.id === entry.id ? entry : item)
-      );
+    if (success) {
+      setEditingEntry(null);
       toast({
-        title: "Success",
-        description: "Seeker membership fee updated successfully.",
+        title: editingEntry ? "Fee Updated" : "Fee Added",
+        description: `Membership fee has been ${editingEntry ? 'updated' : 'added'} successfully`,
       });
     } else {
-      setMembershipFees(prev => [...prev, entry]);
       toast({
-        title: "Success",
-        description: "Seeker membership fee created successfully.",
+        title: "Error",
+        description: "Failed to save membership fee",
+        variant: "destructive"
       });
     }
-    setEditingEntry(null);
   };
 
   const handleEdit = (entry: MembershipFeeEntry) => {
     setEditingEntry(entry);
   };
 
-  const handleDelete = (id: string) => {
-    setMembershipFees(prev => prev.filter(item => item.id !== id));
-    toast({
-      title: "Success",
-      description: "Seeker membership fee deleted successfully.",
-    });
+  const handleDelete = async (id: string) => {
+    const success = await deleteMembershipFee(id);
+    
+    if (success) {
+      toast({
+        title: "Fee Deleted", 
+        description: "Membership fee has been deleted successfully",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete membership fee",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCancelEdit = () => {

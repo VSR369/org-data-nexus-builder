@@ -4,33 +4,101 @@ import { getPricingConfigs, savePricingConfigs, resetDeletedConfigsTracking } fr
 import { normalizeCountryName } from './pricingUtils';
 
 export class PricingDataManager {
-  static getAllConfigurations(): PricingConfig[] {
-    const configs = getPricingConfigs();
+  static async getAllConfigurations(): Promise<PricingConfig[]> {
+    console.log('✅ CRUD TEST - Loading pricing configurations from Supabase');
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase
+        .from('pricing_configs')
+        .select('*')
+        .order('country, organization_type, engagement_model');
+
+      if (error) throw error;
+
+      const configs: PricingConfig[] = data?.map(config => ({
+        id: config.id,
+        country: config.country,
+        currency: config.currency,
+        organizationType: config.organization_type,
+        entityType: config.entity_type,
+        engagementModel: config.engagement_model,
+        membershipStatus: (config.membership_status as "member" | "not-a-member") || "not-a-member",
+        quarterlyFee: config.quarterly_fee,
+        halfYearlyFee: config.half_yearly_fee,
+        annualFee: config.annual_fee,
+        platformFeePercentage: config.platform_fee_percentage,
+        discountPercentage: config.discount_percentage,
+        version: config.version || 1,
+        internalPaasPricing: Array.isArray(config.internal_paas_pricing) ? config.internal_paas_pricing.map((item: any) => item) : [],
+        createdAt: config.created_at || new Date().toISOString(),
+        updatedAt: config.updated_at || new Date().toISOString()
+      })) || [];
+
+      console.log('✅ CRUD TEST - Pricing configurations loaded:', configs.length);
+      return configs;
+    } catch (error) {
+      console.error('❌ Error loading pricing configurations from Supabase:', error);
+      // Fallback to localStorage method
+      const configs = getPricingConfigs();
     
-    // Clean up data: ensure marketplace models only have platformFeePercentage
-    // and PaaS models only have frequency fees
-    return configs.map(config => {
-      const isMarketplace = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
-      const isPaaS = config.engagementModel === 'Platform as a Service';
-      
-      if (isMarketplace) {
-        // Remove frequency fields from marketplace models
-        const { quarterlyFee, halfYearlyFee, annualFee, ...cleanConfig } = config;
-        return cleanConfig;
-      }
-      
-      if (isPaaS) {
-        // Remove platformFeePercentage from PaaS models
-        const { platformFeePercentage, ...cleanConfig } = config;
-        return cleanConfig;
-      }
-      
-      return config;
-    });
+      // Clean up data: ensure marketplace models only have platformFeePercentage
+      // and PaaS models only have frequency fees
+      return configs.map(config => {
+        const isMarketplace = ['Market Place', 'Aggregator', 'Market Place & Aggregator'].includes(config.engagementModel);
+        const isPaaS = config.engagementModel === 'Platform as a Service';
+        
+        if (isMarketplace) {
+          // Remove frequency fields from marketplace models
+          const { quarterlyFee, halfYearlyFee, annualFee, ...cleanConfig } = config;
+          return cleanConfig;
+        }
+        
+        if (isPaaS) {
+          // Remove platformFeePercentage from PaaS models
+          const { platformFeePercentage, ...cleanConfig } = config;
+          return cleanConfig;
+        }
+        
+        return config;
+      });
+    }
   }
 
-  static saveConfigurations(configs: PricingConfig[]): void {
-    savePricingConfigs(configs);
+  static async saveConfigurations(configs: PricingConfig[]): Promise<void> {
+    console.log('✅ CRUD TEST - Saving pricing configurations to Supabase:', configs.length);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      for (const config of configs) {
+        const { error } = await supabase
+          .from('pricing_configs')
+          .upsert({
+            config_id: config.id,
+            country: config.country,
+            currency: config.currency,
+            organization_type: config.organizationType,
+            entity_type: config.entityType,
+            engagement_model: config.engagementModel,
+            membership_status: config.membershipStatus,
+            quarterly_fee: config.quarterlyFee,
+            half_yearly_fee: config.halfYearlyFee,
+            annual_fee: config.annualFee,
+            platform_fee_percentage: config.platformFeePercentage,
+            discount_percentage: config.discountPercentage,
+            internal_paas_pricing: JSON.stringify(Array.isArray(config.internalPaasPricing) ? config.internalPaasPricing : []),
+            version: config.version || 1,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+      }
+      
+      console.log('✅ CRUD TEST - Pricing configurations saved to Supabase successfully');
+    } catch (error) {
+      console.error('❌ Error saving pricing configurations to Supabase:', error);
+      // Fallback to localStorage method
+      savePricingConfigs(configs);
+    }
   }
 
   static getPricingForCountryOrgTypeAndEngagement(country: string, orgType: string, engagement: string): PricingConfig | null {
