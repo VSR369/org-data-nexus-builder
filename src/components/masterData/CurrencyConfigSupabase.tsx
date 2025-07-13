@@ -51,6 +51,7 @@ export default function CurrencyConfigSupabase() {
         .order('name');
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Currencies loaded from Supabase:', data);
       setCurrencies(data || []);
     } catch (error) {
       console.error('Error loading currencies:', error);

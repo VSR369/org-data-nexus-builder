@@ -53,6 +53,7 @@ const ChallengeStatusConfigSupabase = () => {
         .order('name');
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Challenge Statuses loaded from Supabase:', data);
       
       // If no data exists, insert default data
       if (!data || data.length === 0) {

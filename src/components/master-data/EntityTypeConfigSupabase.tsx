@@ -33,7 +33,7 @@ const EntityTypeConfigSupabase = () => {
         .order('name');
 
       if (error) throw error;
-
+      console.log('✅ CRUD TEST - Entity Types loaded from Supabase:', data);
       setEntityTypes(data || []);
       
       // If no data exists, insert default data
