@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Edit, FileText, Image, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Edit, FileText, Image, ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
 import { OrganizationFormData, MasterDataItem } from '@/types/organizationRegistration';
+import { openFile } from '@/utils/fileViewing';
+import { toast } from 'sonner';
 
 interface OrganizationPreviewProps {
   formData: OrganizationFormData;
@@ -40,6 +42,11 @@ export const OrganizationPreview: React.FC<OrganizationPreviewProps> = ({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleFileClick = async (file: File, bucket: string) => {
+    toast.info('Opening file...');
+    await openFile(file, bucket);
   };
 
   return (
@@ -100,16 +107,26 @@ export const OrganizationPreview: React.FC<OrganizationPreviewProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border rounded-lg p-4">
+              <div 
+                className={`border rounded-lg p-4 transition-all duration-200 ${
+                  formData.companyProfileDocument 
+                    ? 'cursor-pointer hover:border-blue-300 hover:shadow-md hover:bg-blue-50/50' 
+                    : ''
+                }`}
+                onClick={() => formData.companyProfileDocument && handleFileClick(formData.companyProfileDocument, 'organization-documents')}
+              >
                 <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-5 h-5 text-blue-500" />
                   <h4 className="font-medium">Company Profile Document</h4>
+                  {formData.companyProfileDocument && (
+                    <ExternalLink className="w-4 h-4 text-blue-500 ml-auto" />
+                  )}
                 </div>
                 {formData.companyProfileDocument ? (
                   <div>
                     <p className="text-sm font-medium">{formData.companyProfileDocument.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatFileSize(formData.companyProfileDocument.size)}
+                      {formatFileSize(formData.companyProfileDocument.size)} • Click to view
                     </p>
                   </div>
                 ) : (
@@ -117,16 +134,26 @@ export const OrganizationPreview: React.FC<OrganizationPreviewProps> = ({
                 )}
               </div>
 
-              <div className="border rounded-lg p-4">
+              <div 
+                className={`border rounded-lg p-4 transition-all duration-200 ${
+                  formData.companyLogo 
+                    ? 'cursor-pointer hover:border-purple-300 hover:shadow-md hover:bg-purple-50/50' 
+                    : ''
+                }`}
+                onClick={() => formData.companyLogo && handleFileClick(formData.companyLogo, 'organization-logos')}
+              >
                 <div className="flex items-center gap-3 mb-2">
                   <Image className="w-5 h-5 text-purple-500" />
                   <h4 className="font-medium">Company Logo</h4>
+                  {formData.companyLogo && (
+                    <ExternalLink className="w-4 h-4 text-purple-500 ml-auto" />
+                  )}
                 </div>
                 {formData.companyLogo ? (
                   <div>
                     <p className="text-sm font-medium">{formData.companyLogo.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatFileSize(formData.companyLogo.size)}
+                      {formatFileSize(formData.companyLogo.size)} • Click to view
                     </p>
                   </div>
                 ) : (
