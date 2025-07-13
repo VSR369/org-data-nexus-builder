@@ -86,7 +86,7 @@ const CurrencyConfig = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    if (!currentCurrency.code || !currentCurrency.name || !currentCurrency.symbol || !currentCurrency.country_id) {
+    if (!currentCurrency.code || !currentCurrency.name || !currentCurrency.symbol || !currentCurrency.country_id || !currentCurrency.countryCode) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -191,19 +191,27 @@ const CurrencyConfig = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="country">Country *</Label>
                 <Select
                   value={currentCurrency.country_id || ''}
-                  onValueChange={(value) => setCurrentCurrency(prev => ({ ...prev, country_id: value }))}
+                  onValueChange={(value) => {
+                    const selectedCountry = countries.find(c => c.id === value);
+                    setCurrentCurrency(prev => ({ 
+                      ...prev, 
+                      country_id: value,
+                      countryCode: selectedCountry?.code || '', // Auto-populate country code
+                      countryName: selectedCountry?.name || '' // Auto-populate country name
+                    }));
+                  }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border shadow-lg z-50">
                     {countries.map((country) => (
-                      <SelectItem key={country.id} value={country.id}>
+                      <SelectItem key={country.id} value={country.id} className="hover:bg-accent">
                         {country.name} ({country.code})
                       </SelectItem>
                     ))}
@@ -216,6 +224,21 @@ const CurrencyConfig = () => {
                 )}
               </div>
               <div>
+                <Label htmlFor="countryCode">Country Code</Label>
+                <Input
+                  id="countryCode"
+                  value={currentCurrency.countryCode || ''}
+                  onChange={(e) => setCurrentCurrency(prev => ({ ...prev, countryCode: e.target.value.toUpperCase() }))}
+                  placeholder="e.g., US"
+                  maxLength={3}
+                  className="bg-background"
+                  readOnly
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Auto-populated from selected country
+                </p>
+              </div>
+              <div>
                 <Label htmlFor="code">Currency Code *</Label>
                 <Input
                   id="code"
@@ -223,6 +246,7 @@ const CurrencyConfig = () => {
                   onChange={(e) => setCurrentCurrency(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
                   placeholder="e.g., USD"
                   maxLength={3}
+                  className="bg-background"
                 />
               </div>
               <div>
@@ -232,6 +256,7 @@ const CurrencyConfig = () => {
                   value={currentCurrency.name || ''}
                   onChange={(e) => setCurrentCurrency(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., US Dollar"
+                  className="bg-background"
                 />
               </div>
               <div>
@@ -242,6 +267,7 @@ const CurrencyConfig = () => {
                   onChange={(e) => setCurrentCurrency(prev => ({ ...prev, symbol: e.target.value }))}
                   placeholder="e.g., $"
                   maxLength={3}
+                  className="bg-background"
                 />
               </div>
             </div>
@@ -273,7 +299,7 @@ const CurrencyConfig = () => {
                   <div>
                     <h3 className="font-medium">{currency.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Symbol: {currency.symbol} • Country: {currency.countryName || 'Unknown'}
+                      Symbol: {currency.symbol} • Country: {currency.countryName || 'Unknown'} • Code: {currency.countryCode || 'N/A'}
                     </p>
                     {currency.isUserCreated && (
                       <p className="text-xs text-blue-600 mt-1">User Created</p>

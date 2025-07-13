@@ -7,6 +7,7 @@ export interface Currency {
   country?: string;
   country_id?: string;
   countryName?: string;
+  countryCode?: string;
   createdAt: string;
   updatedAt: string;
   isUserCreated: boolean;
