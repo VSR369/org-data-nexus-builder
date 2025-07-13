@@ -8,8 +8,12 @@ export class PricingDataManager {
   private static isLoading = false;
 
   static getAllConfigurations(): PricingConfig[] {
-    // Return cached data for synchronous calls, load async in background
-    this.loadConfigurationsAsync();
+    console.log('⚠️ getAllConfigurations (sync) is deprecated. Use getAllConfigurationsAsync() instead.');
+    return this.cachedConfigs;
+  }
+
+  static async getAllConfigurationsAsync(): Promise<PricingConfig[]> {
+    await this.loadConfigurationsAsync();
     return this.cachedConfigs;
   }
 
@@ -18,7 +22,11 @@ export class PricingDataManager {
     
     this.isLoading = true;
     try {
-      console.log('✅ CRUD TEST - Loading pricing configurations from Supabase');
+      // Clear any localStorage fallbacks first to ensure clean state
+      const { GlobalCacheManager } = await import('../core/GlobalCacheManager');
+      GlobalCacheManager.clearAllCache();
+      
+      console.log('✅ CRUD TEST - Loading pricing configurations from Supabase (single source of truth)');
       const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('pricing_configs')
@@ -50,9 +58,8 @@ export class PricingDataManager {
       console.log('✅ CRUD TEST - Pricing configurations loaded:', configs.length);
     } catch (error) {
       console.error('❌ Error loading pricing configurations from Supabase:', error);
-      // Fallback to localStorage method
-      const configs = getPricingConfigs();
-      this.cachedConfigs = configs;
+      // No fallbacks - Supabase is single source of truth
+      this.cachedConfigs = [];
     }
     this.isLoading = false;
   }
@@ -90,13 +97,13 @@ export class PricingDataManager {
       console.log('✅ CRUD TEST - Pricing configurations saved to Supabase successfully');
     } catch (error) {
       console.error('❌ Error saving pricing configurations to Supabase:', error);
-      // Fallback to localStorage method
-      savePricingConfigs(configs);
+      // No fallbacks - Supabase is single source of truth
+      throw error;
     }
   }
 
   static getPricingForCountryOrgTypeAndEngagement(country: string, orgType: string, engagement: string): PricingConfig | null {
-    const configs = getPricingConfigs();
+    const configs = this.cachedConfigs;
     const normalizedCountry = normalizeCountryName(country);
     
     console.log(`🔍 Looking for pricing config - Country: "${normalizedCountry}", OrgType: "${orgType}", Engagement: "${engagement}"`);
@@ -140,7 +147,7 @@ export class PricingDataManager {
   }
 
   static getConfigurationByOrgTypeAndEngagement(orgType: string, engagementModel: string): PricingConfig | null {
-    const configs = getPricingConfigs();
+    const configs = this.cachedConfigs;
     
     console.log(`🔍 Looking for config by OrgType: "${orgType}", EngagementModel: "${engagementModel}"`);
     
@@ -160,7 +167,7 @@ export class PricingDataManager {
 
   // New method to get pricing by country specifically
   static getPricingForCountry(country: string, organizationType?: string, entityType?: string): PricingConfig[] {
-    const configs = getPricingConfigs();
+    const configs = this.cachedConfigs;
     const normalizedCountry = normalizeCountryName(country);
     
     console.log(`🔍 Looking for pricing configs for country: "${normalizedCountry}"`);

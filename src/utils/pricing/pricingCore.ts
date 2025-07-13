@@ -44,10 +44,10 @@ const mapDatabaseToConfig = (dbRow: any): PricingConfig => ({
 });
 
 /**
- * Get all pricing configurations with Supabase integration
+ * Get all pricing configurations - Supabase only (no fallbacks)
  */
 export async function getPricingConfigsAsync(): Promise<PricingConfig[]> {
-  console.log('🔍 Getting pricing configurations from Supabase...');
+  console.log('🔍 Getting pricing configurations from Supabase (single source of truth)...');
   
   try {
     const { data, error } = await supabase
@@ -60,64 +60,32 @@ export async function getPricingConfigsAsync(): Promise<PricingConfig[]> {
       throw error;
     }
 
-    if (data && data.length > 0) {
-      const configs = data.map(mapDatabaseToConfig);
-      console.log('✅ Loaded from Supabase:', configs.length);
-      
-      // Also save to localStorage as backup
-      localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
-      return configs;
-    }
+    const configs = data ? data.map(mapDatabaseToConfig) : [];
+    console.log('✅ Loaded from Supabase:', configs.length);
+    return configs;
+    
   } catch (error) {
     console.error('❌ Error loading from Supabase:', error);
+    throw error;
   }
-
-  // Fallback to localStorage
-  console.log('🔄 Falling back to localStorage...');
-  const localConfigs = JSON.parse(localStorage.getItem(CUSTOM_PRICING_CONFIGS_KEY) || '[]');
-  if (localConfigs.length > 0) {
-    console.log('✅ Loaded from localStorage:', localConfigs.length);
-    return localConfigs;
-  }
-
-  // Final fallback to defaults
-  console.log('📋 Using default configurations as final fallback');
-  return defaultPricingConfigs;
 }
 
 /**
- * Synchronous version for backward compatibility
+ * Synchronous version - returns empty array, forces async loading
  */
 export const getPricingConfigs = (): PricingConfig[] => {
-  console.log('🔍 Getting pricing configurations (sync)...');
-  
-  // Try localStorage first for immediate response
-  const localConfigs = JSON.parse(localStorage.getItem(CUSTOM_PRICING_CONFIGS_KEY) || '[]');
-  if (localConfigs.length > 0) {
-    console.log('✅ Loaded from localStorage (sync):', localConfigs.length);
-    return localConfigs;
-  }
-
-  // If no local data, trigger async load and return defaults for now
-  getPricingConfigsAsync().then(configs => {
-    console.log('🔄 Async load completed, configs will be available on next call');
-  }).catch(error => {
-    console.error('❌ Async load failed:', error);
-  });
-
-  // Return defaults for immediate use
-  console.log('📋 Using default configurations for immediate response');
-  return defaultPricingConfigs;
+  console.log('⚠️ getPricingConfigs (sync) is deprecated. Use getPricingConfigsAsync() instead.');
+  console.log('🔍 Returning empty array - use async version for Supabase data');
+  return [];
 };
 
 /**
- * Save pricing configurations to Supabase with localStorage backup
+ * Save pricing configurations to Supabase only (no localStorage fallback)
  */
 export async function savePricingConfigsAsync(configs: PricingConfig[]): Promise<void> {
-  console.log('💾 Saving pricing configurations to Supabase:', configs.length);
+  console.log('💾 Saving pricing configurations to Supabase (single source of truth):', configs.length);
   
   try {
-    // Save to Supabase
     const dbConfigs = configs.map(mapConfigToDatabase);
     
     // Delete existing configs and insert new ones (replace all)
@@ -144,61 +112,41 @@ export async function savePricingConfigsAsync(configs: PricingConfig[]): Promise
 
     console.log('✅ Configurations saved to Supabase successfully');
     
-    // Also save to localStorage as backup only after Supabase success
-    localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
-    
   } catch (error: any) {
     console.error('❌ Error saving to Supabase:', error);
-    
-    // Save to localStorage as fallback
-    localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
-    console.log('💾 Saved to localStorage as fallback');
-    
-    // Re-throw the error so the UI can handle it
     throw new Error(error.message || 'Failed to save to database');
   }
 }
 
 /**
- * Save pricing configurations (backward compatibility)
+ * Save pricing configurations (deprecated - use async version)
  */
 export const savePricingConfigs = (configs: PricingConfig[]): void => {
-  console.log('💾 Saving pricing configurations (sync):', configs.length);
+  console.log('⚠️ savePricingConfigs (sync) is deprecated. Use savePricingConfigsAsync() instead.');
   
-  // Save to localStorage immediately for sync operation
-  localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(configs));
-  
-  // Also trigger async save to Supabase in background
+  // Trigger async save to Supabase
   savePricingConfigsAsync(configs).catch(error => {
-    console.error('⚠️ Background Supabase save failed:', error);
+    console.error('❌ Supabase save failed:', error);
   });
 };
 
 /**
- * Save single pricing configuration
+ * Save single pricing configuration (deprecated)
  */
 export const savePricingConfig = (config: PricingConfig): void => {
-  console.log(`💾 Saving single config: ${config.engagementModel} (${config.membershipStatus})`);
+  console.log('⚠️ savePricingConfig is deprecated. Use savePricingConfigsAsync() with full config array instead.');
   
-  const configs = getPricingConfigs();
-  const existingIndex = configs.findIndex(c => c.id === config.id);
-  
-  if (existingIndex >= 0) {
-    configs[existingIndex] = config;
-    console.log('✏️ Updated existing configuration');
-  } else {
-    configs.push(config);
-    console.log('➕ Added new configuration');
-  }
-  
-  savePricingConfigs(configs);
+  // This method is deprecated as we use Supabase-only approach
+  savePricingConfigsAsync([config]).catch(error => {
+    console.error('❌ Single config save failed:', error);
+  });
 };
 
 /**
- * Delete pricing configuration permanently from Supabase
+ * Delete pricing configuration from Supabase only
  */
 export const deletePricingConfigFromDatabase = async (configId: string): Promise<void> => {
-  console.log(`🗑️ Permanently deleting config from database: ${configId}`);
+  console.log(`🗑️ Deleting config from Supabase: ${configId}`);
   
   try {
     const { error } = await supabase
@@ -211,32 +159,23 @@ export const deletePricingConfigFromDatabase = async (configId: string): Promise
       throw error;
     }
 
-    console.log('✅ Configuration permanently deleted from database');
-    
-    // Also remove from localStorage
-    const localConfigs = JSON.parse(localStorage.getItem(CUSTOM_PRICING_CONFIGS_KEY) || '[]');
-    const filteredConfigs = localConfigs.filter((c: PricingConfig) => c.id !== configId);
-    localStorage.setItem(CUSTOM_PRICING_CONFIGS_KEY, JSON.stringify(filteredConfigs));
+    console.log('✅ Configuration deleted from Supabase');
     
   } catch (error) {
-    console.error('❌ Error in permanent delete operation:', error);
+    console.error('❌ Error in delete operation:', error);
     throw error;
   }
 };
 
 /**
- * Delete pricing configuration (backward compatibility)
+ * Delete pricing configuration (deprecated)
  */
 export const deletePricingConfig = (id: string): void => {
-  console.log(`🗑️ Deleting config: ${id}`);
+  console.log('⚠️ deletePricingConfig is deprecated. Use deletePricingConfigFromDatabase() instead.');
   
-  const configs = getPricingConfigs();
-  const filteredConfigs = configs.filter(c => c.id !== id);
-  savePricingConfigs(filteredConfigs);
-  
-  // Also trigger permanent database deletion
+  // Trigger database deletion
   deletePricingConfigFromDatabase(id).catch(error => {
-    console.error('⚠️ Background database deletion failed:', error);
+    console.error('❌ Database deletion failed:', error);
   });
 };
 

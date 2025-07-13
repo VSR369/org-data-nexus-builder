@@ -9,18 +9,19 @@ export const usePricingData = (organizationType?: string, country?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadPricingData = () => {
-      console.log('🔄 usePricingData: Loading pricing configurations...');
+    const loadPricingData = async () => {
+      console.log('🔄 usePricingData: Loading pricing configurations from Supabase...');
       setLoading(true);
       setError(null);
 
       try {
-        const configs = PricingDataManager.getAllConfigurations();
+        const configs = await PricingDataManager.getAllConfigurationsAsync();
         setPricingConfigs(configs);
         console.log('✅ usePricingData: Loaded configurations:', configs.length);
       } catch (err) {
         console.error('❌ usePricingData: Error loading pricing data:', err);
         setError('Failed to load pricing configurations');
+        setPricingConfigs([]);
       } finally {
         setLoading(false);
       }
@@ -47,9 +48,14 @@ export const usePricingData = (organizationType?: string, country?: string) => {
     error,
     getSpecificPricing,
     getConfigByOrgTypeAndEngagement,
-    refetch: () => {
-      const configs = PricingDataManager.getAllConfigurations();
-      setPricingConfigs(configs);
+    refetch: async () => {
+      try {
+        const configs = await PricingDataManager.getAllConfigurationsAsync();
+        setPricingConfigs(configs);
+      } catch (err) {
+        console.error('❌ usePricingData: Error refetching pricing data:', err);
+        setPricingConfigs([]);
+      }
     }
   };
 };

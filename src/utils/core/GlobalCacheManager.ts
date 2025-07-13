@@ -14,6 +14,20 @@ export class GlobalCacheManager {
       localStorage.removeItem(`${key}_initialized`);
     });
     
+    // Clear all pricing-related localStorage keys
+    const pricingKeys = [
+      'custom_pricing',
+      'master_data_pricing_configs',
+      'custom_pricingConfigs',
+      'pricing_deleted_configs',
+      'custom_pricing_backup',
+      'pricing_configs'
+    ];
+    
+    pricingKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
     // Also clear old keys that might be lingering
     const oldKeys = [
       'industrySegments',
@@ -32,7 +46,7 @@ export class GlobalCacheManager {
       localStorage.removeItem(key);
     });
     
-    console.log('All master data cache cleared, including old keys');
+    console.log('All master data cache cleared, including pricing data and old keys');
   }
 
   static clearDomainGroupsData(): void {
