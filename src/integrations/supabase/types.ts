@@ -292,6 +292,8 @@ export type Database = {
       master_currencies: {
         Row: {
           code: string | null
+          country: string | null
+          country_code: string | null
           created_at: string | null
           created_by: string | null
           id: string
@@ -303,6 +305,8 @@ export type Database = {
         }
         Insert: {
           code?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -314,6 +318,8 @@ export type Database = {
         }
         Update: {
           code?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -323,7 +329,15 @@ export type Database = {
           updated_at?: string | null
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_master_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["name"]
+          },
+        ]
       }
       master_departments: {
         Row: {
@@ -393,6 +407,13 @@ export type Database = {
           version?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_master_domain_groups_industry_segment"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "master_industry_segments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "master_domain_groups_industry_segment_id_fkey"
             columns: ["industry_segment_id"]
@@ -577,11 +598,14 @@ export type Database = {
           country: string
           created_at: string
           created_by: string | null
+          description: string | null
           entity_type: string
           half_yearly_amount: number | null
           half_yearly_currency: string | null
           id: string
           is_user_created: boolean | null
+          monthly_amount: number | null
+          monthly_currency: string | null
           organization_type: string
           quarterly_amount: number | null
           quarterly_currency: string | null
@@ -594,11 +618,14 @@ export type Database = {
           country: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           entity_type: string
           half_yearly_amount?: number | null
           half_yearly_currency?: string | null
           id?: string
           is_user_created?: boolean | null
+          monthly_amount?: number | null
+          monthly_currency?: string | null
           organization_type: string
           quarterly_amount?: number | null
           quarterly_currency?: string | null
@@ -611,11 +638,14 @@ export type Database = {
           country?: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           entity_type?: string
           half_yearly_amount?: number | null
           half_yearly_currency?: string | null
           id?: string
           is_user_created?: boolean | null
+          monthly_amount?: number | null
+          monthly_currency?: string | null
           organization_type?: string
           quarterly_amount?: number | null
           quarterly_currency?: string | null
@@ -695,6 +725,13 @@ export type Database = {
           version?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_master_sub_categories_category"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "master_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "master_sub_categories_category_id_fkey"
             columns: ["category_id"]

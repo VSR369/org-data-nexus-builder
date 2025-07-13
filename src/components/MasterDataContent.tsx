@@ -1,12 +1,14 @@
 import React from "react";
 import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
-import CurrencyConfigSupabase from "./master-data/CurrencyConfigSupabase";
+import CurrencyConfigSupabase from "./masterData/CurrencyConfigSupabase";
+import CategoriesConfigSupabase from "./masterData/CategoriesConfigSupabase";
+import SubCategoriesConfigSupabase from "./masterData/SubCategoriesConfigSupabase";
+import DomainGroupsConfigSupabase from "./masterData/DomainGroupsConfigSupabase";
 import IndustrySegmentsConfigSupabase from "./master-data/IndustrySegmentsConfigSupabase";
 import DepartmentsConfigSupabase from "./master-data/DepartmentsConfigSupabase";
 import OrganizationTypeConfigSupabase from "./master-data/OrganizationTypeConfigSupabase";
 import EntityTypeConfigSupabase from "./master-data/EntityTypeConfigSupabase";
-import DomainGroupsConfig from "./master-data/DomainGroupsConfig";
 import ChallengeStatusConfigSupabase from "./master-data/ChallengeStatusConfigSupabase";
 import SolutionStatusConfigSupabase from "./master-data/SolutionStatusConfigSupabase";
 import CompetencyCapabilityConfig from "./master-data/CompetencyCapabilityConfig";
@@ -46,6 +48,12 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <CountryConfigSupabase />;
       case 'currencies':
         return <CurrencyConfigSupabase />;
+      case 'categories':
+        return <CategoriesConfigSupabase />;
+      case 'sub-categories':
+        return <SubCategoriesConfigSupabase />;
+      case 'domain-groups':
+        return <DomainGroupsConfigSupabase />;
       case 'industry-segments':
         return <IndustrySegmentsConfigSupabase />;
       case 'organization-types':
@@ -54,8 +62,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <EntityTypeConfigSupabase />;
       case 'departments':
         return <DepartmentsConfigSupabase />;
-      case 'domain-groups':
-        return <DomainGroupsConfig />;
       case 'challenge-statuses':
         return <ChallengeStatusConfigSupabase />;
       case 'solution-statuses':

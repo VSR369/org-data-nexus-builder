@@ -16,7 +16,9 @@ import {
   UserCheck,
   Key,
   Download,
-  Table
+  Table,
+  Folder,
+  FolderOpen
 } from 'lucide-react';
 
 export const customDataMenuItems = [
@@ -79,6 +81,18 @@ export const organizationMenuItems = [
     title: 'Domain Groups',
     icon: Database,
     description: 'Manage domain hierarchies'
+  },
+  {
+    id: 'categories',
+    title: 'Categories',
+    icon: Folder,
+    description: 'Manage category master data'
+  },
+  {
+    id: 'sub-categories',
+    title: 'Sub-Categories',
+    icon: FolderOpen,
+    description: 'Manage sub-category hierarchies'
   },
   {
     id: 'competency-capabilities',
