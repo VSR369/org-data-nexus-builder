@@ -64,7 +64,7 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_departments',
       displayName: 'Departments',
-      frontendFields: ['id', 'name', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      frontendFields: ['id', 'name', 'description', 'organization_id', 'organization_name', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
@@ -82,7 +82,7 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_communication_types',
       displayName: 'Communication Types',
-      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      frontendFields: ['id', 'name', 'description', 'link', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
@@ -106,7 +106,7 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
-      frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      frontendFields: ['id', 'name', 'description', 'hierarchy', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true
     },
     {
