@@ -120,6 +120,18 @@ const MasterDataTableTester = () => {
       displayName: 'Pricing Configurations',
       frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee', 'platform_fee_percentage', 'discount_percentage', 'internal_paas_pricing', 'created_at', 'updated_at', 'version'],
       isSupabaseEnabled: true
+    },
+    {
+      tableName: 'master_sub_departments',
+      displayName: 'Sub Departments',
+      frontendFields: ['id', 'name', 'description', 'department_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      isSupabaseEnabled: true
+    },
+    {
+      tableName: 'master_team_units',
+      displayName: 'Team Units',
+      frontendFields: ['id', 'name', 'description', 'sub_department_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      isSupabaseEnabled: true
     }
   ];
 
@@ -136,38 +148,43 @@ const MasterDataTableTester = () => {
 
           if (tableInfo.isSupabaseEnabled) {
             try {
-              // Try to get actual table structure by querying the table and checking its columns
-              // This approach works by getting a sample of the actual data to infer structure
+              // First try to get sample data to see what fields actually exist
               const { data: tableData, error: tableError } = await supabase
                 .from(tableInfo.tableName as any)
                 .select('*')
                 .limit(1);
 
-              // Also try to get structure from sample data or fallback to empty structure
               if (!tableError && tableData && tableData.length > 0) {
+                // Extract actual table structure from sample data
                 const sampleObj = tableData[0];
                 structure = Object.keys(sampleObj).map(key => {
                   const value = sampleObj[key];
-                  let dataType: string = 'text';
+                  let dataType = 'text';
                   
-                  if (value === null) {
-                    dataType = 'text';
+                  // Improved type inference based on field name patterns and values
+                  if (key === 'id' || key.endsWith('_id')) {
+                    dataType = 'uuid';
+                  } else if (key.includes('date') || key.includes('time') || key.includes('at')) {
+                    dataType = 'timestamp with time zone';
+                  } else if (key.includes('amount') || key.includes('percentage') || key.includes('fee')) {
+                    dataType = 'numeric';
+                  } else if (key === 'version') {
+                    dataType = 'integer';
+                  } else if (key.startsWith('is_') || key === 'active' || typeof value === 'boolean') {
+                    dataType = 'boolean';
+                  } else if (key === 'hierarchy' || (typeof value === 'object' && value !== null && !Array.isArray(value))) {
+                    dataType = 'jsonb';
+                  } else if (Array.isArray(value)) {
+                    dataType = 'ARRAY';
+                  } else if (typeof value === 'number') {
+                    dataType = Number.isInteger(value) ? 'integer' : 'numeric';
                   } else if (typeof value === 'string') {
-                    if (key.includes('date') || key.includes('time') || key.includes('at') || value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                    // Check if it looks like a timestamp
+                    if (value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
                       dataType = 'timestamp with time zone';
-                    } else if (key === 'id' || key.endsWith('_id')) {
-                      dataType = 'uuid';
                     } else {
                       dataType = 'text';
                     }
-                  } else if (typeof value === 'number') {
-                    dataType = Number.isInteger(value) ? 'integer' : 'numeric';
-                  } else if (typeof value === 'boolean') {
-                    dataType = 'boolean';
-                  } else if (Array.isArray(value)) {
-                    dataType = 'ARRAY';
-                  } else if (typeof value === 'object') {
-                    dataType = 'jsonb';
                   }
                   
                   return {
@@ -175,25 +192,30 @@ const MasterDataTableTester = () => {
                     column_name: key,
                     data_type: dataType,
                     is_nullable: value === null ? 'YES' : 'NO',
-                    column_default: null
+                    column_default: key === 'id' ? 'gen_random_uuid()' : null
                   };
                 });
               } else {
-                // If no data, create structure based on known database schema
-                const knownFields = tableInfo.frontendFields;
-                structure = knownFields.map(field => {
+                // If no data exists, create structure based on frontend field mapping
+                structure = tableInfo.frontendFields.map(field => {
                   let dataType = 'text';
+                  let defaultValue = null;
+                  
                   if (field === 'id' || field.endsWith('_id')) {
                     dataType = 'uuid';
+                    defaultValue = field === 'id' ? 'gen_random_uuid()' : null;
                   } else if (field.includes('date') || field.includes('time') || field.includes('at')) {
                     dataType = 'timestamp with time zone';
+                    defaultValue = field.includes('created_at') || field.includes('updated_at') ? 'now()' : null;
                   } else if (field.includes('amount') || field.includes('percentage') || field.includes('fee')) {
                     dataType = 'numeric';
-                  } else if (field.includes('version')) {
+                  } else if (field === 'version') {
                     dataType = 'integer';
-                  } else if (field.includes('is_') || field.includes('active')) {
+                    defaultValue = '1';
+                  } else if (field.startsWith('is_') || field === 'active') {
                     dataType = 'boolean';
-                  } else if (field.includes('pricing') && field.includes('internal')) {
+                    defaultValue = field === 'is_active' ? 'true' : 'false';
+                  } else if (field === 'hierarchy') {
                     dataType = 'jsonb';
                   }
                   
@@ -201,8 +223,8 @@ const MasterDataTableTester = () => {
                     table_name: tableInfo.tableName,
                     column_name: field,
                     data_type: dataType,
-                    is_nullable: field === 'id' ? 'NO' : 'YES',
-                    column_default: field === 'id' ? 'gen_random_uuid()' : null
+                    is_nullable: field === 'id' || field === 'name' ? 'NO' : 'YES',
+                    column_default: defaultValue
                   };
                 });
               }
