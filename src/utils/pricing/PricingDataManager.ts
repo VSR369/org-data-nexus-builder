@@ -1,7 +1,7 @@
-// PricingDataManager Class - Updated to use template-based system
+// PricingDataManager Class - Restored to original simple approach
 import { PricingConfig } from '@/types/pricing';
-import { NewPricingDataManager } from './NewPricingDataManager';
 import { normalizeCountryName } from './pricingUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 export class PricingDataManager {
   private static cachedConfigs: PricingConfig[] = [];
@@ -22,12 +22,61 @@ export class PricingDataManager {
     
     this.isLoading = true;
     try {
-      console.log('✅ Loading pricing configurations using new template system...');
+      console.log('✅ Loading pricing configurations from Supabase...');
       
-      // Use the new template-based system to generate all configurations
-      this.cachedConfigs = await NewPricingDataManager.generateAllConfigurations();
+      // Load directly from pricing_configs table
+      const { data, error } = await supabase
+        .from('pricing_configs')
+        .select('*');
       
-      console.log('✅ Pricing configurations loaded from templates:', this.cachedConfigs.length);
+      if (error) {
+        console.error('❌ Error loading pricing configs:', error);
+        this.cachedConfigs = [];
+      } else {
+        // Convert database records to PricingConfig format  
+        this.cachedConfigs = (data || []).map(config => {
+          const pricingConfig: PricingConfig = {
+            id: config.id,
+            country: config.country,
+            organizationType: config.organization_type,
+            entityType: config.entity_type,
+            engagementModel: config.engagement_model,
+            membershipStatus: (config.membership_status === 'member' ? 'member' : 'not-a-member') as 'member' | 'not-a-member',
+            quarterlyFee: config.quarterly_fee,
+            halfYearlyFee: config.half_yearly_fee,
+            annualFee: config.annual_fee,
+            currency: config.currency,
+            platformFeePercentage: config.platform_fee_percentage,
+            discountPercentage: config.discount_percentage,
+            internalPaasPricing: [],
+            version: config.version || 1,
+            createdAt: config.created_at || new Date().toISOString()
+          };
+          
+          // Handle internalPaasPricing conversion
+          if (Array.isArray(config.internal_paas_pricing)) {
+            try {
+              pricingConfig.internalPaasPricing = config.internal_paas_pricing.map((item: any) => ({
+                id: item.id || `country-${Date.now()}`,
+                country: item.country || '',
+                currency: item.currency || 'USD',
+                quarterlyPrice: item.quarterlyPrice || 0,
+                halfYearlyPrice: item.halfYearlyPrice || 0,
+                annualPrice: item.annualPrice || 0,
+                membershipStatus: item.membershipStatus || 'not-a-member',
+                discountPercentage: item.discountPercentage || 0
+              }));
+            } catch (error) {
+              console.warn('Error converting internal paas pricing:', error);
+              pricingConfig.internalPaasPricing = [];
+            }
+          }
+          
+          return pricingConfig;
+        });
+        
+        console.log('✅ Pricing configurations loaded from Supabase:', this.cachedConfigs.length);
+      }
     } catch (error) {
       console.error('❌ Error loading pricing configurations:', error);
       this.cachedConfigs = [];
@@ -36,11 +85,53 @@ export class PricingDataManager {
   }
 
   static async saveConfigurations(configs: PricingConfig[]): Promise<void> {
-    console.log('✅ Template-based system: Saving configurations is no longer needed');
-    console.log('💡 Use the Master Data Portal to manage pricing templates and rules instead');
+    console.log('✅ Saving pricing configurations to Supabase...');
     
-    // Refresh the cache to get the latest calculated configurations
-    await this.loadConfigurationsAsync();
+    try {
+      // Clear existing configs
+      await supabase.from('pricing_configs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      // Insert new configs
+      for (const config of configs) {
+        const dbConfig = {
+          country: config.country,
+          organization_type: config.organizationType,
+          entity_type: config.entityType,
+          engagement_model: config.engagementModel,
+          membership_status: config.membershipStatus,
+          quarterly_fee: config.quarterlyFee,
+          half_yearly_fee: config.halfYearlyFee,
+          annual_fee: config.annualFee,
+          currency: config.currency,
+          platform_fee_percentage: config.platformFeePercentage,
+          discount_percentage: config.discountPercentage,
+          internal_paas_pricing: JSON.parse(JSON.stringify(config.internalPaasPricing || [])),
+          config_id: config.id || `config-${Date.now()}`,
+          country_id: '00000000-0000-0000-0000-000000000000', // Placeholder
+          organization_type_id: '00000000-0000-0000-0000-000000000000', // Placeholder
+          entity_type_id: '00000000-0000-0000-0000-000000000000', // Placeholder
+          engagement_model_id: '00000000-0000-0000-0000-000000000000' // Placeholder
+        };
+        
+        const { error } = await supabase
+          .from('pricing_configs')
+          .insert([dbConfig]);
+        
+        if (error) {
+          console.error('❌ Error saving pricing config:', error);
+        }
+      }
+      
+      if (configs.length > 0) {
+        console.log('✅ Pricing configurations saved successfully');
+      } else {
+        console.log('✅ No configurations to save');
+      }
+      // Refresh cache
+      await this.loadConfigurationsAsync();
+    } catch (error) {
+      console.error('❌ Error saving pricing configurations:', error);
+    }
   }
 
   static getPricingForCountryOrgTypeAndEngagement(country: string, orgType: string, engagement: string): PricingConfig | null {
@@ -81,7 +172,7 @@ export class PricingDataManager {
 
   // Method to refresh pricing configurations
   static async refreshCache(): Promise<void> {
-    await NewPricingDataManager.refreshCache();
+    this.cachedConfigs = [];
     await this.loadConfigurationsAsync();
   }
 
@@ -114,8 +205,7 @@ export class PricingDataManager {
     });
   }
 
-  // Remove deduplication method as it's no longer needed
   static resetDeletedConfigsTracking(): void {
-    console.log('💡 Deleted configs tracking is no longer applicable with template-based system');
+    console.log('💡 Reset tracking - no longer needed in simplified system');
   }
 }

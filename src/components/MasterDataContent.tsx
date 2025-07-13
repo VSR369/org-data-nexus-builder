@@ -14,7 +14,7 @@ import CommunicationTypeConfigSupabase from "./master-data/CommunicationTypeConf
 import RewardTypeConfigSupabase from "./master-data/RewardTypeConfigSupabase";
 import SeekerMembershipFeeConfig from "./master-data/SeekerMembershipFeeConfig";
 import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
-import { PricingTemplatesManager } from "./master-data/PricingTemplatesManager";
+import PricingConfig from "./master-data/PricingConfig";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
@@ -70,7 +70,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'engagement-models':
         return <EngagementModelsConfig />;
       case 'pricing':
-        return <PricingTemplatesManager />;
+        return <PricingConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
       case 'global-cache-manager':
