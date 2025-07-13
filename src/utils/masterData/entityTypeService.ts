@@ -1,80 +1,58 @@
 
-import { MasterDataPersistenceManager } from '../masterDataPersistenceManager';
-import { entityTypeConfig } from './configs';
-import { emergencyFallbackEntityTypes } from './fallbackData';
 import { supabaseMasterDataService } from '@/services/SupabaseMasterDataService';
 
 export class EntityTypeService {
   static async getEntityTypes(): Promise<string[]> {
     try {
-      // First try to get from Supabase
       const entityTypes = await supabaseMasterDataService.getEntityTypes();
-      if (entityTypes.length > 0) {
-        console.log('✅ Using Supabase entity types:', entityTypes.map(e => e.name));
-        return entityTypes.map(e => e.name);
-      }
+      console.log('✅ EntityTypeService: Using Supabase entity types:', entityTypes.map(e => e.name));
+      return entityTypes.map(e => e.name);
     } catch (error) {
-      console.error('❌ Error fetching entity types from Supabase:', error);
+      console.error('❌ EntityTypeService: Error fetching entity types from Supabase:', error);
+      // Return fallback data instead of localStorage
+      return [
+        'Commercial',
+        'Non-Profit Organization',
+        'Society',
+        'Trust',
+        'Private Limited Company',
+        'Public Limited Company',
+        'Partnership Firm',
+        'Limited Liability Partnership (LLP)',
+        'Sole Proprietorship'
+      ];
     }
-
-    // Fallback to localStorage
-    return EntityTypeService.getEntityTypesSync();
   }
 
   static getEntityTypesSync(): string[] {
-    console.log('🔍 Getting entity types...');
-    
-    // CHECK FOR CUSTOM-ONLY MODE FIRST
-    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-    if (isCustomMode) {
-      console.log('🎯 Custom-only mode detected, loading custom entity types...');
-      const customData = localStorage.getItem('custom_entityTypes');
-      if (customData) {
-        try {
-          const parsed = JSON.parse(customData);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            console.log('✅ Using custom entity types:', parsed.length);
-            return parsed;
-          }
-        } catch (error) {
-          console.error('❌ Failed to parse custom entity types data:', error);
-        }
-      }
-    }
-    
-    // FALLBACK: Original logic
-    // Check if we have user data (stored as string array)
-    const hasUserData = MasterDataPersistenceManager.hasUserData(entityTypeConfig);
-    if (hasUserData) {
-      const stored = localStorage.getItem('master_data_entity_types');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.data && Array.isArray(parsed.data)) {
-            console.log('✅ Using user-created entity types:', parsed.data.length);
-            return parsed.data;
-          }
-        } catch (error) {
-          console.error('❌ Failed to parse entity types:', error);
-        }
-      }
-    }
+    console.log('⚠️ EntityTypeService.getEntityTypesSync is deprecated - use async getEntityTypes() instead');
+    // Return fallback only - no localStorage access
+    return [
+      'Commercial',
+      'Non-Profit Organization',
+      'Society',
+      'Trust',
+      'Private Limited Company',
+      'Public Limited Company',
+      'Partnership Firm',
+      'Limited Liability Partnership (LLP)',
+      'Sole Proprietorship'
+    ];
+  }
 
-    // Check legacy format
-    const legacyData = localStorage.getItem('master_data_entity_types');
-    if (legacyData) {
-      try {
-        const parsed = JSON.parse(legacyData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          console.log('⚠️ Found legacy entity types, treating as user data');
-          return parsed;
-        }
-      } catch (error) {
-        console.error('❌ Failed to parse legacy entity types:', error);
+  static async saveEntityTypes(types: string[]): Promise<boolean> {
+    try {
+      const items = types.map(name => ({ name, is_user_created: true }));
+      const success = await supabaseMasterDataService.saveEntityTypes(items);
+      
+      if (success) {
+        console.log('✅ EntityTypeService: Saved entity types to Supabase:', types.length);
       }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ EntityTypeService: Error saving entity types:', error);
+      return false;
     }
-
-    console.log('📦 No user data found, using emergency fallback entity types');
-    return emergencyFallbackEntityTypes;
   }
 }

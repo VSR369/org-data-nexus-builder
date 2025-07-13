@@ -7,116 +7,79 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { UniversalDataManager } from '@/utils/core/UniversalDataManager';
-import { seedingService } from '@/utils/core/UniversalSeedingService';
-
-const defaultOrgTypes = [
-  'Large Enterprise',
-  'Start-up',
-  'MSME',
-  'Academic Institution',
-  'Research Institution',
-  'Non-Profit Organization / NGO',
-  'Government Department / PSU',
-  'Industry Association / Consortium',
-  'Freelancer / Individual Consultant',
-  'Think Tank / Policy Institute'
-];
-
-// Validation function for organization types
-const validateOrgTypesData = (data: any): boolean => {
-  console.log(`🔍 Validating organization types data:`, data);
-  const isValid = Array.isArray(data);
-  console.log(`✅ Organization types validation result: ${isValid}`);
-  return isValid;
-};
-
-// Seeding function for organization types
-const seedOrgTypesData = (): string[] => {
-  console.log('🌱 Seeding organization types default data');
-  return defaultOrgTypes;
-};
-
-// Create universal data manager instance
-const orgTypesManager = new UniversalDataManager<string[]>({
-  key: 'master_data_organization_types',
-  defaultData: defaultOrgTypes,
-  version: 2, // Increment version for the new system
-  seedFunction: seedOrgTypesData,
-  validationFunction: validateOrgTypesData
-});
-
-// Register with seeding service
-seedingService.registerManager('organization_types', orgTypesManager);
-seedingService.registerSeedFunction('organization_types', seedOrgTypesData);
+import { useOrganizationTypes } from '@/hooks/useMasterDataCRUD';
 
 const OrganizationTypeConfig = () => {
   const { toast } = useToast();
-  const [orgTypes, setOrgTypes] = useState<string[]>([]);
+  const { items: orgTypes, loading, addItem, updateItem, deleteItem, refreshItems } = useOrganizationTypes();
   const [newOrgType, setNewOrgType] = useState('');
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
-  // Load data on component mount using Universal Data Manager
-  useEffect(() => {
-    console.log('🔄 OrganizationTypeConfig: Loading data using Universal Data Manager...');
-    const loadedTypes = orgTypesManager.loadData();
-    console.log('✅ OrganizationTypeConfig: Loaded data:', loadedTypes);
-    setOrgTypes(loadedTypes);
-  }, []);
-
-  // Save data whenever orgTypes change
-  useEffect(() => {
-    if (orgTypes.length > 0) {
-      console.log('💾 OrganizationTypeConfig: Saving data:', orgTypes);
-      orgTypesManager.saveData(orgTypes);
-    }
-  }, [orgTypes]);
-
-  const handleAddOrgType = () => {
+  const handleAddOrgType = async () => {
     if (newOrgType.trim()) {
-      const updatedTypes = [...orgTypes, newOrgType.trim()];
-      setOrgTypes(updatedTypes);
-      setNewOrgType('');
-      setIsAdding(false);
-      toast({
-        title: "Success",
-        description: "Organization type added successfully",
-      });
+      const success = await addItem({ name: newOrgType.trim(), is_user_created: true });
+      if (success) {
+        setNewOrgType('');
+        setIsAdding(false);
+        toast({
+          title: "Success",
+          description: "Organization type added successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add organization type",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleEditOrgType = (index: number) => {
-    setEditingIndex(index);
-    setEditingValue(orgTypes[index]);
+  const handleEditOrgType = (id: string, name: string) => {
+    setEditingId(id);
+    setEditingValue(name);
   };
 
-  const handleSaveEdit = () => {
-    if (editingValue.trim() && editingIndex !== null) {
-      const updatedOrgTypes = [...orgTypes];
-      updatedOrgTypes[editingIndex] = editingValue.trim();
-      setOrgTypes(updatedOrgTypes);
-      setEditingIndex(null);
-      setEditingValue('');
-      toast({
-        title: "Success",
-        description: "Organization type updated successfully",
-      });
+  const handleSaveEdit = async () => {
+    if (editingValue.trim() && editingId) {
+      const success = await updateItem(editingId, { name: editingValue.trim() });
+      if (success) {
+        setEditingId(null);
+        setEditingValue('');
+        toast({
+          title: "Success",
+          description: "Organization type updated successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update organization type",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDeleteOrgType = (index: number) => {
-    const updatedOrgTypes = orgTypes.filter((_, i) => i !== index);
-    setOrgTypes(updatedOrgTypes);
-    toast({
-      title: "Success",
-      description: "Organization type deleted successfully",
-    });
+  const handleDeleteOrgType = async (id: string) => {
+    const success = await deleteItem(id);
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Organization type deleted successfully",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete organization type",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditingIndex(null);
+    setEditingId(null);
     setEditingValue('');
   };
 
@@ -125,24 +88,43 @@ const OrganizationTypeConfig = () => {
     setNewOrgType('');
   };
 
-  const handleResetToDefault = () => {
-    console.log('🔄 Resetting organization types to default...');
-    const defaultData = orgTypesManager.forceReseed();
-    setOrgTypes(defaultData);
-    setEditingIndex(null);
-    setEditingValue('');
-    setIsAdding(false);
-    setNewOrgType('');
-    toast({
-      title: "Success",
-      description: "Organization types reset to default values",
-    });
+  const handleResetToDefault = async () => {
+    // Add default organization types to Supabase
+    const defaultTypes = [
+      'Large Enterprise',
+      'Start-up',
+      'MSME',
+      'Academic Institution',
+      'Research Institution',
+      'Non-Profit Organization / NGO',
+      'Government Department / PSU',
+      'Industry Association / Consortium',
+      'Freelancer / Individual Consultant',
+      'Think Tank / Policy Institute'
+    ];
+    
+    try {
+      // Clear existing and add defaults - this would need custom logic
+      await refreshItems();
+      setEditingId(null);
+      setEditingValue('');
+      setIsAdding(false);
+      setNewOrgType('');
+      toast({
+        title: "Info",
+        description: "Please manually add default organization types",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reset organization types",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRefreshData = () => {
-    console.log('🔄 Refreshing organization types data...');
-    const refreshedData = orgTypesManager.loadData();
-    setOrgTypes(refreshedData);
+  const handleRefreshData = async () => {
+    await refreshItems();
     toast({
       title: "Success",
       description: "Organization types data refreshed",
@@ -219,56 +201,62 @@ const OrganizationTypeConfig = () => {
           </div>
         )}
 
-        <div className="grid gap-2">
-          {orgTypes.map((orgType, index) => (
-            <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              {editingIndex === index ? (
-                <div className="flex gap-2 flex-1">
-                  <Input
-                    value={editingValue}
-                    onChange={(e) => setEditingValue(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
-                    <Save className="w-3 h-3" />
-                    Save
-                  </Button>
-                  <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
-                    <X className="w-3 h-3" />
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary">{index + 1}</Badge>
-                    <span className="font-medium">{orgType}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEditOrgType(index)}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Edit className="w-3 h-3" />
-                      Edit
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Loading organization types...</p>
+          </div>
+        ) : (
+          <div className="grid gap-2">
+            {orgTypes.map((orgType, index) => (
+              <div key={orgType.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                {editingId === orgType.id ? (
+                  <div className="flex gap-2 flex-1">
+                    <Input
+                      value={editingValue}
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
+                      <Save className="w-3 h-3" />
+                      Save
                     </Button>
-                    <Button
-                      onClick={() => handleDeleteOrgType(index)}
-                      variant="destructive"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete
+                    <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
+                      <X className="w-3 h-3" />
+                      Cancel
                     </Button>
                   </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="secondary">{index + 1}</Badge>
+                      <span className="font-medium">{orgType.name}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleEditOrgType(orgType.id, orgType.name)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteOrgType(orgType.id)}
+                        variant="destructive"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

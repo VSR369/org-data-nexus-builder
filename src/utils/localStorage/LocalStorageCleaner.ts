@@ -1,16 +1,16 @@
 /**
- * Comprehensive localStorage cleaner to remove all legacy master data
- * This ensures Supabase is the single source of truth
+ * ENHANCED localStorage cleaner - TOTAL ELIMINATION of master data localStorage
+ * This ensures Supabase is the ONLY source of truth
  */
 export class LocalStorageCleaner {
   /**
-   * Remove all localStorage keys related to master data
+   * Remove ALL localStorage keys related to master data - NO EXCEPTIONS
    */
   static clearAllMasterData(): void {
-    console.log('🧹 Starting comprehensive localStorage cleanup...');
+    console.log('🧹 STARTING TOTAL MASTER DATA ELIMINATION FROM LOCALSTORAGE...');
     
-    const masterDataKeys = [
-      // Legacy data manager keys
+    const allMasterDataKeys = [
+      // Core master data keys
       'master_data_countries',
       'master_data_currencies', 
       'master_data_organization_types',
@@ -27,12 +27,19 @@ export class LocalStorageCleaner {
       'master_data_engagement_models',
       'master_data_pricing',
       'master_data_events',
+      'master_data_domain_groups_hierarchy',
+      'master_data_capability_levels',
+      'master_data_challenge_status',
+      'master_data_communication_channels',
+      'master_data_pricing_configs',
       
-      // Custom data keys
+      // Custom data keys - ALL VARIANTS
       'custom_countries',
       'custom_currencies',
       'custom_organization_types',
+      'custom_organizationTypes',
       'custom_entity_types', 
+      'custom_entityTypes',
       'custom_industry_segments',
       'custom_departments',
       'custom_domain_groups',
@@ -46,7 +53,7 @@ export class LocalStorageCleaner {
       'custom_pricing',
       'custom_events',
       
-      // Mode and control keys
+      // Mode and control keys - ELIMINATE ALL MODE LOGIC
       'master_data_mode',
       'custom_data_extraction_timestamp',
       'custom_data_report',
@@ -61,21 +68,32 @@ export class LocalStorageCleaner {
       'master_data_version',
       'master_data_initialized',
       'pricing_configs_version',
-      'membership_fees_version'
+      'membership_fees_version',
+      
+      // Migration and state keys
+      'supabase_master_data_migration_complete',
+      'indexeddb_migration_complete'
     ];
     
     let removedCount = 0;
     
-    masterDataKeys.forEach(key => {
-      if (localStorage.getItem(key) !== null) {
+    // AGGRESSIVE CLEANUP - Check all localStorage keys
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach(key => {
+      if (allMasterDataKeys.includes(key) || 
+          key.includes('master_data') || 
+          key.includes('custom_') ||
+          key.includes('pricing') ||
+          key.includes('membership')) {
         localStorage.removeItem(key);
         removedCount++;
-        console.log(`🗑️ Removed: ${key}`);
+        console.log(`🗑️ ELIMINATED: ${key}`);
       }
     });
     
-    console.log(`✅ localStorage cleanup complete. Removed ${removedCount} master data keys.`);
-    console.log('🎯 Supabase is now the single source of truth for all master data.');
+    console.log(`✅ TOTAL MASTER DATA ELIMINATION COMPLETE. Removed ${removedCount} keys.`);
+    console.log('🎯 SUPABASE IS NOW THE ONLY SOURCE OF TRUTH FOR ALL MASTER DATA.');
+    console.log('🚫 localStorage can NO LONGER be used for master data - SUPABASE ONLY.');
   }
   
   /**

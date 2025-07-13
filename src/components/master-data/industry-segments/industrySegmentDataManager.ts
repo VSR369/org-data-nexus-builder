@@ -1,7 +1,7 @@
 
 import { LegacyDataManager } from '@/utils/core/DataManager';
 import { IndustrySegmentData } from '@/types/industrySegments';
-import { IndustrySegmentService } from '@/utils/masterData/industrySegmentService';
+// Industry segment service removed - use Supabase hooks instead
 
 const defaultIndustrySegmentData: IndustrySegmentData = {
   industrySegments: [
@@ -28,8 +28,8 @@ class IndustrySegmentDataManager extends LegacyDataManager<IndustrySegmentData> 
     // CHECK FOR CUSTOM-ONLY MODE FIRST
     const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
     if (isCustomMode) {
-      console.log('🎯 Custom-only mode detected, using IndustrySegmentService...');
-      return IndustrySegmentService.getIndustrySegments();
+      console.log('⚠️ Custom mode deprecated - use Supabase hooks instead');
+      return defaultIndustrySegmentData;
     }
     
     const rawData = super.loadData();
@@ -56,8 +56,7 @@ class IndustrySegmentDataManager extends LegacyDataManager<IndustrySegmentData> 
     // CHECK FOR CUSTOM-ONLY MODE FIRST
     const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
     if (isCustomMode) {
-      console.log('🎯 Custom-only mode detected, using IndustrySegmentService for save...');
-      IndustrySegmentService.saveIndustrySegments(data);
+      console.log('⚠️ Custom mode deprecated - use Supabase hooks instead');
       return;
     }
     

@@ -4,47 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { LegacyDataManager } from '@/utils/core/DataManager';
-import { EntityTypesRestorer } from '@/utils/entityTypesRestorer';
-
-const entityTypesDataManager = new LegacyDataManager<string[]>({
-  key: 'master_data_entity_types',
-  defaultData: ['Commercial', 'Non-Profit Organization', 'Society', 'Trust'],
-  version: 1
-});
+import { useEntityTypes } from '@/hooks/useMasterDataCRUD';
 
 const EntityTypeConfig = () => {
-  const [entityTypes, setEntityTypes] = useState<string[]>([]);
   const [newEntityType, setNewEntityType] = useState('');
   const { toast } = useToast();
-
-  // Load data on component mount with restoration
-  useEffect(() => {
-    // First run restoration to ensure data is properly formatted
-    const restorationResult = EntityTypesRestorer.restoreEntityTypes();
-    console.log('🔄 Entity Types restoration result:', restorationResult);
-    
-    // Then fetch the restored data
-    fetchEntityTypes();
-  }, []);
-
-  // Save data whenever entityTypes change
-  useEffect(() => {
-    if (entityTypes.length > 0) {
-      entityTypesDataManager.saveData(entityTypes);
-    }
-  }, [entityTypes]);
+  const { items: entityTypes, loading, addItem, updateItem, deleteItem, refreshItems } = useEntityTypes();
 
   const fetchEntityTypes = async () => {
-    const loadedEntityTypes = entityTypesDataManager.loadData();
-    console.log("Entity types from local storage:", loadedEntityTypes);
-    setEntityTypes(loadedEntityTypes || ['Commercial', 'Non-Profit Organization', 'Society', 'Trust']);
+    await refreshItems();
   }
 
   const saveEntityType = async (newEntityType: string) => {
     try {
-      const currentEntityTypes = entityTypesDataManager.loadData() || [];
-      if (currentEntityTypes.includes(newEntityType.trim())) {
+      if (entityTypes.some(item => item.name === newEntityType.trim())) {
         toast({
           title: "Duplicate Entry",
           description: "This entity type already exists.",
@@ -53,15 +26,21 @@ const EntityTypeConfig = () => {
         return;
       }
       
-      const updatedEntityTypes = [...currentEntityTypes, newEntityType.trim()];
-      entityTypesDataManager.saveData(updatedEntityTypes);
-      setEntityTypes(updatedEntityTypes);
+      const success = await addItem({ name: newEntityType.trim(), is_user_created: true });
       
-      toast({
-        title: "Success",
-        description: "Entity type saved successfully.",
-        variant: "default",
-      });
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Entity type saved successfully.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save entity type.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error saving entity type:', error);
       toast({
@@ -72,18 +51,23 @@ const EntityTypeConfig = () => {
     }
   }
 
-  const deleteEntityType = async (entityType: string) => {
+  const deleteEntityType = async (entityTypeId: string) => {
     try {
-      const currentEntityTypes = entityTypesDataManager.loadData() || [];
-      const updatedEntityTypes = currentEntityTypes.filter(et => et !== entityType);
-      entityTypesDataManager.saveData(updatedEntityTypes);
-      setEntityTypes(updatedEntityTypes);
+      const success = await deleteItem(entityTypeId);
       
-      toast({
-        title: "Success",
-        description: "Entity type deleted successfully.",
-        variant: "default",
-      });
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Entity type deleted successfully.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete entity type.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error deleting entity type:', error);
       toast({
@@ -107,9 +91,9 @@ const EntityTypeConfig = () => {
     }
   };
 
-  const removeEntityType = async (entityType: string) => {
-    console.log("Removing entity type:", entityType);
-    await deleteEntityType(entityType);
+  const removeEntityType = async (entityTypeId: string) => {
+    console.log("Removing entity type:", entityTypeId);
+    await deleteEntityType(entityTypeId);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -153,22 +137,30 @@ const EntityTypeConfig = () => {
           <CardDescription>Manage existing entity types.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="list-none space-y-2">
-            {entityTypes.map((entityType, index) => (
-              <li key={`${entityType}-${index}`} className="flex items-center justify-between py-2 border-b border-gray-200">
-                <span>{entityType}</span>
-                <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-          
-          {entityTypes.length === 0 && (
+          {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No entity types configured.</p>
-              <p className="text-sm">Add entity types using the form above.</p>
+              <p>Loading entity types...</p>
             </div>
+          ) : (
+            <>
+              <ul className="list-none space-y-2">
+                {entityTypes.map((entityType) => (
+                  <li key={entityType.id} className="flex items-center justify-between py-2 border-b border-gray-200">
+                    <span>{entityType.name}</span>
+                    <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              
+              {entityTypes.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No entity types configured.</p>
+                  <p className="text-sm">Add entity types using the form above.</p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

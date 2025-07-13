@@ -7,50 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { LegacyDataManager } from '@/utils/core/DataManager';
-
-const challengeStatusDataManager = new LegacyDataManager<string[]>({
-  key: 'master_data_challenge_status',
-  defaultData: [
-    'Challenge Identification',
-    'Challenge Creation',
-    'Challenge Curation',
-    'Challenge Review',
-    'Challenge Modification / Refinement',
-    'Challenge Rejection',
-    'Challenge Approved for Publishing',
-    'Challenge Published',
-    'Solution Collection Phase',
-    'Challenge Evaluation',
-    'Challenge Closed'
-  ],
-  version: 1
-});
+import { useChallengeStatuses } from '@/hooks/useMasterDataCRUD';
 
 const ChallengeStatusConfig = () => {
   const { toast } = useToast();
-  const [statuses, setStatuses] = useState<string[]>([]);
+  const { items: statuses, loading, addItem, updateItem, deleteItem, refreshItems } = useChallengeStatuses();
   const [newStatus, setNewStatus] = useState('');
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
-  // Load data on component mount
-  useEffect(() => {
-    const loadedStatuses = challengeStatusDataManager.loadData();
-    setStatuses(loadedStatuses);
-  }, []);
-
-  // Save data whenever statuses change
-  useEffect(() => {
-    if (statuses.length > 0) {
-      challengeStatusDataManager.saveData(statuses);
-    }
-  }, [statuses]);
-
-  const handleAddStatus = () => {
+  const handleAddStatus = async () => {
     if (newStatus.trim()) {
-      if (statuses.includes(newStatus.trim())) {
+      if (statuses.some(status => status.name === newStatus.trim())) {
         toast({
           title: "Error",
           description: "This status already exists.",
@@ -58,47 +27,68 @@ const ChallengeStatusConfig = () => {
         });
         return;
       }
-      setStatuses([...statuses, newStatus.trim()]);
-      setNewStatus('');
-      setIsAdding(false);
-      toast({
-        title: "Success",
-        description: "Challenge status added successfully",
-      });
+      
+      const success = await addItem({ name: newStatus.trim(), is_user_created: true });
+      if (success) {
+        setNewStatus('');
+        setIsAdding(false);
+        toast({
+          title: "Success",
+          description: "Challenge status added successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add challenge status",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleEditStatus = (index: number) => {
-    setEditingIndex(index);
-    setEditingValue(statuses[index]);
+  const handleEditStatus = (id: string, name: string) => {
+    setEditingId(id);
+    setEditingValue(name);
   };
 
-  const handleSaveEdit = () => {
-    if (editingValue.trim() && editingIndex !== null) {
-      const updatedStatuses = [...statuses];
-      updatedStatuses[editingIndex] = editingValue.trim();
-      setStatuses(updatedStatuses);
-      setEditingIndex(null);
-      setEditingValue('');
-      toast({
-        title: "Success",
-        description: "Challenge status updated successfully",
-      });
+  const handleSaveEdit = async () => {
+    if (editingValue.trim() && editingId) {
+      const success = await updateItem(editingId, { name: editingValue.trim() });
+      if (success) {
+        setEditingId(null);
+        setEditingValue('');
+        toast({
+          title: "Success",
+          description: "Challenge status updated successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update challenge status",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDeleteStatus = (index: number) => {
-    const statusToRemove = statuses[index];
-    const updatedStatuses = statuses.filter((_, i) => i !== index);
-    setStatuses(updatedStatuses);
-    toast({
-      title: "Success",
-      description: `${statusToRemove} deleted successfully`,
-    });
+  const handleDeleteStatus = async (id: string, name: string) => {
+    const success = await deleteItem(id);
+    if (success) {
+      toast({
+        title: "Success",
+        description: `${name} deleted successfully`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete challenge status",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditingIndex(null);
+    setEditingId(null);
     setEditingValue('');
   };
 
@@ -107,24 +97,11 @@ const ChallengeStatusConfig = () => {
     setNewStatus('');
   };
 
-  const resetToDefault = () => {
-    const defaultStatuses = [
-      'Challenge Identification',
-      'Challenge Creation',
-      'Challenge Curation',
-      'Challenge Review',
-      'Challenge Modification / Refinement',
-      'Challenge Rejection',
-      'Challenge Approved for Publishing',
-      'Challenge Published',
-      'Solution Collection Phase',
-      'Challenge Evaluation',
-      'Challenge Closed'
-    ];
-    setStatuses(defaultStatuses);
+  const resetToDefault = async () => {
+    await refreshItems();
     toast({
-      title: "Reset Complete",
-      description: "Challenge statuses have been reset to the default workflow.",
+      title: "Info",
+      description: "Data refreshed. Please manually add default statuses if needed.",
     });
   };
 
@@ -219,68 +196,76 @@ const ChallengeStatusConfig = () => {
             </div>
           )}
 
-          <div className="grid gap-2">
-            {statuses.map((status, index) => {
-              const phase = getStatusPhase(status);
-              const phaseColor = getPhaseColor(phase);
-              
-              return (
-                <div key={index} className={`flex items-center justify-between p-3 border rounded-lg ${phaseColor} hover:bg-muted/50 transition-colors`}>
-                  {editingIndex === index ? (
-                    <div className="flex gap-2 flex-1">
-                      <Input
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
-                        <Save className="w-3 h-3" />
-                        Save
-                      </Button>
-                      <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
-                        <X className="w-3 h-3" />
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">{index + 1}</Badge>
-                        <span className="font-medium">{status}</span>
-                        <Badge variant="outline" className="capitalize">{phase}</Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleEditStatus(index)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="w-3 h-3" />
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteStatus(index)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {statuses.length === 0 && (
+          {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No challenge statuses configured.</p>
-              <p className="text-sm mt-1">Click "Reset to Default" to load the standard workflow statuses.</p>
+              <p>Loading challenge statuses...</p>
             </div>
+          ) : (
+            <>
+              <div className="grid gap-2">
+                {statuses.map((status, index) => {
+                  const phase = getStatusPhase(status.name);
+                  const phaseColor = getPhaseColor(phase);
+                  
+                  return (
+                    <div key={status.id} className={`flex items-center justify-between p-3 border rounded-lg ${phaseColor} hover:bg-muted/50 transition-colors`}>
+                      {editingId === status.id ? (
+                        <div className="flex gap-2 flex-1">
+                          <Input
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button onClick={handleSaveEdit} size="sm" className="flex items-center gap-1">
+                            <Save className="w-3 h-3" />
+                            Save
+                          </Button>
+                          <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex items-center gap-1">
+                            <X className="w-3 h-3" />
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary">{index + 1}</Badge>
+                            <span className="font-medium">{status.name}</span>
+                            <Badge variant="outline" className="capitalize">{phase}</Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleEditStatus(status.id, status.name)}
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="w-3 h-3" />
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteStatus(status.id, status.name)}
+                              variant="destructive"
+                              size="sm"
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {statuses.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No challenge statuses configured.</p>
+                  <p className="text-sm mt-1">Add challenge statuses using the form above.</p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

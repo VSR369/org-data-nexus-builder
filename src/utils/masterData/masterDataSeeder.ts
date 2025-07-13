@@ -1,5 +1,5 @@
 
-import { CurrencyService } from './currencyService';
+// Currency service removed - use Supabase hooks instead
 import { EntityTypeService } from './entityTypeService';
 import { ValidationService } from './validationService';
 import { DevUtils } from './devUtils';
@@ -7,30 +7,17 @@ import { Currency } from './interfaces';
 
 export class MasterDataSeeder {
   static seedAllMasterData() {
-    console.log('🌱 Starting master data initialization...');
-    
-    // Load currencies - NEVER overwrite user data
-    let currencies = CurrencyService.getCurrencies();
-    console.log('💰 Loaded currencies from storage:', currencies.length);
-    
-    // Load entity types - NEVER overwrite user data  
-    let entityTypes = EntityTypeService.getEntityTypesSync();
-    console.log('🏢 Entity types loaded:', entityTypes.length);
-    
-    console.log('✅ Master data initialization complete (user data preserved)');
-    
-    return {
-      currencies,
-      entityTypes
-    };
+    console.log('🌱 DEPRECATED: MasterDataSeeder - Use Supabase hooks instead');
+    return { currencies: [], entityTypes: [] };
   }
   
   static getCurrencies(): Currency[] {
-    return CurrencyService.getCurrencies();
+    console.log('⚠️ DEPRECATED: Use useCurrencies hook instead');
+    return [];
   }
   
   static saveCurrencies(currencies: Currency[]): void {
-    CurrencyService.saveCurrencies(currencies);
+    console.log('⚠️ DEPRECATED: Use useCurrencies hook instead');
   }
   
   static getEntityTypes(): string[] {
@@ -38,14 +25,14 @@ export class MasterDataSeeder {
   }
   
   static getCurrencyByCountry(country: string): Currency | null {
-    return CurrencyService.getCurrencyByCountry(country);
+    console.log('⚠️ DEPRECATED: Use useCurrencies hook instead');
+    return null;
   }
   
   static validateMasterDataIntegrity() {
     return ValidationService.validateMasterDataIntegrity();
   }
 
-  // FOR TESTING/DEVELOPMENT ONLY - Use with extreme caution
   static DANGEROUS_resetAllUserData(): void {
     DevUtils.DANGEROUS_resetAllUserData();
   }

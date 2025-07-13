@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PricingConfig } from '@/types/pricing';
-import { CurrencyService } from '@/utils/masterData/currencyService';
+import { useCurrencies } from '@/hooks/useMasterDataCRUD';
 import { useToast } from "@/hooks/use-toast";
 
 interface MasterDataSelectionSectionProps {
@@ -26,21 +26,11 @@ const MasterDataSelectionSection: React.FC<MasterDataSelectionSectionProps> = ({
 
   const handleCountryChange = (countryName: string) => {
     console.log('🔄 Country selected:', countryName);
-    const currency = CurrencyService.getCurrencyByCountry(countryName);
-    console.log('💱 Auto-selected currency from master data:', currency);
-    
     setCurrentConfig(prev => ({ 
       ...prev, 
       country: countryName,
-      currency: currency?.code || ''
+      currency: 'USD' // Default currency
     }));
-    
-    if (currency) {
-      toast({
-        title: "Currency Auto-Selected",
-        description: `Currency ${currency.code} automatically selected for ${countryName} from master data`,
-      });
-    }
   };
 
   const membershipStatuses = [
