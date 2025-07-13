@@ -81,11 +81,11 @@ export const PricingConfigurationGrid: React.FC<PricingConfigurationGridProps> =
         <div key={engagementModel}>
           <div className="flex items-center gap-2 mb-4">
             <h3 className="text-lg font-semibold">{engagementModel}</h3>
-            <Badge variant="outline">{configs.length} configurations</Badge>
+            <Badge variant="outline">{(configs as any[]).length} configurations</Badge>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {configs.map((config) => (
+            {(configs as any[]).map((config) => (
               <Card key={config.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">

@@ -78,7 +78,7 @@ export const PricingConfigurationStats: React.FC<PricingConfigurationStatsProps>
     icon: React.ComponentType<any>;
     description?: string;
     color?: string;
-  }) => (
+  }): React.ReactElement => (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
@@ -117,7 +117,7 @@ export const PricingConfigurationStats: React.FC<PricingConfigurationStatsProps>
                     className="w-16 h-2" 
                   />
                   <Badge variant="outline" className="text-xs">
-                    {count}
+                    {count as number}
                   </Badge>
                 </div>
               </div>

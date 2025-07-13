@@ -68,6 +68,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <SeekerMembershipFeeConfig />;
       case 'engagement-models':
         return <EngagementModelsConfig />;
+      case 'pricing':
+        return <EngagementPricingManager />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
       case 'global-cache-manager':

@@ -95,45 +95,58 @@ export const usePricingConfiguration = () => {
     try {
       setLoading(true);
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('pricing_configurations_detailed')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Apply filters
+      if (error) throw error;
+
+      // Apply client-side filtering for now to avoid TypeScript issues
+      let filteredData = data || [];
+
       if (filters.search) {
-        query = query.or(`config_name.ilike.%${filters.search}%,country_name.ilike.%${filters.search}%,organization_type.ilike.%${filters.search}%`);
+        const searchTerm = filters.search.toLowerCase();
+        filteredData = filteredData.filter((config: any) => 
+          config.config_name?.toLowerCase().includes(searchTerm) ||
+          config.country_name?.toLowerCase().includes(searchTerm) ||
+          config.organization_type?.toLowerCase().includes(searchTerm)
+        );
       }
 
       if (filters.country.length > 0) {
-        query = query.in('country_id', filters.country);
+        filteredData = filteredData.filter((config: any) => 
+          filters.country.includes(config.country_id)
+        );
       }
 
       if (filters.engagementModel.length > 0) {
-        query = query.in('engagement_model_id', filters.engagementModel);
+        filteredData = filteredData.filter((config: any) => 
+          filters.engagementModel.includes(config.engagement_model_id)
+        );
       }
 
       if (filters.organizationType.length > 0) {
-        query = query.in('organization_type_id', filters.organizationType);
+        filteredData = filteredData.filter((config: any) => 
+          filters.organizationType.includes(config.organization_type_id)
+        );
       }
 
       if (filters.membershipStatus) {
-        query = query.eq('membership_status', filters.membershipStatus);
+        filteredData = filteredData.filter((config: any) => 
+          config.membership_status === filters.membershipStatus
+        );
       }
 
       if (filters.status) {
         if (filters.status === 'active') {
-          query = query.eq('is_active', true);
+          filteredData = filteredData.filter((config: any) => config.is_active === true);
         } else if (filters.status === 'inactive') {
-          query = query.eq('is_active', false);
+          filteredData = filteredData.filter((config: any) => config.is_active === false);
         }
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setConfigurations(data || []);
+      setConfigurations(filteredData);
     } catch (error) {
       console.error('Error loading configurations:', error);
       toast({
@@ -241,7 +254,7 @@ export const usePricingConfiguration = () => {
     if (masterData.countries.length > 0) {
       loadConfigurations();
     }
-  }, [filters.search, filters.country, filters.engagementModel, filters.organizationType, filters.membershipStatus, filters.status, masterData.countries.length]);
+  }, [filters, masterData.countries.length]);
 
   return {
     configurations,
