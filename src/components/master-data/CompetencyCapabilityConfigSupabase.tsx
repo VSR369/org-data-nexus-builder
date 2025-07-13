@@ -54,6 +54,7 @@ const CompetencyCapabilityConfigSupabase = () => {
         .order('name', { ascending: true });
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Competency Capabilities loaded from Supabase:', data);
       setCapabilities(data || []);
     } catch (error) {
       console.error('Error loading competency capabilities:', error);
@@ -79,6 +80,7 @@ const CompetencyCapabilityConfigSupabase = () => {
           });
 
         if (error) throw error;
+        console.log('✅ CRUD TEST - Competency Capability created:', newCapability);
         
         setNewCapability({ name: '', description: '', category: '' });
         loadCapabilities();
@@ -123,6 +125,7 @@ const CompetencyCapabilityConfigSupabase = () => {
           .eq('id', editingId);
 
         if (error) throw error;
+        console.log('✅ CRUD TEST - Competency Capability updated:', { id: editingId, name: editingName });
         
         setEditingId(null);
         setEditingName('');
@@ -159,6 +162,7 @@ const CompetencyCapabilityConfigSupabase = () => {
         .eq('id', id);
 
       if (error) throw error;
+      console.log('✅ CRUD TEST - Competency Capability deleted:', id);
       
       loadCapabilities();
       toast({
