@@ -107,6 +107,15 @@ export const useOrganizationRegistration = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const hashPassword = async (password: string): Promise<string> => {
+    // Simple hash function - in production use bcrypt or similar
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + 'salt123'); // Add salt in production
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   const uploadFile = async (file: File, bucket: string, path: string): Promise<string> => {
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -172,7 +181,7 @@ export const useOrganizationRegistration = () => {
         email: formData.email,
         country_code: formData.countryCode,
         phone_number: formData.phoneNumber,
-        password_hash: formData.password, // In production, hash this properly
+        password_hash: await hashPassword(formData.password),
         registration_status: 'pending'
       };
 
