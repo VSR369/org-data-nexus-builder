@@ -551,10 +551,8 @@ export type Database = {
       }
       master_reward_types: {
         Row: {
-          amount: number | null
           created_at: string | null
           created_by: string | null
-          currency: string | null
           description: string | null
           id: string
           is_user_created: boolean | null
@@ -564,10 +562,8 @@ export type Database = {
           version: number | null
         }
         Insert: {
-          amount?: number | null
           created_at?: string | null
           created_by?: string | null
-          currency?: string | null
           description?: string | null
           id?: string
           is_user_created?: boolean | null
@@ -577,10 +573,8 @@ export type Database = {
           version?: number | null
         }
         Update: {
-          amount?: number | null
           created_at?: string | null
           created_by?: string | null
-          currency?: string | null
           description?: string | null
           id?: string
           is_user_created?: boolean | null
