@@ -41,8 +41,8 @@ export const usePricingConfiguration = () => {
     country: [],
     engagementModel: [],
     organizationType: [],
-    membershipStatus: '',
-    status: ''
+    membershipStatus: 'all',
+    status: 'all'
   });
 
   const { toast } = useToast();
@@ -132,13 +132,13 @@ export const usePricingConfiguration = () => {
         );
       }
 
-      if (filters.membershipStatus) {
+      if (filters.membershipStatus && filters.membershipStatus !== 'all') {
         filteredData = filteredData.filter((config: any) => 
           config.membership_status === filters.membershipStatus
         );
       }
 
-      if (filters.status) {
+      if (filters.status && filters.status !== 'all') {
         if (filters.status === 'active') {
           filteredData = filteredData.filter((config: any) => config.is_active === true);
         } else if (filters.status === 'inactive') {

@@ -59,8 +59,8 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
       country: [],
       engagementModel: [],
       organizationType: [],
-      membershipStatus: '',
-      status: ''
+      membershipStatus: 'all',
+      status: 'all'
     });
   };
 
@@ -69,8 +69,8 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
     ...filters.country,
     ...filters.engagementModel,
     ...filters.organizationType,
-    filters.membershipStatus,
-    filters.status
+    filters.membershipStatus !== 'all' ? filters.membershipStatus : '',
+    filters.status !== 'all' ? filters.status : ''
   ].filter(Boolean).length;
 
   return (
@@ -165,7 +165,7 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                     <SelectItem value="Member">Member</SelectItem>
                     <SelectItem value="Non-Member">Non-Member</SelectItem>
                   </SelectContent>
@@ -181,7 +181,7 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
