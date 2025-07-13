@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '../components/AppSidebar';
-import OrganizationRegistrationForm from '../components/forms/OrganizationRegistrationForm';
+import { OrganizationRegistrationForm } from '../components/organization/OrganizationRegistrationForm';
 
 const OrganizationRegistration = () => {
   const [activeSection, setActiveSection] = useState('');
