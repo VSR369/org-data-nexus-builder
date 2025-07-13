@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SupabaseWizard from './wizard/SupabaseWizard';
 import ExcelUploadSupabase from './upload/ExcelUploadSupabase';
 import DomainGroupHierarchyDisplay from './components/DomainGroupHierarchyDisplay';
+import DomainGroupHierarchyForm from './components/DomainGroupHierarchyForm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -243,6 +244,53 @@ const DomainGroupsConfigSupabase = () => {
     }
   };
 
+  const handleSaveHierarchy = async (hierarchyData: any) => {
+    try {
+      // Build hierarchy structure with categories and sub-categories
+      const categories = hierarchyData.categories.map((category: any) => ({
+        id: crypto.randomUUID(),
+        name: category.name.trim(),
+        description: category.description?.trim() || undefined,
+        subCategories: category.subCategories.map((sub: any) => ({
+          id: crypto.randomUUID(),
+          name: sub.name.trim(),
+          description: sub.description?.trim() || undefined
+        }))
+      }));
+
+      // Create Domain Group with hierarchy
+      const { error } = await supabase
+        .from('master_domain_groups')
+        .insert([{
+          name: hierarchyData.name.trim(),
+          description: hierarchyData.description?.trim() || null,
+          industry_segment_id: hierarchyData.industry_segment_id || null,
+          is_active: true,
+          hierarchy: { categories }
+        }]);
+
+      if (error) throw error;
+
+      const totalSubCategories = categories.reduce((sum: number, cat: any) => sum + cat.subCategories.length, 0);
+
+      toast({
+        title: "Success!",
+        description: `Created domain group "${hierarchyData.name}" with ${categories.length} categories and ${totalSubCategories} sub-categories`,
+      });
+
+      setShowDirectEntry(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error saving hierarchy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save domain group hierarchy",
+        variant: "destructive",
+      });
+      throw error; // Re-throw to let the form handle the error state
+    }
+  };
+
   const exportData = async () => {
     try {
       const exportData = {
@@ -422,91 +470,11 @@ const DomainGroupsConfigSupabase = () => {
 
       {/* Direct Entry Form */}
       {showDirectEntry && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Domain Group</CardTitle>
-            <CardDescription>Create a new domain group with hierarchical structure</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Domain Groups ({domainGroups.length})</h3>
-              <Button 
-                onClick={() => setIsAdding(true)} 
-                disabled={isAdding}
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Domain Group
-              </Button>
-            </div>
-
-            {isAdding && (
-              <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
-                <div className="flex-1 space-y-2">
-                  <div>
-                    <Label htmlFor="new-domain-group-name">Domain Group Name</Label>
-                    <Input
-                      id="new-domain-group-name"
-                      value={newDomainGroup.name}
-                      onChange={(e) => setNewDomainGroup({...newDomainGroup, name: e.target.value})}
-                      placeholder="Enter domain group name"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-domain-group-description">Description</Label>
-                    <Textarea
-                      id="new-domain-group-description"
-                      value={newDomainGroup.description}
-                      onChange={(e) => setNewDomainGroup({...newDomainGroup, description: e.target.value})}
-                      placeholder="Enter description (optional)"
-                      className="mt-1"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-domain-group-segment">Industry Segment (Optional)</Label>
-                    <Select
-                      value={newDomainGroup.industry_segment_id}
-                      onValueChange={(value) => setNewDomainGroup({...newDomainGroup, industry_segment_id: value === 'none' ? '' : value})}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select industry segment (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Industry Segment</SelectItem>
-                        {industrySegments.map((segment) => (
-                          <SelectItem key={segment.id} value={segment.id}>
-                            {segment.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 justify-end">
-                  <Button 
-                    onClick={handleAddDomainGroup}
-                    disabled={!newDomainGroup.name.trim()}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setIsAdding(false);
-                      setNewDomainGroup({ name: '', description: '', industry_segment_id: '', is_active: true });
-                    }}
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <DomainGroupHierarchyForm
+          industrySegments={industrySegments}
+          onSave={handleSaveHierarchy}
+          onCancel={() => setShowDirectEntry(false)}
+        />
       )}
 
       {/* Domain Groups List */}
