@@ -104,6 +104,13 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.country_id || !formData.organization_type_id || !formData.entity_type_id || 
+        !formData.engagement_model_id || !formData.membership_status_id || !formData.unit_of_measure_id || 
+        !formData.base_value) {
+      return; // Form validation will show errors
+    }
+    
     const submitData = {
       ...formData,
       base_value: parseFloat(formData.base_value) || 0,
@@ -111,6 +118,9 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
       calculated_value: calculatedValue,
       effective_from: formData.effective_from?.toISOString().split('T')[0] || null,
       effective_to: formData.effective_to?.toISOString().split('T')[0] || null,
+      // Only include currency_id and billing_frequency_id if they have values
+      currency_id: formData.currency_id || null,
+      billing_frequency_id: formData.billing_frequency_id || null,
     };
 
     onSave(submitData);
@@ -153,7 +163,11 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
 
               <div className="space-y-2">
                 <Label htmlFor="country_id">Country *</Label>
-                <Select value={formData.country_id} onValueChange={(value) => setFormData(prev => ({ ...prev, country_id: value }))}>
+                <Select 
+                  value={formData.country_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, country_id: value }))}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
@@ -169,7 +183,11 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
 
               <div className="space-y-2">
                 <Label htmlFor="organization_type_id">Organization Type *</Label>
-                <Select value={formData.organization_type_id} onValueChange={(value) => setFormData(prev => ({ ...prev, organization_type_id: value }))}>
+                <Select 
+                  value={formData.organization_type_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, organization_type_id: value }))}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select organization type" />
                   </SelectTrigger>
@@ -185,7 +203,11 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
 
               <div className="space-y-2">
                 <Label htmlFor="entity_type_id">Entity Type *</Label>
-                <Select value={formData.entity_type_id} onValueChange={(value) => setFormData(prev => ({ ...prev, entity_type_id: value }))}>
+                <Select 
+                  value={formData.entity_type_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, entity_type_id: value }))}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select entity type" />
                   </SelectTrigger>
@@ -201,7 +223,11 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
 
               <div className="space-y-2">
                 <Label htmlFor="engagement_model_id">Engagement Model *</Label>
-                <Select value={formData.engagement_model_id} onValueChange={(value) => setFormData(prev => ({ ...prev, engagement_model_id: value }))}>
+                <Select 
+                  value={formData.engagement_model_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, engagement_model_id: value }))}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select engagement model" />
                   </SelectTrigger>
@@ -217,7 +243,11 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
 
               <div className="space-y-2">
                 <Label htmlFor="membership_status_id">Membership Status *</Label>
-                <Select value={formData.membership_status_id} onValueChange={(value) => setFormData(prev => ({ ...prev, membership_status_id: value }))}>
+                <Select 
+                  value={formData.membership_status_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, membership_status_id: value }))}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select membership status" />
                   </SelectTrigger>
@@ -245,7 +275,11 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="unit_of_measure_id">Unit of Measure *</Label>
-                  <Select value={formData.unit_of_measure_id} onValueChange={(value) => setFormData(prev => ({ ...prev, unit_of_measure_id: value }))}>
+                  <Select 
+                    value={formData.unit_of_measure_id} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, unit_of_measure_id: value }))}
+                    required
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select unit" />
                     </SelectTrigger>
@@ -271,10 +305,12 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
                       id="base_value"
                       type="number"
                       step="0.01"
+                      min="0"
                       value={formData.base_value}
                       onChange={(e) => setFormData(prev => ({ ...prev, base_value: e.target.value }))}
                       placeholder="0.00"
                       className="pl-10"
+                      required
                     />
                   </div>
                 </div>
@@ -440,7 +476,12 @@ export const PricingConfigurationDialog: React.FC<PricingConfigurationDialogProp
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading || !formData.country_id || !formData.organization_type_id || 
+                       !formData.entity_type_id || !formData.engagement_model_id || 
+                       !formData.membership_status_id || !formData.unit_of_measure_id || !formData.base_value}
+            >
               {loading ? 'Saving...' : (configuration ? 'Update Configuration' : 'Create Configuration')}
             </Button>
           </DialogFooter>
