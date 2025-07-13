@@ -24,6 +24,7 @@ import CustomDataManager from "./master-data/CustomDataManager";
 import DataProtectionPanel from "./master-data/DataProtectionPanel";
 import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
 import MigrationTester from "./MigrationTester";
+import MasterDataTableTester from "./master-data/MasterDataTableTester";
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -35,6 +36,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'table-tester':
+        return <MasterDataTableTester />;
       case 'migration-tester':
         return <MigrationTester />;
       case 'custom-data-manager':
@@ -44,25 +47,25 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'currencies':
         return <CurrencyConfigSupabase />;
       case 'industry-segments':
-        return <IndustrySegmentsConfig />;
+        return <IndustrySegmentsConfigSupabase />;
       case 'organization-types':
         return <OrganizationTypeConfigSupabase />;
       case 'entity-types':
-        return <EntityTypeConfig />;
+        return <EntityTypeConfigSupabase />;
       case 'departments':
-        return <DepartmentsConfig />;
+        return <DepartmentsConfigSupabase />;
       case 'domain-groups':
         return <DomainGroupsConfig />;
       case 'challenge-statuses':
-        return <ChallengeStatusConfig />;
+        return <ChallengeStatusConfigSupabase />;
       case 'solution-statuses':
-        return <SolutionStatusConfig />;
+        return <SolutionStatusConfigSupabase />;
       case 'competency-capabilities':
         return <CompetencyCapabilityConfig />;
       case 'communication-types':
-        return <CommunicationTypeConfig />;
+        return <CommunicationTypeConfigSupabase />;
       case 'reward-types':
-        return <RewardTypeConfig />;
+        return <RewardTypeConfigSupabase />;
       case 'seeker-membership-fee':
         return <SeekerMembershipFeeConfig />;
       case 'engagement-models':
