@@ -35,7 +35,7 @@ const CommunicationTypeConfig = () => {
   }, [channels, isInitialized]);
 
   const addChannel = () => {
-    if (newChannel.name && newChannel.link) {
+    if (newChannel.name.trim() && newChannel.link.trim()) {
       const channel: CommunicationChannel = {
         id: Date.now().toString(),
         name: newChannel.name,
@@ -65,10 +65,10 @@ const CommunicationTypeConfig = () => {
   };
 
   const handleSaveEdit = () => {
-    if (editingId) {
+    if (editingId && editingLink.trim()) {
       setChannels(prev => prev.map(channel => 
         channel.id === editingId 
-          ? { ...channel, link: editingLink, updatedAt: new Date().toISOString() }
+          ? { ...channel, link: editingLink.trim(), updatedAt: new Date().toISOString() }
           : channel
       ));
       setEditingId(null);
@@ -76,6 +76,12 @@ const CommunicationTypeConfig = () => {
       toast({
         title: "Success",
         description: "Communication channel updated successfully",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Link field is required and cannot be empty",
+        variant: "destructive"
       });
     }
   };
@@ -123,12 +129,13 @@ const CommunicationTypeConfig = () => {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="channel-link">Channel Link</Label>
+              <Label htmlFor="channel-link">Channel Link *</Label>
               <Input
                 id="channel-link"
                 value={newChannel.link}
                 onChange={(e) => setNewChannel(prev => ({ ...prev, link: e.target.value }))}
-                placeholder="Enter the URL for this channel"
+                placeholder="Enter the URL for this channel (required)"
+                required
               />
             </div>
             <Button onClick={addChannel} className="w-fit">
@@ -167,8 +174,9 @@ const CommunicationTypeConfig = () => {
                           id={`link-${channel.id}`}
                           value={editingLink}
                           onChange={(e) => setEditingLink(e.target.value)}
-                          placeholder={`Enter ${channel.name.toLowerCase()} link`}
+                          placeholder={`Enter ${channel.name.toLowerCase()} link (required)`}
                           className="mt-1"
+                          required
                         />
                       </div>
                       <div className="flex gap-2">

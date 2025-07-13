@@ -194,7 +194,7 @@ export type Database = {
           description: string | null
           id: string
           is_user_created: boolean | null
-          link: string | null
+          link: string
           name: string
           updated_at: string | null
           version: number | null
@@ -205,7 +205,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_user_created?: boolean | null
-          link?: string | null
+          link: string
           name: string
           updated_at?: string | null
           version?: number | null
@@ -216,7 +216,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_user_created?: boolean | null
-          link?: string | null
+          link?: string
           name?: string
           updated_at?: string | null
           version?: number | null
