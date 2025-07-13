@@ -38,8 +38,14 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
         <CardTitle>Existing Pricing Configurations</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {configs.map((config) => (
+        {configs.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No pricing configurations found</p>
+            <p className="text-sm text-muted-foreground mt-2">Add a new configuration using the General Config tab</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {configs.map((config) => (
             <div key={config.id} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -94,8 +100,9 @@ const ExistingConfigsList: React.FC<ExistingConfigsListProps> = ({
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -9,6 +9,7 @@ import ExistingConfigsList from './pricing/ExistingConfigsList';
 import InternalPaasPricingManager from './pricing/InternalPaasPricingManager';
 import { organizationTypesDataManager } from '@/utils/sharedDataManagers';
 import { PricingDataManager } from '@/utils/pricingDataManager';
+import { BrowserStorageCleaner } from '@/utils/core/BrowserStorageCleaner';
 
 const PricingConfig = () => {
   const [configs, setConfigs] = useState<PricingConfigType[]>([]);
@@ -17,38 +18,30 @@ const PricingConfig = () => {
 
   // Load data on component mount
   useEffect(() => {
-    console.log('🔄 PricingConfig: Loading comprehensive pricing data from Supabase...');
+    console.log('🔄 PricingConfig: Initializing with clean state...');
     
-    // Load directly from Supabase using PricingDataManager
+    // Clear any cached browser storage data first
+    BrowserStorageCleaner.clearAllPricingData();
+    
+    // Load directly from Supabase using async PricingDataManager
     const initializeFromSupabase = async () => {
       try {
         console.log('🔍 Loading pricing configurations from Supabase...');
-        const loadedConfigs = await PricingDataManager.getAllConfigurations();
+        const loadedConfigs = await PricingDataManager.getAllConfigurationsAsync();
+        
+        // Always use what comes from Supabase, even if empty
+        setConfigs(loadedConfigs);
+        console.log('✅ Pricing configurations loaded from Supabase:', loadedConfigs.length);
         
         if (loadedConfigs.length === 0) {
-          // If no configs found, initialize with defaults
-          console.log('📋 No existing configs found, initializing with defaults...');
-          const { defaultPricingConfigs } = await import('@/utils/pricing/pricingDefaults');
-          await PricingDataManager.saveConfigurations(defaultPricingConfigs);
-          setConfigs(defaultPricingConfigs);
-          console.log('✅ Default pricing configurations initialized:', defaultPricingConfigs.length);
-        } else {
-          setConfigs(loadedConfigs);
-          console.log('✅ CRUD TEST - Pricing configurations loaded from Supabase:', loadedConfigs.length);
+          console.log('📋 No configurations found in database - showing empty state');
         }
         
       } catch (error) {
-        console.error('❌ Failed to load from Supabase, using fallback:', error);
-        try {
-          // Enhanced fallback with proper initialization
-          const { defaultPricingConfigs } = await import('@/utils/pricing/pricingDefaults');
-          setConfigs(defaultPricingConfigs);
-          console.log('✅ Fallback pricing configurations loaded:', defaultPricingConfigs.length);
-          
-        } catch (fallbackError) {
-          console.error('❌ All loading methods failed:', fallbackError);
-          setConfigs([]);
-        }
+        console.error('❌ Failed to load from Supabase:', error);
+        // On error, show empty state instead of defaults
+        setConfigs([]);
+        console.log('❌ Error loading - showing empty state');
       }
     };
     
@@ -61,12 +54,12 @@ const PricingConfig = () => {
     console.log('✅ PricingConfig: Comprehensive pricing data loaded');
   }, []);
 
-  // Save configurations whenever they change
+  // Save configurations whenever they change (only if user explicitly makes changes)
   useEffect(() => {
     if (configs.length > 0) { // Only save when there are actual configs
       console.log('💾 PricingConfig: Saving configurations to Supabase');
       
-      // Use PricingDataManager to save to Supabase
+      // Use async PricingDataManager to save to Supabase
       PricingDataManager.saveConfigurations(configs).catch(error => {
         console.error('❌ Failed to save to Supabase:', error);
       });
