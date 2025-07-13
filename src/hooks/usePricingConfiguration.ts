@@ -103,9 +103,6 @@ export const usePricingConfiguration = () => {
       // Apply client-side filtering for now to avoid TypeScript issues
       let filteredData = data || [];
 
-      console.log('Raw data from database:', data);
-      console.log('Current filters:', filters);
-
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         filteredData = filteredData.filter((config: any) => 
@@ -113,40 +110,31 @@ export const usePricingConfiguration = () => {
           config.country_name?.toLowerCase().includes(searchTerm) ||
           config.organization_type?.toLowerCase().includes(searchTerm)
         );
-        console.log('After search filter:', filteredData);
       }
 
       if (filters.country.length > 0) {
         filteredData = filteredData.filter((config: any) => 
           filters.country.includes(config.country_id)
         );
-        console.log('After country filter:', filteredData);
       }
 
       if (filters.engagementModel.length > 0) {
         filteredData = filteredData.filter((config: any) => 
           filters.engagementModel.includes(config.engagement_model_id)
         );
-        console.log('After engagement model filter:', filteredData);
       }
 
       if (filters.organizationType.length > 0) {
         filteredData = filteredData.filter((config: any) => 
           filters.organizationType.includes(config.organization_type_id)
         );
-        console.log('After organization type filter:', filteredData);
       }
 
       if (filters.membershipStatus && filters.membershipStatus !== 'all') {
-        console.log('Filtering by membership status:', filters.membershipStatus);
-        console.log('Before membership filter:', filteredData.map(c => ({ id: c.id, membership_status: c.membership_status })));
         filteredData = filteredData.filter((config: any) => 
           config.membership_status === filters.membershipStatus
         );
-        console.log('After membership filter:', filteredData);
       }
-
-      console.log('Final filtered data:', filteredData);
 
       setConfigurations(filteredData);
     } catch (error) {

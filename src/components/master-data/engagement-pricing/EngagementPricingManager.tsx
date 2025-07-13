@@ -33,7 +33,27 @@ const EngagementPricingManager: React.FC = () => {
   };
 
   const handleEdit = (config: any) => {
-    setEditingConfig(config);
+    // Map detailed view data back to the original format expected by the dialog
+    const editableConfig = {
+      id: config.id,
+      config_name: config.config_name,
+      country_id: masterData.countries?.find((c: any) => c.name === config.country_name)?.id || '',
+      organization_type_id: masterData.organizationTypes?.find((o: any) => o.name === config.organization_type)?.id || '',
+      entity_type_id: masterData.entityTypes?.find((e: any) => e.name === config.entity_type)?.id || '',
+      engagement_model_id: masterData.engagementModels?.find((e: any) => e.name === config.engagement_model)?.id || '',
+      membership_status_id: masterData.membershipStatuses?.find((m: any) => m.name === config.membership_status)?.id || '',
+      unit_of_measure_id: masterData.unitsOfMeasure?.find((u: any) => u.name === config.unit_of_measure)?.id || '',
+      base_value: config.base_value,
+      membership_discount_percentage: config.membership_discount_percentage,
+      currency_id: masterData.currencies?.find((c: any) => c.code === config.currency_code)?.id || '',
+      billing_frequency_id: masterData.billingFrequencies?.find((b: any) => b.name === config.billing_frequency)?.id || '',
+      effective_from: config.effective_from,
+      effective_to: config.effective_to,
+      remarks: config.remarks,
+      is_active: config.is_active
+    };
+    
+    setEditingConfig(editableConfig);
     setIsDialogOpen(true);
   };
 
