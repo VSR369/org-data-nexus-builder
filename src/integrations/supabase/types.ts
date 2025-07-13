@@ -334,6 +334,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["name"]
+          },
+          {
             foreignKeyName: "fk_master_currencies_country"
             columns: ["country"]
             isOneToOne: false
@@ -425,6 +432,13 @@ export type Database = {
           version?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_domain_groups_industry_segment"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "master_industry_segments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_master_domain_groups_industry_segment"
             columns: ["industry_segment_id"]
