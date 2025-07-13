@@ -234,37 +234,76 @@ export default function DepartmentConfigSupabase() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('Starting Excel upload:', file.name);
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const data = e.target?.result;
+        console.log('File read successfully');
+        
         const workbook = XLSX.read(data, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+        console.log('Excel data parsed:', jsonData);
+
+        if (jsonData.length === 0) {
+          toast({
+            title: "Error",
+            description: "No data found in the Excel file",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        let createdCount = 0;
+        let skippedCount = 0;
+
         for (const row of jsonData) {
-          const department = await createDepartmentFromRow(row);
-          if (department && row['Sub Department Name']) {
-            const subDepartment = await createSubDepartmentFromRow(row, department.id);
-            if (subDepartment && row['Team/Unit Name']) {
-              await createTeamUnitFromRow(row, subDepartment.id);
+          console.log('Processing row:', row);
+          
+          try {
+            const department = await createDepartmentFromRow(row);
+            if (department) {
+              console.log('Department created/found:', department.name);
+              createdCount++;
+
+              if (row['Sub Department Name']) {
+                const subDepartment = await createSubDepartmentFromRow(row, department.id);
+                if (subDepartment) {
+                  console.log('Sub-department created/found:', subDepartment.name);
+
+                  if (row['Team/Unit Name']) {
+                    const teamUnit = await createTeamUnitFromRow(row, subDepartment.id);
+                    if (teamUnit) {
+                      console.log('Team unit created/found:', teamUnit.name);
+                    }
+                  }
+                }
+              }
+            } else {
+              skippedCount++;
             }
+          } catch (rowError) {
+            console.error('Error processing row:', row, rowError);
+            skippedCount++;
           }
         }
 
         toast({
           title: "Success",
-          description: `Uploaded ${jsonData.length} department records`
+          description: `Processed ${jsonData.length} rows. Created/Updated: ${createdCount}, Skipped: ${skippedCount}`
         });
 
-        fetchData();
+        await fetchData(); // Refresh the data
         setShowExcelUpload(false);
       } catch (error) {
         console.error('Error uploading Excel:', error);
         toast({
           title: "Error",
-          description: "Failed to upload Excel file",
+          description: `Failed to upload Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive"
         });
       }
