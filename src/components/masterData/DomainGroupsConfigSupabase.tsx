@@ -7,14 +7,34 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { 
   Plus, Edit, Trash2, Save, X, RotateCcw, Upload, Download, 
-  Wand2, FileText, Database, Eye, FolderTree, Target 
+  Wand2, FileText, Database, Eye, FolderTree, Target, Search,
+  ChevronDown, ChevronRight, AlertTriangle, Move
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SupabaseWizard from './wizard/SupabaseWizard';
 import ExcelUploadSupabase from './upload/ExcelUploadSupabase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DomainGroup {
   id: string;
@@ -51,6 +71,12 @@ interface IndustrySegment {
   name: string;
 }
 
+interface EditingItem {
+  type: 'domain-group' | 'category' | 'sub-category';
+  id: string;
+  data: any;
+}
+
 const DomainGroupsConfigSupabase = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
@@ -62,6 +88,13 @@ const DomainGroupsConfigSupabase = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showDirectEntry, setShowDirectEntry] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  
+  // Edit/Delete states
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{open: boolean, item: any, type: string} | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Form states for direct entry
   const [newDomainGroup, setNewDomainGroup] = useState({ 
@@ -97,7 +130,6 @@ const DomainGroupsConfigSupabase = () => {
     try {
       setLoading(true);
       
-      // Fetch all data
       const [domainGroupsResult, categoriesResult, subCategoriesResult, industrySegmentsResult] = await Promise.all([
         supabase.from('master_domain_groups').select('*').order('name'),
         supabase.from('master_categories').select('*').order('name'),
@@ -126,6 +158,149 @@ const DomainGroupsConfigSupabase = () => {
     }
   };
 
+  // CRUD Operations
+  const handleEdit = (type: EditingItem['type'], item: any) => {
+    setEditingItem({ type, id: item.id, data: { ...item } });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+
+    try {
+      const { type, id, data } = editingItem;
+      let error;
+      
+      switch (type) {
+        case 'domain-group':
+          ({ error } = await supabase.from('master_domain_groups').update(data).eq('id', id));
+          break;
+        case 'category':
+          ({ error } = await supabase.from('master_categories').update(data).eq('id', id));
+          break;
+        case 'sub-category':
+          ({ error } = await supabase.from('master_sub_categories').update(data).eq('id', id));
+          break;
+      }
+
+      if (error) throw error;
+
+      setEditingItem(null);
+      setShowEditDialog(false);
+      fetchData();
+      toast({
+        title: "Success",
+        description: `${type.replace('-', ' ')} updated successfully`,
+      });
+    } catch (error) {
+      console.error('Error updating item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update item.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (type: string, item: any) => {
+    try {
+      let table = '';
+      let cascadeMessage = '';
+      
+      switch (type) {
+        case 'domain-group':
+          table = 'master_domain_groups';
+          const domainCategories = categories.filter(c => c.domain_group_id === item.id);
+          const domainSubCategories = subCategories.filter(sc => 
+            domainCategories.some(c => c.id === sc.category_id)
+          );
+          cascadeMessage = `This will also delete ${domainCategories.length} categories and ${domainSubCategories.length} sub-categories.`;
+          break;
+        case 'category':
+          table = 'master_categories';
+          const categorySubCategories = subCategories.filter(sc => sc.category_id === item.id);
+          cascadeMessage = `This will also delete ${categorySubCategories.length} sub-categories.`;
+          break;
+        case 'sub-category':
+          table = 'master_sub_categories';
+          cascadeMessage = 'This action cannot be undone.';
+          break;
+      }
+
+      // First delete children if necessary
+      if (type === 'domain-group') {
+        const domainCategories = categories.filter(c => c.domain_group_id === item.id);
+        for (const category of domainCategories) {
+          await supabase.from('master_sub_categories').delete().eq('category_id', category.id);
+        }
+        await supabase.from('master_categories').delete().eq('domain_group_id', item.id);
+      } else if (type === 'category') {
+        await supabase.from('master_sub_categories').delete().eq('category_id', item.id);
+      }
+
+      let error;
+      switch (type) {
+        case 'domain-group':
+          ({ error } = await supabase.from('master_domain_groups').delete().eq('id', item.id));
+          break;
+        case 'category':
+          ({ error } = await supabase.from('master_categories').delete().eq('id', item.id));
+          break;
+        case 'sub-category':
+          ({ error } = await supabase.from('master_sub_categories').delete().eq('id', item.id));
+          break;
+      }
+      if (error) throw error;
+
+      setDeleteDialog(null);
+      fetchData();
+      toast({
+        title: "Deleted",
+        description: `${type.replace('-', ' ')} deleted successfully`,
+      });
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleStatus = async (type: string, item: any) => {
+    try {
+      let error;
+      switch (type) {
+        case 'domain-group':
+          ({ error } = await supabase.from('master_domain_groups').update({ is_active: !item.is_active }).eq('id', item.id));
+          break;
+        case 'category':
+          ({ error } = await supabase.from('master_categories').update({ is_active: !item.is_active }).eq('id', item.id));
+          break;
+        case 'sub-category':
+          ({ error } = await supabase.from('master_sub_categories').update({ is_active: !item.is_active }).eq('id', item.id));
+          break;
+      }
+
+      if (error) throw error;
+
+      fetchData();
+      toast({
+        title: "Status Updated",
+        description: `${type.replace('-', ' ')} ${!item.is_active ? 'activated' : 'deactivated'}`,
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Add operations (keeping existing functionality)
   const handleAddDomainGroup = async () => {
     if (newDomainGroup.name.trim()) {
       try {
@@ -222,6 +397,7 @@ const DomainGroupsConfigSupabase = () => {
     }
   };
 
+  // Utility functions
   const exportData = async () => {
     try {
       const exportData = {
@@ -276,11 +452,26 @@ const DomainGroupsConfigSupabase = () => {
     return subCategories.filter(sc => sc.category_id === categoryId);
   };
 
+  const toggleExpanded = (id: string) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedItems(newExpanded);
+  };
+
+  // Filter data based on search term
+  const filteredDomainGroups = domainGroups.filter(dg => 
+    dg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (dg.description && dg.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">Loading hierarchy data...</div>;
   }
 
-  // Show wizard if requested
   if (showWizard) {
     return (
       <SupabaseWizard 
@@ -293,7 +484,6 @@ const DomainGroupsConfigSupabase = () => {
     );
   }
 
-  // Show Excel upload if requested
   if (showExcelUpload) {
     return (
       <ExcelUploadSupabase 
@@ -386,6 +576,21 @@ const DomainGroupsConfigSupabase = () => {
         </CardContent>
       </Card>
 
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search domain groups, categories, or sub-categories..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -425,6 +630,183 @@ const DomainGroupsConfigSupabase = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Hierarchy View */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Hierarchy Overview</CardTitle>
+          <CardDescription>Complete hierarchy with edit and delete capabilities</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredDomainGroups.map((domainGroup) => {
+              const domainCategories = getCategoriesForDomainGroup(domainGroup.id);
+              const isExpanded = expandedItems.has(domainGroup.id);
+              
+              return (
+                <div key={domainGroup.id} className="border rounded-lg p-4">
+                  {/* Domain Group Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleExpanded(domainGroup.id)}
+                        className="p-1 h-auto"
+                      >
+                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                      <Target className="w-5 h-5 text-primary" />
+                      <div>
+                        <h3 className="font-semibold">{domainGroup.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {getIndustrySegmentName(domainGroup.industry_segment_id)} • {domainCategories.length} categories
+                        </p>
+                      </div>
+                      <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
+                        {domainGroup.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={domainGroup.is_active}
+                        onCheckedChange={() => handleToggleStatus('domain-group', domainGroup)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit('domain-group', domainGroup)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteDialog({
+                          open: true,
+                          item: domainGroup,
+                          type: 'domain-group'
+                        })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Categories */}
+                  {isExpanded && (
+                    <div className="ml-8 mt-4 space-y-3">
+                      {domainCategories.map((category) => {
+                        const categorySubCategories = getSubCategoriesForCategory(category.id);
+                        const isCategoryExpanded = expandedItems.has(category.id);
+                        
+                        return (
+                          <div key={category.id} className="border-l-2 border-muted pl-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleExpanded(category.id)}
+                                  className="p-1 h-auto"
+                                >
+                                  {isCategoryExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                </Button>
+                                <Database className="w-4 h-4 text-secondary-foreground" />
+                                <div>
+                                  <h4 className="font-medium">{category.name}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {categorySubCategories.length} sub-categories
+                                  </p>
+                                </div>
+                                <Badge variant={category.is_active ? "default" : "secondary"}>
+                                  {category.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={category.is_active}
+                                  onCheckedChange={() => handleToggleStatus('category', category)}
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEdit('category', category)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => setDeleteDialog({
+                                    open: true,
+                                    item: category,
+                                    type: 'category'
+                                  })}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Sub-Categories */}
+                            {isCategoryExpanded && (
+                              <div className="ml-8 mt-3 space-y-2">
+                                {categorySubCategories.map((subCategory) => (
+                                  <div key={subCategory.id} className="border-l-2 border-muted-foreground/30 pl-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3 flex-1">
+                                        <FolderTree className="w-4 h-4 text-muted-foreground" />
+                                        <div>
+                                          <h5 className="font-medium text-sm">{subCategory.name}</h5>
+                                          {subCategory.description && (
+                                            <p className="text-xs text-muted-foreground">{subCategory.description}</p>
+                                          )}
+                                        </div>
+                                        <Badge variant={subCategory.is_active ? "default" : "secondary"} className="text-xs">
+                                          {subCategory.is_active ? 'Active' : 'Inactive'}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Switch
+                                          checked={subCategory.is_active}
+                                          onCheckedChange={() => handleToggleStatus('sub-category', subCategory)}
+                                        />
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleEdit('sub-category', subCategory)}
+                                        >
+                                          <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => setDeleteDialog({
+                                            open: true,
+                                            item: subCategory,
+                                            type: 'sub-category'
+                                          })}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Direct Entry Forms */}
       {showDirectEntry && (
@@ -498,40 +880,27 @@ const DomainGroupsConfigSupabase = () => {
                         </Select>
                       </div>
                     </div>
-                    <div className="flex gap-2 items-end">
-                      <Button onClick={handleAddDomainGroup} size="sm" className="flex items-center gap-1">
-                        <Save className="w-3 h-3" />
+                    <div className="flex flex-col gap-2 justify-end">
+                      <Button 
+                        onClick={handleAddDomainGroup}
+                        disabled={!newDomainGroup.name.trim()}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
                         Save
                       </Button>
-                      <Button onClick={() => setIsAdding({ ...isAdding, domainGroup: false })} variant="outline" size="sm" className="flex items-center gap-1">
-                        <X className="w-3 h-3" />
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setIsAdding({ ...isAdding, domainGroup: false });
+                          setNewDomainGroup({ name: '', description: '', industry_segment_id: '', is_active: true });
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
                         Cancel
                       </Button>
                     </div>
                   </div>
                 )}
-
-                <div className="grid gap-2">
-                  {domainGroups.map((domainGroup, index) => (
-                    <div key={domainGroup.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">{index + 1}</Badge>
-                        <div>
-                          <div className="font-medium">{domainGroup.name}</div>
-                          {domainGroup.description && (
-                            <div className="text-sm text-muted-foreground">{domainGroup.description}</div>
-                          )}
-                          <div className="text-sm text-muted-foreground">
-                            Industry: {getIndustrySegmentName(domainGroup.industry_segment_id || '')}
-                          </div>
-                        </div>
-                        <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
-                          {domainGroup.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </TabsContent>
 
               <TabsContent value="categories" className="space-y-4">
@@ -548,32 +917,15 @@ const DomainGroupsConfigSupabase = () => {
                 </div>
 
                 {domainGroups.length === 0 && (
-                  <div className="text-center p-4 text-muted-foreground">
-                    Please create at least one Domain Group first
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No domain groups available. Please add domain groups first.</p>
                   </div>
                 )}
 
                 {isAdding.category && (
                   <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
                     <div className="flex-1 space-y-2">
-                      <div>
-                        <Label htmlFor="new-category-domain-group">Domain Group</Label>
-                        <Select
-                          value={newCategory.domain_group_id}
-                          onValueChange={(value) => setNewCategory({...newCategory, domain_group_id: value})}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select domain group" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {domainGroups.map((dg) => (
-                              <SelectItem key={dg.id} value={dg.id}>
-                                {dg.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
                       <div>
                         <Label htmlFor="new-category-name">Category Name</Label>
                         <Input
@@ -595,41 +947,46 @@ const DomainGroupsConfigSupabase = () => {
                           rows={3}
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="new-category-domain-group">Domain Group</Label>
+                        <Select
+                          value={newCategory.domain_group_id}
+                          onValueChange={(value) => setNewCategory({...newCategory, domain_group_id: value})}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select domain group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {domainGroups.filter(dg => dg.is_active).map((domainGroup) => (
+                              <SelectItem key={domainGroup.id} value={domainGroup.id}>
+                                {domainGroup.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="flex gap-2 items-end">
-                      <Button onClick={handleAddCategory} size="sm" className="flex items-center gap-1">
-                        <Save className="w-3 h-3" />
+                    <div className="flex flex-col gap-2 justify-end">
+                      <Button 
+                        onClick={handleAddCategory}
+                        disabled={!newCategory.name.trim() || !newCategory.domain_group_id}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
                         Save
                       </Button>
-                      <Button onClick={() => setIsAdding({ ...isAdding, category: false })} variant="outline" size="sm" className="flex items-center gap-1">
-                        <X className="w-3 h-3" />
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setIsAdding({ ...isAdding, category: false });
+                          setNewCategory({ name: '', description: '', domain_group_id: '', is_active: true });
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
                         Cancel
                       </Button>
                     </div>
                   </div>
                 )}
-
-                <div className="grid gap-2">
-                  {categories.map((category, index) => (
-                    <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">{index + 1}</Badge>
-                        <div>
-                          <div className="font-medium">{category.name}</div>
-                          {category.description && (
-                            <div className="text-sm text-muted-foreground">{category.description}</div>
-                          )}
-                          <div className="text-sm text-muted-foreground">
-                            Domain Group: {getDomainGroupName(category.domain_group_id)}
-                          </div>
-                        </div>
-                        <Badge variant={category.is_active ? "default" : "secondary"}>
-                          {category.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </TabsContent>
 
               <TabsContent value="sub-categories" className="space-y-4">
@@ -646,32 +1003,15 @@ const DomainGroupsConfigSupabase = () => {
                 </div>
 
                 {categories.length === 0 && (
-                  <div className="text-center p-4 text-muted-foreground">
-                    Please create at least one Category first
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FolderTree className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No categories available. Please add categories first.</p>
                   </div>
                 )}
 
                 {isAdding.subCategory && (
                   <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
                     <div className="flex-1 space-y-2">
-                      <div>
-                        <Label htmlFor="new-sub-category-category">Category</Label>
-                        <Select
-                          value={newSubCategory.category_id}
-                          onValueChange={(value) => setNewSubCategory({...newSubCategory, category_id: value})}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name} ({getDomainGroupName(category.domain_group_id)})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
                       <div>
                         <Label htmlFor="new-sub-category-name">Sub-Category Name</Label>
                         <Input
@@ -693,134 +1033,181 @@ const DomainGroupsConfigSupabase = () => {
                           rows={3}
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="new-sub-category-category">Category</Label>
+                        <Select
+                          value={newSubCategory.category_id}
+                          onValueChange={(value) => setNewSubCategory({...newSubCategory, category_id: value})}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.filter(c => c.is_active).map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name} ({getDomainGroupName(category.domain_group_id)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="flex gap-2 items-end">
-                      <Button onClick={handleAddSubCategory} size="sm" className="flex items-center gap-1">
-                        <Save className="w-3 h-3" />
+                    <div className="flex flex-col gap-2 justify-end">
+                      <Button 
+                        onClick={handleAddSubCategory}
+                        disabled={!newSubCategory.name.trim() || !newSubCategory.category_id}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
                         Save
                       </Button>
-                      <Button onClick={() => setIsAdding({ ...isAdding, subCategory: false })} variant="outline" size="sm" className="flex items-center gap-1">
-                        <X className="w-3 h-3" />
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setIsAdding({ ...isAdding, subCategory: false });
+                          setNewSubCategory({ name: '', description: '', category_id: '', is_active: true });
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
                         Cancel
                       </Button>
                     </div>
                   </div>
                 )}
-
-                <div className="grid gap-2">
-                  {subCategories.map((subCategory, index) => (
-                    <div key={subCategory.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">{index + 1}</Badge>
-                        <div>
-                          <div className="font-medium">{subCategory.name}</div>
-                          {subCategory.description && (
-                            <div className="text-sm text-muted-foreground">{subCategory.description}</div>
-                          )}
-                          <div className="text-sm text-muted-foreground">
-                            Category: {getCategoryName(subCategory.category_id)}
-                          </div>
-                        </div>
-                        <Badge variant={subCategory.is_active ? "default" : "secondary"}>
-                          {subCategory.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       )}
 
-      {/* Hierarchy View */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
-            Hierarchy View
-          </CardTitle>
-          <CardDescription>
-            Complete hierarchy showing Master → Child → Sub-Child relationships
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {domainGroups.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              No domain groups found. Create your first domain group to get started.
-            </div>
-          ) : (
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {editingItem?.type.replace('-', ' ')}
+            </DialogTitle>
+            <DialogDescription>
+              Make changes to the {editingItem?.type.replace('-', ' ')} details below.
+            </DialogDescription>
+          </DialogHeader>
+          {editingItem && (
             <div className="space-y-4">
-              {domainGroups.map((domainGroup) => {
-                const domainCategories = getCategoriesForDomainGroup(domainGroup.id);
-                return (
-                  <div key={domainGroup.id} className="border rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Target className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold text-blue-600">Domain Group:</span>
-                      <span className="font-medium">{domainGroup.name}</span>
-                      {domainGroup.description && (
-                        <span className="text-sm text-muted-foreground">({domainGroup.description})</span>
-                      )}
-                      <Badge variant={domainGroup.is_active ? "default" : "secondary"}>
-                        {domainGroup.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                    
-                    {domainCategories.length === 0 ? (
-                      <div className="ml-6 text-sm text-muted-foreground">No categories</div>
-                    ) : (
-                      <div className="ml-6 space-y-3">
-                        {domainCategories.map((category) => {
-                          const categorySubCategories = getSubCategoriesForCategory(category.id);
-                          return (
-                            <div key={category.id} className="border-l-2 border-green-200 pl-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Database className="w-4 h-4 text-green-600" />
-                                <span className="font-medium text-green-600">Category:</span>
-                                <span>{category.name}</span>
-                                {category.description && (
-                                  <span className="text-sm text-muted-foreground">({category.description})</span>
-                                )}
-                                <Badge variant={category.is_active ? "default" : "secondary"} className="text-xs">
-                                  {category.is_active ? "Active" : "Inactive"}
-                                </Badge>
-                              </div>
-                              
-                              {categorySubCategories.length === 0 ? (
-                                <div className="ml-6 text-sm text-muted-foreground">No sub-categories</div>
-                              ) : (
-                                <div className="ml-6 space-y-2">
-                                  {categorySubCategories.map((subCategory) => (
-                                    <div key={subCategory.id} className="border-l-2 border-orange-200 pl-4">
-                                      <div className="flex items-center gap-2">
-                                        <FolderTree className="w-4 h-4 text-orange-600" />
-                                        <span className="font-medium text-orange-600">Sub-Category:</span>
-                                        <span>{subCategory.name}</span>
-                                        {subCategory.description && (
-                                          <span className="text-sm text-muted-foreground">({subCategory.description})</span>
-                                        )}
-                                        <Badge variant={subCategory.is_active ? "default" : "secondary"} className="text-xs">
-                                          {subCategory.is_active ? "Active" : "Inactive"}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <div>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editingItem.data.name || ''}
+                  onChange={(e) => setEditingItem({
+                    ...editingItem,
+                    data: { ...editingItem.data, name: e.target.value }
+                  })}
+                  placeholder="Enter name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingItem.data.description || ''}
+                  onChange={(e) => setEditingItem({
+                    ...editingItem,
+                    data: { ...editingItem.data, description: e.target.value }
+                  })}
+                  placeholder="Enter description (optional)"
+                  rows={3}
+                />
+              </div>
+              {editingItem.type === 'domain-group' && (
+                <div>
+                  <Label htmlFor="edit-industry-segment">Industry Segment</Label>
+                  <Select
+                    value={editingItem.data.industry_segment_id || 'none'}
+                    onValueChange={(value) => setEditingItem({
+                      ...editingItem,
+                      data: { 
+                        ...editingItem.data, 
+                        industry_segment_id: value === 'none' ? null : value 
+                      }
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select industry segment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Industry Segment</SelectItem>
+                      {industrySegments.map((segment) => (
+                        <SelectItem key={segment.id} value={segment.id}>
+                          {segment.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-active"
+                  checked={editingItem.data.is_active}
+                  onCheckedChange={(checked) => setEditingItem({
+                    ...editingItem,
+                    data: { ...editingItem.data, is_active: checked }
+                  })}
+                />
+                <Label htmlFor="edit-active">Active</Label>
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog 
+        open={deleteDialog?.open || false} 
+        onOpenChange={(open) => !open && setDeleteDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Confirm Deletion
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteDialog?.item?.name}"?
+              {deleteDialog?.type === 'domain-group' && (
+                <>
+                  <br /><br />
+                  <strong>Warning:</strong> This will also delete all associated categories and sub-categories.
+                </>
+              )}
+              {deleteDialog?.type === 'category' && (
+                <>
+                  <br /><br />
+                  <strong>Warning:</strong> This will also delete all associated sub-categories.
+                </>
+              )}
+              <br /><br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteDialog && handleDelete(deleteDialog.type, deleteDialog.item)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
