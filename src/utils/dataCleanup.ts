@@ -20,72 +20,10 @@ export class DataCleanupService {
     console.log('🗑️ === CLEARING ALL SOLUTION SEEKING ORGANIZATION DATA ===');
     
     try {
-      // First clear Supabase database tables
+      // Clear Supabase database tables (main cleanup)
       await this.clearSupabaseData();
 
-      // Ensure IndexedDB is initialized
-      if (!await indexedDBManager.isInitialized()) {
-        await indexedDBManager.initialize();
-      }
-
-      // Clear user profiles from IndexedDB
-      console.log('🗑️ Clearing user profiles from IndexedDB...');
-      await this.userService.clear();
-
-      // Clear membership data from IndexedDB
-      console.log('🗑️ Clearing membership data from IndexedDB...');
-      try {
-        await this.membershipService.clear();
-      } catch (error) {
-        console.log('ℹ️ Membership store may not exist yet, skipping...');
-      }
-
-      // Clear localStorage data related to organizations
-      console.log('🗑️ Clearing localStorage organization data...');
-      const keysToRemove = [
-        'registered_users',
-        'seeker_session_data',
-        'seeking_org_admin_session',
-        'seekerOrganizationName',
-        'seekerEntityType',
-        'seekerCountry',
-        'seekerUserId',
-        'seekerOrganizationType',
-        'membership_status',
-        'engagement_selection',
-        'user_membership_data'
-      ];
-
-      keysToRemove.forEach(key => {
-        try {
-          localStorage.removeItem(key);
-          console.log(`✅ Removed ${key} from localStorage`);
-        } catch (error) {
-          console.log(`⚠️ Could not remove ${key}:`, error);
-        }
-      });
-
-      // Clear any backup or integrity data
-      const allKeys = Object.keys(localStorage);
-      const backupKeys = allKeys.filter(key => 
-        key.includes('_backup') || 
-        key.includes('_integrity') || 
-        key.includes('_version') ||
-        key.startsWith('seeker') ||
-        key.includes('membership') ||
-        key.includes('organization')
-      );
-
-      backupKeys.forEach(key => {
-        try {
-          localStorage.removeItem(key);
-          console.log(`✅ Removed backup/integrity key: ${key}`);
-        } catch (error) {
-          console.log(`⚠️ Could not remove backup key ${key}:`, error);
-        }
-      });
-
-      // Clear browser form cache and autofill data
+      // Clear browser form cache
       this.clearBrowserFormCache();
 
       console.log('✅ === ALL SOLUTION SEEKING ORGANIZATION DATA CLEARED ===');
@@ -134,14 +72,40 @@ export class DataCleanupService {
     try {
       // Get current data counts for logging
       const counts = await this.getDataCounts();
-      console.log(`📊 Current data: Profiles: ${counts.profiles}, Activations: ${counts.activations}, Auth Users: ${counts.authUsers}`);
+      console.log(`📊 Current data: Organizations: ${counts.organizations}, Profiles: ${counts.profiles}, Activations: ${counts.activations}, Auth Users: ${counts.authUsers}`);
+
+      // Clear organization documents first (due to foreign key)
+      console.log('🗑️ Clearing organization documents...');
+      const { error: docsError } = await supabase
+        .from('organization_documents')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (docsError) {
+        console.error('❌ Error clearing organization documents:', docsError);
+        throw docsError;
+      }
+      console.log('✅ Organization documents cleared');
+
+      // Clear organizations
+      console.log('🗑️ Clearing organizations...');
+      const { error: orgsError } = await supabase
+        .from('organizations')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (orgsError) {
+        console.error('❌ Error clearing organizations:', orgsError);
+        throw orgsError;
+      }
+      console.log('✅ Organizations cleared');
 
       // Clear engagement activations
       console.log('🗑️ Clearing engagement activations...');
       const { error: activationsError } = await supabase
         .from('engagement_activations')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (activationsError) {
         console.error('❌ Error clearing engagement activations:', activationsError);
@@ -154,7 +118,7 @@ export class DataCleanupService {
       const { error: profilesError } = await supabase
         .from('profiles')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (profilesError) {
         console.error('❌ Error clearing profiles:', profilesError);
@@ -162,19 +126,23 @@ export class DataCleanupService {
       }
       console.log('✅ Profiles cleared');
 
-      // Clear auth users (this allows email reuse)
-      console.log('🗑️ Clearing auth users...');
-      const { data: users } = await supabase.auth.admin.listUsers();
-      
-      if (users?.users) {
-        for (const user of users.users) {
-          const { error } = await supabase.auth.admin.deleteUser(user.id);
-          if (error) {
-            console.warn(`⚠️ Could not delete user ${user.email}:`, error);
-          } else {
-            console.log(`✅ Deleted user: ${user.email}`);
+      // Clear auth users (requires admin access)
+      console.log('🗑️ Attempting to clear auth users...');
+      try {
+        const { data: users } = await supabase.auth.admin.listUsers();
+        
+        if (users?.users) {
+          for (const user of users.users) {
+            const { error } = await supabase.auth.admin.deleteUser(user.id);
+            if (error) {
+              console.warn(`⚠️ Could not delete user ${user.email}:`, error);
+            } else {
+              console.log(`✅ Deleted user: ${user.email}`);
+            }
           }
         }
+      } catch (error) {
+        console.warn('⚠️ Could not access auth admin (requires service key):', error);
       }
 
       console.log('✅ === SUPABASE DATABASE CLEARED ===');
@@ -186,12 +154,18 @@ export class DataCleanupService {
   }
 
   async getDataCounts(): Promise<{
+    organizations: number;
     profiles: number;
     activations: number;
     authUsers: number;
     configs: number;
   }> {
     try {
+      // Count organizations
+      const { count: organizationsCount } = await supabase
+        .from('organizations')
+        .select('*', { count: 'exact', head: true });
+
       // Count profiles
       const { count: profilesCount } = await supabase
         .from('profiles')
@@ -207,11 +181,17 @@ export class DataCleanupService {
         .from('pricing_configs')
         .select('*', { count: 'exact', head: true });
 
-      // Count auth users
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const authUsersCount = users?.users?.length || 0;
+      // Count auth users (requires admin access)
+      let authUsersCount = 0;
+      try {
+        const { data: users } = await supabase.auth.admin.listUsers();
+        authUsersCount = users?.users?.length || 0;
+      } catch (error) {
+        console.warn('⚠️ Could not access auth admin for user count');
+      }
 
       return {
+        organizations: organizationsCount || 0,
         profiles: profilesCount || 0,
         activations: activationsCount || 0,
         authUsers: authUsersCount,
@@ -219,7 +199,7 @@ export class DataCleanupService {
       };
     } catch (error) {
       console.error('❌ Error getting data counts:', error);
-      return { profiles: 0, activations: 0, authUsers: 0, configs: 0 };
+      return { organizations: 0, profiles: 0, activations: 0, authUsers: 0, configs: 0 };
     }
   }
 
@@ -229,7 +209,7 @@ export class DataCleanupService {
     localStorageCleared: boolean;
     databaseCleared: boolean;
     remainingKeys: string[];
-    databaseCounts: { profiles: number; activations: number; authUsers: number; configs: number };
+    databaseCounts: { organizations: number; profiles: number; activations: number; authUsers: number; configs: number };
   }> {
     console.log('🔍 === VERIFYING DATA CLEANUP ===');
     
@@ -269,7 +249,7 @@ export class DataCleanupService {
 
       // Verify database cleanup
       const databaseCounts = await this.getDataCounts();
-      const databaseCleared = databaseCounts.profiles === 0 && databaseCounts.activations === 0 && databaseCounts.authUsers === 0;
+      const databaseCleared = databaseCounts.organizations === 0 && databaseCounts.profiles === 0 && databaseCounts.activations === 0;
       
       console.log(`📊 Post-cleanup database counts:`, databaseCounts);
       console.log('✅ === VERIFICATION COMPLETE ===');
@@ -291,7 +271,7 @@ export class DataCleanupService {
         localStorageCleared: false,
         databaseCleared: false,
         remainingKeys: [],
-        databaseCounts: { profiles: 0, activations: 0, authUsers: 0, configs: 0 }
+        databaseCounts: { organizations: 0, profiles: 0, activations: 0, authUsers: 0, configs: 0 }
       };
     }
   }

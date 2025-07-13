@@ -32,8 +32,6 @@ export default function OrganizationSignIn() {
       if (error) {
         if (error.message === 'Invalid login credentials') {
           setError('Invalid email or password. Please check your credentials and try again.');
-        } else if (error.message.includes('Email not confirmed')) {
-          setError('Please check your email and click the confirmation link before signing in.');
         } else {
           setError(error.message);
         }

@@ -96,7 +96,7 @@ export const useOrganizationRegistration = () => {
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email format is invalid';
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
     if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    else if (formData.password.length < 3) newErrors.password = 'Password must be at least 3 characters';
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
     if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
@@ -129,7 +129,7 @@ export const useOrganizationRegistration = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/organization-signin`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             organization_name: formData.organizationName,
             contact_person_name: formData.contactPersonName
