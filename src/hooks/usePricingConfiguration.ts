@@ -8,7 +8,6 @@ interface PricingFilters {
   engagementModel: string[];
   organizationType: string[];
   membershipStatus: string;
-  status: string;
 }
 
 interface MasterData {
@@ -41,8 +40,7 @@ export const usePricingConfiguration = () => {
     country: [],
     engagementModel: [],
     organizationType: [],
-    membershipStatus: 'all',
-    status: 'all'
+    membershipStatus: 'all'
   });
 
   const { toast } = useToast();
@@ -136,14 +134,6 @@ export const usePricingConfiguration = () => {
         filteredData = filteredData.filter((config: any) => 
           config.membership_status === filters.membershipStatus
         );
-      }
-
-      if (filters.status && filters.status !== 'all') {
-        if (filters.status === 'active') {
-          filteredData = filteredData.filter((config: any) => config.is_active === true);
-        } else if (filters.status === 'inactive') {
-          filteredData = filteredData.filter((config: any) => config.is_active === false);
-        }
       }
 
       setConfigurations(filteredData);

@@ -12,7 +12,6 @@ interface PricingFilters {
   engagementModel: string[];
   organizationType: string[];
   membershipStatus: string;
-  status: string;
 }
 
 interface PricingConfigurationFiltersProps {
@@ -59,8 +58,7 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
       country: [],
       engagementModel: [],
       organizationType: [],
-      membershipStatus: 'all',
-      status: 'all'
+      membershipStatus: 'all'
     });
   };
 
@@ -69,8 +67,7 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
     ...filters.country,
     ...filters.engagementModel,
     ...filters.organizationType,
-    filters.membershipStatus !== 'all' ? filters.membershipStatus : '',
-    filters.status !== 'all' ? filters.status : ''
+    filters.membershipStatus !== 'all' ? filters.membershipStatus : ''
   ].filter(Boolean).length;
 
   return (
@@ -154,39 +151,21 @@ export const PricingConfigurationFilters: React.FC<PricingConfigurationFiltersPr
               </div>
             </div>
 
-            {/* Status Filters */}
-            <div className="space-y-2">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Membership Status</label>
-                <Select value={filters.membershipStatus} onValueChange={(value) => 
-                  onFiltersChange({ ...filters, membershipStatus: value })
-                }>
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="Member">Member</SelectItem>
-                    <SelectItem value="Non-Member">Non-Member</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">Status</label>
-                <Select value={filters.status} onValueChange={(value) => 
-                  onFiltersChange({ ...filters, status: value })
-                }>
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Membership Status Filter */}
+            <div>
+              <label className="text-sm font-medium mb-1 block">Membership Status</label>
+              <Select value={filters.membershipStatus} onValueChange={(value) => 
+                onFiltersChange({ ...filters, membershipStatus: value })
+              }>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Not Active">Not Active</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
