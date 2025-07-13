@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, ChevronDown, ChevronRight, Download, Upload, RefreshCw, Search, Plus } from 'lucide-react';
+import { Trash2, Edit, ChevronDown, ChevronRight, Download, Upload, RefreshCw, Search, Plus, Building, Users, User, Globe, FolderTree, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import * as XLSX from 'xlsx';
 
 interface Department {
@@ -48,8 +49,14 @@ interface DepartmentHierarchy {
   subDepartments: (SubDepartment & { teamUnits: TeamUnit[] })[];
 }
 
+interface OrganizationHierarchy {
+  organizationId: string;
+  organizationName: string;
+  departments: DepartmentHierarchy[];
+}
+
 export default function DepartmentConfigSupabase() {
-  const [departmentHierarchy, setDepartmentHierarchy] = useState<DepartmentHierarchy[]>([]);
+  const [organizationHierarchy, setOrganizationHierarchy] = useState<OrganizationHierarchy[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDirectEntry, setShowDirectEntry] = useState(false);
@@ -87,7 +94,7 @@ export default function DepartmentConfigSupabase() {
       const { data: departments, error: deptError } = await supabase
         .from('master_departments')
         .select('*')
-        .order('name');
+        .order('organization_name', { nullsFirst: false });
 
       if (deptError) throw deptError;
 
@@ -108,7 +115,7 @@ export default function DepartmentConfigSupabase() {
       if (teamError) throw teamError;
 
       // Build hierarchy
-      const hierarchy: DepartmentHierarchy[] = departments?.map(dept => ({
+      const departmentHierarchy: DepartmentHierarchy[] = departments?.map(dept => ({
         department: dept,
         subDepartments: subDepartments?.filter(sub => sub.department_id === dept.id).map(sub => ({
           ...sub,
@@ -116,7 +123,25 @@ export default function DepartmentConfigSupabase() {
         })) || []
       })) || [];
 
-      setDepartmentHierarchy(hierarchy);
+      // Group by organization
+      const organizationMap = new Map<string, OrganizationHierarchy>();
+      
+      departmentHierarchy.forEach(deptHierarchy => {
+        const orgKey = deptHierarchy.department.organization_id || 'no-org';
+        const orgName = deptHierarchy.department.organization_name || 'Unknown Organization';
+        
+        if (!organizationMap.has(orgKey)) {
+          organizationMap.set(orgKey, {
+            organizationId: deptHierarchy.department.organization_id || '',
+            organizationName: orgName,
+            departments: []
+          });
+        }
+        
+        organizationMap.get(orgKey)!.departments.push(deptHierarchy);
+      });
+
+      setOrganizationHierarchy(Array.from(organizationMap.values()));
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
@@ -133,8 +158,16 @@ export default function DepartmentConfigSupabase() {
     setFormData(prev => ({ ...prev, organizationId: value }));
     
     if (value.trim()) {
-      // Auto-populate organization name (placeholder logic)
-      setFormData(prev => ({ ...prev, organizationName: `Organization ${value}` }));
+      // Try to find existing organization name from departments
+      const existingOrg = organizationHierarchy.find(org => 
+        org.organizationId === value || org.organizationId === value.toUpperCase()
+      );
+      
+      if (existingOrg) {
+        setFormData(prev => ({ ...prev, organizationName: existingOrg.organizationName }));
+      } else {
+        setFormData(prev => ({ ...prev, organizationName: `Organization ${value}` }));
+      }
     } else {
       setFormData(prev => ({ ...prev, organizationName: '' }));
     }
@@ -407,19 +440,21 @@ export default function DepartmentConfigSupabase() {
     try {
       const exportData = [];
       
-      for (const hierarchy of departmentHierarchy) {
-        for (const subDept of hierarchy.subDepartments) {
-          for (const teamUnit of subDept.teamUnits) {
-            exportData.push({
-              'Organization ID': hierarchy.department.organization_id || '',
-              'Organization Name': hierarchy.department.organization_name || '',
-              'Department Name': hierarchy.department.name,
-              'Department Description': hierarchy.department.description || '',
-              'Sub Department Name': subDept.name,
-              'Sub Department Description': subDept.description || '',
-              'Team/Unit Name': teamUnit.name,
-              'Team/Unit Description': teamUnit.description || ''
-            });
+      for (const orgHierarchy of organizationHierarchy) {
+        for (const deptHierarchy of orgHierarchy.departments) {
+          for (const subDept of deptHierarchy.subDepartments) {
+            for (const teamUnit of subDept.teamUnits) {
+              exportData.push({
+                'Organization ID': orgHierarchy.organizationId,
+                'Organization Name': orgHierarchy.organizationName,
+                'Department Name': deptHierarchy.department.name,
+                'Department Description': deptHierarchy.department.description || '',
+                'Sub Department Name': subDept.name,
+                'Sub Department Description': subDept.description || '',
+                'Team/Unit Name': teamUnit.name,
+                'Team/Unit Description': teamUnit.description || ''
+              });
+            }
           }
         }
       }
@@ -531,13 +566,16 @@ export default function DepartmentConfigSupabase() {
     setExpandedSubDepartments(newExpanded);
   };
 
-  const filteredHierarchy = departmentHierarchy.filter(hierarchy =>
-    hierarchy.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    hierarchy.subDepartments.some(sub =>
-      sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.teamUnits.some(team => team.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredHierarchy = organizationHierarchy.map(orgHierarchy => ({
+    ...orgHierarchy,
+    departments: orgHierarchy.departments.filter(deptHierarchy =>
+      deptHierarchy.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      deptHierarchy.subDepartments.some(sub =>
+        sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.teamUnits.some(team => team.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
     )
-  );
+  })).filter(orgHierarchy => orgHierarchy.departments.length > 0 || searchTerm === '');
 
   if (loading) {
     return <div className="flex items-center justify-center p-8">Loading departments...</div>;
@@ -586,150 +624,250 @@ export default function DepartmentConfigSupabase() {
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-              <div>Total Departments: {departmentHierarchy.length}</div>
-              <div>Total Sub Departments: {departmentHierarchy.reduce((acc, h) => acc + h.subDepartments.length, 0)}</div>
-              <div>Total Team/Units: {departmentHierarchy.reduce((acc, h) => acc + h.subDepartments.reduce((subAcc, sub) => subAcc + sub.teamUnits.length, 0), 0)}</div>
-            </div>
-
-            {filteredHierarchy.map((hierarchy) => (
-              <Card key={hierarchy.department.id} className="border-l-4 border-l-primary">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleDepartmentExpansion(hierarchy.department.id)}
-                      >
-                        {expandedDepartments.has(hierarchy.department.id) ? 
-                          <ChevronDown className="h-4 w-4" /> : 
-                          <ChevronRight className="h-4 w-4" />
-                        }
-                      </Button>
-                      <div>
-                        <h3 className="font-semibold">{hierarchy.department.name}</h3>
-                        {hierarchy.department.description && (
-                          <p className="text-sm text-muted-foreground">{hierarchy.department.description}</p>
-                        )}
-                        {hierarchy.department.organization_name && (
-                          <Badge variant="secondary" className="mt-1">
-                            {hierarchy.department.organization_name}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(hierarchy.department, 'department')}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setDeletingItem({ ...hierarchy.department, type: 'department' });
-                          setDeleteDialog(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+            {/* Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-blue-600" />
+                  <div>
+                    <div className="font-medium">Organizations</div>
+                    <div className="text-2xl font-bold text-blue-600">{organizationHierarchy.length}</div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-green-600" />
+                  <div>
+                    <div className="font-medium">Departments</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {organizationHierarchy.reduce((acc, org) => acc + org.departments.length, 0)}
                     </div>
                   </div>
-
-                  {expandedDepartments.has(hierarchy.department.id) && (
-                    <div className="ml-6 mt-4 space-y-3">
-                      {hierarchy.subDepartments.map((subDept) => (
-                        <Card key={subDept.id} className="border-l-4 border-l-secondary">
-                          <CardContent className="pt-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleSubDepartmentExpansion(subDept.id)}
-                                >
-                                  {expandedSubDepartments.has(subDept.id) ? 
-                                    <ChevronDown className="h-4 w-4" /> : 
-                                    <ChevronRight className="h-4 w-4" />
-                                  }
-                                </Button>
-                                <div>
-                                  <h4 className="font-medium">{subDept.name}</h4>
-                                  {subDept.description && (
-                                    <p className="text-sm text-muted-foreground">{subDept.description}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(subDept, 'subdepartment')}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setDeletingItem({ ...subDept, type: 'subdepartment' });
-                                    setDeleteDialog(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            {expandedSubDepartments.has(subDept.id) && (
-                              <div className="ml-6 mt-3 space-y-2">
-                                {subDept.teamUnits.map((teamUnit) => (
-                                  <Card key={teamUnit.id} className="border-l-4 border-l-accent">
-                                    <CardContent className="pt-2">
-                                      <div className="flex items-center justify-between">
-                                        <div>
-                                          <h5 className="font-medium">{teamUnit.name}</h5>
-                                          {teamUnit.description && (
-                                            <p className="text-sm text-muted-foreground">{teamUnit.description}</p>
-                                          )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleEdit(teamUnit, 'teamunit')}
-                                          >
-                                            <Edit className="h-4 w-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                              setDeletingItem({ ...teamUnit, type: 'teamunit' });
-                                              setDeleteDialog(true);
-                                            }}
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
+                </div>
               </Card>
-            ))}
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-orange-600" />
+                  <div>
+                    <div className="font-medium">Sub Departments</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {organizationHierarchy.reduce((acc, org) => 
+                        acc + org.departments.reduce((subAcc, dept) => subAcc + dept.subDepartments.length, 0), 0)}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-purple-600" />
+                  <div>
+                    <div className="font-medium">Team/Units</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {organizationHierarchy.reduce((acc, org) => 
+                        acc + org.departments.reduce((deptAcc, dept) => 
+                          deptAcc + dept.subDepartments.reduce((subAcc, sub) => subAcc + sub.teamUnits.length, 0), 0), 0)}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Hierarchy Display */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FolderTree className="w-5 h-5" />
+                  Department Hierarchies by Organization
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredHierarchy.map((orgHierarchy) => (
+                    <div key={orgHierarchy.organizationId || 'no-org'} className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+                      {/* Organization Header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Globe className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-blue-900">
+                            {orgHierarchy.organizationId ? `[${orgHierarchy.organizationId}] ` : ''}
+                            {orgHierarchy.organizationName}
+                          </h3>
+                          <p className="text-sm text-blue-700">
+                            {orgHierarchy.departments.length} Departments • {' '}
+                            {orgHierarchy.departments.reduce((sum, dept) => sum + dept.subDepartments.length, 0)} Sub-Departments • {' '}
+                            {orgHierarchy.departments.reduce((sum, dept) => 
+                              sum + dept.subDepartments.reduce((subSum, sub) => subSum + sub.teamUnits.length, 0), 0)} Team/Units
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Departments */}
+                      <div className="space-y-3">
+                        {orgHierarchy.departments.map((deptHierarchy) => (
+                          <div key={deptHierarchy.department.id} className="bg-white border rounded-lg">
+                            <Collapsible 
+                              open={expandedDepartments.has(deptHierarchy.department.id)}
+                              onOpenChange={() => toggleDepartmentExpansion(deptHierarchy.department.id)}
+                            >
+                              <CollapsibleTrigger className="w-full p-4 text-left hover:bg-gray-50 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <Building className="w-5 h-5 text-primary" />
+                                    <div>
+                                      <h4 className="font-medium">
+                                        <span className="text-primary font-semibold">Dept:</span> {deptHierarchy.department.name}
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        {deptHierarchy.subDepartments.length} sub-departments
+                                        {deptHierarchy.department.description && ` • ${deptHierarchy.department.description}`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEdit(deptHierarchy.department, 'department');
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeletingItem({ ...deptHierarchy.department, type: 'department' });
+                                        setDeleteDialog(true);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    {expandedDepartments.has(deptHierarchy.department.id) ? (
+                                      <ChevronDown className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4" />
+                                    )}
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
+                              
+                              <CollapsibleContent className="px-4 pb-4">
+                                <div className="space-y-2 ml-8">
+                                  {deptHierarchy.subDepartments.map((subDept) => (
+                                    <div key={subDept.id} className="border-l-2 border-primary/20 pl-4">
+                                      <Collapsible
+                                        open={expandedSubDepartments.has(subDept.id)}
+                                        onOpenChange={() => toggleSubDepartmentExpansion(subDept.id)}
+                                      >
+                                        <CollapsibleTrigger className="w-full text-left p-2 hover:bg-gray-50 rounded">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                              <Users className="w-4 h-4 text-primary" />
+                                              <div>
+                                                <span className="font-medium text-sm">
+                                                  <span className="text-orange-600 font-semibold">Sub Dept:</span> {subDept.name}
+                                                </span>
+                                                <Badge variant="outline" className="ml-2 text-xs">
+                                                  {subDept.teamUnits.length} team/units
+                                                </Badge>
+                                                {subDept.description && (
+                                                  <div className="text-xs text-muted-foreground mt-1">{subDept.description}</div>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleEdit(subDept, 'subdepartment');
+                                                }}
+                                              >
+                                                <Edit className="h-3 w-3" />
+                                              </Button>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setDeletingItem({ ...subDept, type: 'subdepartment' });
+                                                  setDeleteDialog(true);
+                                                }}
+                                              >
+                                                <Trash2 className="h-3 w-3" />
+                                              </Button>
+                                              {expandedSubDepartments.has(subDept.id) ? (
+                                                <ChevronDown className="w-3 h-3" />
+                                              ) : (
+                                                <ChevronRight className="w-3 h-3" />
+                                              )}
+                                            </div>
+                                          </div>
+                                        </CollapsibleTrigger>
+                                        
+                                        <CollapsibleContent className="mt-2">
+                                          <div className="space-y-1 ml-6">
+                                            {subDept.teamUnits.map((teamUnit, index) => (
+                                              <div key={teamUnit.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                                                <div className="flex items-start gap-2">
+                                                  <span className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs font-medium shrink-0">
+                                                    {index + 1}
+                                                  </span>
+                                                  <div>
+                                                    <div className="font-medium">
+                                                      <span className="text-purple-600 font-semibold">Team/Unit:</span> {teamUnit.name}
+                                                    </div>
+                                                    {teamUnit.description && (
+                                                      <div className="text-xs text-muted-foreground mt-1">
+                                                        {teamUnit.description}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleEdit(teamUnit, 'teamunit')}
+                                                  >
+                                                    <Edit className="h-3 w-3" />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      setDeletingItem({ ...teamUnit, type: 'teamunit' });
+                                                      setDeleteDialog(true);
+                                                    }}
+                                                  >
+                                                    <Trash2 className="h-3 w-3" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    </div>
+                                  ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
@@ -857,6 +995,7 @@ export default function DepartmentConfigSupabase() {
               type="file"
               accept=".xlsx,.xls"
               onChange={handleExcelUpload}
+              className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
             />
           </div>
         </DialogContent>
