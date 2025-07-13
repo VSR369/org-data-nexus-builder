@@ -12,7 +12,7 @@ import { EntityTypesRestorer } from "@/utils/entityTypesRestorer";
 import { useToast } from "@/hooks/use-toast";
 
 const MasterDataPortal = () => {
-  const [activeSection, setActiveSection] = useState('custom-data-manager');
+  const [activeSection, setActiveSection] = useState('domain-groups');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toast } = useToast();
 
