@@ -107,6 +107,39 @@ export type Database = {
         }
         Relationships: []
       }
+      master_billing_frequencies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          months: number | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          months?: number | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          months?: number | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_capability_levels: {
         Row: {
           color: string
@@ -393,6 +426,13 @@ export type Database = {
             referencedColumns: ["country_name"]
           },
           {
+            foreignKeyName: "fk_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "pricing_configurations_detailed"
+            referencedColumns: ["country_name"]
+          },
+          {
             foreignKeyName: "fk_master_currencies_country"
             columns: ["country"]
             isOneToOne: false
@@ -404,6 +444,13 @@ export type Database = {
             columns: ["country"]
             isOneToOne: false
             referencedRelation: "organization_context"
+            referencedColumns: ["country_name"]
+          },
+          {
+            foreignKeyName: "fk_master_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "pricing_configurations_detailed"
             referencedColumns: ["country_name"]
           },
         ]
@@ -627,6 +674,36 @@ export type Database = {
           is_user_created?: boolean | null
           name?: string
           updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      master_membership_statuses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
           version?: number | null
         }
         Relationships: []
@@ -986,6 +1063,42 @@ export type Database = {
           },
         ]
       }
+      master_units_of_measure: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_percentage: boolean
+          name: string
+          symbol: string | null
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          name: string
+          symbol?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          name?: string
+          symbol?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       organization_documents: {
         Row: {
           document_type: string
@@ -1154,6 +1267,159 @@ export type Database = {
           },
         ]
       }
+      pricing_configurations: {
+        Row: {
+          base_value: number
+          billing_frequency_id: string | null
+          calculated_value: number | null
+          config_name: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          currency_id: string | null
+          effective_from: string | null
+          effective_to: string | null
+          engagement_model_id: string
+          entity_type_id: string
+          id: string
+          is_active: boolean
+          membership_discount_percentage: number | null
+          membership_status_id: string
+          organization_type_id: string
+          remarks: string | null
+          unit_of_measure_id: string
+          updated_at: string
+          updated_by: string | null
+          version: number | null
+        }
+        Insert: {
+          base_value: number
+          billing_frequency_id?: string | null
+          calculated_value?: number | null
+          config_name?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          currency_id?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          engagement_model_id: string
+          entity_type_id: string
+          id?: string
+          is_active?: boolean
+          membership_discount_percentage?: number | null
+          membership_status_id: string
+          organization_type_id: string
+          remarks?: string | null
+          unit_of_measure_id: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number | null
+        }
+        Update: {
+          base_value?: number
+          billing_frequency_id?: string | null
+          calculated_value?: number | null
+          config_name?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency_id?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          engagement_model_id?: string
+          entity_type_id?: string
+          id?: string
+          is_active?: boolean
+          membership_discount_percentage?: number | null
+          membership_status_id?: string
+          organization_type_id?: string
+          remarks?: string | null
+          unit_of_measure_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_configurations_billing_frequency_fkey"
+            columns: ["billing_frequency_id"]
+            isOneToOne: false
+            referencedRelation: "master_billing_frequencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_country_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_country_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_currency_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "master_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_engagement_model_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_entity_type_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_entity_type_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_membership_status_fkey"
+            columns: ["membership_status_id"]
+            isOneToOne: false
+            referencedRelation: "master_membership_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_org_type_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_org_type_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_configurations_unit_measure_fkey"
+            columns: ["unit_of_measure_id"]
+            isOneToOne: false
+            referencedRelation: "master_units_of_measure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -1241,11 +1507,69 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_configurations_detailed: {
+        Row: {
+          base_value: number | null
+          billing_frequency: string | null
+          billing_months: number | null
+          calculated_value: number | null
+          config_name: string | null
+          country_code: string | null
+          country_name: string | null
+          created_at: string | null
+          currency_code: string | null
+          currency_name: string | null
+          currency_symbol: string | null
+          effective_from: string | null
+          effective_to: string | null
+          engagement_model: string | null
+          entity_type: string | null
+          id: string | null
+          is_active: boolean | null
+          is_percentage: boolean | null
+          membership_discount_percentage: number | null
+          membership_status: string | null
+          organization_type: string | null
+          remarks: string | null
+          unit_of_measure: string | null
+          unit_symbol: string | null
+          updated_at: string | null
+          version: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      bulk_update_pricing_discount: {
+        Args: {
+          p_country_name: string
+          p_organization_type: string
+          p_new_discount: number
+        }
+        Returns: number
+      }
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_pricing_configuration: {
+        Args: {
+          p_country_name: string
+          p_organization_type: string
+          p_entity_type: string
+          p_engagement_model: string
+          p_membership_status?: string
+          p_billing_frequency?: string
+        }
+        Returns: {
+          id: string
+          config_name: string
+          base_value: number
+          calculated_value: number
+          unit_symbol: string
+          currency_code: string
+          membership_discount: number
+        }[]
       }
       get_table_schema: {
         Args: { table_name: string }
