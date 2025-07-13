@@ -3,18 +3,26 @@ export interface SubCategory {
   id: string;
   name: string;
   description?: string;
-  categoryId: string;
-  isActive: boolean;
-  createdAt: string;
+  category_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  version?: number;
+  is_user_created?: boolean;
 }
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  domainGroupId: string;
-  isActive: boolean;
-  createdAt: string;
+  domain_group_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  version?: number;
+  is_user_created?: boolean;
   subCategories?: SubCategory[];
 }
 
@@ -22,10 +30,14 @@ export interface DomainGroup {
   id: string;
   name: string;
   description?: string;
-  industrySegmentId: string;
+  industry_segment_id: string;
   industrySegmentName?: string;
-  isActive: boolean;
-  createdAt: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  version?: number;
+  is_user_created?: boolean;
   categories?: Category[];
 }
 

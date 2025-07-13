@@ -127,10 +127,28 @@ const MasterDataTableTester = () => {
     {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
-      frontendFields: ['id', 'name', 'description', 'hierarchy', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
       isSupabaseEnabled: true,
       relationshipType: 'hierarchy' as const,
-      parentTable: 'master_industry_segments'
+      parentTable: 'master_industry_segments',
+      childTables: ['master_categories']
+    },
+    {
+      tableName: 'master_categories',
+      displayName: 'Categories',
+      frontendFields: ['id', 'name', 'description', 'domain_group_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      isSupabaseEnabled: true,
+      relationshipType: 'hierarchy' as const,
+      parentTable: 'master_domain_groups',
+      childTables: ['master_sub_categories']
+    },
+    {
+      tableName: 'master_sub_categories',
+      displayName: 'Sub Categories',
+      frontendFields: ['id', 'name', 'description', 'category_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      isSupabaseEnabled: true,
+      relationshipType: 'hierarchy' as const,
+      parentTable: 'master_categories'
     },
     {
       tableName: 'master_seeker_membership_fees',
@@ -446,26 +464,38 @@ const MasterDataTableTester = () => {
               </CardContent>
             </Card>
 
-            {/* Industry Hierarchy */}
+            {/* Industry Hierarchy - Now with 4 levels */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Workflow className="w-5 h-5" />
-                  Industry Hierarchy
+                  Industry Hierarchy (4-Level Structure)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
                   <div className="text-center">
                     <div className="font-semibold">Industry Segments</div>
-                    <div className="text-sm text-muted-foreground">Parent</div>
+                    <div className="text-sm text-muted-foreground">Level 1</div>
                     <Badge variant="outline">{tables.find(t => t.tableName === 'master_industry_segments')?.recordCount || 0} records</Badge>
                   </div>
                   <ArrowRight className="w-5 h-5" />
                   <div className="text-center">
                     <div className="font-semibold">Domain Groups</div>
-                    <div className="text-sm text-muted-foreground">Child</div>
+                    <div className="text-sm text-muted-foreground">Level 2</div>
                     <Badge variant="outline">{tables.find(t => t.tableName === 'master_domain_groups')?.recordCount || 0} records</Badge>
+                  </div>
+                  <ArrowRight className="w-5 h-5" />
+                  <div className="text-center">
+                    <div className="font-semibold">Categories</div>
+                    <div className="text-sm text-muted-foreground">Level 3</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_categories')?.recordCount || 0} records</Badge>
+                  </div>
+                  <ArrowRight className="w-5 h-5" />
+                  <div className="text-center">
+                    <div className="font-semibold">Sub Categories</div>
+                    <div className="text-sm text-muted-foreground">Level 4</div>
+                    <Badge variant="outline">{tables.find(t => t.tableName === 'master_sub_categories')?.recordCount || 0} records</Badge>
                   </div>
                 </div>
               </CardContent>
