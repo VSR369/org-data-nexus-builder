@@ -320,50 +320,73 @@ const MasterDataTableTester = () => {
 
   // Function to load full table data for individual table view
   const loadFullTableData = async (tableName: string) => {
-    // Add table to loading set
+    if (loadingTables.has(tableName)) {
+      console.log(`⏳ Table ${tableName} is already loading, skipping...`);
+      return;
+    }
+    
+    console.log(`🔄 Starting to load data for table: ${tableName}`);
     setLoadingTables(prev => new Set([...prev, tableName]));
     
     try {
-      const { data, error } = await supabase
+      console.log(`📡 Making Supabase query for table: ${tableName}`);
+      const { data, error, count } = await supabase
         .from(tableName as any)
-        .select('*')
-        .limit(100); // Limit to prevent overwhelming UI
+        .select('*', { count: 'exact' })
+        .limit(100);
 
       if (error) {
-        console.error(`Error loading data for ${tableName}:`, error);
+        console.error(`❌ Error loading data for ${tableName}:`, error);
         toast({
           title: "Error",
-          description: `Failed to load data for ${tableName}`,
+          description: `Failed to load data for ${tableName}: ${error.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      // Store data for this specific table
-      setTableDataMap(prev => ({
-        ...prev,
-        [tableName]: data || []
-      }));
+      console.log(`✅ Successfully loaded ${data?.length || 0} records for ${tableName}`);
+      console.log(`📊 Sample data for ${tableName}:`, data?.slice(0, 2));
+      
+      // Store data for this specific table with verification
+      setTableDataMap(prev => {
+        const newMap = {
+          ...prev,
+          [tableName]: data || []
+        };
+        console.log(`💾 Storing data for ${tableName}, total tables in map:`, Object.keys(newMap));
+        return newMap;
+      });
       
       toast({
-        title: "Data Loaded",
+        title: "Data Loaded Successfully",
         description: `Loaded ${data?.length || 0} records for ${tableName}`,
       });
     } catch (error) {
-      console.error(`Error loading data for ${tableName}:`, error);
+      console.error(`💥 Exception loading data for ${tableName}:`, error);
       toast({
         title: "Error",
-        description: "Failed to load table data",
+        description: `Failed to load table data for ${tableName}`,
         variant: "destructive",
       });
     } finally {
-      // Remove table from loading set
       setLoadingTables(prev => {
         const newSet = new Set(prev);
         newSet.delete(tableName);
+        console.log(`✅ Removed ${tableName} from loading set`);
         return newSet;
       });
     }
+  };
+
+  // Function to clear all loaded table data
+  const clearAllTableData = () => {
+    console.log('🧹 Clearing all table data');
+    setTableDataMap({});
+    toast({
+      title: "Data Cleared",
+      description: "All table data has been cleared",
+    });
   };
 
   // Filter tables based on search term
@@ -631,7 +654,7 @@ const MasterDataTableTester = () => {
 
         <TabsContent value="table-data">
           <div className="space-y-6">
-            {/* Search and Table Selection */}
+            {/* Search and Control Panel */}
             <div className="flex items-center gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -642,7 +665,34 @@ const MasterDataTableTester = () => {
                   className="pl-10"
                 />
               </div>
+              <Button 
+                onClick={clearAllTableData}
+                variant="outline"
+                disabled={Object.keys(tableDataMap).length === 0}
+                className="flex items-center gap-2"
+              >
+                <XCircle className="w-4 h-4" />
+                Clear All Data
+              </Button>
             </div>
+
+            {/* Data Overview */}
+            {Object.keys(tableDataMap).length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4" />
+                      {Object.keys(tableDataMap).length} tables loaded
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      {Object.values(tableDataMap).reduce((sum, data) => sum + data.length, 0)} total records
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Table Data Viewer */}
             <div className="grid gap-4">
@@ -654,6 +704,11 @@ const MasterDataTableTester = () => {
                         <CardTitle className="flex items-center gap-2">
                           <Database className="w-5 h-5" />
                           {table.displayName}
+                          {tableDataMap[table.tableName] && (
+                            <Badge variant="outline" className="ml-2">
+                              {tableDataMap[table.tableName].length} loaded
+                            </Badge>
+                          )}
                         </CardTitle>
                         <CardDescription>
                           {table.tableName} • {table.recordCount} records • {table.structure.length} columns
