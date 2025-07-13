@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit, DollarSign, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { RewardTypeService, RewardType } from '@/utils/masterData/rewardTypeService';
-import { CurrencyService } from '@/utils/masterData/currencyService';
+import { useRewardTypes, useCurrencies } from '@/hooks/useMasterDataCRUD';
 
 const RewardTypeConfig = () => {
   const [rewardTypes, setRewardTypes] = useState<RewardType[]>([]);

@@ -155,3 +155,5 @@ export const useDepartments = () => useMasterDataCRUD('master_departments');
 export const useIndustrySegments = () => useMasterDataCRUD('master_industry_segments');
 export const useEngagementModels = () => useMasterDataCRUD('master_engagement_models');
 export const useCompetencyCapabilities = () => useMasterDataCRUD('master_competency_capabilities');
+export const useCurrencies = () => useMasterDataCRUD('master_currencies');
+export const useCountries = () => useMasterDataCRUD('master_countries');

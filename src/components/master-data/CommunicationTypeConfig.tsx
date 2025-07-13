@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit, Trash2, Save, X, MessageSquare, ExternalLink } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { CommunicationTypeService, CommunicationChannel } from '@/utils/masterData/communicationTypeService';
+import { useCommunicationTypes } from '@/hooks/useMasterDataCRUD';
 
 const CommunicationTypeConfig = () => {
   const { toast } = useToast();
