@@ -299,27 +299,33 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          department_name: string
           id: string
           is_user_created: boolean | null
-          name: string
+          sub_department_name: string | null
+          team_unit_name: string | null
           updated_at: string | null
           version: number | null
         }
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          department_name?: string
           id?: string
           is_user_created?: boolean | null
-          name: string
+          sub_department_name?: string | null
+          team_unit_name?: string | null
           updated_at?: string | null
           version?: number | null
         }
         Update: {
           created_at?: string | null
           created_by?: string | null
+          department_name?: string
           id?: string
           is_user_created?: boolean | null
-          name?: string
+          sub_department_name?: string | null
+          team_unit_name?: string | null
           updated_at?: string | null
           version?: number | null
         }

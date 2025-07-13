@@ -4,7 +4,7 @@ import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
 import CurrencyConfigSupabase from "./masterData/CurrencyConfigSupabase";
 import DomainGroupsConfigSupabase from "./masterData/DomainGroupsConfigSupabase";
 import IndustrySegmentsConfigSupabase from "./master-data/IndustrySegmentsConfigSupabase";
-import DepartmentsConfigSupabase from "./master-data/DepartmentsConfigSupabase";
+import DepartmentConfigSupabase from "./master-data/DepartmentConfigSupabase";
 import OrganizationTypeConfigSupabase from "./master-data/OrganizationTypeConfigSupabase";
 import EntityTypeConfigSupabase from "./master-data/EntityTypeConfigSupabase";
 import ChallengeStatusConfigSupabase from "./master-data/ChallengeStatusConfigSupabase";
@@ -55,7 +55,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'entity-types':
         return <EntityTypeConfigSupabase />;
       case 'departments':
-        return <DepartmentsConfigSupabase />;
+        return <DepartmentConfigSupabase />;
       case 'challenge-statuses':
         return <ChallengeStatusConfigSupabase />;
       case 'solution-statuses':
