@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { safeRender, isPaaSModel } from '../utils/viewDetailsHelpers';
-import { PricingDataManager } from '@/utils/pricing/PricingDataManager';
+// Simple helpers - removed pricing dependencies
 
 interface PaymentDetailsSectionProps {
   membershipData: any;
@@ -9,7 +9,7 @@ interface PaymentDetailsSectionProps {
   isMobile?: boolean;
 }
 
-// Helper function to get the correct pricing display for engagement models
+// Helper function to get the correct pricing display
 const getPricingDisplay = (pricingData: any) => {
   if (!pricingData || pricingData.paymentStatus !== 'paid' || !pricingData.paymentAmount) {
     return null;
@@ -20,18 +20,9 @@ const getPricingDisplay = (pricingData: any) => {
     return `${pricingData.paymentAmount}%`;
   }
   
-  // For marketplace model, check if it should be percentage based on pricing config
+  // For marketplace model, show percentage
   if (pricingData.engagementModel === 'marketplace') {
-    // Try to get the pricing config for this engagement model
-    const pricingConfig = PricingDataManager.getConfigurationByOrgTypeAndEngagement(
-      'solution-seeker', 
-      'marketplace'
-    );
-    
-    // If config shows percentage-based pricing (marketplace fee)
-    if (pricingConfig && pricingConfig.generalConfig?.marketPlaceFee) {
-      return `${pricingData.paymentAmount}%`;
-    }
+    return `${pricingData.paymentAmount}%`;
   }
   
   // Default to currency display

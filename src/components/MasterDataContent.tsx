@@ -14,13 +14,11 @@ import CommunicationTypeConfigSupabase from "./master-data/CommunicationTypeConf
 import RewardTypeConfigSupabase from "./master-data/RewardTypeConfigSupabase";
 import SeekerMembershipFeeConfig from "./master-data/SeekerMembershipFeeConfig";
 import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
-import PricingConfig from "./master-data/PricingConfig";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
 import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
-import DataProtectionPanel from "./master-data/DataProtectionPanel";
 import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
 import MigrationTester from "./MigrationTester";
 import MasterDataTableTester from "./master-data/MasterDataTableTester";
@@ -69,8 +67,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <SeekerMembershipFeeConfig />;
       case 'engagement-models':
         return <EngagementModelsConfig />;
-      case 'pricing':
-        return <PricingConfig />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
       case 'global-cache-manager':
@@ -81,8 +77,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <MasterDataDiagnostics />;
       case 'admin-creation':
         return <AdminCreationDiagnostic />;
-      case 'data-protection':
-        return <DataProtectionPanel />;
       case 'solution-seekers-validation':
         return <SeekingOrgValidationDashboard />;
       default:

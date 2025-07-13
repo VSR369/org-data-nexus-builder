@@ -47,79 +47,15 @@ export const useSupabaseMasterData = () => {
           return;
         }
 
-        // Fallback to pricing_configs table
-        const { data: pricingData, error: pricingError } = await supabase
-          .from('pricing_configs')
-          .select('country, organization_type, entity_type')
-          .order('country, organization_type, entity_type');
-
-        if (pricingError) {
-          console.error('❌ Error fetching pricing configs:', pricingError);
-          throw pricingError;
-        }
-
-        console.log('📊 Raw pricing data:', pricingData);
-
-        if (pricingData && pricingData.length > 0) {
-          // Extract unique countries
-          const uniqueCountries = Array.from(
-            new Set(pricingData.map(item => item.country))
-          ).map(countryCode => {
-            // Map country codes to names
-            const countryMap: { [key: string]: string } = {
-              'IN': 'India',
-              'US': 'United States',
-              'AE': 'United Arab Emirates',
-              'GB': 'United Kingdom',
-              'CA': 'Canada',
-              'AU': 'Australia',
-              'DE': 'Germany',
-              'FR': 'France',
-              'JP': 'Japan',
-              'CN': 'China',
-              'BR': 'Brazil',
-              'MX': 'Mexico',
-              'SG': 'Singapore',
-              'MY': 'Malaysia',
-              'TH': 'Thailand',
-              'ID': 'Indonesia',
-              'PH': 'Philippines',
-              'VN': 'Vietnam',
-              'KR': 'South Korea',
-              'TW': 'Taiwan'
-            };
-            
-            return {
-              name: countryMap[countryCode] || countryCode,
-              code: countryCode
-            };
-          });
-
-          // Extract unique organization types
-          const uniqueOrgTypes = Array.from(
-            new Set(pricingData.map(item => item.organization_type))
-          );
-
-          // Extract unique entity types
-          const uniqueEntityTypes = Array.from(
-            new Set(pricingData.map(item => item.entity_type))
-          );
-
-          setCountries(uniqueCountries);
-          setOrganizationTypes(uniqueOrgTypes);
-          setEntityTypes(uniqueEntityTypes);
-
-          console.log('✅ Master data loaded successfully:');
-          console.log('📍 Countries:', uniqueCountries);
-          console.log('🏢 Organization Types:', uniqueOrgTypes);
-          console.log('🏛️ Entity Types:', uniqueEntityTypes);
-        } else {
-          console.warn('⚠️ No pricing config data found');
-          // Set default fallback data
-          setCountries([{ name: 'India', code: 'IN' }]);
-          setOrganizationTypes(['MSME']);
-          setEntityTypes(['Commercial']);
-        }
+        // Since pricing_configs table is removed, use default fallback data
+        console.warn('⚠️ Pricing configs table removed - using fallback data');
+        setCountries([
+          { name: 'India', code: 'IN' },
+          { name: 'United States', code: 'US' },
+          { name: 'United Arab Emirates', code: 'AE' }
+        ]);
+        setOrganizationTypes(['MSME', 'Startup', 'Corporate']);
+        setEntityTypes(['Commercial', 'Non-profit', 'Government']);
       } catch (err) {
         console.error('❌ Error fetching master data:', err);
         setError('Failed to load master data');

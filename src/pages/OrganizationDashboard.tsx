@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import MembershipPricingSystem from "@/components/membership/MembershipPricingSystem";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
 
 const OrganizationDashboard = () => {
@@ -230,15 +229,22 @@ const OrganizationDashboard = () => {
           </Card>
         </div>
 
-        {/* Membership & Engagement System */}
+        {/* Organization Overview */}
         <div className="mb-8">
-          <MembershipPricingSystem
-            organizationType={profile.organization_type}
-            entityType={profile.entity_type}
-            country={profile.country}
-            organizationId={profile.custom_user_id}
-            organizationName={profile.organization_name}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization Overview</CardTitle>
+              <CardDescription>
+                Your organization details and basic information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Organization management features will be available here. 
+                This section previously contained the membership pricing system which has been removed.
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions */}

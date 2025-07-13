@@ -174,11 +174,6 @@ export class DataCleanupService {
         .from('engagement_activations')
         .select('*', { count: 'exact', head: true });
 
-      // Count pricing configs (should be preserved)
-      const { count: configsCount } = await supabase
-        .from('pricing_configs')
-        .select('*', { count: 'exact', head: true });
-
       // Count auth users (check for current user)
       let authUsersCount = 0;
       try {
@@ -193,7 +188,7 @@ export class DataCleanupService {
         profiles: profilesCount || 0,
         activations: activationsCount || 0,
         authUsers: authUsersCount,
-        configs: configsCount || 0
+        configs: 0 // No pricing configs table anymore
       };
     } catch (error) {
       console.error('❌ Error getting data counts:', error);

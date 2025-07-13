@@ -2,7 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Settings, CreditCard, CheckCircle, Clock } from 'lucide-react';
-import { formatCurrency } from '@/utils/membershipPricingUtils';
+// Simple currency format helper
+const formatCurrency = (amount: number, currency: string): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+  }).format(amount);
+};
 
 interface ComprehensiveOrgData {
   organizationDetails: any;

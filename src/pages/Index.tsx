@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import MembershipPricingSystem from "@/components/membership/MembershipPricingSystem";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
 
 const Index = () => {

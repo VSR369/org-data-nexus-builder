@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Code, Headphones, Server } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { PricingConfig } from '@/types/pricing';
+// Removed pricing config type - using basic interface
 
 interface EngagementModel {
   id: string;
@@ -16,7 +16,7 @@ export const useMembershipPricingData = (
   country: string,
   userId?: string
 ) => {
-  const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
+  const [pricingConfigs, setPricingConfigs] = useState<any[]>([]);
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,18 +54,13 @@ export const useMembershipPricingData = (
           }
         }
 
-        // Load data using database functions
-        const [membershipFeesData, pricingConfigsData, engagementModelsData] = await Promise.all([
-          countryId ? supabase.rpc('get_membership_fees_for_organization', {
-            org_country_id: countryId,
-            org_type_id: orgTypeId,
-            org_entity_type_id: entityTypeId
-          }) : { data: [], error: null },
-          countryId ? supabase.rpc('get_pricing_configs_for_organization', {
-            org_country_id: countryId,
-            org_type_id: orgTypeId,
-            org_entity_type_id: entityTypeId
-          }) : { data: [], error: null },
+        // Load data using database functions - only membership fees and engagement models
+        const [membershipFeesData, engagementModelsData] = await Promise.all([
+          countryId ? supabase.from('master_seeker_membership_fees')
+            .select('*')
+            .eq('country_id', countryId)
+            .eq('organization_type_id', orgTypeId)
+            .eq('entity_type_id', entityTypeId) : { data: [], error: null },
           supabase.from('master_engagement_models').select('*').order('name')
         ]);
 
@@ -73,27 +68,8 @@ export const useMembershipPricingData = (
           setMembershipFees(membershipFeesData.data || []);
         }
 
-        if (!pricingConfigsData.error && pricingConfigsData.data) {
-          const configs: PricingConfig[] = pricingConfigsData.data.map((config: any) => ({
-            id: config.id,
-            country: config.country || country,
-            currency: config.currency,
-            organizationType: config.organization_type || organizationType,
-            entityType: config.entity_type || entityType,
-            engagementModel: config.engagement_model_name,
-            membershipStatus: config.membership_status,
-            quarterlyFee: config.quarterly_fee,
-            halfYearlyFee: config.half_yearly_fee,
-            annualFee: config.annual_fee,
-            platformFeePercentage: config.platform_fee_percentage,
-            discountPercentage: config.discount_percentage,
-            internalPaasPricing: config.internal_paas_pricing || [],
-            version: 1,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }));
-          setPricingConfigs(configs);
-        }
+        // Set empty pricing configs since pricing table is removed
+        setPricingConfigs([]);
 
         if (!engagementModelsData.error) {
           const models: EngagementModel[] = engagementModelsData.data?.map((model: any) => ({
