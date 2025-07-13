@@ -36,6 +36,7 @@ const CountryConfigSupabase: React.FC = () => {
         .order('name');
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Countries loaded from Supabase:', data);
       setCountries(data || []);
     } catch (error) {
       console.error('Error loading countries:', error);
@@ -90,6 +91,7 @@ const CountryConfigSupabase: React.FC = () => {
         .single();
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Country created in Supabase:', data);
       setCountries(prev => [...prev, data]);
       setNewCountry({ name: '', code: '', region: '' });
       setIsAdding(false);
@@ -156,6 +158,7 @@ const CountryConfigSupabase: React.FC = () => {
         .single();
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Country updated in Supabase:', data);
       setCountries(prev => prev.map(country => country.id === editingId ? data : country));
       setEditingId(null);
       setEditingValue({ name: '', code: '', region: '' });
@@ -184,6 +187,7 @@ const CountryConfigSupabase: React.FC = () => {
         .eq('id', id);
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Country deleted from Supabase');
       setCountries(prev => prev.filter(country => country.id !== id));
       toast({
         title: "Success",

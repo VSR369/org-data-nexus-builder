@@ -43,6 +43,7 @@ const RewardTypeConfigSupabase = () => {
         .order('name');
       
       if (error) throw error;
+      console.log('✅ CRUD TEST - Reward Types loaded from Supabase:', data);
       setRewardTypes(data || []);
     } catch (error) {
       console.error('Error loading reward types:', error);
