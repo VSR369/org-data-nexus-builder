@@ -15,7 +15,7 @@ import {
   Building,
   Globe
 } from 'lucide-react';
-import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
+// MembershipFeeFixer removed - using Supabase as single source of truth
 
 interface MasterDataKeyInfo {
   key: string;
@@ -223,11 +223,9 @@ export const MasterDataDiagnostics: React.FC = () => {
   const analyzeMasterDataKey = (key: string, config: any): MasterDataKeyInfo => {
     console.log(`🔍 Analyzing ${key}...`);
     
-    // Special handling for membership fees - run fixer first (but only once)
-    if (key === 'master_data_seeker_membership_fees' && !(window as any).diagnosticFixerRan) {
-      console.log('🔧 Running membership fee structure fix...');
-      (window as any).diagnosticFixerRan = true;
-      MembershipFeeFixer.fixMembershipFeeStructure();
+    // Membership fees now handled by Supabase - no localStorage fixes needed
+    if (key === 'master_data_seeker_membership_fees') {
+      console.log('ℹ️ Membership fees now managed by Supabase - localStorage diagnostics deprecated');
     }
     
     const rawValue = localStorage.getItem(key);

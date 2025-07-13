@@ -9,7 +9,7 @@ export class BrowserStorageCleaner {
    */
   static clearAllPricingData(): void {
     try {
-      console.log('🧹 Clearing all browser storage for pricing data...');
+      console.log('🧹 Clearing all browser storage for pricing and membership data...');
       
       // Clear localStorage
       const keysToRemove: string[] = [];
@@ -18,10 +18,16 @@ export class BrowserStorageCleaner {
         if (key && (
           key.includes('pricing') ||
           key.includes('config') ||
+          key.includes('membership') ||
+          key.includes('seeker') ||
           key.includes('Pricing') ||
           key.includes('Config') ||
+          key.includes('Membership') ||
+          key.includes('Seeker') ||
           key.includes('PRICING') ||
-          key.includes('CONFIG')
+          key.includes('CONFIG') ||
+          key.includes('MEMBERSHIP') ||
+          key.includes('SEEKER')
         )) {
           keysToRemove.push(key);
         }
@@ -39,10 +45,16 @@ export class BrowserStorageCleaner {
         if (key && (
           key.includes('pricing') ||
           key.includes('config') ||
+          key.includes('membership') ||
+          key.includes('seeker') ||
           key.includes('Pricing') ||
           key.includes('Config') ||
+          key.includes('Membership') ||
+          key.includes('Seeker') ||
           key.includes('PRICING') ||
-          key.includes('CONFIG')
+          key.includes('CONFIG') ||
+          key.includes('MEMBERSHIP') ||
+          key.includes('SEEKER')
         )) {
           sessionKeysToRemove.push(key);
         }

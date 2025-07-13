@@ -27,6 +27,21 @@ export class GlobalCacheManager {
     pricingKeys.forEach(key => {
       localStorage.removeItem(key);
     });
+
+    // Clear all membership fee related keys
+    const membershipKeys = [
+      'master_data_seeker_membership_fees',
+      'custom_seekerMembershipFees',
+      'user_created_master_data_seeker_membership_fees',
+      'backup_master_data_seeker_membership_fees',
+      'master_data_seeker_membership_fees_version',
+      'master_data_seeker_membership_fees_timestamp',
+      'master_data_seeker_membership_fees_metadata'
+    ];
+
+    membershipKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
     
     // Also clear old keys that might be lingering
     const oldKeys = [
@@ -46,7 +61,7 @@ export class GlobalCacheManager {
       localStorage.removeItem(key);
     });
     
-    console.log('All master data cache cleared, including pricing data and old keys');
+    console.log('All master data cache cleared, including pricing data, membership fees, and old keys');
   }
 
   static clearDomainGroupsData(): void {

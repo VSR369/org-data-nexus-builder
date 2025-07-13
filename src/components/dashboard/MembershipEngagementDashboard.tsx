@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { PricingDataManager } from '@/utils/pricingDataManager';
 import { PricingConfig } from '@/types/pricing';
-import { MembershipFeeFixer, MembershipFeeEntry } from '@/utils/membershipFeeFixer';
+import { useMembershipFeeDataSupabase } from '@/components/master-data/seeker-membership/useMembershipFeeDataSupabase';
 import { getEngagementPricing, getEngagementModelName, getBothMemberAndNonMemberPricing, isPaaSModel, isMarketplaceModel } from '@/utils/membershipPricingUtils';
 // Activation functionality removed
 import { useToast } from '@/hooks/use-toast';
@@ -50,8 +50,10 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   
   // State for pricing data
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
-  const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
-  const [selectedMembershipFee, setSelectedMembershipFee] = useState<MembershipFeeEntry | null>(null);
+  
+  // Use Supabase as single source of truth for membership fees
+  const { membershipFees: supabaseMembershipFees } = useMembershipFeeDataSupabase();
+  const [selectedMembershipFee, setSelectedMembershipFee] = useState<any | null>(null);
 
   // Activation functionality removed
   const { toast } = useToast();
@@ -70,18 +72,17 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
     const allConfigs = PricingDataManager.getAllConfigurations();
     setPricingConfigs(allConfigs);
     
-    // Load membership fees from SeekerMembershipFeeConfig - CORRECT DATA SOURCE
-    const allMembershipFees = MembershipFeeFixer.getMembershipFees();
-    const filteredMembershipFees = allMembershipFees.filter(fee => 
+    console.log('🔍 Loading membership pricing for:', { country, organizationType, entityType });
+    console.log('📊 Supabase membership fees available:', supabaseMembershipFees.length);
+    
+    // Filter Supabase membership fees for this organization
+    const filteredMembershipFees = supabaseMembershipFees.filter(fee => 
       fee.country === country && 
       fee.organizationType === organizationType && 
       fee.entityType === entityType
     );
-    setMembershipFees(filteredMembershipFees);
     
-    console.log('🔍 Loading membership pricing for:', { country, organizationType, entityType });
-    console.log('📊 Found membership fees:', filteredMembershipFees.length);
-    console.log('💡 Membership fees data:', filteredMembershipFees);
+    console.log('💡 Filtered membership fees data:', filteredMembershipFees);
     
     // Set initial membership fee if we have saved plan
     if (savedMembershipPlan && filteredMembershipFees.length > 0) {
@@ -89,7 +90,7 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       setSelectedMembershipFee(initialFee);
       console.log('💰 Initial membership fee loaded:', initialFee);
     }
-  }, [country, organizationType, entityType]);
+  }, [country, organizationType, entityType, supabaseMembershipFees]);
 
   // Update localStorage when membership plan changes
   useEffect(() => {
@@ -97,14 +98,19 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
       localStorage.setItem('selectedMembershipPlan', selectedMembershipPlan);
       console.log('💾 Saved membership plan to localStorage:', selectedMembershipPlan);
       
-      // Update membership fee when plan changes
-      if (membershipFees.length > 0) {
-        const fee = membershipFees[0]; // Use first available fee for now
+      // Update membership fee when plan changes - use filtered Supabase data
+      const filteredFees = supabaseMembershipFees.filter(fee => 
+        fee.country === country && 
+        fee.organizationType === organizationType && 
+        fee.entityType === entityType
+      );
+      if (filteredFees.length > 0) {
+        const fee = filteredFees[0]; // Use first available fee for now
         setSelectedMembershipFee(fee);
         console.log('🔄 Updated membership fee:', fee);
       }
     }
-  }, [selectedMembershipPlan, membershipFees]);
+  }, [selectedMembershipPlan, supabaseMembershipFees, country, organizationType, entityType]);
 
   // Update localStorage when engagement model changes (only if membership plan is selected)
   useEffect(() => {
@@ -175,15 +181,21 @@ const MembershipEngagementDashboard: React.FC<MembershipEngagementDashboardProps
   };
 
 
-  // Get membership plans with dynamic pricing from master data (independent of engagement model)
+  // Get membership plans with dynamic pricing from Supabase data
   const getMembershipPlans = (): PricingPlan[] => {
-    if (membershipFees.length === 0) {
+    const filteredFees = supabaseMembershipFees.filter(fee => 
+      fee.country === country && 
+      fee.organizationType === organizationType && 
+      fee.entityType === entityType
+    );
+    
+    if (filteredFees.length === 0) {
       console.log('⚠️ No membership fees found');
       return [];
     }
 
     // Use the first available membership fee entry
-    const membershipFee = membershipFees[0];
+    const membershipFee = filteredFees[0];
     console.log('📋 Using membership fee entry:', membershipFee.id);
     console.log('💰 Fee data:', membershipFee);
 

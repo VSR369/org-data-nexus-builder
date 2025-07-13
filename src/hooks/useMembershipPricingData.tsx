@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Code, Headphones, Server } from 'lucide-react';
 import { PricingDataManager } from '@/utils/pricingDataManager';
-import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
+import { useMembershipFeeDataSupabase } from '@/components/master-data/seeker-membership/useMembershipFeeDataSupabase';
 import { engagementModelsDataManager } from '@/components/master-data/engagement-models/engagementModelsDataManager';
 import { PricingConfig } from '@/types/pricing';
 import { useToast } from "@/hooks/use-toast";
@@ -74,8 +74,9 @@ export const useMembershipPricingData = (
           })));
         }
 
-        // Load membership fees
-        const fees = MembershipFeeFixer.getMembershipFees().filter(fee => 
+        // Use Supabase hook for membership fees
+        const { membershipFees: supabaseFees } = useMembershipFeeDataSupabase();
+        const fees = supabaseFees.filter(fee => 
           fee.country === country && 
           fee.organizationType === organizationType && 
           fee.entityType === entityType

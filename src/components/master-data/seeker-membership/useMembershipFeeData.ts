@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { countriesDataManager } from '@/utils/sharedDataManagers';
 import { MasterDataSeeder } from '@/utils/masterDataSeeder';
 import { MembershipFeeEntry, Currency, Country } from './types';
-import { MembershipFeeFixer } from '@/utils/membershipFeeFixer';
+// MembershipFeeFixer removed - this hook is now legacy, use useMembershipFeeDataSupabase instead
 
 export const useMembershipFeeData = () => {
   const [membershipFees, setMembershipFees] = useState<MembershipFeeEntry[]>([]);
@@ -25,13 +25,13 @@ export const useMembershipFeeData = () => {
     };
   }, []);
 
-  // Function to check data health
+  // Function to check data health - now deprecated since using Supabase
   const checkDataHealth = () => {
-    const membershipHealth = MembershipFeeFixer.verifyStructure();
+    console.log('⚠️ Data health check deprecated - using Supabase as single source of truth');
     
     return {
       currencies: { isValid: true, issues: [] },
-      membershipFees: membershipHealth
+      membershipFees: { isValid: true, issues: [] }
     };
   };
 
@@ -52,8 +52,8 @@ export const useMembershipFeeData = () => {
       
       const loadedEntityTypes = MasterDataSeeder.getEntityTypes();
       
-      // Use MembershipFeeFixer to get guaranteed raw format
-      const loadedFees = MembershipFeeFixer.getMembershipFees();
+      // Legacy hook - return empty fees since we now use Supabase
+      const loadedFees: any[] = [];
       
       console.log('🔍 Safe Load Results:');
       console.log('  - Currencies:', loadedCurrencies.length);
@@ -104,8 +104,8 @@ export const useMembershipFeeData = () => {
     
     console.log('🔍 Checking for auto-recovery need...');
     
-    // Check if we have data in storage but empty state using MembershipFeeFixer
-    const storageData = MembershipFeeFixer.getMembershipFees();
+    // Legacy auto-recovery - no longer needed since using Supabase
+    const storageData: any[] = [];
     const hasStorageData = storageData.length > 0;
     const hasStateData = membershipFees.length > 0;
     
@@ -172,8 +172,8 @@ export const useMembershipFeeData = () => {
     console.log(`💾 Saving ${membershipFees.length} membership fees using MembershipFeeFixer`);
     
     try {
-      // Use MembershipFeeFixer to save with mode-aware storage
-      MembershipFeeFixer.saveMembershipFees(membershipFees);
+      // Legacy save - no longer needed since using Supabase
+      console.log('⚠️ Legacy save ignored - use Supabase hook instead');
       console.log("✅ Successfully saved membership fees using MembershipFeeFixer");
       
       setDataHealth(checkDataHealth());

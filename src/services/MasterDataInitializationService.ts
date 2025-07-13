@@ -88,38 +88,8 @@ const FALLBACK_CURRENCIES = [
   { id: 'sgd', code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', isUserCreated: false }
 ];
 
-const FALLBACK_SEEKER_MEMBERSHIP_FEES = [
-  {
-    id: 'basic-startup',
-    country: 'Global',
-    organizationType: 'Start-up',
-    entityType: 'Commercial',
-    quarterlyAmount: 99,
-    quarterlyCurrency: 'USD',
-    halfYearlyAmount: 189,
-    halfYearlyCurrency: 'USD',
-    annualAmount: 359,
-    annualCurrency: 'USD',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isUserCreated: false
-  },
-  {
-    id: 'standard-enterprise',
-    country: 'Global',
-    organizationType: 'Large Enterprise',
-    entityType: 'Commercial',
-    quarterlyAmount: 299,
-    quarterlyCurrency: 'USD',
-    halfYearlyAmount: 569,
-    halfYearlyCurrency: 'USD',
-    annualAmount: 1079,
-    annualCurrency: 'USD',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isUserCreated: false
-  }
-];
+// DEPRECATED: Seeker membership fees now managed by Supabase
+// Fallback data removed since we use Supabase as single source of truth
 
 const FALLBACK_INDUSTRY_SEGMENTS = [
   { id: 'it', industrySegment: 'Information Technology', description: 'Software, Hardware, and IT services' },
@@ -328,28 +298,12 @@ export class MasterDataInitializationService {
     }
   }
 
+  /**
+   * DEPRECATED: Seeker membership fees now managed by Supabase
+   */
   private static async fixSeekerMembershipFees(results: { fixed: string[], errors: string[] }): Promise<void> {
-    try {
-      const existing = localStorage.getItem('master_data_seeker_membership_fees');
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        
-        // Check if it's in the wrong format (wrapped in data manager structure)
-        if (parsed && typeof parsed === 'object' && parsed.data && parsed.version) {
-          // Fix the structure - store raw array instead of wrapped data
-          localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(FALLBACK_SEEKER_MEMBERSHIP_FEES));
-          results.fixed.push('Seeker Membership Fees: Fixed data structure (unwrapped from data manager format)');
-          console.log('✅ Seeker Membership Fees structure fixed');
-        } else if (!Array.isArray(parsed)) {
-          // If it's not an array, replace with fallback
-          localStorage.setItem('master_data_seeker_membership_fees', JSON.stringify(FALLBACK_SEEKER_MEMBERSHIP_FEES));
-          results.fixed.push('Seeker Membership Fees: Fixed data structure (replaced with proper array)');
-          console.log('✅ Seeker Membership Fees structure fixed');
-        }
-      }
-    } catch (error) {
-      results.errors.push(`Seeker Membership Fees fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.log('⚠️ fixSeekerMembershipFees is deprecated - using Supabase as single source of truth');
+    results.fixed.push('Seeker Membership Fees: Now managed by Supabase (deprecated localStorage operations)');
   }
 
   private static async fixRewardTypes(results: { fixed: string[], errors: string[] }): Promise<void> {

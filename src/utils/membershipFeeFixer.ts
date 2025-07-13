@@ -1,5 +1,6 @@
-// Dedicated Membership Fee Structure Fixer
-// Permanently converts wrapped format to raw array format
+// Legacy Membership Fee Fixer - DEPRECATED
+// This file is kept for compatibility but no longer manages localStorage
+// All membership data now comes from Supabase as single source of truth
 
 export interface MembershipFeeEntry {
   id: string;
@@ -20,307 +21,57 @@ export interface MembershipFeeEntry {
   isUserCreated: boolean;
 }
 
-const FALLBACK_MEMBERSHIP_FEES: MembershipFeeEntry[] = [
-  {
-    id: 'basic-startup',
-    country: 'Global',
-    organizationType: 'Start-up',
-    entityType: 'Commercial',
-    quarterlyAmount: 99,
-    quarterlyCurrency: 'USD',
-    halfYearlyAmount: 189,
-    halfYearlyCurrency: 'USD',
-    annualAmount: 359,
-    annualCurrency: 'USD',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isUserCreated: false
-  },
-  {
-    id: 'standard-enterprise',
-    country: 'Global',
-    organizationType: 'Large Enterprise',
-    entityType: 'Commercial',
-    quarterlyAmount: 299,
-    quarterlyCurrency: 'USD',
-    halfYearlyAmount: 569,
-    halfYearlyCurrency: 'USD',
-    annualAmount: 1079,
-    annualCurrency: 'USD',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isUserCreated: false
-  }
-];
-
 export class MembershipFeeFixer {
   private static readonly STORAGE_KEY = 'master_data_seeker_membership_fees';
   
   /**
-   * Fix membership fee data structure permanently
+   * DEPRECATED: This method no longer performs any fixes
+   * All data comes from Supabase now
    */
   static fixMembershipFeeStructure(): { success: boolean; message: string; count: number } {
-    console.log('🔧 === FIXING MEMBERSHIP FEE STRUCTURE ===');
+    console.log('🔧 === MEMBERSHIP FEE FIXER - DEPRECATED ===');
+    console.log('⚠️ This fixer is deprecated. All membership data now comes from Supabase.');
     
-    try {
-      const rawData = localStorage.getItem(this.STORAGE_KEY);
-      
-      if (!rawData) {
-        console.log('📦 No membership fee data found, creating with fallback');
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(FALLBACK_MEMBERSHIP_FEES));
-        return { 
-          success: true, 
-          message: 'Created membership fees with fallback data', 
-          count: FALLBACK_MEMBERSHIP_FEES.length 
-        };
-      }
-      
-      let parsed;
-      try {
-        parsed = JSON.parse(rawData);
-      } catch (error) {
-        console.error('❌ Invalid JSON, using fallback');
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(FALLBACK_MEMBERSHIP_FEES));
-        return { 
-          success: true, 
-          message: 'Fixed invalid JSON with fallback data', 
-          count: FALLBACK_MEMBERSHIP_FEES.length 
-        };
-      }
-      
-      // Check if it's already in raw format
-      if (Array.isArray(parsed)) {
-        console.log('✅ Already in raw format:', parsed.length, 'items');
-        return { 
-          success: true, 
-          message: 'Already in correct raw format', 
-          count: parsed.length 
-        };
-      }
-      
-      // Handle wrapped format
-      if (parsed && typeof parsed === 'object' && parsed.data) {
-        console.log('🔧 Converting from wrapped format...');
-        
-        if (Array.isArray(parsed.data)) {
-          // Extract raw data
-          const rawArray = parsed.data;
-          
-          // Validate the data structure
-          const isValidStructure = rawArray.every(item => 
-            item && typeof item === 'object' && 
-            item.id && item.country && item.organizationType
-          );
-          
-          if (isValidStructure) {
-            // Save as raw array
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(rawArray));
-            
-            // Clean up wrapped format artifacts
-            this.cleanupWrappedFormatArtifacts();
-            
-            console.log('✅ Successfully converted to raw format:', rawArray.length, 'items');
-            return { 
-              success: true, 
-              message: 'Converted from wrapped to raw format', 
-              count: rawArray.length 
-            };
-          } else {
-            console.log('⚠️ Invalid data structure in wrapped format, using fallback');
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(FALLBACK_MEMBERSHIP_FEES));
-            return { 
-              success: true, 
-              message: 'Replaced invalid wrapped data with fallback', 
-              count: FALLBACK_MEMBERSHIP_FEES.length 
-            };
-          }
-        }
-      }
-      
-      // Unknown format, use fallback
-      console.log('❌ Unknown format, using fallback');
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(FALLBACK_MEMBERSHIP_FEES));
-      return { 
-        success: true, 
-        message: 'Replaced unknown format with fallback data', 
-        count: FALLBACK_MEMBERSHIP_FEES.length 
-      };
-      
-    } catch (error) {
-      console.error('❌ Critical error fixing membership fees:', error);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(FALLBACK_MEMBERSHIP_FEES));
-      return { 
-        success: true, 
-        message: 'Fixed critical error with fallback data', 
-        count: FALLBACK_MEMBERSHIP_FEES.length 
-      };
-    }
+    return { 
+      success: true, 
+      message: 'Deprecated - using Supabase as single source of truth', 
+      count: 0 
+    };
   }
   
   /**
-   * Clean up any artifacts from wrapped format storage
+   * DEPRECATED: No longer cleans localStorage
    */
   private static cleanupWrappedFormatArtifacts(): void {
-    try {
-      const keysToRemove = [
-        'user_created_master_data_seeker_membership_fees',
-        'backup_master_data_seeker_membership_fees',
-        `${this.STORAGE_KEY}_version`,
-        `${this.STORAGE_KEY}_timestamp`,
-        `${this.STORAGE_KEY}_metadata`
-      ];
-      
-      keysToRemove.forEach(key => {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key);
-          console.log(`🧹 Cleaned up: ${key}`);
-        }
-      });
-    } catch (error) {
-      console.warn('⚠️ Error during cleanup:', error);
-    }
+    console.log('⚠️ cleanupWrappedFormatArtifacts is deprecated - using Supabase');
   }
   
   /**
-   * Verify the current data structure is correct
+   * DEPRECATED: Always returns valid since we don't use localStorage
    */
   static verifyStructure(): { isValid: boolean; issues: string[] } {
-    const issues: string[] = [];
-    
-    try {
-      const rawData = localStorage.getItem(this.STORAGE_KEY);
-      
-      if (!rawData) {
-        issues.push('No data found');
-        return { isValid: false, issues };
-      }
-      
-      const parsed = JSON.parse(rawData);
-      
-      if (!Array.isArray(parsed)) {
-        issues.push('Data is not an array');
-        return { isValid: false, issues };
-      }
-      
-      if (parsed.length === 0) {
-        issues.push('Array is empty');
-        return { isValid: false, issues };
-      }
-      
-      // Validate structure of each item
-      const requiredFields = ['id', 'country', 'organizationType', 'entityType'];
-      
-      for (let i = 0; i < parsed.length; i++) {
-        const item = parsed[i];
-        if (!item || typeof item !== 'object') {
-          issues.push(`Item ${i} is not an object`);
-          continue;
-        }
-        
-        for (const field of requiredFields) {
-          if (!item[field]) {
-            issues.push(`Item ${i} missing field: ${field}`);
-          }
-        }
-      }
-      
-      const isValid = issues.length === 0;
-      console.log(`🔍 Structure verification: ${isValid ? 'VALID' : 'INVALID'}`);
-      if (!isValid) {
-        console.log('❌ Issues found:', issues);
-      }
-      
-      return { isValid, issues };
-      
-    } catch (error) {
-      issues.push(`Parse error: ${error instanceof Error ? error.message : 'Unknown'}`);
-      return { isValid: false, issues };
-    }
+    console.log('⚠️ verifyStructure is deprecated - using Supabase as single source of truth');
+    return { isValid: true, issues: [] };
   }
   
   /**
-   * Get membership fees in guaranteed raw format
+   * DEPRECATED: Returns empty array since we don't use localStorage
    */
   static getMembershipFees(): MembershipFeeEntry[] {
-    console.log('🔍 Getting membership fees...');
-    
-    // CHECK FOR CUSTOM-ONLY MODE FIRST
-    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-    if (isCustomMode) {
-      console.log('🎯 Custom-only mode detected, loading custom membership fees...');
-      const customData = localStorage.getItem('custom_seekerMembershipFees');
-      if (customData !== null) {
-        try {
-          const parsed = JSON.parse(customData);
-          if (Array.isArray(parsed)) {
-            console.log('✅ Using custom membership fees (including empty array):', parsed.length);
-            return parsed; // Return even if empty array - this preserves deletions
-          }
-        } catch (error) {
-          console.error('❌ Failed to parse custom membership fees data:', error);
-        }
-      }
-      
-      // In custom-only mode, don't fall back to defaults if no custom data
-      console.log('🚫 Custom-only mode: No custom membership fees found, returning empty array');
-      return [];
-    }
-    
-    // Mixed mode: use existing logic with fallback
-    const fixResult = this.fixMembershipFeeStructure();
-    
-    try {
-      const rawData = localStorage.getItem(this.STORAGE_KEY);
-      if (rawData) {
-        const parsed = JSON.parse(rawData);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error getting membership fees:', error);
-    }
-    
-    return FALLBACK_MEMBERSHIP_FEES;
+    console.log('⚠️ getMembershipFees is deprecated - use useMembershipFeeDataSupabase hook instead');
+    return [];
   }
   
   /**
-   * Save membership fees with mode-aware storage
+   * DEPRECATED: No longer saves to localStorage
    */
   static saveMembershipFees(fees: MembershipFeeEntry[]): void {
-    const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
-    
-    if (isCustomMode) {
-      console.log('💾 Custom-only mode: Saving membership fees to custom_seekerMembershipFees:', fees.length);
-      localStorage.setItem('custom_seekerMembershipFees', JSON.stringify(fees));
-      
-      // Validation: Read back to ensure it was saved correctly
-      const readBack = localStorage.getItem('custom_seekerMembershipFees');
-      if (readBack !== null) {
-        try {
-          const parsed = JSON.parse(readBack);
-          if (Array.isArray(parsed) && parsed.length === fees.length) {
-            console.log('✅ Custom membership fees save validated successfully');
-          } else {
-            console.error('❌ Custom membership fees save validation failed - length mismatch');
-          }
-        } catch (error) {
-          console.error('❌ Custom membership fees save validation failed - parse error:', error);
-        }
-      } else {
-        console.error('❌ Custom membership fees save validation failed - null readback');
-      }
-    } else {
-      console.log('💾 Mixed mode: Saving membership fees to master_data_seeker_membership_fees:', fees.length);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(fees));
-    }
+    console.log('⚠️ saveMembershipFees is deprecated - use Supabase hook save methods instead');
+    console.log('   Attempted to save', fees.length, 'fees - operation ignored');
   }
 }
 
-// Auto-fix on import (but only once)
-if (typeof window !== 'undefined' && !(window as any).membershipFeeFixerRan) {
-  (window as any).membershipFeeFixerRan = true;
-  MembershipFeeFixer.fixMembershipFeeStructure();
-}
+// No longer auto-fix on import since we use Supabase
+console.log('📦 MembershipFeeFixer loaded (deprecated - using Supabase)');
 
 export default MembershipFeeFixer;
