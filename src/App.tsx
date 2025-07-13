@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import ContributorAuth from "./pages/ContributorAuth";
 import MasterDataPortal from "./pages/MasterDataPortal";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
+import OrganizationSignIn from "./pages/OrganizationSignIn";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function App() {
               <Route path="/contributor-auth" element={<ContributorAuth />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />
               <Route path="/organization-registration" element={<OrganizationRegistration />} />
+              <Route path="/organization-signin" element={<OrganizationSignIn />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

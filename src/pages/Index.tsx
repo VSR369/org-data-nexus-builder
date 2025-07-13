@@ -363,12 +363,12 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Link to="/auth?mode=signup" className="w-full block">
+                  <Link to="/organization-registration" className="w-full block">
                     <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                      Sign Up Organization
+                      Register Organization
                     </Button>
                   </Link>
-                  <Link to="/auth" className="w-full block">
+                  <Link to="/organization-signin" className="w-full block">
                     <Button variant="outline" className="w-full">
                       Sign In Organization
                     </Button>
