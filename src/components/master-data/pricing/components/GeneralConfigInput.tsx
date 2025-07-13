@@ -66,7 +66,7 @@ const GeneralConfigInput: React.FC<GeneralConfigInputProps> = ({
     setOrganizationTypesFromMaster(safeOrgTypes);
     
     // Load entity types from master data
-    const loadedEntityTypes = EntityTypeService.getEntityTypes();
+    const loadedEntityTypes = EntityTypeService.getEntityTypesSync();
     console.log('🏛️ GeneralConfigInput: Loaded entity types:', loadedEntityTypes);
     setEntityTypes(loadedEntityTypes);
     

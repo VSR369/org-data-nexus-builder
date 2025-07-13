@@ -77,7 +77,7 @@ organizationTypesDataManager.loadData = function() {
   const isCustomMode = localStorage.getItem('master_data_mode') === 'custom_only';
   if (isCustomMode) {
     console.log('🎯 Custom-only mode detected, using OrganizationTypeService...');
-    return OrganizationTypeService.getOrganizationTypes();
+    return OrganizationTypeService.getOrganizationTypesSync();
   }
   
   // Fallback to original method

@@ -14,7 +14,7 @@ export class MasterDataSeeder {
     console.log('💰 Loaded currencies from storage:', currencies.length);
     
     // Load entity types - NEVER overwrite user data  
-    let entityTypes = EntityTypeService.getEntityTypes();
+    let entityTypes = EntityTypeService.getEntityTypesSync();
     console.log('🏢 Entity types loaded:', entityTypes.length);
     
     console.log('✅ Master data initialization complete (user data preserved)');
@@ -34,7 +34,7 @@ export class MasterDataSeeder {
   }
   
   static getEntityTypes(): string[] {
-    return EntityTypeService.getEntityTypes();
+    return EntityTypeService.getEntityTypesSync();
   }
   
   static getCurrencyByCountry(country: string): Currency | null {

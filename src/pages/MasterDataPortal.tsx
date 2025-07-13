@@ -76,7 +76,11 @@ const MasterDataPortal = () => {
   React.useEffect(() => {
     console.log('🔍 Master Data Portal - Enhanced custom data analysis...');
     
-    const initializeCustomData = async () => {
+    const initializeData = async () => {
+      // Run master data migration from localStorage to Supabase
+      const { masterDataMigrationService } = await import('@/services/MasterDataMigrationService');
+      await masterDataMigrationService.migrateAllMasterData();
+      
       // Import and run the enhanced restoration processor
       const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
       
@@ -94,7 +98,7 @@ const MasterDataPortal = () => {
       }
     };
     
-    initializeCustomData().catch(console.error);
+    initializeData().catch(console.error);
   }, []);
 
   console.log('MasterDataPortal - activeSection:', activeSection);

@@ -1,5 +1,23 @@
+import { supabaseMasterDataService } from '@/services/SupabaseMasterDataService';
+
 export class OrganizationTypeService {
-  static getOrganizationTypes(): string[] {
+  static async getOrganizationTypes(): Promise<string[]> {
+    try {
+      // First try to get from Supabase
+      const organizationTypes = await supabaseMasterDataService.getOrganizationTypes();
+      if (organizationTypes.length > 0) {
+        console.log('✅ Using Supabase organization types:', organizationTypes.map(o => o.name));
+        return organizationTypes.map(o => o.name);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching organization types from Supabase:', error);
+    }
+
+    // Fallback to localStorage
+    return OrganizationTypeService.getOrganizationTypesSync();
+  }
+
+  static getOrganizationTypesSync(): string[] {
     console.log('🔍 Getting organization types...');
     
     // CHECK FOR CUSTOM-ONLY MODE FIRST
@@ -61,8 +79,22 @@ export class OrganizationTypeService {
     return fallbackData;
   }
   
-  static saveOrganizationTypes(types: string[]): void {
-    console.log('💾 Saving organization types in raw format:', types.length);
-    localStorage.setItem('master_data_organization_types', JSON.stringify(types));
+  static async saveOrganizationTypes(types: string[]): Promise<boolean> {
+    try {
+      // Convert strings to MasterDataItem format
+      const items = types.map(name => ({ name, is_user_created: true }));
+      const success = await supabaseMasterDataService.saveOrganizationTypes(items);
+      
+      if (success) {
+        // Also save to localStorage for backward compatibility
+        console.log('💾 Saving organization types in raw format:', types.length);
+        localStorage.setItem('master_data_organization_types', JSON.stringify(types));
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ Error saving organization types:', error);
+      return false;
+    }
   }
 }

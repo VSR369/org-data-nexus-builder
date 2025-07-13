@@ -2,9 +2,26 @@
 import { MasterDataPersistenceManager } from '../masterDataPersistenceManager';
 import { entityTypeConfig } from './configs';
 import { emergencyFallbackEntityTypes } from './fallbackData';
+import { supabaseMasterDataService } from '@/services/SupabaseMasterDataService';
 
 export class EntityTypeService {
-  static getEntityTypes(): string[] {
+  static async getEntityTypes(): Promise<string[]> {
+    try {
+      // First try to get from Supabase
+      const entityTypes = await supabaseMasterDataService.getEntityTypes();
+      if (entityTypes.length > 0) {
+        console.log('✅ Using Supabase entity types:', entityTypes.map(e => e.name));
+        return entityTypes.map(e => e.name);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching entity types from Supabase:', error);
+    }
+
+    // Fallback to localStorage
+    return EntityTypeService.getEntityTypesSync();
+  }
+
+  static getEntityTypesSync(): string[] {
     console.log('🔍 Getting entity types...');
     
     // CHECK FOR CUSTOM-ONLY MODE FIRST

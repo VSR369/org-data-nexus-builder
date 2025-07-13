@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseMasterDataService } from '@/services/SupabaseMasterDataService';
 
 export interface CountryOption {
   name: string;
@@ -20,7 +21,33 @@ export const useSupabaseMasterData = () => {
         setIsLoading(true);
         setError(null);
 
-        // Fetch distinct values from pricing_configs
+        // Try to fetch from dedicated master data tables first
+        const [countriesData, orgTypesData, entityTypesData] = await Promise.all([
+          supabaseMasterDataService.getCountries(),
+          supabaseMasterDataService.getOrganizationTypes(),
+          supabaseMasterDataService.getEntityTypes()
+        ]);
+
+        if (countriesData.length > 0 || orgTypesData.length > 0 || entityTypesData.length > 0) {
+          // Use data from master data tables
+          const countries = countriesData.map(c => ({ 
+            name: c.name, 
+            code: c.code || c.name.substring(0, 2).toUpperCase() 
+          }));
+          
+          setCountries(countries);
+          setOrganizationTypes(orgTypesData.map(o => o.name));
+          setEntityTypes(entityTypesData.map(e => e.name));
+          
+          console.log('✅ Master data loaded from dedicated tables:');
+          console.log('📍 Countries:', countries);
+          console.log('🏢 Organization Types:', orgTypesData.map(o => o.name));
+          console.log('🏛️ Entity Types:', entityTypesData.map(e => e.name));
+          
+          return;
+        }
+
+        // Fallback to pricing_configs table
         const { data: pricingData, error: pricingError } = await supabase
           .from('pricing_configs')
           .select('country, organization_type, entity_type')
