@@ -56,7 +56,7 @@ export class MembershipService {
           activatedAt: activation.created_at,
           pricing: {
             currency: activation.currency || 'USD',
-            amount: activation.payment_amount || 0,
+            amount: activation.mem_payment_amount || 0,
             frequency: activation.selected_frequency || 'monthly'
           }
         };
@@ -93,9 +93,9 @@ export class MembershipService {
           country: orgContext.country_name,
           organization_type: orgContext.organization_type_name,
           currency: pricing.currency,
-          payment_amount: pricing.amount,
+          mem_payment_amount: pricing.amount,
           selected_frequency: pricing.frequency,
-          payment_date: new Date().toISOString(),
+          mem_payment_date: new Date().toISOString(),
           activation_status: 'Activated',
           engagement_model: 'Platform as a Service' // Default engagement model
         }, {
@@ -133,7 +133,7 @@ export class MembershipService {
         duration: activation.selected_frequency || 'monthly',
         pricing: {
           currency: activation.currency || 'USD',
-          originalAmount: activation.payment_amount || 0,
+          originalAmount: activation.mem_payment_amount || 0,
           discountedAmount: activation.final_calculated_price || undefined,
           frequency: activation.selected_frequency || 'monthly'
         },
@@ -181,7 +181,7 @@ export class MembershipService {
           country: orgContext.country_name,
           organization_type: orgContext.organization_type_name,
           currency: selection.pricing.currency,
-          payment_amount: selection.pricing.originalAmount,
+          mem_payment_amount: selection.pricing.originalAmount,
           final_calculated_price: finalPrice,
           membership_status: membership.status === 'active' ? 'active' : 'inactive'
         }, {

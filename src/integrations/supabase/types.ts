@@ -24,18 +24,23 @@ export type Database = {
           discount_percentage: number | null
           engagement_locked: boolean | null
           engagement_model: string
+          enm_terms: boolean | null
           final_calculated_price: number | null
           frequency_change_history: Json | null
           frequency_payments: Json | null
           id: string
           last_payment_date: string | null
           lock_date: string | null
+          mem_payment_amount: number | null
+          mem_payment_currency: string | null
+          mem_payment_date: string | null
+          mem_payment_method: string | null
+          mem_payment_status: string | null
+          mem_receipt_number: string | null
+          mem_terms: boolean | null
           membership_status: string
           membership_type: string | null
           organization_type: string | null
-          payment_amount: number | null
-          payment_date: string | null
-          payment_status: string | null
           platform_fee_percentage: number | null
           pricing_locked: boolean | null
           selected_frequency: string | null
@@ -54,18 +59,23 @@ export type Database = {
           discount_percentage?: number | null
           engagement_locked?: boolean | null
           engagement_model: string
+          enm_terms?: boolean | null
           final_calculated_price?: number | null
           frequency_change_history?: Json | null
           frequency_payments?: Json | null
           id?: string
           last_payment_date?: string | null
           lock_date?: string | null
+          mem_payment_amount?: number | null
+          mem_payment_currency?: string | null
+          mem_payment_date?: string | null
+          mem_payment_method?: string | null
+          mem_payment_status?: string | null
+          mem_receipt_number?: string | null
+          mem_terms?: boolean | null
           membership_status: string
           membership_type?: string | null
           organization_type?: string | null
-          payment_amount?: number | null
-          payment_date?: string | null
-          payment_status?: string | null
           platform_fee_percentage?: number | null
           pricing_locked?: boolean | null
           selected_frequency?: string | null
@@ -84,18 +94,23 @@ export type Database = {
           discount_percentage?: number | null
           engagement_locked?: boolean | null
           engagement_model?: string
+          enm_terms?: boolean | null
           final_calculated_price?: number | null
           frequency_change_history?: Json | null
           frequency_payments?: Json | null
           id?: string
           last_payment_date?: string | null
           lock_date?: string | null
+          mem_payment_amount?: number | null
+          mem_payment_currency?: string | null
+          mem_payment_date?: string | null
+          mem_payment_method?: string | null
+          mem_payment_status?: string | null
+          mem_receipt_number?: string | null
+          mem_terms?: boolean | null
           membership_status?: string
           membership_type?: string | null
           organization_type?: string | null
-          payment_amount?: number | null
-          payment_date?: string | null
-          payment_status?: string | null
           platform_fee_percentage?: number | null
           pricing_locked?: boolean | null
           selected_frequency?: string | null
