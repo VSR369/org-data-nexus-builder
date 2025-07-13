@@ -123,13 +123,27 @@ export const useMembershipFeeDataSupabase = () => {
 
   const saveMembershipFee = async (fee: MembershipFeeEntry) => {
     try {
+      // Get foreign key IDs first
+      const [countryResult, orgTypeResult, entityTypeResult] = await Promise.all([
+        supabase.from('master_countries').select('id').eq('name', fee.country).single(),
+        supabase.from('master_organization_types').select('id').eq('name', fee.organizationType).single(),
+        supabase.from('master_entity_types').select('id').eq('name', fee.entityType).single()
+      ]);
+
+      if (countryResult.error || orgTypeResult.error || entityTypeResult.error) {
+        throw new Error('Failed to lookup foreign key IDs');
+      }
+
       const { error } = await supabase
         .from('master_seeker_membership_fees')
         .upsert({
           id: fee.id,
           country: fee.country,
+          country_id: countryResult.data.id,
           organization_type: fee.organizationType,
+          organization_type_id: orgTypeResult.data.id,
           entity_type: fee.entityType,
+          entity_type_id: entityTypeResult.data.id,
           monthly_amount: fee.monthlyAmount,
           monthly_currency: fee.monthlyCurrency,
           quarterly_amount: fee.quarterlyAmount,

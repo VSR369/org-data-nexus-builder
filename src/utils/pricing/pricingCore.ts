@@ -8,22 +8,42 @@ const CUSTOM_PRICING_CONFIGS_KEY = 'custom_pricingConfigs';
 const DELETED_CONFIGS_KEY = 'pricing_deleted_configs';
 
 // Database mapping functions
-const mapConfigToDatabase = (config: PricingConfig) => ({
-  config_id: config.id,
-  country: config.country,
-  currency: config.currency || '',
-  organization_type: config.organizationType,
-  entity_type: config.entityType,
-  engagement_model: config.engagementModel,
-  quarterly_fee: config.quarterlyFee || null,
-  half_yearly_fee: config.halfYearlyFee || null,
-  annual_fee: config.annualFee || null,
-  platform_fee_percentage: config.platformFeePercentage || null,
-  membership_status: config.membershipStatus,
-  discount_percentage: config.discountPercentage || null,
-  internal_paas_pricing: JSON.parse(JSON.stringify(config.internalPaasPricing || [])),
-  version: config.version || 1
-});
+const mapConfigToDatabase = async (config: PricingConfig) => {
+  const { supabase } = await import('@/integrations/supabase/client');
+  
+  // Get foreign key IDs
+  const [countryResult, orgTypeResult, entityTypeResult, engagementResult] = await Promise.all([
+    supabase.from('master_countries').select('id').eq('name', config.country).single(),
+    supabase.from('master_organization_types').select('id').eq('name', config.organizationType).single(),
+    supabase.from('master_entity_types').select('id').eq('name', config.entityType).single(),
+    supabase.from('master_engagement_models').select('id').eq('name', config.engagementModel).single()
+  ]);
+
+  if (countryResult.error || orgTypeResult.error || entityTypeResult.error || engagementResult.error) {
+    throw new Error(`Failed to lookup foreign key IDs for config: ${config.id}`);
+  }
+
+  return {
+    config_id: config.id,
+    country: config.country,
+    country_id: countryResult.data.id,
+    currency: config.currency || '',
+    organization_type: config.organizationType,
+    organization_type_id: orgTypeResult.data.id,
+    entity_type: config.entityType,
+    entity_type_id: entityTypeResult.data.id,
+    engagement_model: config.engagementModel,
+    engagement_model_id: engagementResult.data.id,
+    quarterly_fee: config.quarterlyFee || null,
+    half_yearly_fee: config.halfYearlyFee || null,
+    annual_fee: config.annualFee || null,
+    platform_fee_percentage: config.platformFeePercentage || null,
+    membership_status: config.membershipStatus,
+    discount_percentage: config.discountPercentage || null,
+    internal_paas_pricing: JSON.parse(JSON.stringify(config.internalPaasPricing || [])),
+    version: config.version || 1
+  };
+};
 
 const mapDatabaseToConfig = (dbRow: any): PricingConfig => ({
   id: dbRow.config_id,
@@ -86,7 +106,7 @@ export async function savePricingConfigsAsync(configs: PricingConfig[]): Promise
   console.log('💾 Saving pricing configurations to Supabase (single source of truth):', configs.length);
   
   try {
-    const dbConfigs = configs.map(mapConfigToDatabase);
+    const dbConfigs = await Promise.all(configs.map(mapConfigToDatabase));
     
     // Delete existing configs and insert new ones (replace all)
     const { error: deleteError } = await supabase

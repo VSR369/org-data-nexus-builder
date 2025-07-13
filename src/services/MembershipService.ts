@@ -1,4 +1,7 @@
 
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+
 interface MembershipData {
   status: 'active' | 'inactive';
   plan: string;
@@ -23,57 +26,178 @@ interface EngagementSelection {
 }
 
 export class MembershipService {
-  private static readonly MEMBERSHIP_KEY = 'user_membership_data';
-  private static readonly ENGAGEMENT_KEY = 'user_engagement_selection';
   private static readonly MEMBER_DISCOUNT = 0.2; // 20% discount
 
-  static getMembershipData(userId: string): MembershipData {
-    const data = localStorage.getItem(`${this.MEMBERSHIP_KEY}_${userId}`);
-    return data ? JSON.parse(data) : { status: 'inactive', plan: '' };
-  }
+  static async getMembershipData(userId: string): Promise<MembershipData> {
+    try {
+      // Get user's organization
+      const { data: organization } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-  static activateMembership(userId: string, plan: string, pricing: any): boolean {
-    const membershipData: MembershipData = {
-      status: 'active',
-      plan,
-      activatedAt: new Date().toISOString(),
-      pricing
-    };
-    
-    localStorage.setItem(`${this.MEMBERSHIP_KEY}_${userId}`, JSON.stringify(membershipData));
-    
-    // Auto-adjust existing engagement selection if any
-    this.adjustExistingEngagementPricing(userId);
-    
-    console.log('✅ Membership activated:', membershipData);
-    return true;
-  }
+      if (!organization) {
+        return { status: 'inactive', plan: '' };
+      }
 
-  static getEngagementSelection(userId: string): EngagementSelection | null {
-    const data = localStorage.getItem(`${this.ENGAGEMENT_KEY}_${userId}`);
-    const selection = data ? JSON.parse(data) : null;
-    console.log('📊 Retrieved engagement selection for user', userId, ':', selection);
-    return selection;
-  }
+      // Check if user has an active engagement activation
+      const { data: activation } = await supabase
+        .from('engagement_activations')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('membership_status', 'active')
+        .single();
 
-  static saveEngagementSelection(userId: string, selection: EngagementSelection): boolean {
-    // Apply member discount if user is a member
-    const membership = this.getMembershipData(userId);
-    if (membership.status === 'active' && !selection.pricing.discountedAmount) {
-      selection.pricing.discountedAmount = Math.round(selection.pricing.originalAmount * (1 - this.MEMBER_DISCOUNT));
+      if (activation) {
+        return {
+          status: 'active',
+          plan: activation.membership_type || 'standard',
+          activatedAt: activation.created_at,
+          pricing: {
+            currency: activation.currency || 'USD',
+            amount: activation.payment_amount || 0,
+            frequency: activation.selected_frequency || 'monthly'
+          }
+        };
+      }
+
+      return { status: 'inactive', plan: '' };
+    } catch (error) {
+      console.error('❌ Error getting membership data:', error);
+      return { status: 'inactive', plan: '' };
     }
-    
-    localStorage.setItem(`${this.ENGAGEMENT_KEY}_${userId}`, JSON.stringify(selection));
-    console.log('✅ Engagement selection saved for user', userId, ':', selection);
-    return true;
   }
 
-  private static adjustExistingEngagementPricing(userId: string): void {
-    const selection = this.getEngagementSelection(userId);
-    if (selection && !selection.pricing.discountedAmount) {
-      selection.pricing.discountedAmount = Math.round(selection.pricing.originalAmount * (1 - this.MEMBER_DISCOUNT));
-      localStorage.setItem(`${this.ENGAGEMENT_KEY}_${userId}`, JSON.stringify(selection));
-      console.log('🎯 Auto-adjusted pricing for new member:', selection);
+  static async activateMembership(userId: string, plan: string, pricing: any): Promise<boolean> {
+    try {
+      // Get user's organization context
+      const { data: orgContext } = await supabase
+        .from('organization_context')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (!orgContext) {
+        console.error('❌ No organization context found for user:', userId);
+        return false;
+      }
+
+      // Insert or update engagement activation
+      const { error } = await supabase
+        .from('engagement_activations')
+        .upsert({
+          user_id: userId,
+          membership_status: 'active',
+          membership_type: plan,
+          country: orgContext.country_name,
+          organization_type: orgContext.organization_type_name,
+          currency: pricing.currency,
+          payment_amount: pricing.amount,
+          selected_frequency: pricing.frequency,
+          payment_date: new Date().toISOString(),
+          activation_status: 'Activated',
+          engagement_model: 'Platform as a Service' // Default engagement model
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('❌ Error activating membership:', error);
+        return false;
+      }
+
+      console.log('✅ Membership activated:', { userId, plan, pricing });
+      return true;
+    } catch (error) {
+      console.error('❌ Error activating membership:', error);
+      return false;
+    }
+  }
+
+  static async getEngagementSelection(userId: string): Promise<EngagementSelection | null> {
+    try {
+      const { data: activation } = await supabase
+        .from('engagement_activations')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (!activation) {
+        console.log('📊 No engagement selection found for user:', userId);
+        return null;
+      }
+
+      const selection: EngagementSelection = {
+        model: activation.engagement_model,
+        duration: activation.selected_frequency || 'monthly',
+        pricing: {
+          currency: activation.currency || 'USD',
+          originalAmount: activation.payment_amount || 0,
+          discountedAmount: activation.final_calculated_price || undefined,
+          frequency: activation.selected_frequency || 'monthly'
+        },
+        selectedAt: activation.created_at
+      };
+
+      console.log('📊 Retrieved engagement selection for user', userId, ':', selection);
+      return selection;
+    } catch (error) {
+      console.error('❌ Error getting engagement selection:', error);
+      return null;
+    }
+  }
+
+  static async saveEngagementSelection(userId: string, selection: EngagementSelection): Promise<boolean> {
+    try {
+      // Get user's organization context
+      const { data: orgContext } = await supabase
+        .from('organization_context')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (!orgContext) {
+        console.error('❌ No organization context found for user:', userId);
+        return false;
+      }
+
+      // Apply member discount if user is a member
+      const membership = await this.getMembershipData(userId);
+      let finalPrice = selection.pricing.originalAmount;
+      if (membership.status === 'active' && !selection.pricing.discountedAmount) {
+        finalPrice = Math.round(selection.pricing.originalAmount * (1 - this.MEMBER_DISCOUNT));
+      } else if (selection.pricing.discountedAmount) {
+        finalPrice = selection.pricing.discountedAmount;
+      }
+
+      // Insert or update engagement activation
+      const { error } = await supabase
+        .from('engagement_activations')
+        .upsert({
+          user_id: userId,
+          engagement_model: selection.model,
+          selected_frequency: selection.pricing.frequency,
+          country: orgContext.country_name,
+          organization_type: orgContext.organization_type_name,
+          currency: selection.pricing.currency,
+          payment_amount: selection.pricing.originalAmount,
+          final_calculated_price: finalPrice,
+          membership_status: membership.status === 'active' ? 'active' : 'inactive'
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('❌ Error saving engagement selection:', error);
+        return false;
+      }
+
+      console.log('✅ Engagement selection saved for user', userId, ':', selection);
+      return true;
+    } catch (error) {
+      console.error('❌ Error saving engagement selection:', error);
+      return false;
     }
   }
 }

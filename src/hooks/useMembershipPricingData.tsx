@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Code, Headphones, Server } from 'lucide-react';
-import { PricingDataManager } from '@/utils/pricingDataManager';
-import { useMembershipFeeDataSupabase } from '@/components/master-data/seeker-membership/useMembershipFeeDataSupabase';
-import { engagementModelsDataManager } from '@/components/master-data/engagement-models/engagementModelsDataManager';
+import { supabase } from '@/integrations/supabase/client';
 import { PricingConfig } from '@/types/pricing';
-import { useToast } from "@/hooks/use-toast";
 
 interface EngagementModel {
   id: string;
@@ -16,118 +13,110 @@ interface EngagementModel {
 export const useMembershipPricingData = (
   organizationType: string,
   entityType: string,
-  country: string
+  country: string,
+  userId?: string
 ) => {
   const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
   const [engagementModels, setEngagementModels] = useState<EngagementModel[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadMasterData = async () => {
       try {
         setLoading(true);
+        console.log('🔄 Loading data from Supabase for organization context:', { organizationType, entityType, country, userId });
         
-        // Load pricing configurations from Supabase
-        const { getPricingConfigsAsync } = await import('@/utils/pricing/pricingCore');
-        
-        // Clear localStorage cache to force fresh Supabase load
-        localStorage.removeItem('custom_pricing');
-        localStorage.removeItem('master_data_pricing_configs');
-        
-        const configs = await getPricingConfigsAsync();
-        console.log('🔍 Raw configs from Supabase:', configs.length);
-        console.log('🔍 Sample discount values:', configs.slice(0,3).map(c => ({
-          model: c.engagementModel, 
-          status: c.membershipStatus, 
-          discount: c.discountPercentage,
-          id: c.id
-        })));
-        
-        setPricingConfigs(configs);
-        console.log('✅ Set pricing configs in state:', configs.length);
-        
-        // Force initialization if no configs loaded at all
-        if (!configs || configs.length === 0) {
-          console.log('🔧 No pricing configs found, forcing default data load...');
-          const currentMode = localStorage.getItem('master_data_mode');
-          
-          // Temporarily force mixed mode to get defaults
-          localStorage.setItem('master_data_mode', 'mixed');
-          
-          // Clear any existing invalid data
-          localStorage.removeItem('master_data_pricing_configs');
-          localStorage.removeItem('custom_pricing');
-          
-          const defaultConfigs = PricingDataManager.getAllConfigurations();
-          localStorage.setItem('master_data_mode', currentMode || 'custom_only');
-          
-          setPricingConfigs(defaultConfigs);
-          console.log('✅ Loaded default pricing configs:', defaultConfigs.length);
-        } else {
-          console.log('✅ Using Supabase pricing configs with proper discounts:', configs.length);
-          console.log('🔍 Sample config discounts:', configs.slice(0,3).map(c => ({
-            model: c.engagementModel, 
-            status: c.membershipStatus, 
-            discount: c.discountPercentage
-          })));
+        // Get organization context if userId provided
+        let orgContext = null;
+        if (userId) {
+          const { data } = await supabase.from('organization_context').select('*').eq('user_id', userId).single();
+          orgContext = data;
         }
 
-        // Use Supabase hook for membership fees
-        const { membershipFees: supabaseFees } = useMembershipFeeDataSupabase();
-        const fees = supabaseFees.filter(fee => 
-          fee.country === country && 
-          fee.organizationType === organizationType && 
-          fee.entityType === entityType
-        );
-        setMembershipFees(fees);
-        console.log('✅ Loaded membership fees:', fees.length);
+        // Use organization context or lookup IDs by names
+        let countryId, orgTypeId, entityTypeId;
+        if (orgContext) {
+          countryId = orgContext.country_id;
+          orgTypeId = orgContext.organization_type_id;
+          entityTypeId = orgContext.entity_type_id;
+        } else {
+          const [countryResult, orgTypeResult, entityTypeResult] = await Promise.all([
+            supabase.from('master_countries').select('id').eq('name', country).single(),
+            supabase.from('master_organization_types').select('id').eq('name', organizationType).single(),
+            supabase.from('master_entity_types').select('id').eq('name', entityType).single()
+          ]);
+          
+          if (!countryResult.error && !orgTypeResult.error && !entityTypeResult.error) {
+            countryId = countryResult.data.id;
+            orgTypeId = orgTypeResult.data.id;
+            entityTypeId = entityTypeResult.data.id;
+          }
+        }
 
-        // Load engagement models from master data
-        const loadedEngagementModels = engagementModelsDataManager.loadData();
-        const modelsWithIcons: EngagementModel[] = loadedEngagementModels.map(model => ({
-          id: model.id,
-          name: model.name,
-          description: model.description || `${model.name} services`,
-          icon: getEngagementModelIcon(model.name)
-        }));
-        setEngagementModels(modelsWithIcons);
-        console.log('✅ Loaded engagement models:', modelsWithIcons.length);
+        // Load data using database functions
+        const [membershipFeesData, pricingConfigsData, engagementModelsData] = await Promise.all([
+          countryId ? supabase.rpc('get_membership_fees_for_organization', {
+            org_country_id: countryId,
+            org_type_id: orgTypeId,
+            org_entity_type_id: entityTypeId
+          }) : { data: [], error: null },
+          countryId ? supabase.rpc('get_pricing_configs_for_organization', {
+            org_country_id: countryId,
+            org_type_id: orgTypeId,
+            org_entity_type_id: entityTypeId
+          }) : { data: [], error: null },
+          supabase.from('master_engagement_models').select('*').order('name')
+        ]);
+
+        if (!membershipFeesData.error) {
+          setMembershipFees(membershipFeesData.data || []);
+        }
+
+        if (!pricingConfigsData.error && pricingConfigsData.data) {
+          const configs: PricingConfig[] = pricingConfigsData.data.map((config: any) => ({
+            id: config.id,
+            country: config.country || country,
+            currency: config.currency,
+            organizationType: config.organization_type || organizationType,
+            entityType: config.entity_type || entityType,
+            engagementModel: config.engagement_model_name,
+            membershipStatus: config.membership_status,
+            quarterlyFee: config.quarterly_fee,
+            halfYearlyFee: config.half_yearly_fee,
+            annualFee: config.annual_fee,
+            platformFeePercentage: config.platform_fee_percentage,
+            discountPercentage: config.discount_percentage,
+            internalPaasPricing: config.internal_paas_pricing || [],
+            version: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }));
+          setPricingConfigs(configs);
+        }
+
+        if (!engagementModelsData.error) {
+          const models: EngagementModel[] = engagementModelsData.data?.map((model: any) => ({
+            id: model.id,
+            name: model.name,
+            description: model.description || '',
+            icon: getEngagementModelIcon(model.name)
+          })) || [];
+          setEngagementModels(models);
+        }
+
+        console.log('✅ Loaded all data from Supabase');
       } catch (error) {
-        console.error('❌ Error loading master data:', error);
-        // Don't show error toast - provide fallback data instead
-        console.log('🔧 Loading fallback data due to error...');
-        
-        // Load default fallback data
-        const defaultConfigs = PricingDataManager.getAllConfigurations();
-        setPricingConfigs(defaultConfigs);
-        
-        const fallbackFees = [{
-          id: '1',
-          country: country,
-          organizationType: organizationType,
-          entityType: entityType,
-          annualFee: 1000,
-          currency: 'USD',
-          amount: 1000
-        }];
-        setMembershipFees(fallbackFees);
-        
-        const fallbackModels: EngagementModel[] = [
-          { id: '1', name: 'Consulting', description: 'Professional consulting services', icon: <Users className="w-5 h-5" /> },
-          { id: '2', name: 'Development', description: 'Software development services', icon: <Code className="w-5 h-5" /> }
-        ];
-        setEngagementModels(fallbackModels);
-        
-        console.log('✅ Loaded fallback data successfully');
+        console.error('❌ Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadMasterData();
-  }, [country, organizationType, entityType, toast]);
+    if (organizationType && entityType && country) {
+      loadMasterData();
+    }
+  }, [country, organizationType, entityType, userId]);
 
   return {
     pricingConfigs,
@@ -137,7 +126,6 @@ export const useMembershipPricingData = (
   };
 };
 
-// Get icon for engagement model
 const getEngagementModelIcon = (modelName: string): React.ReactNode => {
   const name = modelName.toLowerCase();
   if (name.includes('consulting')) return <Users className="w-5 h-5" />;

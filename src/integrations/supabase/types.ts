@@ -386,11 +386,25 @@ export type Database = {
             referencedColumns: ["name"]
           },
           {
+            foreignKeyName: "fk_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_name"]
+          },
+          {
             foreignKeyName: "fk_master_currencies_country"
             columns: ["country"]
             isOneToOne: false
             referencedRelation: "master_countries"
             referencedColumns: ["name"]
+          },
+          {
+            foreignKeyName: "fk_master_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_name"]
           },
         ]
       }
@@ -485,7 +499,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_domain_groups_industry_segment"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["industry_segment_id"]
+          },
+          {
             foreignKeyName: "fk_master_domain_groups_industry_segment"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "master_industry_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_master_domain_groups_industry_segment"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["industry_segment_id"]
+          },
+          {
+            foreignKeyName: "master_domain_groups_industry_segment_id_fkey"
             columns: ["industry_segment_id"]
             isOneToOne: false
             referencedRelation: "master_industry_segments"
@@ -495,8 +530,8 @@ export type Database = {
             foreignKeyName: "master_domain_groups_industry_segment_id_fkey"
             columns: ["industry_segment_id"]
             isOneToOne: false
-            referencedRelation: "master_industry_segments"
-            referencedColumns: ["id"]
+            referencedRelation: "organization_context"
+            referencedColumns: ["industry_segment_id"]
           },
         ]
       }
@@ -741,6 +776,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "master_seeker_membership_fees_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
             foreignKeyName: "master_seeker_membership_fees_entity_type_id_fkey"
             columns: ["entity_type_id"]
             isOneToOne: false
@@ -748,11 +790,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "master_seeker_membership_fees_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
+          },
+          {
             foreignKeyName: "master_seeker_membership_fees_organization_type_id_fkey"
             columns: ["organization_type_id"]
             isOneToOne: false
             referencedRelation: "master_organization_types"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_seeker_membership_fees_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
           },
         ]
       }
@@ -966,6 +1022,13 @@ export type Database = {
             foreignKeyName: "organization_documents_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1041,11 +1104,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "organizations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
             foreignKeyName: "organizations_entity_type_id_fkey"
             columns: ["entity_type_id"]
             isOneToOne: false
             referencedRelation: "master_entity_types"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
           },
           {
             foreignKeyName: "organizations_industry_segment_id_fkey"
@@ -1055,11 +1132,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "organizations_industry_segment_id_fkey"
+            columns: ["industry_segment_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["industry_segment_id"]
+          },
+          {
             foreignKeyName: "organizations_organization_type_id_fkey"
             columns: ["organization_type_id"]
             isOneToOne: false
             referencedRelation: "master_organization_types"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
           },
         ]
       }
@@ -1142,6 +1233,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pricing_configs_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
             foreignKeyName: "pricing_configs_engagement_model_id_fkey"
             columns: ["engagement_model_id"]
             isOneToOne: false
@@ -1156,11 +1254,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pricing_configs_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
+          },
+          {
             foreignKeyName: "pricing_configs_organization_type_id_fkey"
             columns: ["organization_type_id"]
             isOneToOne: false
             referencedRelation: "master_organization_types"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_configs_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
           },
         ]
       }
@@ -1229,12 +1341,73 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      organization_context: {
+        Row: {
+          address: string | null
+          contact_person_name: string | null
+          country_id: string | null
+          country_name: string | null
+          email: string | null
+          entity_type_id: string | null
+          entity_type_name: string | null
+          id: string | null
+          industry_segment_id: string | null
+          industry_segment_name: string | null
+          organization_id: string | null
+          organization_name: string | null
+          organization_type_id: string | null
+          organization_type_name: string | null
+          phone_number: string | null
+          user_id: string | null
+          website: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_membership_fees_for_organization: {
+        Args: {
+          org_country_id: string
+          org_type_id: string
+          org_entity_type_id: string
+        }
+        Returns: {
+          id: string
+          monthly_amount: number
+          monthly_currency: string
+          quarterly_amount: number
+          quarterly_currency: string
+          half_yearly_amount: number
+          half_yearly_currency: string
+          annual_amount: number
+          annual_currency: string
+          description: string
+        }[]
+      }
+      get_pricing_configs_for_organization: {
+        Args: {
+          org_country_id: string
+          org_type_id: string
+          org_entity_type_id: string
+          engagement_model_id?: string
+        }
+        Returns: {
+          id: string
+          config_id: string
+          engagement_model_name: string
+          membership_status: string
+          quarterly_fee: number
+          half_yearly_fee: number
+          annual_fee: number
+          currency: string
+          platform_fee_percentage: number
+          discount_percentage: number
+          internal_paas_pricing: Json
+        }[]
       }
       get_table_schema: {
         Args: { table_name: string }

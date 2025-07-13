@@ -75,15 +75,32 @@ export class PricingDataManager {
       
       for (const config of deduplicatedConfigs) {
         try {
+          // Get foreign key IDs first
+          const [countryResult, orgTypeResult, entityTypeResult, engagementResult] = await Promise.all([
+            supabase.from('master_countries').select('id').eq('name', config.country).single(),
+            supabase.from('master_organization_types').select('id').eq('name', config.organizationType).single(),
+            supabase.from('master_entity_types').select('id').eq('name', config.entityType).single(),
+            supabase.from('master_engagement_models').select('id').eq('name', config.engagementModel).single()
+          ]);
+
+          if (countryResult.error || orgTypeResult.error || entityTypeResult.error || engagementResult.error) {
+            console.warn('⚠️ Skipping config due to missing master data:', config.id);
+            continue;
+          }
+
           const { error } = await supabase
             .from('pricing_configs')
             .upsert({
               config_id: config.id,
               country: config.country,
+              country_id: countryResult.data.id,
               currency: config.currency,
               organization_type: config.organizationType,
+              organization_type_id: orgTypeResult.data.id,
               entity_type: config.entityType,
+              entity_type_id: entityTypeResult.data.id,
               engagement_model: config.engagementModel,
+              engagement_model_id: engagementResult.data.id,
               membership_status: config.membershipStatus,
               quarterly_fee: config.quarterlyFee,
               half_yearly_fee: config.halfYearlyFee,
