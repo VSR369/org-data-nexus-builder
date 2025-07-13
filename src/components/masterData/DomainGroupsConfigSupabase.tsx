@@ -291,6 +291,30 @@ const DomainGroupsConfigSupabase = () => {
     }
   };
 
+  const handleUpdateHierarchy = async (domainGroup: DomainGroup, updatedHierarchy: any) => {
+    try {
+      const { error } = await supabase
+        .from('master_domain_groups')
+        .update({ hierarchy: updatedHierarchy })
+        .eq('id', domainGroup.id);
+
+      if (error) throw error;
+
+      fetchData();
+      toast({
+        title: "Success",
+        description: "Hierarchy updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating hierarchy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update hierarchy",
+        variant: "destructive",
+      });
+    }
+  };
+
   const exportData = async () => {
     try {
       const exportData = {
@@ -499,6 +523,7 @@ const DomainGroupsConfigSupabase = () => {
                   onEdit={handleEdit}
                   onDelete={(item) => setDeleteDialog({ open: true, item })}
                   onToggleStatus={handleToggleStatus}
+                  onUpdateHierarchy={handleUpdateHierarchy}
                 />
               ))
             )}
