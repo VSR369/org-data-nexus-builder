@@ -2,10 +2,11 @@ import React from "react";
 import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfig from "./master-data/CountryConfig";
 import CurrencyConfig from "./master-data/CurrencyConfig";
-import IndustrySegmentConfig from "./master-data/IndustrySegmentConfig";
+import IndustrySegmentsConfig from "./master-data/IndustrySegmentsConfig";
+import DepartmentsConfig from "./master-data/DepartmentsConfig";
 import OrganizationTypeConfig from "./master-data/OrganizationTypeConfig";
+import OrganizationTypeConfigSupabase from "./master-data/OrganizationTypeConfigSupabase";
 import EntityTypeConfig from "./master-data/EntityTypeConfig";
-import DepartmentConfig from "./master-data/DepartmentConfig";
 import DomainGroupsConfig from "./master-data/DomainGroupsConfig";
 import ChallengeStatusConfig from "./master-data/ChallengeStatusConfig";
 import SolutionStatusConfig from "./master-data/SolutionStatusConfig";
@@ -44,13 +45,13 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'currencies':
         return <CurrencyConfig />;
       case 'industry-segments':
-        return <IndustrySegmentConfig />;
+        return <IndustrySegmentsConfig />;
       case 'organization-types':
-        return <OrganizationTypeConfig />;
+        return <OrganizationTypeConfigSupabase />;
       case 'entity-types':
         return <EntityTypeConfig />;
       case 'departments':
-        return <DepartmentConfig />;
+        return <DepartmentsConfig />;
       case 'domain-groups':
         return <DomainGroupsConfig />;
       case 'challenge-statuses':
