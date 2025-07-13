@@ -954,7 +954,7 @@ export type Database = {
           organization_id: string
           organization_name: string
           organization_type_id: string | null
-          password_hash: string
+          password_hash: string | null
           phone_number: string
           registration_status: string | null
           updated_at: string
@@ -974,7 +974,7 @@ export type Database = {
           organization_id: string
           organization_name: string
           organization_type_id?: string | null
-          password_hash: string
+          password_hash?: string | null
           phone_number: string
           registration_status?: string | null
           updated_at?: string
@@ -994,7 +994,7 @@ export type Database = {
           organization_id?: string
           organization_name?: string
           organization_type_id?: string | null
-          password_hash?: string
+          password_hash?: string | null
           phone_number?: string
           registration_status?: string | null
           updated_at?: string

@@ -6,15 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Eye, ArrowLeft } from 'lucide-react';
+import { Upload, Eye, ArrowLeft, Loader2 } from 'lucide-react';
 import { useOrganizationRegistration } from '@/hooks/useOrganizationRegistration';
 import { OrganizationPreview } from './OrganizationPreview';
+import { useToast } from '@/hooks/use-toast';
 
 type FormStep = 'form' | 'preview' | 'success';
 
 export const OrganizationRegistrationForm = () => {
   const [currentStep, setCurrentStep] = useState<FormStep>('form');
   const [registrationResult, setRegistrationResult] = useState<{ organizationId?: string; error?: string }>({});
+  const { toast } = useToast();
 
   const {
     formData,
@@ -52,6 +54,18 @@ export const OrganizationRegistrationForm = () => {
     setRegistrationResult(result);
     if (result.success) {
       setCurrentStep('success');
+      toast({
+        title: "Registration Successful!",
+        description: `Your organization has been registered with ID: ${result.organizationId}`,
+        duration: 5000,
+      });
+    } else {
+      toast({
+        title: "Registration Failed",
+        description: result.error || "An error occurred during registration. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
     }
   };
 
@@ -435,11 +449,34 @@ export const OrganizationRegistrationForm = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button onClick={handlePreview} className="min-w-32">
-            <Eye className="w-4 h-4 mr-2" />
-            Preview
+          <Button onClick={handlePreview} className="min-w-32" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </>
+            )}
           </Button>
         </div>
+
+        {/* Error Display Section */}
+        {Object.keys(errors).length > 0 && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <h3 className="text-red-800 font-semibold mb-2">Please fix the following errors:</h3>
+              <ul className="text-red-700 text-sm space-y-1">
+                {Object.entries(errors).map(([field, error]) => (
+                  <li key={field}>• {error}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

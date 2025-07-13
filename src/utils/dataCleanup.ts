@@ -126,23 +126,21 @@ export class DataCleanupService {
       }
       console.log('✅ Profiles cleared');
 
-      // Clear auth users (requires admin access)
-      console.log('🗑️ Attempting to clear auth users...');
+      // Clear auth users using client-side auth methods
+      console.log('🗑️ Attempting to clear current auth user...');
       try {
-        const { data: users } = await supabase.auth.admin.listUsers();
-        
-        if (users?.users) {
-          for (const user of users.users) {
-            const { error } = await supabase.auth.admin.deleteUser(user.id);
-            if (error) {
-              console.warn(`⚠️ Could not delete user ${user.email}:`, error);
-            } else {
-              console.log(`✅ Deleted user: ${user.email}`);
-            }
+        const { data: currentUser } = await supabase.auth.getUser();
+        if (currentUser?.user) {
+          console.log(`🗑️ Signing out current user: ${currentUser.user.email}`);
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.warn('⚠️ Error signing out:', error);
+          } else {
+            console.log('✅ Current user signed out');
           }
         }
       } catch (error) {
-        console.warn('⚠️ Could not access auth admin (requires service key):', error);
+        console.warn('⚠️ Could not access current user:', error);
       }
 
       console.log('✅ === SUPABASE DATABASE CLEARED ===');
@@ -181,13 +179,13 @@ export class DataCleanupService {
         .from('pricing_configs')
         .select('*', { count: 'exact', head: true });
 
-      // Count auth users (requires admin access)
+      // Count auth users (check for current user)
       let authUsersCount = 0;
       try {
-        const { data: users } = await supabase.auth.admin.listUsers();
-        authUsersCount = users?.users?.length || 0;
+        const { data: currentUser } = await supabase.auth.getUser();
+        authUsersCount = currentUser?.user ? 1 : 0;
       } catch (error) {
-        console.warn('⚠️ Could not access auth admin for user count');
+        console.warn('⚠️ Could not access current user for count');
       }
 
       return {

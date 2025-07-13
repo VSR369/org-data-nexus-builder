@@ -124,6 +124,18 @@ export const useOrganizationRegistration = () => {
 
     setIsLoading(true);
     try {
+      // Check if user already exists and has an organization
+      const { data: existingUsers } = await supabase
+        .from('organizations')
+        .select('id, organization_id')
+        .eq('email', formData.email)
+        .single();
+
+      if (existingUsers) {
+        setErrors({ email: 'Organization already registered with this email' });
+        return { success: false, error: 'Organization already registered with this email' };
+      }
+
       // Create Supabase Auth user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -138,15 +150,34 @@ export const useOrganizationRegistration = () => {
       });
 
       if (authError) {
-        if (authError.message.includes('already registered')) {
-          setErrors({ email: 'Email already registered' });
-          return { success: false, error: 'Email already registered' };
+        if (authError.message.includes('already registered') || authError.message.includes('User already registered')) {
+          // Check if this auth user has an organization record
+          const { data: session } = await supabase.auth.getSession();
+          if (session?.session?.user) {
+            const { data: orgCheck } = await supabase
+              .from('organizations')
+              .select('id, organization_id')
+              .eq('user_id', session.session.user.id)
+              .single();
+            
+            if (orgCheck) {
+              setErrors({ email: 'Organization already registered with this email' });
+              return { success: false, error: 'Organization already registered with this email' };
+            } else {
+              // User exists but no organization - use existing user
+              authData.user = session.session.user;
+            }
+          } else {
+            setErrors({ email: 'Email already registered but authentication failed' });
+            return { success: false, error: 'Email already registered but authentication failed' };
+          }
+        } else {
+          throw authError;
         }
-        throw authError;
       }
 
-      if (!authData.user) {
-        throw new Error('Failed to create user account');
+      if (!authData?.user) {
+        throw new Error('Failed to create or retrieve user account');
       }
 
       // Upload files if provided
