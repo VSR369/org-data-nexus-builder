@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { 
-  Plus, Edit, Trash2, Save, X, RotateCcw, Download, 
-  FileText, Target, Search, AlertTriangle
+  Plus, Edit, Trash2, Save, X, RotateCcw, Upload, Download, 
+  Wand2, FileText, Target, Search, AlertTriangle
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import SupabaseWizard from './wizard/SupabaseWizard';
+import ExcelUploadSupabase from './upload/ExcelUploadSupabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +54,8 @@ const DomainGroupsConfigSupabase = () => {
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showDirectEntry, setShowDirectEntry] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -258,6 +262,29 @@ const DomainGroupsConfigSupabase = () => {
     return <div className="flex items-center justify-center h-64">Loading domain groups...</div>;
   }
 
+  if (showWizard) {
+    return (
+      <SupabaseWizard 
+        onCancel={() => setShowWizard(false)} 
+        onComplete={() => {
+          setShowWizard(false);
+          fetchData();
+        }} 
+      />
+    );
+  }
+
+  if (showExcelUpload) {
+    return (
+      <ExcelUploadSupabase 
+        onCancel={() => setShowExcelUpload(false)} 
+        onComplete={() => {
+          setShowExcelUpload(false);
+          fetchData();
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -301,7 +328,7 @@ const DomainGroupsConfigSupabase = () => {
       {/* Action Buttons */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button
               onClick={() => setShowDirectEntry(!showDirectEntry)}
               className="flex items-center gap-2 h-auto p-4 flex-col"
@@ -311,6 +338,28 @@ const DomainGroupsConfigSupabase = () => {
               <div className="text-center">
                 <div className="font-medium">Direct Entry</div>
                 <div className="text-sm opacity-70">Add domain groups one by one</div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => setShowWizard(true)}
+              className="flex items-center gap-2 h-auto p-4 flex-col"
+              variant="outline"
+            >
+              <Wand2 className="w-6 h-6" />
+              <div className="text-center">
+                <div className="font-medium">Guided Wizard</div>
+                <div className="text-sm opacity-70">Step-by-step setup with categories</div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => setShowExcelUpload(true)}
+              className="flex items-center gap-2 h-auto p-4 flex-col"
+              variant="outline"
+            >
+              <Upload className="w-6 h-6" />
+              <div className="text-center">
+                <div className="font-medium">Excel Upload</div>
+                <div className="text-sm opacity-70">Bulk import from file</div>
               </div>
             </Button>
           </div>
