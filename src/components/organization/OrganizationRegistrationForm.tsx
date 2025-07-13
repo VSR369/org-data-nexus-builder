@@ -100,9 +100,18 @@ export const OrganizationRegistrationForm = () => {
                   Your Organization ID: <span className="font-mono font-bold">{registrationResult.organizationId}</span>
                 </p>
               )}
-              <p className="text-muted-foreground">
-                Your registration has been submitted successfully. You will receive a confirmation email shortly.
-              </p>
+              <div className="space-y-3 text-muted-foreground">
+                <p>
+                  Your registration has been submitted successfully! 
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800">
+                  <p className="font-semibold mb-2">📧 Email Confirmation Required</p>
+                  <p>Please check your email and click the confirmation link to activate your account. Once confirmed, you can sign in using the "Sign In Organization" button.</p>
+                </div>
+                <p className="text-sm">
+                  If you don't see the email, please check your spam folder.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
