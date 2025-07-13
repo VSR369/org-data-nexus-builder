@@ -59,7 +59,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <ChallengeStatusConfigSupabase />;
       case 'solution-statuses':
         return <SolutionStatusConfigSupabase />;
-      case 'competency-capabilities':
+      case 'capability-levels':
         return <CapabilityLevelsConfig />;
       case 'communication-types':
         return <CommunicationTypeConfigSupabase />;

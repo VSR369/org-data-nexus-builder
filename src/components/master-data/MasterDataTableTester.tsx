@@ -130,6 +130,13 @@ const MasterDataTableTester = () => {
       relationshipType: 'master' as const
     },
     {
+      tableName: 'master_capability_levels',
+      displayName: 'Capability Scoring Levels',
+      frontendFields: ['id', 'name', 'min_score', 'max_score', 'color', 'order_index', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
+      isSupabaseEnabled: true,
+      relationshipType: 'master' as const
+    },
+    {
       tableName: 'master_domain_groups',
       displayName: 'Domain Groups',
       frontendFields: ['id', 'name', 'description', 'industry_segment_id', 'is_active', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],

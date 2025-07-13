@@ -83,10 +83,10 @@ export const organizationMenuItems = [
     description: 'Manage domain hierarchies'
   },
   {
-    id: 'competency-capabilities',
-    title: 'Capability Levels',
+    id: 'capability-levels',
+    title: 'Capability Scoring Levels',
     icon: Award,
-    description: 'Manage capability level ranges and scoring'
+    description: 'Manage capability level ranges and scoring thresholds'
   }
 ];
 
