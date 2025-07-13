@@ -1,6 +1,7 @@
 
 import { indexedDBManager } from './storage/IndexedDBManager';
 import { IndexedDBService } from './storage/IndexedDBService';
+import { supabase } from '@/integrations/supabase/client';
 
 export class DataCleanupService {
   private userService: IndexedDBService<any>;
@@ -19,6 +20,9 @@ export class DataCleanupService {
     console.log('🗑️ === CLEARING ALL SOLUTION SEEKING ORGANIZATION DATA ===');
     
     try {
+      // First clear Supabase database tables
+      await this.clearSupabaseData();
+
       // Ensure IndexedDB is initialized
       if (!await indexedDBManager.isInitialized()) {
         await indexedDBManager.initialize();
@@ -124,11 +128,108 @@ export class DataCleanupService {
     console.log('✅ Browser form cache cleared');
   }
 
+  private async clearSupabaseData(): Promise<void> {
+    console.log('🗑️ === CLEARING SUPABASE DATABASE ===');
+    
+    try {
+      // Get current data counts for logging
+      const counts = await this.getDataCounts();
+      console.log(`📊 Current data: Profiles: ${counts.profiles}, Activations: ${counts.activations}, Auth Users: ${counts.authUsers}`);
+
+      // Clear engagement activations
+      console.log('🗑️ Clearing engagement activations...');
+      const { error: activationsError } = await supabase
+        .from('engagement_activations')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+      
+      if (activationsError) {
+        console.error('❌ Error clearing engagement activations:', activationsError);
+        throw activationsError;
+      }
+      console.log('✅ Engagement activations cleared');
+
+      // Clear profiles
+      console.log('🗑️ Clearing profiles...');
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+      
+      if (profilesError) {
+        console.error('❌ Error clearing profiles:', profilesError);
+        throw profilesError;
+      }
+      console.log('✅ Profiles cleared');
+
+      // Clear auth users (this allows email reuse)
+      console.log('🗑️ Clearing auth users...');
+      const { data: users } = await supabase.auth.admin.listUsers();
+      
+      if (users?.users) {
+        for (const user of users.users) {
+          const { error } = await supabase.auth.admin.deleteUser(user.id);
+          if (error) {
+            console.warn(`⚠️ Could not delete user ${user.email}:`, error);
+          } else {
+            console.log(`✅ Deleted user: ${user.email}`);
+          }
+        }
+      }
+
+      console.log('✅ === SUPABASE DATABASE CLEARED ===');
+      
+    } catch (error) {
+      console.error('❌ Error during Supabase cleanup:', error);
+      throw error;
+    }
+  }
+
+  async getDataCounts(): Promise<{
+    profiles: number;
+    activations: number;
+    authUsers: number;
+    configs: number;
+  }> {
+    try {
+      // Count profiles
+      const { count: profilesCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Count engagement activations
+      const { count: activationsCount } = await supabase
+        .from('engagement_activations')
+        .select('*', { count: 'exact', head: true });
+
+      // Count pricing configs (should be preserved)
+      const { count: configsCount } = await supabase
+        .from('pricing_configs')
+        .select('*', { count: 'exact', head: true });
+
+      // Count auth users
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const authUsersCount = users?.users?.length || 0;
+
+      return {
+        profiles: profilesCount || 0,
+        activations: activationsCount || 0,
+        authUsers: authUsersCount,
+        configs: configsCount || 0
+      };
+    } catch (error) {
+      console.error('❌ Error getting data counts:', error);
+      return { profiles: 0, activations: 0, authUsers: 0, configs: 0 };
+    }
+  }
+
   async verifyDataCleanup(): Promise<{
     userProfilesCleared: boolean;
     membershipDataCleared: boolean;
     localStorageCleared: boolean;
+    databaseCleared: boolean;
     remainingKeys: string[];
+    databaseCounts: { profiles: number; activations: number; authUsers: number; configs: number };
   }> {
     console.log('🔍 === VERIFYING DATA CLEANUP ===');
     
@@ -166,13 +267,20 @@ export class DataCleanupService {
         console.log('🔍 Remaining organization keys:', organizationKeys);
       }
 
+      // Verify database cleanup
+      const databaseCounts = await this.getDataCounts();
+      const databaseCleared = databaseCounts.profiles === 0 && databaseCounts.activations === 0 && databaseCounts.authUsers === 0;
+      
+      console.log(`📊 Post-cleanup database counts:`, databaseCounts);
       console.log('✅ === VERIFICATION COMPLETE ===');
       
       return {
         userProfilesCleared,
         membershipDataCleared,
         localStorageCleared,
-        remainingKeys: organizationKeys
+        databaseCleared,
+        remainingKeys: organizationKeys,
+        databaseCounts
       };
       
     } catch (error) {
@@ -181,7 +289,9 @@ export class DataCleanupService {
         userProfilesCleared: false,
         membershipDataCleared: false,
         localStorageCleared: false,
-        remainingKeys: []
+        databaseCleared: false,
+        remainingKeys: [],
+        databaseCounts: { profiles: 0, activations: 0, authUsers: 0, configs: 0 }
       };
     }
   }

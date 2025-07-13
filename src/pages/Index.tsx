@@ -5,6 +5,7 @@ import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye } fr
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import MembershipPricingSystem from "@/components/membership/MembershipPricingSystem";
+import DataCleanupButton from "@/components/admin/DataCleanupButton";
 
 const Index = () => {
   console.log('Index page is rendering...');
@@ -158,7 +159,7 @@ const Index = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle className="text-lg">Post a Challenge</CardTitle>
@@ -208,6 +209,18 @@ const Index = () => {
                 </CardContent>
               </Card>
             </Link>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg text-red-600">Testing Tools</CardTitle>
+                <CardDescription>
+                  Clear all data for fresh testing (enables email reuse)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DataCleanupButton />
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
