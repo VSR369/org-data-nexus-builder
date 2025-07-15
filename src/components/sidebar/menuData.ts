@@ -78,12 +78,6 @@ export const organizationMenuItems = [
     description: 'Manage workflow organization categories'
   },
   {
-    id: 'organization-relationships',
-    title: 'Organization Relationships',
-    icon: GitBranch,
-    description: 'Configure relationships between types, categories, and departments'
-  },
-  {
     id: 'industry-segments',
     title: 'Industry Segments',
     icon: Target,
