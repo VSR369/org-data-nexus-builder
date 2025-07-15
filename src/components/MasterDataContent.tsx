@@ -18,6 +18,9 @@ import SeekerMembershipFeeConfig from "./master-data/SeekerMembershipFeeConfig";
 import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
 import EngagementPricingManager from "./master-data/engagement-pricing/EngagementPricingManager";
 import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
+import BillingFrequenciesConfig from "./master-data/BillingFrequenciesConfig";
+import MembershipStatusesConfig from "./master-data/MembershipStatusesConfig";
+import UnitsOfMeasureConfig from "./master-data/UnitsOfMeasureConfig";
 import GlobalCacheManager from "./master-data/GlobalCacheManager";
 import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
 import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
@@ -74,6 +77,12 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <SeekerMembershipFeeConfig />;
       case 'engagement-models':
         return <EngagementModelsConfig />;
+      case 'billing-frequencies':
+        return <BillingFrequenciesConfig />;
+      case 'membership-statuses':
+        return <MembershipStatusesConfig />;
+      case 'units-of-measure':
+        return <UnitsOfMeasureConfig />;
       case 'pricing':
         return <EngagementPricingManager />;
       case 'events-calendar':

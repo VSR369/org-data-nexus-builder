@@ -138,6 +138,24 @@ export const systemMenuItems = [
     description: 'Configure engagement frameworks'
   },
   {
+    id: 'billing-frequencies',
+    title: 'Billing Frequencies',
+    icon: Calendar,
+    description: 'Configure billing cycles and payment schedules'
+  },
+  {
+    id: 'membership-statuses',
+    title: 'Membership Statuses',
+    icon: UserCheck,
+    description: 'Manage membership states and user account statuses'
+  },
+  {
+    id: 'units-of-measure',
+    title: 'Units of Measure',
+    icon: Target,
+    description: 'Configure measurement units for pricing and calculations'
+  },
+  {
     id: 'pricing',
     title: 'Pricing Configuration',
     icon: DollarSign,
