@@ -723,6 +723,203 @@ export type Database = {
         }
         Relationships: []
       }
+      master_org_category_department_mapping: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department_id: string
+          id: string
+          is_active: boolean
+          is_default: boolean | null
+          organization_category_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean | null
+          organization_category_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean | null
+          organization_category_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_org_category_department_ma_organization_category_id_fkey"
+            columns: ["organization_category_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_org_category_department_mapping_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "master_departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_org_type_category_mapping: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          organization_category_id: string
+          organization_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          organization_category_id: string
+          organization_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          organization_category_id?: string
+          organization_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_org_type_category_mapping_organization_category_id_fkey"
+            columns: ["organization_category_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_org_type_category_mapping_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_org_type_category_mapping_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
+          },
+        ]
+      }
+      master_org_type_department_mapping: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department_id: string
+          id: string
+          is_active: boolean
+          is_default: boolean | null
+          organization_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean | null
+          organization_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean | null
+          organization_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_org_type_department_mapping_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "master_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_org_type_department_mapping_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_org_type_department_mapping_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
+          },
+        ]
+      }
+      master_organization_categories: {
+        Row: {
+          category_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+          workflow_config: Json | null
+        }
+        Insert: {
+          category_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+          workflow_config?: Json | null
+        }
+        Update: {
+          category_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+          workflow_config?: Json | null
+        }
+        Relationships: []
+      }
       master_organization_types: {
         Row: {
           created_at: string | null
@@ -1173,6 +1370,7 @@ export type Database = {
           entity_type_id: string | null
           id: string
           industry_segment_id: string | null
+          organization_category_id: string | null
           organization_id: string
           organization_name: string
           organization_type_id: string | null
@@ -1193,6 +1391,7 @@ export type Database = {
           entity_type_id?: string | null
           id?: string
           industry_segment_id?: string | null
+          organization_category_id?: string | null
           organization_id: string
           organization_name: string
           organization_type_id?: string | null
@@ -1213,6 +1412,7 @@ export type Database = {
           entity_type_id?: string | null
           id?: string
           industry_segment_id?: string | null
+          organization_category_id?: string | null
           organization_id?: string
           organization_name?: string
           organization_type_id?: string | null
@@ -1265,6 +1465,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organization_context"
             referencedColumns: ["industry_segment_id"]
+          },
+          {
+            foreignKeyName: "organizations_organization_category_id_fkey"
+            columns: ["organization_category_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_categories"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "organizations_organization_type_id_fkey"

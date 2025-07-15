@@ -9,12 +9,21 @@ interface MasterDataItem {
   created_at?: string;
   updated_at?: string;
   is_user_created?: boolean;
+  category_type?: string;
+  workflow_config?: any;
+  is_active?: boolean;
+  organization_type_id?: string;
+  organization_category_id?: string;
+  department_id?: string;
+  is_default?: boolean;
 }
 
 type TableName = 'master_organization_types' | 'master_entity_types' | 'master_solution_statuses' | 
   'master_challenge_statuses' | 'master_reward_types' | 'master_communication_types' | 
   'master_departments' | 'master_industry_segments' | 'master_engagement_models' | 
-  'master_competency_capabilities' | 'master_currencies' | 'master_countries';
+  'master_competency_capabilities' | 'master_currencies' | 'master_countries' | 
+  'master_organization_categories' | 'master_org_type_category_mapping' | 
+  'master_org_type_department_mapping' | 'master_org_category_department_mapping';
 
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
@@ -157,3 +166,7 @@ export const useEngagementModels = () => useMasterDataCRUD('master_engagement_mo
 export const useCompetencyCapabilities = () => useMasterDataCRUD('master_competency_capabilities');
 export const useCurrencies = () => useMasterDataCRUD('master_currencies');
 export const useCountries = () => useMasterDataCRUD('master_countries');
+export const useOrganizationCategories = () => useMasterDataCRUD('master_organization_categories');
+export const useOrgTypeCategoryMapping = () => useMasterDataCRUD('master_org_type_category_mapping');
+export const useOrgTypeDepartmentMapping = () => useMasterDataCRUD('master_org_type_department_mapping');
+export const useOrgCategoryDepartmentMapping = () => useMasterDataCRUD('master_org_category_department_mapping');

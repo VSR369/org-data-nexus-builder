@@ -18,7 +18,8 @@ import {
   Download,
   Table,
   Folder,
-  FolderOpen
+  FolderOpen,
+  GitBranch
 } from 'lucide-react';
 
 export const customDataMenuItems = [
@@ -69,6 +70,18 @@ export const organizationMenuItems = [
     title: 'Organization Types',
     icon: Building2,
     description: 'Configure organization categories'
+  },
+  {
+    id: 'organization-categories',
+    title: 'Organization Categories',
+    icon: FolderOpen,
+    description: 'Manage workflow organization categories'
+  },
+  {
+    id: 'organization-relationships',
+    title: 'Organization Relationships',
+    icon: GitBranch,
+    description: 'Configure relationships between types, categories, and departments'
   },
   {
     id: 'industry-segments',
