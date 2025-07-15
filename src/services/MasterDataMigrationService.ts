@@ -42,8 +42,6 @@ export class MasterDataMigrationService {
         { key: 'master_data_industry_segments', table: 'master_industry_segments', fields: ['name', 'description'] },
         { key: 'master_data_competency_capabilities', table: 'master_competency_capabilities', fields: ['name', 'description', 'category'] },
         { key: 'master_data_engagement_models', table: 'master_engagement_models', fields: ['name', 'description'] },
-        { key: 'master_data_challenge_statuses', table: 'master_challenge_statuses', fields: ['name', 'description'] },
-        { key: 'master_data_solution_statuses', table: 'master_solution_statuses', fields: ['name', 'description'] },
         { key: 'master_data_reward_types', table: 'master_reward_types', fields: ['name', 'description'] },
         { key: 'master_data_communication_types', table: 'master_communication_types', fields: ['name', 'description'] },
         { key: 'master_data_countries', table: 'master_countries', fields: ['name', 'code'] },

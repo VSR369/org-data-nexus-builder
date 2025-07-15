@@ -18,11 +18,10 @@ interface MasterDataItem {
   is_default?: boolean;
 }
 
-type TableName = 'master_organization_types' | 'master_entity_types' | 'master_solution_statuses' | 
-  'master_challenge_statuses' | 'master_reward_types' | 'master_communication_types' | 
-  'master_departments' | 'master_industry_segments' | 'master_engagement_models' | 
-  'master_competency_capabilities' | 'master_currencies' | 'master_countries' | 
-  'master_organization_categories';
+type TableName = 'master_organization_types' | 'master_entity_types' | 'master_reward_types' | 
+  'master_communication_types' | 'master_departments' | 'master_industry_segments' | 
+  'master_engagement_models' | 'master_competency_capabilities' | 'master_currencies' | 
+  'master_countries' | 'master_organization_categories';
 
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
@@ -155,8 +154,6 @@ export function useMasterDataCRUD(tableName: TableName) {
 // Specific hooks for each master data type
 export const useOrganizationTypes = () => useMasterDataCRUD('master_organization_types');
 export const useEntityTypes = () => useMasterDataCRUD('master_entity_types');
-export const useSolutionStatuses = () => useMasterDataCRUD('master_solution_statuses');
-export const useChallengeStatuses = () => useMasterDataCRUD('master_challenge_statuses');
 export const useRewardTypes = () => useMasterDataCRUD('master_reward_types');
 export const useCommunicationTypes = () => useMasterDataCRUD('master_communication_types');
 export const useDepartments = () => useMasterDataCRUD('master_departments');

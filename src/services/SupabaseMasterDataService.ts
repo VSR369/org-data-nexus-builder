@@ -219,21 +219,6 @@ export class SupabaseMasterDataService {
     return this.saveItems('master_engagement_models', models);
   }
 
-  async getChallengeStatuses(): Promise<MasterDataItem[]> {
-    return this.getItems('master_challenge_statuses');
-  }
-
-  async saveChallengeStatuses(statuses: MasterDataItem[]): Promise<boolean> {
-    return this.saveItems('master_challenge_statuses', statuses);
-  }
-
-  async getSolutionStatuses(): Promise<MasterDataItem[]> {
-    return this.getItems('master_solution_statuses');
-  }
-
-  async saveSolutionStatuses(statuses: MasterDataItem[]): Promise<boolean> {
-    return this.saveItems('master_solution_statuses', statuses);
-  }
 
   async getRewardTypes(): Promise<MasterDataItem[]> {
     return this.getItems('master_reward_types');

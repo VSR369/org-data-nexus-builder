@@ -99,18 +99,6 @@ export const organizationMenuItems = [
 
 export const challengeMenuItems = [
   {
-    id: 'challenge-statuses',
-    title: 'Challenge Statuses',
-    icon: Target,
-    description: 'Configure challenge states'
-  },
-  {
-    id: 'solution-statuses',
-    title: 'Solution Statuses',
-    icon: Lightbulb,
-    description: 'Define solution states'
-  },
-  {
     id: 'reward-types',
     title: 'Reward Types',
     icon: Award,

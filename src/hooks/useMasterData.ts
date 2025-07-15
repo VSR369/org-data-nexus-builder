@@ -126,7 +126,5 @@ export const useDepartments = () => useMasterData('master_departments');
 export const useIndustrySegments = () => useMasterData('master_industry_segments');
 export const useCompetencyCapabilities = () => useMasterData('master_competency_capabilities');
 export const useEngagementModels = () => useMasterData('master_engagement_models');
-export const useChallengeStatuses = () => useMasterData('master_challenge_statuses');
-export const useSolutionStatuses = () => useMasterData('master_solution_statuses');
 export const useRewardTypes = () => useMasterData('master_reward_types');
 export const useCommunicationTypes = () => useMasterData('master_communication_types');

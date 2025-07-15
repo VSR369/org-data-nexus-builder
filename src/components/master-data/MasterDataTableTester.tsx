@@ -88,20 +88,6 @@ const MasterDataTableTester = () => {
       childTables: ['master_sub_departments']
     },
     {
-      tableName: 'master_challenge_statuses',
-      displayName: 'Challenge Statuses',
-      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true,
-      relationshipType: 'master' as const
-    },
-    {
-      tableName: 'master_solution_statuses',
-      displayName: 'Solution Statuses',
-      frontendFields: ['id', 'name', 'description', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],
-      isSupabaseEnabled: true,
-      relationshipType: 'master' as const
-    },
-    {
       tableName: 'master_communication_types',
       displayName: 'Communication Types',
       frontendFields: ['id', 'name', 'description', 'link', 'created_at', 'updated_at', 'created_by', 'version', 'is_user_created'],

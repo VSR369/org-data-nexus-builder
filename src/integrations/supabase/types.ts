@@ -247,39 +247,6 @@ export type Database = {
           },
         ]
       }
-      master_challenge_statuses: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          is_user_created: boolean | null
-          name: string
-          updated_at: string | null
-          version: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_user_created?: boolean | null
-          name: string
-          updated_at?: string | null
-          version?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_user_created?: boolean | null
-          name?: string
-          updated_at?: string | null
-          version?: number | null
-        }
-        Relationships: []
-      }
       master_communication_types: {
         Row: {
           created_at: string | null
@@ -945,39 +912,6 @@ export type Database = {
             referencedColumns: ["organization_type_id"]
           },
         ]
-      }
-      master_solution_statuses: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          is_user_created: boolean | null
-          name: string
-          updated_at: string | null
-          version: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_user_created?: boolean | null
-          name: string
-          updated_at?: string | null
-          version?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_user_created?: boolean | null
-          name?: string
-          updated_at?: string | null
-          version?: number | null
-        }
-        Relationships: []
       }
       master_sub_categories: {
         Row: {

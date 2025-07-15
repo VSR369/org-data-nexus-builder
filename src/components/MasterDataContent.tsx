@@ -9,8 +9,6 @@ import OrganizationTypeConfigSupabase from "./master-data/OrganizationTypeConfig
 import EntityTypeConfigSupabase from "./master-data/EntityTypeConfigSupabase";
 import { OrganizationCategoryConfigSupabase } from "./OrganizationCategoryConfigSupabase";
 
-import ChallengeStatusConfigSupabase from "./master-data/ChallengeStatusConfigSupabase";
-import SolutionStatusConfigSupabase from "./master-data/SolutionStatusConfigSupabase";
 import CapabilityLevelsConfig from "./master-data/CapabilityLevelsConfig";
 import CommunicationTypeConfigSupabase from "./master-data/CommunicationTypeConfigSupabase";
 import RewardTypeConfigSupabase from "./master-data/RewardTypeConfigSupabase";
@@ -61,10 +59,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <EntityTypeConfigSupabase />;
       case 'departments':
         return <DepartmentConfigSupabase />;
-      case 'challenge-statuses':
-        return <ChallengeStatusConfigSupabase />;
-      case 'solution-statuses':
-        return <SolutionStatusConfigSupabase />;
       case 'capability-levels':
         return <CapabilityLevelsConfig />;
       case 'communication-types':
