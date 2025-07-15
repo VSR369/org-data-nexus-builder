@@ -26,7 +26,7 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   const location = useLocation();
   const navigate = useNavigate();
   const isOnRegistrationPage = location.pathname === '/register';
-  const isOnMasterDataPortal = location.pathname === '/master-data';
+  const isOnMasterDataPortal = location.pathname === '/master-data-portal';
 
   console.log('AppSidebar render:', { activeSection, isOnMasterDataPortal, pathname: location.pathname });
 
