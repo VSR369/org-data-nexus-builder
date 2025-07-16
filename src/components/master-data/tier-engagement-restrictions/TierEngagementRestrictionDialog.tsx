@@ -129,7 +129,7 @@ export const TierEngagementRestrictionDialog: React.FC<TierEngagementRestriction
                 <SelectValue placeholder="Select subtype (optional - leave empty for all)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Subtypes</SelectItem>
+                <SelectItem value="all">All Subtypes</SelectItem>
                 {filteredSubtypes.map((subtype: any) => (
                   <SelectItem key={subtype.id} value={subtype.id}>
                     {subtype.name}

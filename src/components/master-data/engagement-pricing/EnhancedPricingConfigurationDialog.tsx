@@ -443,7 +443,7 @@ export const EnhancedPricingConfigurationDialog: React.FC<EnhancedPricingConfigu
                       <SelectValue placeholder="Select subtype (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific subtype</SelectItem>
+                      <SelectItem value="none">No specific subtype</SelectItem>
                       {availableSubtypes.map((subtype: any) => (
                         <SelectItem key={subtype.id} value={subtype.id}>
                           {subtype.name}
