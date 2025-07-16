@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { DialogTriggerButton } from '@/components/ui/dialog-trigger-button';
 
 interface ChallengeOverageFeeDialogProps {
   mode: 'add' | 'edit' | 'delete';
@@ -117,7 +117,7 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
       }
 
       setOpen(false);
-      onSuccess();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -242,19 +242,9 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button 
-            variant={mode === 'delete' ? 'destructive' : 'default'} 
-            size="sm"
-          >
-            {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
-            {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
-            {mode === 'delete' && <Trash2 className="w-4 h-4 mr-2" />}
-            {mode.charAt(0).toUpperCase() + mode.slice(1)}
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTriggerButton mode={mode}>
+        {children}
+      </DialogTriggerButton>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>

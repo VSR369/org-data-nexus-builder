@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { DialogTriggerButton } from '@/components/ui/dialog-trigger-button';
 
 interface TierEngagementAccessDialogProps {
   mode: 'add' | 'edit' | 'delete';
@@ -125,7 +126,7 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
       }
 
       setOpen(false);
-      onSuccess();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -328,19 +329,9 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button 
-            variant={mode === 'delete' ? 'destructive' : 'default'} 
-            size="sm"
-          >
-            {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
-            {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
-            {mode === 'delete' && <Trash2 className="w-4 h-4 mr-2" />}
-            {mode.charAt(0).toUpperCase() + mode.slice(1)}
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTriggerButton mode={mode}>
+        {children}
+      </DialogTriggerButton>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
