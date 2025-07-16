@@ -2005,7 +2005,6 @@ export type Database = {
           max_concurrent_models: number
           pricing_tier_id: string
           selection_scope: string
-          selection_type: string
           switch_requirements: string
           updated_at: string
           version: number | null
@@ -2024,7 +2023,6 @@ export type Database = {
           max_concurrent_models?: number
           pricing_tier_id: string
           selection_scope?: string
-          selection_type?: string
           switch_requirements?: string
           updated_at?: string
           version?: number | null
@@ -2043,7 +2041,6 @@ export type Database = {
           max_concurrent_models?: number
           pricing_tier_id?: string
           selection_scope?: string
-          selection_type?: string
           switch_requirements?: string
           updated_at?: string
           version?: number | null

@@ -18,14 +18,22 @@ const EngagementModelsConfig = () => {
   useEffect(() => {
     console.log('🔄 EngagementModelsConfig: Loading clean engagement models...');
     const loadedModels = getCleanEngagementModels();
-    console.log('✅ EngagementModelsConfig: Loaded models:', loadedModels.length, loadedModels.map(m => m.name));
-    setEngagementModels(loadedModels);
+    // Filter to only show "Market Place" and "Aggregator" models
+    const filteredModels = loadedModels.filter(model => 
+      model.name === 'Market Place' || model.name === 'Aggregator'
+    );
+    console.log('✅ EngagementModelsConfig: Loaded filtered models:', filteredModels.length, filteredModels.map(m => m.name));
+    setEngagementModels(filteredModels);
   }, []);
 
   const handleRefreshData = () => {
     console.log('🔄 Refreshing engagement models data...');
     const refreshedData = getCleanEngagementModels();
-    setEngagementModels(refreshedData);
+    // Filter to only show "Market Place" and "Aggregator" models
+    const filteredData = refreshedData.filter(model => 
+      model.name === 'Market Place' || model.name === 'Aggregator'
+    );
+    setEngagementModels(filteredData);
     toast({
       title: "Success",
       description: "Engagement models data refreshed and cleaned",
@@ -33,21 +41,13 @@ const EngagementModelsConfig = () => {
   };
 
   const handleResetToDefault = () => {
-    console.log('🔄 Resetting engagement models to default 4 models...');
-    // Get default data and save it
-    const defaultData = [
+    console.log('🔄 Resetting engagement models to filtered default models...');
+    // Get filtered default data and save it
+    const filteredDefaultData = [
       {
         id: 'marketplace',
         name: 'Market Place',
         description: 'A platform where solution seekers and providers connect directly for marketplace transactions',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'marketplace-aggregator',
-        name: 'Market Place & Aggregator',
-        description: 'Combined marketplace and aggregation services for comprehensive solution management',
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -59,22 +59,13 @@ const EngagementModelsConfig = () => {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'platform-service',
-        name: 'Platform as a Service',
-        description: 'Complete platform infrastructure and services for solution development and deployment',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
       }
     ];
     
-    engagementModelsDataManager.saveData(defaultData);
-    setEngagementModels(defaultData);
+    setEngagementModels(filteredDefaultData);
     toast({
       title: "Success",
-      description: "Engagement models reset to default 4 models",
+      description: "Engagement models reset to Market Place and Aggregator models",
     });
   };
 
@@ -110,7 +101,7 @@ const EngagementModelsConfig = () => {
               </CardTitle>
               <CardDescription>
                 Configure engagement models that define how services are delivered and managed. 
-                You should have exactly 4 distinct models: Market Place, Market Place & Aggregator, Aggregator, and Platform as a Service.
+                Showing Market Place and Aggregator models only.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -130,14 +121,14 @@ const EngagementModelsConfig = () => {
                 className="flex items-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
-                Reset to Default 4
+                Reset to Default
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground mb-4">
-            Current engagement models: {engagementModels.length}/4 expected models
+            Current engagement models: {engagementModels.length}/2 expected models
           </div>
         </CardContent>
       </Card>
