@@ -7,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, AlertCircle } from 'lucide-react';
 import { useMasterDataCRUD } from '../../../hooks/useMasterDataCRUD';
+import { useToast } from '@/hooks/use-toast';
 
 interface EngagementModelSubtypeDialogProps {
   open: boolean;
@@ -36,8 +37,11 @@ export const EngagementModelSubtypeDialog: React.FC<EngagementModelSubtypeDialog
 
   const [newRequiredField, setNewRequiredField] = useState('');
   const [newOptionalField, setNewOptionalField] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const { items: engagementModels } = useMasterDataCRUD('master_engagement_models');
+  const { items: existingSubtypes } = useMasterDataCRUD('master_engagement_model_subtypes');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (subtype) {
@@ -59,11 +63,54 @@ export const EngagementModelSubtypeDialog: React.FC<EngagementModelSubtypeDialog
         is_active: true,
       });
     }
+    setValidationError('');
   }, [subtype, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Validation function to check for duplicate names
+  const validateUniqueness = (name: string, engagementModelId: string) => {
+    if (!name || !engagementModelId) return true;
+    
+    const duplicate = existingSubtypes.find(
+      (item: any) => 
+        item.name.toLowerCase() === name.toLowerCase() &&
+        item.engagement_model_id === engagementModelId &&
+        item.id !== subtype?.id // Exclude current item when editing
+    );
+    
+    return !duplicate;
+  };
+
+  // Real-time validation as user types
+  useEffect(() => {
+    if (formData.name && formData.engagement_model_id) {
+      if (!validateUniqueness(formData.name, formData.engagement_model_id)) {
+        setValidationError('A subtype with this name already exists for the selected engagement model');
+      } else {
+        setValidationError('');
+      }
+    } else {
+      setValidationError('');
+    }
+  }, [formData.name, formData.engagement_model_id, existingSubtypes, subtype]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Final validation before submission
+    if (!validateUniqueness(formData.name, formData.engagement_model_id)) {
+      setValidationError('A subtype with this name already exists for the selected engagement model');
+      return;
+    }
+    
+    try {
+      await onSave(formData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save engagement model subtype",
+        variant: "destructive",
+      });
+    }
   };
 
   const addRequiredField = () => {
@@ -141,6 +188,14 @@ export const EngagementModelSubtypeDialog: React.FC<EngagementModelSubtypeDialog
               </Select>
             </div>
           </div>
+
+          {/* Validation Error */}
+          {validationError && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{validationError}</span>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
@@ -225,7 +280,7 @@ export const EngagementModelSubtypeDialog: React.FC<EngagementModelSubtypeDialog
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!validationError}>
               {loading ? 'Saving...' : 'Save'}
             </Button>
           </div>

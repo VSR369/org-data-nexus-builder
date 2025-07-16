@@ -19,6 +19,8 @@ export const EngagementModelSubtypesManager: React.FC = () => {
     deleteItem,
     refreshItems
   } = useMasterDataCRUD('master_engagement_model_subtypes');
+  
+  const { items: engagementModels } = useMasterDataCRUD('master_engagement_models');
 
   const handleAddNew = () => {
     setEditingItem(null);
@@ -41,6 +43,11 @@ export const EngagementModelSubtypesManager: React.FC = () => {
       setEditingItem(null);
     } catch (error) {
       console.error('Failed to save engagement model subtype:', error);
+      // Check if it's a unique constraint violation
+      if (error.message?.includes('unique_subtype_name_per_engagement_model')) {
+        throw new Error('A subtype with this name already exists for the selected engagement model. Please choose a different name.');
+      }
+      throw error;
     }
   };
 
@@ -67,8 +74,13 @@ export const EngagementModelSubtypesManager: React.FC = () => {
       accessorKey: 'engagement_model_id',
       header: 'Engagement Model',
       cell: ({ row }: any) => {
-        // This would be populated by joining with engagement models
-        return <span className="text-muted-foreground">Model ID: {row.getValue('engagement_model_id')}</span>;
+        const modelId = row.getValue('engagement_model_id');
+        const model = engagementModels.find(m => m.id === modelId);
+        return (
+          <Badge variant="outline" className="text-sm">
+            {model?.name || 'Unknown Model'}
+          </Badge>
+        );
       },
     },
     {
