@@ -404,7 +404,14 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button variant={mode === 'delete' ? 'destructive' : 'default'} size="sm">
+          <Button 
+            variant={mode === 'delete' ? 'destructive' : 'default'} 
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
             {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
             {mode === 'delete' && <Trash2 className="w-4 h-4 mr-2" />}

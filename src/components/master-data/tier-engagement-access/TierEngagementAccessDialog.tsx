@@ -30,7 +30,6 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
     engagement_model_id: '',
     is_allowed: true,
     is_default: false,
-    selection_type: 'per_challenge',
     selection_scope: 'per_challenge',
     max_concurrent_models: 1,
     switch_requirements: 'none',
@@ -53,7 +52,6 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
         engagement_model_id: item.engagement_model_id || '',
         is_allowed: item.is_allowed ?? true,
         is_default: item.is_default ?? false,
-        selection_type: item.selection_type || 'per_challenge',
         selection_scope: item.selection_scope || 'per_challenge',
         max_concurrent_models: item.max_concurrent_models || 1,
         switch_requirements: item.switch_requirements || 'none',
@@ -196,22 +194,6 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="selection_type">Selection Type</Label>
-            <Select
-              value={formData.selection_type}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, selection_type: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select selection type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="per_challenge">Per Challenge</SelectItem>
-                <SelectItem value="per_project">Per Project</SelectItem>
-                <SelectItem value="subscription">Subscription</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -254,8 +236,6 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no_active_challenges">No Active Challenges (Basic)</SelectItem>
-                <SelectItem value="pause_all">Pause All Active</SelectItem>
-                <SelectItem value="complete_all">Complete All Active</SelectItem>
                 <SelectItem value="none">None (Standard/Premium)</SelectItem>
               </SelectContent>
             </Select>
@@ -350,7 +330,14 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button variant={mode === 'delete' ? 'destructive' : 'default'} size="sm">
+          <Button 
+            variant={mode === 'delete' ? 'destructive' : 'default'} 
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
             {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
             {mode === 'delete' && <Trash2 className="w-4 h-4 mr-2" />}
