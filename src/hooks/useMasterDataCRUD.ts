@@ -108,6 +108,15 @@ export function useMasterDataCRUD(tableName: TableName) {
             unit_of_measure:master_units_of_measure(name, symbol)
           `)
           .order('created_at', { ascending: false });
+      } else if (tableName === 'master_platform_fee_formulas') {
+        // Special case for platform fee formulas - join with engagement models to get readable names
+        query = supabase
+          .from(tableName)
+          .select(`
+            *,
+            engagement_model:master_engagement_models(name)
+          `)
+          .order('created_at', { ascending: false });
       } else {
         // Default case for other tables
         query = supabase
@@ -132,6 +141,13 @@ export function useMasterDataCRUD(tableName: TableName) {
           currency_symbol: item.currency?.symbol || '',
           unit_of_measure: item.unit_of_measure?.name || '',
           unit_symbol: item.unit_of_measure?.symbol || ''
+        }));
+        setItems(processedData || []);
+      } else if (tableName === 'master_platform_fee_formulas' && data) {
+        // For platform fee formulas, flatten the joined data to include readable engagement model name
+        const processedData = data.map((item: any) => ({
+          ...item,
+          engagement_model_name: item.engagement_model?.name || 'Unknown Model'
         }));
         setItems(processedData || []);
       } else {

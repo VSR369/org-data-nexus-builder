@@ -60,11 +60,11 @@ export const PlatformFeeFormulasManager: React.FC = () => {
       header: 'Formula Name',
     },
     {
-      accessorKey: 'engagement_model_id',
+      accessorKey: 'engagement_model_name',
       header: 'Engagement Model',
       cell: ({ row }: any) => (
-        <span className="text-muted-foreground">
-          Model ID: {row.getValue('engagement_model_id')}
+        <span className="font-medium">
+          {row.original.engagement_model_name || 'Unknown Model'}
         </span>
       ),
     },
