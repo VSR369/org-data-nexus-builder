@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface MasterDataItem {
   id?: string;
-  name: string;
+  name?: string;
   description?: string;
   created_at?: string;
   updated_at?: string;
@@ -16,12 +16,72 @@ interface MasterDataItem {
   organization_category_id?: string;
   department_id?: string;
   is_default?: boolean;
+  // Pricing tiers specific
+  level_order?: number;
+  // System configurations specific
+  config_key?: string;
+  config_value?: string;
+  data_type?: string;
+  category?: string;
+  is_system_config?: boolean;
+  // Fee components specific
+  component_type?: string;
+  // Platform fee formulas specific
+  engagement_model_id?: string;
+  formula_name?: string;
+  formula_expression?: string;
+  variables?: any;
+  // Advance payment types specific
+  percentage_of_platform_fee?: number;
+  // Pricing parameters specific
+  country_id?: string;
+  currency_id?: string;
+  entity_type_id?: string;
+  fee_component_id?: string;
+  amount?: number;
+  unit_of_measure_id?: string;
+  effective_from?: string;
+  effective_to?: string;
+  // Engagement model subtypes specific
+  required_fields?: any;
+  optional_fields?: any;
+  // Tier restrictions specific
+  pricing_tier_id?: string;
+  engagement_model_subtype_id?: string;
+  is_allowed?: boolean;
+  [key: string]: any;
 }
 
-type TableName = 'master_organization_types' | 'master_entity_types' | 'master_reward_types' | 
-  'master_communication_types' | 'master_departments' | 'master_industry_segments' | 
-  'master_engagement_models' | 'master_competency_capabilities' | 'master_currencies' | 
-  'master_countries' | 'master_organization_categories';
+type TableName = 
+  | 'master_countries'
+  | 'master_currencies'
+  | 'master_organization_types'
+  | 'master_entity_types'
+  | 'master_engagement_models'
+  | 'master_industry_segments'
+  | 'master_capability_levels'
+  | 'master_units_of_measure'
+  | 'master_billing_frequencies'
+  | 'master_membership_statuses'
+  | 'master_departments'
+  | 'master_sub_departments'
+  | 'master_team_units'
+  | 'master_categories'
+  | 'master_sub_categories'
+  | 'master_domain_groups'
+  | 'master_competency_capabilities'
+  | 'master_communication_types'
+  | 'master_reward_types'
+  | 'master_organization_categories'
+  | 'master_seeker_membership_fees'
+  | 'master_pricing_tiers'
+  | 'master_engagement_model_subtypes'
+  | 'master_fee_components'
+  | 'master_platform_fee_formulas'
+  | 'master_advance_payment_types'
+  | 'tier_engagement_model_restrictions'
+  | 'master_pricing_parameters'
+  | 'master_system_configurations';
 
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
@@ -34,7 +94,7 @@ export function useMasterDataCRUD(tableName: TableName) {
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
-        .order('name');
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       setItems((data as MasterDataItem[]) || []);
@@ -50,12 +110,12 @@ export function useMasterDataCRUD(tableName: TableName) {
     }
   };
 
-  const addItem = async (item: Omit<MasterDataItem, 'id'>) => {
+  const addItem = async (item: any) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from(tableName)
-        .insert([{ ...item, is_user_created: true }])
+        .insert([{ ...item, is_user_created: item.is_user_created ?? true }])
         .select()
         .single();
       
@@ -63,14 +123,14 @@ export function useMasterDataCRUD(tableName: TableName) {
       setItems(prev => [...prev, data as MasterDataItem]);
       toast({
         title: "Success",
-        description: `${item.name} added successfully`,
+        description: `${item.name || item.config_key || 'Item'} added successfully`,
       });
       return true;
     } catch (error) {
       console.error(`Error adding to ${tableName}:`, error);
       toast({
         title: "Error",
-        description: `Failed to add ${item.name}`,
+        description: `Failed to add ${item.name || item.config_key || 'item'}`,
         variant: "destructive",
       });
       return false;
@@ -79,7 +139,7 @@ export function useMasterDataCRUD(tableName: TableName) {
     }
   };
 
-  const updateItem = async (id: string, updates: Partial<MasterDataItem>) => {
+  const updateItem = async (id: string, updates: any) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -151,15 +211,35 @@ export function useMasterDataCRUD(tableName: TableName) {
   };
 }
 
-// Specific hooks for each master data type
+// Existing hooks for backward compatibility
 export const useOrganizationTypes = () => useMasterDataCRUD('master_organization_types');
 export const useEntityTypes = () => useMasterDataCRUD('master_entity_types');
-export const useRewardTypes = () => useMasterDataCRUD('master_reward_types');
-export const useCommunicationTypes = () => useMasterDataCRUD('master_communication_types');
-export const useDepartments = () => useMasterDataCRUD('master_departments');
-export const useIndustrySegments = () => useMasterDataCRUD('master_industry_segments');
-export const useEngagementModels = () => useMasterDataCRUD('master_engagement_models');
-export const useCompetencyCapabilities = () => useMasterDataCRUD('master_competency_capabilities');
-export const useCurrencies = () => useMasterDataCRUD('master_currencies');
 export const useCountries = () => useMasterDataCRUD('master_countries');
+export const useCurrencies = () => useMasterDataCRUD('master_currencies');
+export const useEngagementModels = () => useMasterDataCRUD('master_engagement_models');
+export const useIndustrySegments = () => useMasterDataCRUD('master_industry_segments');
+export const useCapabilityLevels = () => useMasterDataCRUD('master_capability_levels');
+export const useUnitsOfMeasure = () => useMasterDataCRUD('master_units_of_measure');
+export const useBillingFrequencies = () => useMasterDataCRUD('master_billing_frequencies');
+export const useMembershipStatuses = () => useMasterDataCRUD('master_membership_statuses');
+export const useDepartments = () => useMasterDataCRUD('master_departments');
+export const useSubDepartments = () => useMasterDataCRUD('master_sub_departments');
+export const useTeamUnits = () => useMasterDataCRUD('master_team_units');
+export const useCategories = () => useMasterDataCRUD('master_categories');
+export const useSubCategories = () => useMasterDataCRUD('master_sub_categories');
+export const useDomainGroups = () => useMasterDataCRUD('master_domain_groups');
+export const useCompetencyCapabilities = () => useMasterDataCRUD('master_competency_capabilities');
+export const useCommunicationTypes = () => useMasterDataCRUD('master_communication_types');
+export const useRewardTypes = () => useMasterDataCRUD('master_reward_types');
 export const useOrganizationCategories = () => useMasterDataCRUD('master_organization_categories');
+export const useSeekerMembershipFees = () => useMasterDataCRUD('master_seeker_membership_fees');
+
+// New hooks for pricing configuration tables
+export const usePricingTiers = () => useMasterDataCRUD('master_pricing_tiers');
+export const useEngagementModelSubtypes = () => useMasterDataCRUD('master_engagement_model_subtypes');
+export const useFeeComponents = () => useMasterDataCRUD('master_fee_components');
+export const usePlatformFeeFormulas = () => useMasterDataCRUD('master_platform_fee_formulas');
+export const useAdvancePaymentTypes = () => useMasterDataCRUD('master_advance_payment_types');
+export const useTierEngagementModelRestrictions = () => useMasterDataCRUD('tier_engagement_model_restrictions');
+export const usePricingParameters = () => useMasterDataCRUD('master_pricing_parameters');
+export const useSystemConfigurations = () => useMasterDataCRUD('master_system_configurations');

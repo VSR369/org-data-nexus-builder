@@ -89,6 +89,24 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <AdminCreationDiagnostic />;
       case 'solution-seekers-validation':
         return <SeekingOrgValidationDashboard />;
+      case 'pricing-tiers':
+        const PricingTiersManager = React.lazy(() => 
+          import('./master-data/pricing-tiers/PricingTiersManager').then(m => ({ default: m.PricingTiersManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <PricingTiersManager />
+          </React.Suspense>
+        );
+      case 'system-configurations':
+        const SystemConfigurationsManager = React.lazy(() => 
+          import('./master-data/system-configurations/SystemConfigurationsManager').then(m => ({ default: m.SystemConfigurationsManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SystemConfigurationsManager />
+          </React.Suspense>
+        );
       default:
         return <MasterDataDiagnostics />;
     }

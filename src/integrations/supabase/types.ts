@@ -122,6 +122,45 @@ export type Database = {
         }
         Relationships: []
       }
+      master_advance_payment_types: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          percentage_of_platform_fee: number
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          percentage_of_platform_fee: number
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          percentage_of_platform_fee?: number
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_billing_frequencies: {
         Row: {
           created_at: string
@@ -564,6 +603,59 @@ export type Database = {
           },
         ]
       }
+      master_engagement_model_subtypes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          engagement_model_id: string
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          optional_fields: Json | null
+          required_fields: Json | null
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          engagement_model_id: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          optional_fields?: Json | null
+          required_fields?: Json | null
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          engagement_model_id?: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          optional_fields?: Json | null
+          required_fields?: Json | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_engagement_model_subtypes_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_engagement_models: {
         Row: {
           created_at: string | null
@@ -623,6 +715,45 @@ export type Database = {
           is_user_created?: boolean | null
           name?: string
           updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      master_fee_components: {
+        Row: {
+          component_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          component_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          component_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
           version?: number | null
         }
         Relationships: []
@@ -758,6 +889,219 @@ export type Database = {
           is_user_created?: boolean | null
           name?: string
           updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      master_platform_fee_formulas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          engagement_model_id: string
+          formula_expression: string
+          formula_name: string
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          updated_at: string
+          variables: Json | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          engagement_model_id: string
+          formula_expression: string
+          formula_name: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          updated_at?: string
+          variables?: Json | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          engagement_model_id?: string
+          formula_expression?: string
+          formula_name?: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          updated_at?: string
+          variables?: Json | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_platform_fee_formulas_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_pricing_parameters: {
+        Row: {
+          amount: number
+          country_id: string
+          created_at: string
+          created_by: string | null
+          currency_id: string
+          effective_from: string | null
+          effective_to: string | null
+          entity_type_id: string
+          fee_component_id: string
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          organization_type_id: string
+          unit_of_measure_id: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          amount: number
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          currency_id: string
+          effective_from?: string | null
+          effective_to?: string | null
+          entity_type_id: string
+          fee_component_id: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          organization_type_id: string
+          unit_of_measure_id: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          amount?: number
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency_id?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          entity_type_id?: string
+          fee_component_id?: string
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          organization_type_id?: string
+          unit_of_measure_id?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_pricing_parameters_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_currency_id_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "master_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_fee_component_id_fkey"
+            columns: ["fee_component_id"]
+            isOneToOne: false
+            referencedRelation: "master_fee_components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_unit_of_measure_id_fkey"
+            columns: ["unit_of_measure_id"]
+            isOneToOne: false
+            referencedRelation: "master_units_of_measure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_pricing_tiers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          level_order: number
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          level_order: number
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          level_order?: number
+          name?: string
+          updated_at?: string
           version?: number | null
         }
         Relationships: []
@@ -1006,6 +1350,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      master_system_configurations: {
+        Row: {
+          category: string | null
+          config_key: string
+          config_value: string
+          created_at: string
+          created_by: string | null
+          data_type: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system_config: boolean
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          category?: string | null
+          config_key: string
+          config_value: string
+          created_at?: string
+          created_by?: string | null
+          data_type: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system_config?: boolean
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          category?: string | null
+          config_key?: string
+          config_value?: string
+          created_at?: string
+          created_by?: string | null
+          data_type?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system_config?: boolean
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
       }
       master_team_units: {
         Row: {
@@ -1270,10 +1659,14 @@ export type Database = {
       }
       pricing_configurations: {
         Row: {
+          advance_payment_type_id: string | null
           base_value: number
           billing_frequency_id: string | null
+          calculated_advance_payment: number | null
+          calculated_platform_fee: number | null
           calculated_value: number | null
           config_name: string | null
+          consulting_fee_amount: number | null
           country_id: string
           created_at: string
           created_by: string | null
@@ -1281,12 +1674,17 @@ export type Database = {
           effective_from: string | null
           effective_to: string | null
           engagement_model_id: string
+          engagement_model_subtype_id: string | null
           entity_type_id: string
+          formula_variables: Json | null
           id: string
           is_active: boolean
+          management_fee_amount: number | null
           membership_discount_percentage: number | null
           membership_status_id: string
           organization_type_id: string
+          platform_fee_formula_id: string | null
+          pricing_tier_id: string | null
           remarks: string | null
           unit_of_measure_id: string
           updated_at: string
@@ -1294,10 +1692,14 @@ export type Database = {
           version: number | null
         }
         Insert: {
+          advance_payment_type_id?: string | null
           base_value: number
           billing_frequency_id?: string | null
+          calculated_advance_payment?: number | null
+          calculated_platform_fee?: number | null
           calculated_value?: number | null
           config_name?: string | null
+          consulting_fee_amount?: number | null
           country_id: string
           created_at?: string
           created_by?: string | null
@@ -1305,12 +1707,17 @@ export type Database = {
           effective_from?: string | null
           effective_to?: string | null
           engagement_model_id: string
+          engagement_model_subtype_id?: string | null
           entity_type_id: string
+          formula_variables?: Json | null
           id?: string
           is_active?: boolean
+          management_fee_amount?: number | null
           membership_discount_percentage?: number | null
           membership_status_id: string
           organization_type_id: string
+          platform_fee_formula_id?: string | null
+          pricing_tier_id?: string | null
           remarks?: string | null
           unit_of_measure_id: string
           updated_at?: string
@@ -1318,10 +1725,14 @@ export type Database = {
           version?: number | null
         }
         Update: {
+          advance_payment_type_id?: string | null
           base_value?: number
           billing_frequency_id?: string | null
+          calculated_advance_payment?: number | null
+          calculated_platform_fee?: number | null
           calculated_value?: number | null
           config_name?: string | null
+          consulting_fee_amount?: number | null
           country_id?: string
           created_at?: string
           created_by?: string | null
@@ -1329,12 +1740,17 @@ export type Database = {
           effective_from?: string | null
           effective_to?: string | null
           engagement_model_id?: string
+          engagement_model_subtype_id?: string | null
           entity_type_id?: string
+          formula_variables?: Json | null
           id?: string
           is_active?: boolean
+          management_fee_amount?: number | null
           membership_discount_percentage?: number | null
           membership_status_id?: string
           organization_type_id?: string
+          platform_fee_formula_id?: string | null
+          pricing_tier_id?: string | null
           remarks?: string | null
           unit_of_measure_id?: string
           updated_at?: string
@@ -1342,6 +1758,34 @@ export type Database = {
           version?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_advance_payment_type"
+            columns: ["advance_payment_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_advance_payment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_engagement_model_subtype"
+            columns: ["engagement_model_subtype_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_model_subtypes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_platform_fee_formula"
+            columns: ["platform_fee_formula_id"]
+            isOneToOne: false
+            referencedRelation: "master_platform_fee_formulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pricing_tier"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "master_pricing_tiers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pricing_configurations_billing_frequency_fkey"
             columns: ["billing_frequency_id"]
@@ -1483,6 +1927,64 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      tier_engagement_model_restrictions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          engagement_model_id: string
+          engagement_model_subtype_id: string | null
+          id: string
+          is_allowed: boolean
+          pricing_tier_id: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          engagement_model_id: string
+          engagement_model_subtype_id?: string | null
+          id?: string
+          is_allowed?: boolean
+          pricing_tier_id: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          engagement_model_id?: string
+          engagement_model_subtype_id?: string | null
+          id?: string
+          is_allowed?: boolean
+          pricing_tier_id?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tier_engagement_model_restrict_engagement_model_subtype_id_fkey"
+            columns: ["engagement_model_subtype_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_model_subtypes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_engagement_model_restrictions_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_engagement_model_restrictions_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "master_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
