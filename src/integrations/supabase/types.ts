@@ -206,6 +206,48 @@ export type Database = {
         }
         Relationships: []
       }
+      master_analytics_access_types: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dashboard_access: boolean
+          description: string | null
+          features_included: Json | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dashboard_access?: boolean
+          description?: string | null
+          features_included?: Json | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dashboard_access?: boolean
+          description?: string | null
+          features_included?: Json | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_billing_frequencies: {
         Row: {
           created_at: string
@@ -375,6 +417,77 @@ export type Database = {
           version?: number | null
         }
         Relationships: []
+      }
+      master_challenge_overage_fees: {
+        Row: {
+          country_id: string
+          created_at: string
+          created_by: string | null
+          currency_id: string
+          fee_per_additional_challenge: number
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          pricing_tier_id: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          currency_id: string
+          fee_per_additional_challenge: number
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          pricing_tier_id: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency_id?: string
+          fee_per_additional_challenge?: number
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          pricing_tier_id?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_challenge_overage_fees_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_challenge_overage_fees_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "master_challenge_overage_fees_currency_id_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "master_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_challenge_overage_fees_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "master_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       master_communication_types: {
         Row: {
@@ -923,6 +1036,48 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
+      master_onboarding_types: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          resources_included: Json | null
+          service_type: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          resources_included?: Json | null
+          service_type: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          resources_included?: Json | null
+          service_type?: string
           updated_at?: string
           version?: number | null
         }
@@ -1525,6 +1680,51 @@ export type Database = {
           },
         ]
       }
+      master_support_types: {
+        Row: {
+          availability: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          response_time: string | null
+          service_level: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          response_time?: string | null
+          service_level: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          response_time?: string | null
+          service_level?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_system_configurations: {
         Row: {
           category: string | null
@@ -1569,6 +1769,59 @@ export type Database = {
           version?: number | null
         }
         Relationships: []
+      }
+      master_system_feature_access: {
+        Row: {
+          access_level: string
+          created_at: string
+          created_by: string | null
+          feature_config: Json | null
+          feature_name: string
+          id: string
+          is_active: boolean
+          is_enabled: boolean
+          is_user_created: boolean | null
+          pricing_tier_id: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          access_level: string
+          created_at?: string
+          created_by?: string | null
+          feature_config?: Json | null
+          feature_name: string
+          id?: string
+          is_active?: boolean
+          is_enabled?: boolean
+          is_user_created?: boolean | null
+          pricing_tier_id: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          access_level?: string
+          created_at?: string
+          created_by?: string | null
+          feature_config?: Json | null
+          feature_name?: string
+          id?: string
+          is_active?: boolean
+          is_enabled?: boolean
+          is_user_created?: boolean | null
+          pricing_tier_id?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_system_feature_access_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "master_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       master_team_units: {
         Row: {
@@ -1617,6 +1870,186 @@ export type Database = {
           },
         ]
       }
+      master_tier_configurations: {
+        Row: {
+          allows_overage: boolean
+          analytics_access_id: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          currency_id: string | null
+          fixed_charge_per_challenge: number
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          monthly_challenge_limit: number | null
+          onboarding_type_id: string | null
+          pricing_tier_id: string
+          solutions_per_challenge: number
+          support_type_id: string | null
+          updated_at: string
+          version: number | null
+          workflow_template_id: string | null
+        }
+        Insert: {
+          allows_overage?: boolean
+          analytics_access_id?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          currency_id?: string | null
+          fixed_charge_per_challenge?: number
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          monthly_challenge_limit?: number | null
+          onboarding_type_id?: string | null
+          pricing_tier_id: string
+          solutions_per_challenge?: number
+          support_type_id?: string | null
+          updated_at?: string
+          version?: number | null
+          workflow_template_id?: string | null
+        }
+        Update: {
+          allows_overage?: boolean
+          analytics_access_id?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency_id?: string | null
+          fixed_charge_per_challenge?: number
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          monthly_challenge_limit?: number | null
+          onboarding_type_id?: string | null
+          pricing_tier_id?: string
+          solutions_per_challenge?: number
+          support_type_id?: string | null
+          updated_at?: string
+          version?: number | null
+          workflow_template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_tier_configurations_analytics_access_id_fkey"
+            columns: ["analytics_access_id"]
+            isOneToOne: false
+            referencedRelation: "master_analytics_access_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_currency_id_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "master_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_onboarding_type_id_fkey"
+            columns: ["onboarding_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_onboarding_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "master_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_support_type_id_fkey"
+            columns: ["support_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_support_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_configurations_workflow_template_id_fkey"
+            columns: ["workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "master_workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_tier_engagement_model_access: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          engagement_model_id: string
+          id: string
+          is_active: boolean
+          is_allowed: boolean
+          is_default: boolean
+          is_user_created: boolean | null
+          pricing_tier_id: string
+          selection_type: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          engagement_model_id: string
+          id?: string
+          is_active?: boolean
+          is_allowed?: boolean
+          is_default?: boolean
+          is_user_created?: boolean | null
+          pricing_tier_id: string
+          selection_type?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          engagement_model_id?: string
+          id?: string
+          is_active?: boolean
+          is_allowed?: boolean
+          is_default?: boolean
+          is_user_created?: boolean | null
+          pricing_tier_id?: string
+          selection_type?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_tier_engagement_model_access_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_tier_engagement_model_access_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "master_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_units_of_measure: {
         Row: {
           created_at: string
@@ -1648,6 +2081,54 @@ export type Database = {
           is_percentage?: boolean
           name?: string
           symbol?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
+      master_workflow_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customization_level: string
+          description: string | null
+          fields_config: Json | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          name: string
+          template_count: number | null
+          template_type: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customization_level: string
+          description?: string | null
+          fields_config?: Json | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name: string
+          template_count?: number | null
+          template_type: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customization_level?: string
+          description?: string | null
+          fields_config?: Json | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          name?: string
+          template_count?: number | null
+          template_type?: string
           updated_at?: string
           version?: number | null
         }
