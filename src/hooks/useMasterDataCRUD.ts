@@ -140,16 +140,29 @@ export function useMasterDataCRUD(tableName: TableName) {
         }));
         setItems(processedData || []);
       } else if (tableName === 'master_platform_fee_formulas' && data) {
+        // Debug: Log raw data structure
+        console.log('Raw platform fee formula data:', data);
+        
         // For platform fee formulas, flatten the joined data to include readable names
-        const processedData = data.map((item: any) => ({
-          ...item,
-          engagement_model_name: item.engagement_model?.name || 'Unknown Model',
-          country_name: item.country?.name || 'Unknown Country',
-          currency_name: item.currency?.name || 'Unknown Currency',
-          currency_code: item.currency?.code || 'USD',
-          currency_symbol: item.currency?.symbol || '$',
-          engagement_model_subtype_name: item.engagement_model_subtype?.name || null
-        }));
+        const processedData = data.map((item: any) => {
+          console.log('Processing item:', item);
+          console.log('Engagement model:', item.engagement_model);
+          console.log('Country:', item.country);
+          console.log('Currency:', item.currency);
+          
+          const processed = {
+            ...item,
+            engagement_model_name: item.engagement_model?.name || 'Unknown Model',
+            country_name: item.country?.name || 'Unknown Country',
+            currency_name: item.currency?.name || 'Unknown Currency',
+            currency_code: item.currency?.code || 'USD',
+            currency_symbol: item.currency?.symbol || '$',
+            engagement_model_subtype_name: item.engagement_model_subtype?.name || null
+          };
+          
+          console.log('Processed item:', processed);
+          return processed;
+        });
         setItems(processedData || []);
       } else {
         setItems((data as MasterDataItem[]) || []);
