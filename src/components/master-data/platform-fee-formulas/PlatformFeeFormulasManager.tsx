@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calculator, Upload, Download } from 'lucide-react';
+import { Plus, Calculator, Upload, Download, Settings } from 'lucide-react';
 import { useMasterDataCRUD } from '../../../hooks/useMasterDataCRUD';
 import { DataTable } from '@/components/ui/data-table';
 import { PlatformFeeFormulaDialog } from './PlatformFeeFormulaDialog';
+import { StructuredFormulaDialog } from './StructuredFormulaDialog';
 
 export const PlatformFeeFormulasManager: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isStructuredDialogOpen, setIsStructuredDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   
   const {
@@ -22,12 +24,21 @@ export const PlatformFeeFormulasManager: React.FC = () => {
 
   const handleAddNew = () => {
     setEditingItem(null);
+    setIsStructuredDialogOpen(true);
+  };
+
+  const handleAddLegacy = () => {
+    setEditingItem(null);
     setIsDialogOpen(true);
   };
 
   const handleEdit = (formula: any) => {
     setEditingItem(formula);
-    setIsDialogOpen(true);
+    if (formula.formula_type === 'structured') {
+      setIsStructuredDialogOpen(true);
+    } else {
+      setIsDialogOpen(true);
+    }
   };
 
   const handleSave = async (formulaData: any) => {
@@ -38,6 +49,7 @@ export const PlatformFeeFormulasManager: React.FC = () => {
         await addItem(formulaData);
       }
       setIsDialogOpen(false);
+      setIsStructuredDialogOpen(false);
       setEditingItem(null);
     } catch (error) {
       console.error('Failed to save platform fee formula:', error);
@@ -72,25 +84,59 @@ export const PlatformFeeFormulasManager: React.FC = () => {
       accessorKey: 'formula_expression',
       header: 'Formula Expression',
       cell: ({ row }: any) => (
-        <code className="bg-muted px-2 py-1 rounded text-sm">
-          {row.getValue('formula_expression')}
-        </code>
+        <div className="max-w-xs">
+          <code className="bg-muted px-2 py-1 rounded text-sm">
+            {row.getValue('formula_expression')}
+          </code>
+        </div>
       ),
     },
     {
-      accessorKey: 'variables',
-      header: 'Variables',
+      accessorKey: 'formula_type',
+      header: 'Type',
+      cell: ({ row }: any) => (
+        <Badge variant={row.getValue('formula_type') === 'structured' ? 'default' : 'outline'}>
+          {row.getValue('formula_type') === 'structured' ? 'Structured' : 'Expression'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'configuration',
+      header: 'Configuration',
       cell: ({ row }: any) => {
-        const variables = row.getValue('variables') as Record<string, any>;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {Object.keys(variables || {}).map((key) => (
-              <Badge key={key} variant="outline" className="text-xs">
-                {key}
-              </Badge>
-            ))}
-          </div>
-        );
+        const formulaType = row.original.formula_type;
+        if (formulaType === 'structured') {
+          return (
+            <div className="flex flex-wrap gap-1">
+              {row.original.platform_usage_fee_percentage > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  Platform: {row.original.platform_usage_fee_percentage}%
+                </Badge>
+              )}
+              {row.original.base_management_fee > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  Management: ${row.original.base_management_fee}
+                </Badge>
+              )}
+              {row.original.base_consulting_fee > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  Consulting: ${row.original.base_consulting_fee}
+                </Badge>
+              )}
+            </div>
+          );
+        } else {
+          const variables = row.getValue('variables') as Record<string, any>;
+          return (
+            <div className="flex flex-wrap gap-1">
+              {Object.keys(variables || {}).map((key) => (
+                <Badge key={key} variant="outline" className="text-xs">
+                  {key}
+                </Badge>
+              ))}
+            </div>
+          );
+        }
       },
     },
     {
@@ -157,7 +203,11 @@ export const PlatformFeeFormulasManager: React.FC = () => {
               </Button>
               <Button onClick={handleAddNew} disabled={loading}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Formula
+                Add Structured Formula
+              </Button>
+              <Button onClick={handleAddLegacy} variant="outline" disabled={loading}>
+                <Settings className="h-4 w-4 mr-2" />
+                Add Expression Formula
               </Button>
             </div>
           </div>
@@ -175,10 +225,18 @@ export const PlatformFeeFormulasManager: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog */}
+      {/* Dialogs */}
       <PlatformFeeFormulaDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        formula={editingItem}
+        onSave={handleSave}
+        loading={loading}
+      />
+      
+      <StructuredFormulaDialog
+        open={isStructuredDialogOpen}
+        onOpenChange={setIsStructuredDialogOpen}
         formula={editingItem}
         onSave={handleSave}
         loading={loading}
