@@ -19,7 +19,7 @@ const FEE_COMPONENT_TYPES = [
   { value: 'management_fee', label: 'Management Fee' },
   { value: 'consulting_fee', label: 'Consulting Fee' },
   { value: 'total_fee', label: 'Total Fee' },
-  { value: 'platform_usage_fee', label: 'Platform Usage Fee' },
+  { value: 'solution_fee', label: 'Solution Fee' },
   { value: 'advance_payment', label: 'Advance Payment' },
 ];
 

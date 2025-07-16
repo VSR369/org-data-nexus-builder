@@ -138,7 +138,7 @@ export const FeeComponentsManager: React.FC = () => {
         return 'bg-green-100 text-green-800';
       case 'total_fee':
         return 'bg-purple-100 text-purple-800';
-      case 'platform_usage_fee':
+      case 'solution_fee':
         return 'bg-orange-100 text-orange-800';
       case 'advance_payment':
         return 'bg-indigo-100 text-indigo-800';
@@ -279,9 +279,9 @@ export const FeeComponentsManager: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">
-              {feeComponents.filter((c: any) => c.component_type === 'platform_usage_fee').length}
+              {feeComponents.filter((c: any) => c.component_type === 'solution_fee').length}
             </div>
-            <p className="text-xs text-muted-foreground">Platform Usage</p>
+            <p className="text-xs text-muted-foreground">Solution Fees</p>
           </CardContent>
         </Card>
         <Card>
