@@ -91,13 +91,52 @@ export function useMasterDataCRUD(tableName: TableName) {
   const loadItems = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .order('created_at', { ascending: false });
+      
+      let query;
+      
+      if (tableName === 'master_pricing_parameters') {
+        // Special case for pricing parameters - join with related tables to get readable names
+        query = supabase
+          .from(tableName)
+          .select(`
+            *,
+            country:master_countries(name),
+            organization_type:master_organization_types(name),
+            entity_type:master_entity_types(name),
+            fee_component:master_fee_components(name),
+            currency:master_currencies(name, symbol),
+            unit_of_measure:master_units_of_measure(name, symbol)
+          `)
+          .order('created_at', { ascending: false });
+      } else {
+        // Default case for other tables
+        query = supabase
+          .from(tableName)
+          .select('*')
+          .order('created_at', { ascending: false });
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
-      setItems((data as MasterDataItem[]) || []);
+      
+      // For pricing parameters, flatten the joined data to include readable names
+      if (tableName === 'master_pricing_parameters' && data) {
+        const processedData = data.map((item: any) => ({
+          ...item,
+          country: item.country?.name || '',
+          organization_type: item.organization_type?.name || '',
+          entity_type: item.entity_type?.name || '',
+          fee_component: item.fee_component?.name || '',
+          currency: item.currency?.name || '',
+          currency_symbol: item.currency?.symbol || '',
+          unit_of_measure: item.unit_of_measure?.name || '',
+          unit_symbol: item.unit_of_measure?.symbol || ''
+        }));
+        setItems(processedData || []);
+      } else {
+        setItems((data as MasterDataItem[]) || []);
+      }
     } catch (error) {
       console.error(`Error loading ${tableName}:`, error);
       toast({
