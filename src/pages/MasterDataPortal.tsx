@@ -72,34 +72,67 @@ const MasterDataPortal = () => {
     }
   };
 
-  // Initialize master data on portal load with enhanced restoration
+  // Initialize master data on portal load with enhanced restoration and migration
   React.useEffect(() => {
-    console.log('🔍 Master Data Portal - Enhanced custom data analysis...');
+    console.log('🔍 Master Data Portal - Enhanced initialization...');
     
     const initializeData = async () => {
-      // Run master data migration from localStorage to Supabase
-      const { masterDataMigrationService } = await import('@/services/MasterDataMigrationService');
-      await masterDataMigrationService.migrateAllMasterData();
-      
-      // Import and run the enhanced restoration processor
-      const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
-      
-      // Validate and restore custom data
-      const healthReport = await MasterDataRestoreProcessor.validateCustomDataIntegrity();
-      
-      if (healthReport.totalConfigurations > 0) {
-        console.log(`✅ Found ${healthReport.totalConfigurations} custom configurations across ${healthReport.customDataPercentage}% of master data categories`);
-        console.log('🎯 Preserving custom master data configurations');
-      } else {
-        console.log('⚠️ No custom configurations found - will initialize defaults');
-        // Only seed if truly no custom data exists
-        const { MasterDataSeeder } = await import('@/utils/masterDataSeeder');
-        MasterDataSeeder.seedAllMasterData();
+      try {
+        // Run master data migration from localStorage to Supabase
+        const { masterDataMigrationService } = await import('@/services/MasterDataMigrationService');
+        await masterDataMigrationService.migrateAllMasterData();
+        
+        // Import and run the enhanced restoration processor
+        const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
+        
+        // Validate and restore custom data
+        const healthReport = await MasterDataRestoreProcessor.validateCustomDataIntegrity();
+        
+        if (healthReport.totalConfigurations > 0) {
+          console.log(`✅ Found ${healthReport.totalConfigurations} custom configurations`);
+          console.log('🎯 Preserving custom master data configurations');
+        } else {
+          console.log('⚠️ No custom configurations found - initializing marketplace pricing system');
+          
+          // Initialize marketplace pricing system
+          const { MasterDataSeeder } = await import('@/services/MasterDataSeeder');
+          const { DataMigrationService } = await import('@/services/DataMigrationService');
+          
+          // Check if seeding is needed
+          const seedingStatus = await MasterDataSeeder.checkSeedingStatus();
+          if (seedingStatus.needsSeeding) {
+            console.log('🌱 Seeding marketplace pricing master data...');
+            const seedResult = await MasterDataSeeder.seedAllMasterData();
+            
+            if (seedResult.success) {
+              toast({
+                title: "Marketplace Pricing Initialized",
+                description: `Seeded ${seedResult.totalRecords} records across ${seedResult.tablesSeeded.length} tables`,
+              });
+            }
+          }
+          
+          // Run configuration migration
+          const migrationResult = await DataMigrationService.migrateAllConfigurations();
+          if (migrationResult.migratedConfigurations > 0) {
+            toast({
+              title: "Configurations Migrated", 
+              description: `Migrated ${migrationResult.migratedConfigurations} pricing configurations to new marketplace system`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Initialization failed:', error);
+        toast({
+          title: "Initialization Warning",
+          description: "Some initialization steps failed. Please check console for details.",
+          variant: "destructive",
+        });
       }
     };
     
-    initializeData().catch(console.error);
-  }, []);
+    initializeData();
+  }, [toast]);
 
   console.log('MasterDataPortal - activeSection:', activeSection);
 
