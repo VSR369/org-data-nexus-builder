@@ -2,7 +2,8 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Column {
-  accessorKey: string;
+  accessorKey?: string;
+  id?: string;
   header: string;
   cell?: ({ row }: { row: any }) => React.ReactNode;
 }
@@ -27,7 +28,7 @@ export const DataTable: React.FC<DataTableProps> = ({ columns, data, loading }) 
       <TableHeader>
         <TableRow>
           {columns.map((column) => (
-            <TableHead key={column.accessorKey}>{column.header}</TableHead>
+            <TableHead key={column.accessorKey || column.id}>{column.header}</TableHead>
           ))}
         </TableRow>
       </TableHeader>
@@ -36,10 +37,10 @@ export const DataTable: React.FC<DataTableProps> = ({ columns, data, loading }) 
           data.map((row, index) => (
             <TableRow key={index}>
               {columns.map((column) => (
-                <TableCell key={column.accessorKey}>
+                <TableCell key={column.accessorKey || column.id}>
                   {column.cell 
                     ? column.cell({ row: { getValue: (key: string) => row[key], original: row } })
-                    : row[column.accessorKey]
+                    : row[column.accessorKey!]
                   }
                 </TableCell>
               ))}
