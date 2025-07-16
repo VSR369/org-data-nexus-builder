@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { DialogTriggerButton } from '@/components/ui/dialog-trigger-button';
 
 interface ChallengeOverageFeeDialogProps {
   mode: 'add' | 'edit' | 'delete';
@@ -22,7 +22,6 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
   onSuccess,
   children
 }) => {
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     country_id: '',
@@ -116,7 +115,6 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
         });
       }
 
-      setOpen(false);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error:', error);
@@ -136,7 +134,9 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
         <div className="space-y-4">
           <p>Are you sure you want to delete this challenge overage fee?</p>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <DialogTrigger asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogTrigger>
             <Button variant="destructive" onClick={handleSubmit} disabled={loading}>
               {loading ? 'Deleting...' : 'Delete'}
             </Button>
@@ -229,9 +229,9 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
         </div>
 
         <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
+          <DialogTrigger asChild>
+            <Button type="button" variant="outline">Cancel</Button>
+          </DialogTrigger>
           <Button type="submit" disabled={loading}>
             {loading ? 'Saving...' : mode === 'add' ? 'Add' : 'Update'}
           </Button>
@@ -241,10 +241,22 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTriggerButton mode={mode}>
-        {children}
-      </DialogTriggerButton>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button 
+          variant={mode === 'delete' ? 'destructive' : 'default'} 
+          size="sm"
+        >
+          {children || (
+            <>
+              {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
+              {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
+              {mode === 'delete' && <Trash2 className="w-4 h-4 mr-2" />}
+              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+            </>
+          )}
+        </Button>
+      </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
