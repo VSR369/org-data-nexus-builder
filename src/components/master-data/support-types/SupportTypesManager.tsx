@@ -6,6 +6,7 @@ import { Plus, Headphones, Upload, Download } from 'lucide-react';
 import { useMasterDataCRUD } from '@/hooks/useMasterDataCRUD';
 import { DataTable } from '@/components/ui/data-table';
 import { SupportTypeDialog } from './SupportTypeDialog';
+import { SupportTypesTest } from './SupportTypesTest';
 import { useToast } from '@/hooks/use-toast';
 
 export const SupportTypesManager: React.FC = () => {
@@ -22,6 +23,9 @@ export const SupportTypesManager: React.FC = () => {
     deleteItem,
     refreshItems
   } = useMasterDataCRUD('master_support_types');
+
+  console.log('SupportTypesManager - supportTypes:', supportTypes);
+  console.log('SupportTypesManager - loading:', loading);
 
   const handleAddNew = () => {
     setEditingItem(null);
@@ -165,6 +169,8 @@ export const SupportTypesManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SupportTypesTest />
+      
       {/* Header */}
       <Card>
         <CardHeader>
@@ -237,6 +243,9 @@ export const SupportTypesManager: React.FC = () => {
       {/* Data Table */}
       <Card>
         <CardContent className="p-6">
+          <div className="mb-4 text-sm text-muted-foreground">
+            Loading: {loading ? 'Yes' : 'No'} | Data count: {supportTypes.length}
+          </div>
           <DataTable
             columns={columns}
             data={supportTypes}
