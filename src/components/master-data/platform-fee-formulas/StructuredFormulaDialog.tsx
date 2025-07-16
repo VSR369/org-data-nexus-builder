@@ -122,9 +122,9 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
     // Convert empty strings to null for UUID fields to prevent database errors
     const processedFormData = {
       ...formData,
-      country_id: formData.country_id || null,
-      currency_id: formData.currency_id || null,
-      engagement_model_subtype_id: formData.engagement_model_subtype_id || null,
+      country_id: formData.country_id === '' ? null : formData.country_id,
+      currency_id: formData.currency_id === '' ? null : formData.currency_id,
+      engagement_model_subtype_id: formData.engagement_model_subtype_id === '' ? null : formData.engagement_model_subtype_id,
       formula_expression: expression
     };
     
