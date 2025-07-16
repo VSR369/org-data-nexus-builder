@@ -2264,6 +2264,10 @@ export type Database = {
         }
         Returns: number
       }
+      check_fee_component_dependencies: {
+        Args: { component_id: string }
+        Returns: Json
+      }
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2296,6 +2300,10 @@ export type Database = {
           column_default: string
           ordinal_position: number
         }[]
+      }
+      safe_delete_fee_component: {
+        Args: { component_id: string; cascade_delete?: boolean }
+        Returns: Json
       }
     }
     Enums: {

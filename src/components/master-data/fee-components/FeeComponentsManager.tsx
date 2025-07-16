@@ -6,10 +6,18 @@ import { Plus, DollarSign, Upload, Download } from 'lucide-react';
 import { useMasterDataCRUD } from '../../../hooks/useMasterDataCRUD';
 import { DataTable } from '@/components/ui/data-table';
 import { FeeComponentDialog } from './FeeComponentDialog';
+import { DependencyCheckDialog } from './DependencyCheckDialog';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const FeeComponentsManager: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [isDependencyDialogOpen, setIsDependencyDialogOpen] = useState(false);
+  const [dependencyCheckData, setDependencyCheckData] = useState<any>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  const { toast } = useToast();
   
   const {
     items: feeComponents,
@@ -34,23 +42,91 @@ export const FeeComponentsManager: React.FC = () => {
     try {
       if (editingItem) {
         await updateItem(editingItem.id, componentData);
+        toast({
+          title: "Success",
+          description: "Fee component updated successfully",
+        });
       } else {
         await addItem(componentData);
+        toast({
+          title: "Success",
+          description: "Fee component created successfully",
+        });
       }
       setIsDialogOpen(false);
       setEditingItem(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save fee component:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save fee component",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const checkDependencies = async (component: any) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('check_fee_component_dependencies', { component_id: component.id });
+      
+      if (error) throw error;
+      
+      setDependencyCheckData({
+        component,
+        dependencies: data
+      });
+      setIsDependencyDialogOpen(true);
+    } catch (error: any) {
+      console.error('Failed to check dependencies:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check component dependencies",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this fee component?')) {
-      try {
-        await deleteItem(id);
-      } catch (error) {
-        console.error('Failed to delete fee component:', error);
+    const component = feeComponents.find((c: any) => c.id === id);
+    if (!component) return;
+    
+    await checkDependencies(component);
+  };
+
+  const handleConfirmDelete = async (componentId: string, cascadeDelete: boolean = false) => {
+    setDeleteLoading(true);
+    try {
+      const { data, error } = await supabase
+        .rpc('safe_delete_fee_component', { 
+          component_id: componentId,
+          cascade_delete: cascadeDelete 
+        });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; message?: string };
+      
+      if (result.success) {
+        await refreshItems();
+        toast({
+          title: "Success",
+          description: "Fee component deleted successfully",
+        });
+        setIsDependencyDialogOpen(false);
+        setDependencyCheckData(null);
+      } else {
+        throw new Error(result.error || 'Failed to delete fee component');
       }
+    } catch (error: any) {
+      console.error('Failed to delete fee component:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete fee component",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -173,7 +249,7 @@ export const FeeComponentsManager: React.FC = () => {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">
@@ -193,17 +269,9 @@ export const FeeComponentsManager: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">
-              {feeComponents.filter((c: any) => c.component_type === 'platform_fee').length}
+              {feeComponents.filter((c: any) => c.is_active).length}
             </div>
-            <p className="text-xs text-muted-foreground">Platform Fees</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {feeComponents.filter((c: any) => c.component_type === 'advance_payment').length}
-            </div>
-            <p className="text-xs text-muted-foreground">Advance Payments</p>
+            <p className="text-xs text-muted-foreground">Active Components</p>
           </CardContent>
         </Card>
       </div>
@@ -226,6 +294,16 @@ export const FeeComponentsManager: React.FC = () => {
         component={editingItem}
         onSave={handleSave}
         loading={loading}
+      />
+      
+      {/* Dependency Check Dialog */}
+      <DependencyCheckDialog
+        open={isDependencyDialogOpen}
+        onOpenChange={setIsDependencyDialogOpen}
+        component={dependencyCheckData?.component}
+        dependencies={dependencyCheckData?.dependencies}
+        onConfirmDelete={handleConfirmDelete}
+        loading={deleteLoading}
       />
     </div>
   );

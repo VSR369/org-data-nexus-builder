@@ -18,9 +18,6 @@ interface FeeComponentDialogProps {
 const FEE_COMPONENT_TYPES = [
   { value: 'management_fee', label: 'Management Fee' },
   { value: 'consulting_fee', label: 'Consulting Fee' },
-  { value: 'platform_fee', label: 'Platform Fee' },
-  { value: 'advance_payment', label: 'Advance Payment' },
-  { value: 'solution_fee', label: 'Solution Fee' },
 ];
 
 export const FeeComponentDialog: React.FC<FeeComponentDialogProps> = ({
