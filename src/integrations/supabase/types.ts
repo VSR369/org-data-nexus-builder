@@ -1002,48 +1002,76 @@ export type Database = {
       }
       master_platform_fee_formulas: {
         Row: {
+          advance_payment_percentage: number | null
+          base_consulting_fee: number | null
+          base_management_fee: number | null
+          challenge_complexity_id: string | null
+          configuration: Json | null
           created_at: string
           created_by: string | null
           description: string | null
           engagement_model_id: string
           formula_expression: string
           formula_name: string
+          formula_type: string | null
           id: string
           is_active: boolean
           is_user_created: boolean | null
+          platform_usage_fee_percentage: number | null
           updated_at: string
           variables: Json | null
           version: number | null
         }
         Insert: {
+          advance_payment_percentage?: number | null
+          base_consulting_fee?: number | null
+          base_management_fee?: number | null
+          challenge_complexity_id?: string | null
+          configuration?: Json | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           engagement_model_id: string
           formula_expression: string
           formula_name: string
+          formula_type?: string | null
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
+          platform_usage_fee_percentage?: number | null
           updated_at?: string
           variables?: Json | null
           version?: number | null
         }
         Update: {
+          advance_payment_percentage?: number | null
+          base_consulting_fee?: number | null
+          base_management_fee?: number | null
+          challenge_complexity_id?: string | null
+          configuration?: Json | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           engagement_model_id?: string
           formula_expression?: string
           formula_name?: string
+          formula_type?: string | null
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
+          platform_usage_fee_percentage?: number | null
           updated_at?: string
           variables?: Json | null
           version?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "master_platform_fee_formulas_challenge_complexity_id_fkey"
+            columns: ["challenge_complexity_id"]
+            isOneToOne: false
+            referencedRelation: "master_challenge_complexity"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "master_platform_fee_formulas_engagement_model_id_fkey"
             columns: ["engagement_model_id"]
