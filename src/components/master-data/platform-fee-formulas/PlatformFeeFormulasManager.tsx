@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calculator, Upload, Download, Settings } from 'lucide-react';
+import { Plus, Calculator, Upload, Download } from 'lucide-react';
 import { useMasterDataCRUD } from '../../../hooks/useMasterDataCRUD';
 import { DataTable } from '@/components/ui/data-table';
-import { PlatformFeeFormulaDialog } from './PlatformFeeFormulaDialog';
 import { StructuredFormulaDialog } from './StructuredFormulaDialog';
 
 export const PlatformFeeFormulasManager: React.FC = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isStructuredDialogOpen, setIsStructuredDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   
@@ -27,18 +25,9 @@ export const PlatformFeeFormulasManager: React.FC = () => {
     setIsStructuredDialogOpen(true);
   };
 
-  const handleAddLegacy = () => {
-    setEditingItem(null);
-    setIsDialogOpen(true);
-  };
-
   const handleEdit = (formula: any) => {
     setEditingItem(formula);
-    if (formula.formula_type === 'structured') {
-      setIsStructuredDialogOpen(true);
-    } else {
-      setIsDialogOpen(true);
-    }
+    setIsStructuredDialogOpen(true);
   };
 
   const handleSave = async (formulaData: any) => {
@@ -48,7 +37,6 @@ export const PlatformFeeFormulasManager: React.FC = () => {
       } else {
         await addItem(formulaData);
       }
-      setIsDialogOpen(false);
       setIsStructuredDialogOpen(false);
       setEditingItem(null);
     } catch (error) {
@@ -66,21 +54,93 @@ export const PlatformFeeFormulasManager: React.FC = () => {
     }
   };
 
+  // Helper function to generate configuration summary
+  const getConfigurationSummary = (row: any) => {
+    const engagementModel = row.engagement_model_name || 'Unknown Model';
+    const subtype = row.engagement_model_subtype_name;
+    return subtype ? `${engagementModel} (${subtype})` : engagementModel;
+  };
+
+  // Helper function to generate dynamic formula expression
+  const getFormulaExpression = (row: any) => {
+    const engagementModel = row.engagement_model_name;
+    
+    if (engagementModel === 'Aggregator') {
+      return `Platform Fee = ${row.platform_usage_fee_percentage || 0}% of transaction value`;
+    } else if (engagementModel === 'Market Place') {
+      const parts = [];
+      if (row.platform_usage_fee_percentage > 0) {
+        parts.push(`Platform: ${row.platform_usage_fee_percentage}%`);
+      }
+      if (row.base_management_fee > 0) {
+        parts.push(`Management: ${row.currency_symbol}${row.base_management_fee} × complexity`);
+      }
+      if (row.base_consulting_fee > 0) {
+        parts.push(`Consulting: ${row.currency_symbol}${row.base_consulting_fee} × complexity`);
+      }
+      return parts.join(' + ');
+    }
+    
+    return row.formula_expression || 'No formula defined';
+  };
+
+  // Helper function to get relevant configuration for engagement model
+  const getRelevantConfiguration = (row: any) => {
+    const engagementModel = row.engagement_model_name;
+    
+    if (engagementModel === 'Aggregator') {
+      return (
+        <div className="flex flex-wrap gap-1">
+          <Badge variant="outline" className="text-xs">
+            Platform Usage: {row.platform_usage_fee_percentage || 0}%
+          </Badge>
+        </div>
+      );
+    } else if (engagementModel === 'Market Place') {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {row.platform_usage_fee_percentage > 0 && (
+            <Badge variant="outline" className="text-xs">
+              Platform: {row.platform_usage_fee_percentage}%
+            </Badge>
+          )}
+          {row.base_management_fee > 0 && (
+            <Badge variant="outline" className="text-xs">
+              Management: {row.currency_symbol}{row.base_management_fee}
+            </Badge>
+          )}
+          {row.base_consulting_fee > 0 && (
+            <Badge variant="outline" className="text-xs">
+              Consulting: {row.currency_symbol}{row.base_consulting_fee}
+            </Badge>
+          )}
+        </div>
+      );
+    }
+    
+    return <span className="text-muted-foreground text-sm">No configuration</span>;
+  };
+
   const columns = [
     {
-      accessorKey: 'formula_name',
-      header: 'Formula Name',
+      accessorKey: 'configuration_summary',
+      header: 'Configuration Summary',
+      cell: ({ row }: any) => (
+        <div className="font-medium">
+          {getConfigurationSummary(row.original)}
+        </div>
+      ),
     },
     {
       accessorKey: 'engagement_model_name',
       header: 'Engagement Model',
       cell: ({ row }: any) => (
         <div>
-          <span className="font-medium">
+          <span className="font-medium text-base">
             {row.original.engagement_model_name || 'Unknown Model'}
           </span>
           {row.original.engagement_model_subtype_name && (
-            <div className="text-xs text-muted-foreground">
+            <div className="font-medium text-sm text-primary">
               {row.original.engagement_model_subtype_name}
             </div>
           )}
@@ -107,58 +167,15 @@ export const PlatformFeeFormulasManager: React.FC = () => {
       cell: ({ row }: any) => (
         <div className="max-w-xs">
           <code className="bg-muted px-2 py-1 rounded text-sm">
-            {row.getValue('formula_expression')}
+            {getFormulaExpression(row.original)}
           </code>
         </div>
       ),
     },
     {
-      accessorKey: 'formula_type',
-      header: 'Type',
-      cell: ({ row }: any) => (
-        <Badge variant={row.getValue('formula_type') === 'structured' ? 'default' : 'outline'}>
-          {row.getValue('formula_type') === 'structured' ? 'Structured' : 'Expression'}
-        </Badge>
-      ),
-    },
-    {
       accessorKey: 'configuration',
       header: 'Configuration',
-      cell: ({ row }: any) => {
-        const formulaType = row.original.formula_type;
-        if (formulaType === 'structured') {
-          return (
-            <div className="flex flex-wrap gap-1">
-              {row.original.platform_usage_fee_percentage > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  Platform: {row.original.platform_usage_fee_percentage}%
-                </Badge>
-              )}
-              {row.original.base_management_fee > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  Management: {row.original.currency_symbol}{row.original.base_management_fee}
-                </Badge>
-              )}
-              {row.original.base_consulting_fee > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  Consulting: {row.original.currency_symbol}{row.original.base_consulting_fee}
-                </Badge>
-              )}
-            </div>
-          );
-        } else {
-          const variables = row.getValue('variables') as Record<string, any>;
-          return (
-            <div className="flex flex-wrap gap-1">
-              {Object.keys(variables || {}).map((key) => (
-                <Badge key={key} variant="outline" className="text-xs">
-                  {key}
-                </Badge>
-              ))}
-            </div>
-          );
-        }
-      },
+      cell: ({ row }: any) => getRelevantConfiguration(row.original),
     },
     {
       accessorKey: 'is_active',
@@ -224,11 +241,7 @@ export const PlatformFeeFormulasManager: React.FC = () => {
               </Button>
               <Button onClick={handleAddNew} disabled={loading}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Structured Formula
-              </Button>
-              <Button onClick={handleAddLegacy} variant="outline" disabled={loading}>
-                <Settings className="h-4 w-4 mr-2" />
-                Add Expression Formula
+                Add Formula
               </Button>
             </div>
           </div>
@@ -247,14 +260,6 @@ export const PlatformFeeFormulasManager: React.FC = () => {
       </Card>
 
       {/* Dialogs */}
-      <PlatformFeeFormulaDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        formula={editingItem}
-        onSave={handleSave}
-        loading={loading}
-      />
-      
       <StructuredFormulaDialog
         open={isStructuredDialogOpen}
         onOpenChange={setIsStructuredDialogOpen}
