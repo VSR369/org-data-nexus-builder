@@ -17,7 +17,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { useMasterDataCRUD } from '@/hooks/useMasterDataCRUD';
 
 interface PricingParameterDialogProps {
@@ -44,10 +43,7 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
     unit_of_measure_id: '',
     amount: '',
     effective_from: '',
-    effective_to: '',
-    rate_type: 'currency' as 'currency' | 'percentage',
-    complexity_applicable: false,
-    engagement_model_context: {}
+    effective_to: ''
   });
 
   const { items: countries } = useMasterDataCRUD('master_countries');
@@ -56,6 +52,28 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
   const { items: feeComponents } = useMasterDataCRUD('master_fee_components');
   const { items: currencies } = useMasterDataCRUD('master_currencies');
   const { items: unitsOfMeasure } = useMasterDataCRUD('master_units_of_measure');
+
+  // Filter fee components to only show management and consulting fees
+  const managementConsultingFees = feeComponents.filter(component => 
+    component.component_type === 'management_fee' || component.component_type === 'consulting_fee'
+  );
+
+  // Auto-populate currency when country changes
+  const handleCountryChange = (countryId: string) => {
+    setFormData(prev => ({ ...prev, country_id: countryId }));
+    
+    // Find the selected country
+    const selectedCountry = countries.find(c => c.id === countryId);
+    if (selectedCountry) {
+      // Find currency for this country
+      const countryCurrency = currencies.find(currency => 
+        currency.country === selectedCountry.name
+      );
+      if (countryCurrency) {
+        setFormData(prev => ({ ...prev, currency_id: countryCurrency.id }));
+      }
+    }
+  };
 
   useEffect(() => {
     if (parameter) {
@@ -68,28 +86,27 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
         unit_of_measure_id: parameter.unit_of_measure_id || '',
         amount: parameter.amount?.toString() || '',
         effective_from: parameter.effective_from || '',
-        effective_to: parameter.effective_to || '',
-        rate_type: parameter.rate_type || 'currency',
-        complexity_applicable: parameter.complexity_applicable || false,
-        engagement_model_context: parameter.engagement_model_context || {}
+        effective_to: parameter.effective_to || ''
       });
     } else {
+      // Find default currency unit of measure
+      const defaultCurrencyUnit = unitsOfMeasure.find(unit => 
+        unit.name?.toLowerCase().includes('currency') || unit.symbol === '$'
+      );
+      
       setFormData({
         country_id: '',
         organization_type_id: '',
         entity_type_id: '',
         fee_component_id: '',
         currency_id: '',
-        unit_of_measure_id: '',
+        unit_of_measure_id: defaultCurrencyUnit?.id || '',
         amount: '',
         effective_from: '',
-        effective_to: '',
-        rate_type: 'currency',
-        complexity_applicable: false,
-        engagement_model_context: {}
+        effective_to: ''
       });
     }
-  }, [parameter, open]);
+  }, [parameter, open, unitsOfMeasure]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +115,9 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
       ...formData,
       amount: parseFloat(formData.amount),
       effective_from: formData.effective_from || null,
-      effective_to: formData.effective_to || null
+      effective_to: formData.effective_to || null,
+      rate_type: 'currency', // Always currency for management/consulting fees
+      complexity_applicable: true // Always true for management/consulting fees
     };
     
     onSave(data);
@@ -109,20 +128,20 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {parameter ? 'Edit Pricing Parameter' : 'Add New Pricing Parameter'}
+            {parameter ? 'Edit Management/Consulting Fee' : 'Add New Management/Consulting Fee'}
           </DialogTitle>
           <DialogDescription>
-            Configure pricing parameters for specific countries, organization types, and fee components.
+            Configure management and consulting fees for specific countries, organization types, and entity types.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="country">Country *</Label>
               <Select
                 value={formData.country_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, country_id: value }))}
+                onValueChange={handleCountryChange}
                 required
               >
                 <SelectTrigger>
@@ -189,9 +208,9 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
                   <SelectValue placeholder="Select fee component" />
                 </SelectTrigger>
                 <SelectContent>
-                  {feeComponents.map((component: any) => (
+                  {managementConsultingFees.map((component: any) => (
                     <SelectItem key={component.id} value={component.id}>
-                      {component.name} ({component.component_type})
+                      {component.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -204,9 +223,10 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
                 value={formData.currency_id}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, currency_id: value }))}
                 required
+                disabled={true}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select currency" />
+                <SelectTrigger className="bg-muted">
+                  <SelectValue placeholder="Auto-populated based on country" />
                 </SelectTrigger>
                 <SelectContent>
                   {currencies.map((currency: any) => (
@@ -216,60 +236,27 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-sm text-muted-foreground">
+                Currency is automatically selected based on the country choice.
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="unit_of_measure">Unit of Measure *</Label>
-              <Select
-                value={formData.unit_of_measure_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, unit_of_measure_id: value }))}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unitsOfMeasure.map((unit: any) => (
-                    <SelectItem key={unit.id} value={unit.id}>
-                      {unit.name} {unit.symbol && `(${unit.symbol})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="rate_type">Rate Type *</Label>
-              <Select
-                value={formData.rate_type}
-                onValueChange={(value: 'currency' | 'percentage') => setFormData(prev => ({ ...prev, rate_type: value }))}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rate type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="currency">Currency Amount</SelectItem>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount">
-                {formData.rate_type === 'percentage' ? 'Percentage (%)' : 'Amount'} *
-              </Label>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="amount">Fee Amount *</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 min="0"
-                max={formData.rate_type === 'percentage' ? '100' : undefined}
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                placeholder={formData.rate_type === 'percentage' ? '15.00' : '0.00'}
+                placeholder="0.00"
                 required
+                className="max-w-xs"
               />
+              <p className="text-sm text-muted-foreground">
+                Enter the fee amount in the selected currency.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -294,26 +281,16 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
             </div>
           </div>
 
-          {/* New Advanced Settings Section */}
+          {/* Info Section */}
           <div className="space-y-4 border-t pt-4">
-            <h3 className="text-lg font-medium">Advanced Settings</h3>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="complexity_applicable"
-                checked={formData.complexity_applicable}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, complexity_applicable: checked }))}
-              />
-              <Label htmlFor="complexity_applicable" className="text-sm">
-                Apply Challenge Complexity Multiplier
-              </Label>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-medium text-sm mb-2">Automatic Settings</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Rate Type: Always set to "Currency Amount"</li>
+                <li>• Complexity Applicable: Always enabled for management and consulting fees</li>
+                <li>• Unit of Measure: Automatically set to currency unit</li>
+              </ul>
             </div>
-            
-            {formData.complexity_applicable && (
-              <div className="ml-6 text-sm text-muted-foreground">
-                When enabled, this fee will be adjusted based on the challenge complexity level (Low, Medium, High, Expert).
-              </div>
-            )}
           </div>
 
           <DialogFooter>
@@ -326,7 +303,7 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : parameter ? 'Update Parameter' : 'Add Parameter'}
+              {loading ? 'Saving...' : parameter ? 'Update Fee Setup' : 'Add Fee Setup'}
             </Button>
           </DialogFooter>
         </form>

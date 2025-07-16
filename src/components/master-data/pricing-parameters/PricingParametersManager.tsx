@@ -12,9 +12,18 @@ export const PricingParametersManager: React.FC = () => {
   const [editingParameter, setEditingParameter] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredParameters = parameters.filter(param =>
+  // Filter parameters to only show management and consulting fees
+  const managementConsultingParams = parameters.filter(param => 
+    param.fee_component && (
+      param.fee_component.toLowerCase().includes('management') || 
+      param.fee_component.toLowerCase().includes('consulting')
+    )
+  );
+
+  const filteredParameters = managementConsultingParams.filter(param =>
     param.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    param.organization_type?.toLowerCase().includes(searchTerm.toLowerCase())
+    param.organization_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    param.fee_component?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
@@ -47,7 +56,7 @@ export const PricingParametersManager: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Pricing Parameters (Country/Currency Fees)
+            Management and Consulting Fee Setup
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={refreshItems}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -55,7 +64,7 @@ export const PricingParametersManager: React.FC = () => {
               </Button>
               <Button onClick={handleAdd}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Parameter
+                Add Fee Setup
               </Button>
             </div>
           </CardTitle>
@@ -65,7 +74,7 @@ export const PricingParametersManager: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search parameters..."
+                placeholder="Search by country, organization type, or fee component..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"

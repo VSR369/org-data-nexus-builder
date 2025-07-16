@@ -544,6 +544,13 @@ export type Database = {
             referencedColumns: ["country_name"]
           },
           {
+            foreignKeyName: "fk_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "pricing_parameters_management_consulting"
+            referencedColumns: ["country_name"]
+          },
+          {
             foreignKeyName: "fk_master_currencies_country"
             columns: ["country"]
             isOneToOne: false
@@ -562,6 +569,13 @@ export type Database = {
             columns: ["country"]
             isOneToOne: false
             referencedRelation: "pricing_configurations_detailed"
+            referencedColumns: ["country_name"]
+          },
+          {
+            foreignKeyName: "fk_master_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "pricing_parameters_management_consulting"
             referencedColumns: ["country_name"]
           },
         ]
@@ -2142,6 +2156,103 @@ export type Database = {
           version: number | null
         }
         Relationships: []
+      }
+      pricing_parameters_management_consulting: {
+        Row: {
+          amount: number | null
+          complexity_applicable: boolean | null
+          component_type: string | null
+          country_id: string | null
+          country_name: string | null
+          created_at: string | null
+          created_by: string | null
+          currency_id: string | null
+          currency_name: string | null
+          currency_symbol: string | null
+          effective_from: string | null
+          effective_to: string | null
+          engagement_model_context: Json | null
+          entity_type_id: string | null
+          entity_type_name: string | null
+          fee_component_id: string | null
+          fee_component_name: string | null
+          id: string | null
+          is_active: boolean | null
+          is_user_created: boolean | null
+          organization_type_id: string | null
+          organization_type_name: string | null
+          rate_type: string | null
+          unit_name: string | null
+          unit_of_measure_id: string | null
+          unit_symbol: string | null
+          updated_at: string | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_pricing_parameters_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_currency_id_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "master_currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_entity_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_entity_type_id_fkey"
+            columns: ["entity_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["entity_type_id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_fee_component_id_fkey"
+            columns: ["fee_component_id"]
+            isOneToOne: false
+            referencedRelation: "master_fee_components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "master_organization_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_organization_type_id_fkey"
+            columns: ["organization_type_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_type_id"]
+          },
+          {
+            foreignKeyName: "master_pricing_parameters_unit_of_measure_id_fkey"
+            columns: ["unit_of_measure_id"]
+            isOneToOne: false
+            referencedRelation: "master_units_of_measure"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {

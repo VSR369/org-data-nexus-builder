@@ -96,18 +96,10 @@ export function useMasterDataCRUD(tableName: TableName) {
       let query;
       
       if (tableName === 'master_pricing_parameters') {
-        // Special case for pricing parameters - join with related tables to get readable names
+        // Special case for pricing parameters - use the new view for management/consulting fees
         query = supabase
-          .from(tableName)
-          .select(`
-            *,
-            country:master_countries(name),
-            organization_type:master_organization_types(name),
-            entity_type:master_entity_types(name),
-            fee_component:master_fee_components(name),
-            currency:master_currencies(name, symbol),
-            unit_of_measure:master_units_of_measure(name, symbol)
-          `)
+          .from('pricing_parameters_management_consulting')
+          .select('*')
           .order('created_at', { ascending: false });
       } else if (tableName === 'master_platform_fee_formulas') {
         // Special case for platform fee formulas - join with engagement models to get readable names
@@ -130,18 +122,18 @@ export function useMasterDataCRUD(tableName: TableName) {
       
       if (error) throw error;
       
-      // For pricing parameters, flatten the joined data to include readable names
+      // For pricing parameters, data is already flattened in the view
       if (tableName === 'master_pricing_parameters' && data) {
         const processedData = data.map((item: any) => ({
           ...item,
-          country: item.country?.name || '',
-          organization_type: item.organization_type?.name || '',
-          entity_type: item.entity_type?.name || '',
-          fee_component: item.fee_component?.name || '',
-          currency: item.currency?.name || '',
-          currency_symbol: item.currency?.symbol || '',
-          unit_of_measure: item.unit_of_measure?.name || '',
-          unit_symbol: item.unit_of_measure?.symbol || ''
+          country: item.country_name || '',
+          organization_type: item.organization_type_name || '',
+          entity_type: item.entity_type_name || '',
+          fee_component: item.fee_component_name || '',
+          currency: item.currency_name || '',
+          currency_symbol: item.currency_symbol || '',
+          unit_of_measure: item.unit_name || '',
+          unit_symbol: item.unit_symbol || ''
         }));
         setItems(processedData || []);
       } else if (tableName === 'master_platform_fee_formulas' && data) {
