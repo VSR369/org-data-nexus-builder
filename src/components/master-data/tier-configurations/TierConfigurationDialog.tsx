@@ -79,7 +79,7 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
       const [pricingTiers, countries, currencies, analyticsAccess, onboardingTypes, supportTypes, workflowTemplates] = await Promise.all([
         supabase.from('master_pricing_tiers').select('id, name').eq('is_active', true),
         supabase.from('master_countries').select('id, name'),
-        supabase.from('master_currencies').select('id, name, code, symbol'),
+        supabase.from('master_currencies').select('id, name, code, symbol, country'),
         supabase.from('master_analytics_access_types').select('id, name').eq('is_active', true),
         supabase.from('master_onboarding_types').select('id, name').eq('is_active', true),
         supabase.from('master_support_types').select('id, name').eq('is_active', true),
@@ -97,6 +97,27 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
       });
     } catch (error) {
       console.error('Error loading options:', error);
+    }
+  };
+
+  const handleCountryChange = (countryId: string) => {
+    const selectedCountry = options.countries.find((c: any) => c.id === countryId);
+    if (selectedCountry) {
+      // Find matching currency for the selected country
+      const matchingCurrency = options.currencies.find((c: any) => c.country === selectedCountry.name);
+      if (matchingCurrency) {
+        setFormData(prev => ({ 
+          ...prev, 
+          country_id: countryId,
+          currency_id: matchingCurrency.id 
+        }));
+      } else {
+        setFormData(prev => ({ 
+          ...prev, 
+          country_id: countryId,
+          currency_id: '' 
+        }));
+      }
     }
   };
 
@@ -197,7 +218,7 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
             <Label htmlFor="country_id">Country *</Label>
             <Select
               value={formData.country_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, country_id: value }))}
+              onValueChange={handleCountryChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select country" />
@@ -217,6 +238,7 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
             <Select
               value={formData.currency_id}
               onValueChange={(value) => setFormData(prev => ({ ...prev, currency_id: value }))}
+              disabled={!!formData.country_id}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select currency" />
@@ -229,6 +251,11 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
                 ))}
               </SelectContent>
             </Select>
+            {formData.country_id && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Currency auto-selected based on country
+              </p>
+            )}
           </div>
 
           <div>
