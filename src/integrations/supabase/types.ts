@@ -1019,6 +1019,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_user_created: boolean | null
+          membership_discount_percentage: number | null
           platform_usage_fee_percentage: number | null
           updated_at: string
           variables: Json | null
@@ -1042,6 +1043,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
+          membership_discount_percentage?: number | null
           platform_usage_fee_percentage?: number | null
           updated_at?: string
           variables?: Json | null
@@ -1065,6 +1067,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
+          membership_discount_percentage?: number | null
           platform_usage_fee_percentage?: number | null
           updated_at?: string
           variables?: Json | null

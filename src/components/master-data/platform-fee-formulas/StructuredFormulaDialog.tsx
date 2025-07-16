@@ -39,6 +39,7 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
     base_management_fee: 0,
     base_consulting_fee: 0,
     advance_payment_percentage: 25,
+    membership_discount_percentage: 0,
     formula_type: 'structured',
     configuration: {},
     is_active: true,
@@ -68,6 +69,7 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
         base_management_fee: formula.base_management_fee || 0,
         base_consulting_fee: formula.base_consulting_fee || 0,
         advance_payment_percentage: formula.advance_payment_percentage || 25,
+        membership_discount_percentage: formula.membership_discount_percentage || 0,
         formula_type: formula.formula_type || 'structured',
         configuration: formula.configuration || {},
         is_active: formula.is_active !== false,
@@ -85,6 +87,7 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
         base_management_fee: 0,
         base_consulting_fee: 0,
         advance_payment_percentage: 25,
+        membership_discount_percentage: 0,
         formula_type: 'structured',
         configuration: {},
         is_active: true,
@@ -332,6 +335,23 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
                         Percentage of total fee
                       </p>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="membership_discount_percentage">Membership Discount (%)</Label>
+                    <Input
+                      id="membership_discount_percentage"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.membership_discount_percentage}
+                      onChange={(e) => setFormData(prev => ({ ...prev, membership_discount_percentage: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Discount percentage for membership holders (applied during challenge lifecycle)
+                    </p>
                   </div>
 
                   {showManagementFee && (
