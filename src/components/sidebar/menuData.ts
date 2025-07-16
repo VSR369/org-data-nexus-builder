@@ -19,7 +19,14 @@ import {
   Table,
   Folder,
   FolderOpen,
-  GitBranch
+  GitBranch,
+  BarChart3,
+  Calculator,
+  Package,
+  Layers,
+  CreditCard,
+  TrendingUp,
+  Lock
 } from 'lucide-react';
 
 export const customDataMenuItems = [
@@ -163,6 +170,57 @@ export const validationMenuItems = [
     title: 'Solution Seekers Validation',
     icon: CheckCircle,
     description: 'Validate seeker registrations'
+  }
+];
+
+export const pricingConfigurationMenuItems = [
+  {
+    id: 'pricing-tiers',
+    title: 'Pricing Tiers',
+    icon: Layers,
+    description: 'Manage pricing tier levels and hierarchies'
+  },
+  {
+    id: 'system-configurations',
+    title: 'System Configurations',
+    icon: Settings,
+    description: 'Configure system-wide settings and parameters'
+  },
+  {
+    id: 'pricing-parameters',
+    title: 'Pricing Parameters',
+    icon: Calculator,
+    description: 'Configure country/currency-specific pricing parameters'
+  },
+  {
+    id: 'engagement-model-subtypes',
+    title: 'Engagement Model Subtypes',
+    icon: GitBranch,
+    description: 'Define engagement model variations and configurations'
+  },
+  {
+    id: 'fee-components',
+    title: 'Fee Components',
+    icon: Package,
+    description: 'Manage management, consulting, platform, and advance fee types'
+  },
+  {
+    id: 'platform-fee-formulas',
+    title: 'Platform Fee Formulas',
+    icon: BarChart3,
+    description: 'Create and manage dynamic pricing formulas with variables'
+  },
+  {
+    id: 'advance-payment-types',
+    title: 'Advance Payment Types',
+    icon: CreditCard,
+    description: 'Configure percentage-based advance payment structures'
+  },
+  {
+    id: 'tier-engagement-restrictions',
+    title: 'Tier Engagement Restrictions',
+    icon: Lock,
+    description: 'Manage tier-based access control for engagement models'
   }
 ];
 

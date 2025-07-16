@@ -7,7 +7,7 @@ import { DollarSign, Plus, Upload, Download, BarChart3, Settings } from 'lucide-
 import { PricingConfigurationFilters } from './PricingConfigurationFilters';
 import { PricingConfigurationGrid } from './PricingConfigurationGrid';
 import { PricingConfigurationStats } from './PricingConfigurationStats';
-import { PricingConfigurationDialog } from './PricingConfigurationDialog';
+import { EnhancedPricingConfigurationDialog } from './EnhancedPricingConfigurationDialog';
 import { usePricingConfiguration } from '../../../hooks/usePricingConfiguration';
 
 const EngagementPricingManager: React.FC = () => {
@@ -158,8 +158,8 @@ const EngagementPricingManager: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Configuration Dialog */}
-      <PricingConfigurationDialog
+      {/* Enhanced Configuration Dialog */}
+      <EnhancedPricingConfigurationDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         configuration={editingConfig}

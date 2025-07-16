@@ -14,7 +14,8 @@ import {
   systemMenuItems,
   validationMenuItems,
   administrationMenuItems,
-  customDataMenuItems
+  customDataMenuItems,
+  pricingConfigurationMenuItems
 } from './sidebar/menuData';
 
 interface AppSidebarProps {
@@ -82,6 +83,13 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
         <SidebarMenuGroup
           title="System Configuration"
           items={systemMenuItems}
+          activeSection={activeSection}
+          isOnMasterDataPortal={isOnMasterDataPortal}
+          onItemClick={handleMasterDataClick}
+        />
+        <SidebarMenuGroup
+          title="💰 Pricing & Configuration"
+          items={pricingConfigurationMenuItems}
           activeSection={activeSection}
           isOnMasterDataPortal={isOnMasterDataPortal}
           onItemClick={handleMasterDataClick}
