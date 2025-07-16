@@ -40,30 +40,34 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
     
     try {
       const calculations = complexityLevels.map(complexity => {
-        // Calculate Platform Usage Fee (same for all complexity levels)
-        const platformUsageFee = previewValues.solutionFee * (formula.platform_usage_fee_percentage / 100);
+        // Calculate Platform Usage Fee (base amount)
+        const platformUsageFeeBase = previewValues.solutionFee * (formula.platform_usage_fee_percentage / 100);
         
-        // Calculate Management Fee (base * complexity multiplier)
+        // Apply membership discount to Platform Usage Fee only
+        const membershipDiscountPercentage = formula.membership_discount_percentage || 0;
+        const platformUsageFeeAfterDiscount = platformUsageFeeBase * (1 - membershipDiscountPercentage / 100);
+        
+        // Calculate Management Fee (base * complexity multiplier) - NO DISCOUNT
         const managementFee = formula.base_management_fee * (complexity.management_fee_multiplier || 1);
         
-        // Calculate Consulting Fee (base * complexity multiplier)
+        // Calculate Consulting Fee (base * complexity multiplier) - NO DISCOUNT
         const consultingFee = formula.base_consulting_fee * (complexity.consulting_fee_multiplier || 1);
         
-        // Calculate Total Fee based on engagement model
-        let totalFee = platformUsageFee;
+        // Calculate Total Fee based on engagement model using discounted platform usage fee
+        let totalFee = platformUsageFeeAfterDiscount;
         
         if (engagementModel) {
           switch (engagementModel.name) {
             case 'Market Place':
               // Check if consulting fee should be included based on subtype
               const includeConsultingFee = formula.base_consulting_fee > 0;
-              totalFee = platformUsageFee + managementFee + (includeConsultingFee ? consultingFee : 0);
+              totalFee = platformUsageFeeAfterDiscount + managementFee + (includeConsultingFee ? consultingFee : 0);
               break;
             case 'Market Place & Aggregator':
-              totalFee = platformUsageFee + managementFee + consultingFee;
+              totalFee = platformUsageFeeAfterDiscount + managementFee + consultingFee;
               break;
             default: // Aggregator
-              totalFee = platformUsageFee;
+              totalFee = platformUsageFeeAfterDiscount;
           }
         }
         
@@ -72,13 +76,15 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
         
         return {
           complexity,
-          platformUsageFee,
+          platformUsageFeeBase,
+          platformUsageFeeAfterDiscount,
           managementFee,
           consultingFee,
           totalFee,
           advancePayment,
           managementMultiplier: complexity.management_fee_multiplier || 1,
           consultingMultiplier: complexity.consulting_fee_multiplier || 1,
+          membershipDiscountPercentage,
         };
       });
       
@@ -159,6 +165,9 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium">Complexity Level</th>
                     <th className="text-right p-3 font-medium">Platform Usage Fee</th>
+                    {formula.membership_discount_percentage > 0 && (
+                      <th className="text-right p-3 font-medium">Platform Usage Fee (After Discount)</th>
+                    )}
                     {engagementModel?.name !== 'Aggregator' && (
                       <th className="text-right p-3 font-medium">Management Fee</th>
                     )}
@@ -186,11 +195,22 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
                         </div>
                       </td>
                       <td className="p-3 text-right">
-                        <div className="font-medium">{formatCurrency(calc.platformUsageFee)}</div>
+                        <div className="font-medium">{formatCurrency(calc.platformUsageFeeBase)}</div>
                         <div className="text-xs text-muted-foreground">
                           {formula.platform_usage_fee_percentage}%
                         </div>
                       </td>
+                      {formula.membership_discount_percentage > 0 && (
+                        <td className="p-3 text-right">
+                          <div className="font-medium text-green-600">{formatCurrency(calc.platformUsageFeeAfterDiscount)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            -{calc.membershipDiscountPercentage}% discount
+                          </div>
+                          <div className="text-xs text-green-600">
+                            Saved: {formatCurrency(calc.platformUsageFeeBase - calc.platformUsageFeeAfterDiscount)}
+                          </div>
+                        </td>
+                      )}
                       {engagementModel?.name !== 'Aggregator' && (
                         <td className="p-3 text-right">
                           <div className="font-medium">{formatCurrency(calc.managementFee)}</div>
@@ -228,6 +248,11 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
                 <h4 className="font-medium mb-2">Applied for: {engagementModel.name}</h4>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">Platform Usage Fee</Badge>
+                  {formula.membership_discount_percentage > 0 && (
+                    <Badge variant="secondary">
+                      Membership Discount: {formula.membership_discount_percentage}% (Platform Usage Fee Only)
+                    </Badge>
+                  )}
                   {engagementModel.name !== 'Aggregator' && (
                     <Badge variant="outline">Management Fee</Badge>
                   )}
