@@ -119,9 +119,6 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
             expression = 'Platform Usage Fee + Management Fee';
           }
           break;
-        case 'Market Place & Aggregator':
-          expression = 'Platform Usage Fee + Management Fee + Consulting Fee';
-          break;
         default:
           expression = 'Platform Usage Fee';
       }
@@ -152,8 +149,8 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
   const selectedCurrency = currencies.find(c => c.id === formData.currency_id);
   const selectedSubtype = engagementModelSubtypes.find(s => s.id === formData.engagement_model_subtype_id);
   
-  // Filter out Platform as a Service from engagement models
-  const filteredEngagementModels = engagementModels.filter(m => m.name !== 'Platform as a Service');
+  // Filter out Platform as a Service and Market Place & Aggregator from engagement models
+  const filteredEngagementModels = engagementModels.filter(m => m.name !== 'Platform as a Service' && m.name !== 'Market Place & Aggregator');
   
   // Filter subtypes based on selected engagement model
   const filteredSubtypes = engagementModelSubtypes.filter(s => 
@@ -162,8 +159,7 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
 
   // Determine field visibility based on engagement model
   const showManagementFee = selectedEngagementModel?.name !== 'Aggregator';
-  const showConsultingFee = selectedEngagementModel?.name === 'Market Place & Aggregator' || 
-    (selectedEngagementModel?.name === 'Market Place' && selectedSubtype?.name === 'Program Managed');
+  const showConsultingFee = selectedEngagementModel?.name === 'Market Place' && selectedSubtype?.name === 'Program Managed';
   const showSubtypeDropdown = selectedEngagementModel?.name === 'Market Place';
 
   return (
