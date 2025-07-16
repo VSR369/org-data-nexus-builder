@@ -107,15 +107,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
             <SystemConfigurationsManager />
           </React.Suspense>
         );
-      case 'pricing-parameters':
-        const PricingParametersManager = React.lazy(() => 
-          import('./master-data/pricing-parameters/PricingParametersManager').then(m => ({ default: m.PricingParametersManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <PricingParametersManager />
-          </React.Suspense>
-        );
       case 'engagement-model-subtypes':
         const EngagementModelSubtypesManager = React.lazy(() => 
           import('./master-data/engagement-model-subtypes/EngagementModelSubtypesManager').then(m => ({ default: m.EngagementModelSubtypesManager }))

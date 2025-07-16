@@ -80,7 +80,7 @@ type TableName =
   | 'master_platform_fee_formulas'
   | 'master_advance_payment_types'
   | 'tier_engagement_model_restrictions'
-  | 'master_pricing_parameters'
+  
   | 'master_system_configurations'
   | 'master_challenge_complexity';
 
@@ -95,13 +95,7 @@ export function useMasterDataCRUD(tableName: TableName) {
       
       let query;
       
-      if (tableName === 'master_pricing_parameters') {
-        // Special case for pricing parameters - use the new view for management/consulting fees
-        query = supabase
-          .from('pricing_parameters_management_consulting')
-          .select('*')
-          .order('created_at', { ascending: false });
-      } else if (tableName === 'master_platform_fee_formulas') {
+      if (tableName === 'master_platform_fee_formulas') {
         // Special case for platform fee formulas - join with engagement models to get readable names
         query = supabase
           .from(tableName)
@@ -125,21 +119,7 @@ export function useMasterDataCRUD(tableName: TableName) {
       
       if (error) throw error;
       
-      // For pricing parameters, data is already flattened in the view
-      if (tableName === 'master_pricing_parameters' && data) {
-        const processedData = data.map((item: any) => ({
-          ...item,
-          country: item.country_name || '',
-          organization_type: item.organization_type_name || '',
-          entity_type: item.entity_type_name || '',
-          fee_component: item.fee_component_name || '',
-          currency: item.currency_name || '',
-          currency_symbol: item.currency_symbol || '',
-          unit_of_measure: item.unit_name || '',
-          unit_symbol: item.unit_symbol || ''
-        }));
-        setItems(processedData || []);
-      } else if (tableName === 'master_platform_fee_formulas' && data) {
+      if (tableName === 'master_platform_fee_formulas' && data) {
         // Debug: Log raw data structure
         console.log('Raw platform fee formula data:', data);
         
@@ -310,6 +290,6 @@ export const useFeeComponents = () => useMasterDataCRUD('master_fee_components')
 export const usePlatformFeeFormulas = () => useMasterDataCRUD('master_platform_fee_formulas');
 export const useAdvancePaymentTypes = () => useMasterDataCRUD('master_advance_payment_types');
 export const useTierEngagementModelRestrictions = () => useMasterDataCRUD('tier_engagement_model_restrictions');
-export const usePricingParameters = () => useMasterDataCRUD('master_pricing_parameters');
+
 export const useSystemConfigurations = () => useMasterDataCRUD('master_system_configurations');
 export const useChallengeComplexity = () => useMasterDataCRUD('master_challenge_complexity');

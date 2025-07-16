@@ -193,12 +193,6 @@ export const pricingConfigurationMenuItems = [
     description: 'Configure system-wide settings and parameters'
   },
   {
-    id: 'pricing-parameters',
-    title: 'Management Fee',
-    icon: Calculator,
-    description: 'Configure country/currency-specific pricing parameters'
-  },
-  {
     id: 'engagement-model-subtypes',
     title: 'Engagement Model Subtypes',
     icon: GitBranch,
