@@ -122,6 +122,51 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_model_fee_mapping: {
+        Row: {
+          calculation_order: number | null
+          created_at: string | null
+          engagement_model_id: string
+          fee_component_id: string
+          id: string
+          is_required: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          calculation_order?: number | null
+          created_at?: string | null
+          engagement_model_id: string
+          fee_component_id: string
+          id?: string
+          is_required?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          calculation_order?: number | null
+          created_at?: string | null
+          engagement_model_id?: string
+          fee_component_id?: string
+          id?: string
+          is_required?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_model_fee_mapping_engagement_model_id_fkey"
+            columns: ["engagement_model_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_model_fee_mapping_fee_component_id_fkey"
+            columns: ["fee_component_id"]
+            isOneToOne: false
+            referencedRelation: "master_fee_components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_advance_payment_types: {
         Row: {
           created_at: string
@@ -769,6 +814,7 @@ export type Database = {
           component_type: string
           created_at: string
           created_by: string | null
+          default_rate_type: string | null
           description: string | null
           id: string
           is_active: boolean
@@ -781,6 +827,7 @@ export type Database = {
           component_type: string
           created_at?: string
           created_by?: string | null
+          default_rate_type?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
@@ -793,6 +840,7 @@ export type Database = {
           component_type?: string
           created_at?: string
           created_by?: string | null
+          default_rate_type?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
@@ -994,54 +1042,63 @@ export type Database = {
       master_pricing_parameters: {
         Row: {
           amount: number
+          complexity_applicable: boolean | null
           country_id: string
           created_at: string
           created_by: string | null
           currency_id: string
           effective_from: string | null
           effective_to: string | null
+          engagement_model_context: Json | null
           entity_type_id: string
           fee_component_id: string
           id: string
           is_active: boolean
           is_user_created: boolean | null
           organization_type_id: string
+          rate_type: string | null
           unit_of_measure_id: string
           updated_at: string
           version: number | null
         }
         Insert: {
           amount: number
+          complexity_applicable?: boolean | null
           country_id: string
           created_at?: string
           created_by?: string | null
           currency_id: string
           effective_from?: string | null
           effective_to?: string | null
+          engagement_model_context?: Json | null
           entity_type_id: string
           fee_component_id: string
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
           organization_type_id: string
+          rate_type?: string | null
           unit_of_measure_id: string
           updated_at?: string
           version?: number | null
         }
         Update: {
           amount?: number
+          complexity_applicable?: boolean | null
           country_id?: string
           created_at?: string
           created_by?: string | null
           currency_id?: string
           effective_from?: string | null
           effective_to?: string | null
+          engagement_model_context?: Json | null
           entity_type_id?: string
           fee_component_id?: string
           id?: string
           is_active?: boolean
           is_user_created?: boolean | null
           organization_type_id?: string
+          rate_type?: string | null
           unit_of_measure_id?: string
           updated_at?: string
           version?: number | null

@@ -1,7 +1,54 @@
 import { supabase } from '@/integrations/supabase/client';
+import { EngagementFeeCalculator } from './EngagementFeeCalculator';
 
 export class PricingCalculationService {
+  /**
+   * Enhanced calculation method using the new engagement-based fee system
+   */
+  static async calculateEngagementPricing(context: {
+    solutionFee: number;
+    challengeComplexity: string;
+    engagementModel: string;
+    country: string;
+    organizationType: string;
+    entityType: string;
+    membershipStatus?: string;
+  }) {
+    try {
+      // Use the new EngagementFeeCalculator
+      const result = await EngagementFeeCalculator.calculateTotalFees({
+        ...context,
+        membershipStatus: context.membershipStatus || 'Not Active'
+      });
+      
+      return {
+        solutionFee: context.solutionFee,
+        platformUsageFee: result.fees.platformUsageFee,
+        managementFee: result.fees.managementFee,
+        consultingFee: result.fees.consultingFee,
+        totalFee: result.totalFee,
+        advancePayment: result.fees.advancePayment,
+        breakdown: result.breakdown,
+        // Legacy compatibility
+        baseValue: context.solutionFee,
+        totalValue: result.totalFee,
+        complexityMultiplier: result.breakdown.complexityMultiplier,
+        adjustedManagementFee: result.fees.managementFee,
+        adjustedConsultingFee: result.fees.consultingFee
+      };
+    } catch (error) {
+      console.error('Error calculating engagement pricing:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * @deprecated Use calculateEngagementPricing instead
+   * Legacy method for backward compatibility
+   */
   static async calculatePricing(context: any) {
+    console.warn('PricingCalculationService.calculatePricing is deprecated. Use calculateEngagementPricing instead.');
+    
     // Basic implementation for immediate functionality
     const baseValue = context.baseValue || 0;
     const discount = context.membershipDiscount || 0;

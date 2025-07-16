@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useMasterDataCRUD } from '@/hooks/useMasterDataCRUD';
 
 interface PricingParameterDialogProps {
@@ -43,7 +44,10 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
     unit_of_measure_id: '',
     amount: '',
     effective_from: '',
-    effective_to: ''
+    effective_to: '',
+    rate_type: 'currency' as 'currency' | 'percentage',
+    complexity_applicable: false,
+    engagement_model_context: {}
   });
 
   const { items: countries } = useMasterDataCRUD('master_countries');
@@ -64,7 +68,10 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
         unit_of_measure_id: parameter.unit_of_measure_id || '',
         amount: parameter.amount?.toString() || '',
         effective_from: parameter.effective_from || '',
-        effective_to: parameter.effective_to || ''
+        effective_to: parameter.effective_to || '',
+        rate_type: parameter.rate_type || 'currency',
+        complexity_applicable: parameter.complexity_applicable || false,
+        engagement_model_context: parameter.engagement_model_context || {}
       });
     } else {
       setFormData({
@@ -76,7 +83,10 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
         unit_of_measure_id: '',
         amount: '',
         effective_from: '',
-        effective_to: ''
+        effective_to: '',
+        rate_type: 'currency',
+        complexity_applicable: false,
+        engagement_model_context: {}
       });
     }
   }, [parameter, open]);
@@ -229,15 +239,35 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount *</Label>
+              <Label htmlFor="rate_type">Rate Type *</Label>
+              <Select
+                value={formData.rate_type}
+                onValueChange={(value: 'currency' | 'percentage') => setFormData(prev => ({ ...prev, rate_type: value }))}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select rate type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="currency">Currency Amount</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">
+                {formData.rate_type === 'percentage' ? 'Percentage (%)' : 'Amount'} *
+              </Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 min="0"
+                max={formData.rate_type === 'percentage' ? '100' : undefined}
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                placeholder="0.00"
+                placeholder={formData.rate_type === 'percentage' ? '15.00' : '0.00'}
                 required
               />
             </div>
@@ -252,7 +282,7 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
               />
             </div>
 
-            <div className="space-y-2 col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="effective_to">Effective To</Label>
               <Input
                 id="effective_to"
@@ -262,6 +292,28 @@ const PricingParameterDialog: React.FC<PricingParameterDialogProps> = ({
                 placeholder="Leave empty for indefinite"
               />
             </div>
+          </div>
+
+          {/* New Advanced Settings Section */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-lg font-medium">Advanced Settings</h3>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="complexity_applicable"
+                checked={formData.complexity_applicable}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, complexity_applicable: checked }))}
+              />
+              <Label htmlFor="complexity_applicable" className="text-sm">
+                Apply Challenge Complexity Multiplier
+              </Label>
+            </div>
+            
+            {formData.complexity_applicable && (
+              <div className="ml-6 text-sm text-muted-foreground">
+                When enabled, this fee will be adjusted based on the challenge complexity level (Low, Medium, High, Expert).
+              </div>
+            )}
           </div>
 
           <DialogFooter>
