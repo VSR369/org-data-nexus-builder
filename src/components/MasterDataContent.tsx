@@ -161,6 +161,15 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
             <TierEngagementModelRestrictionsManager />
           </React.Suspense>
         );
+      case 'challenge-complexity':
+        const ChallengeComplexityManager = React.lazy(() => 
+          import('./master-data/challenge-complexity/ChallengeComplexityManager').then(m => ({ default: m.ChallengeComplexityManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <ChallengeComplexityManager />
+          </React.Suspense>
+        );
       default:
         return <MasterDataDiagnostics />;
     }

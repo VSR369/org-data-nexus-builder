@@ -106,6 +106,12 @@ export const organizationMenuItems = [
 
 export const challengeMenuItems = [
   {
+    id: 'challenge-complexity',
+    title: 'Challenge Complexity',
+    icon: TrendingUp,
+    description: 'Manage challenge complexity levels and fee multipliers'
+  },
+  {
     id: 'reward-types',
     title: 'Reward Types',
     icon: Award,

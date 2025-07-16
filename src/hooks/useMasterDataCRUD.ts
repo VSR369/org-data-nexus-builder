@@ -81,7 +81,8 @@ type TableName =
   | 'master_advance_payment_types'
   | 'tier_engagement_model_restrictions'
   | 'master_pricing_parameters'
-  | 'master_system_configurations';
+  | 'master_system_configurations'
+  | 'master_challenge_complexity';
 
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
@@ -298,3 +299,4 @@ export const useAdvancePaymentTypes = () => useMasterDataCRUD('master_advance_pa
 export const useTierEngagementModelRestrictions = () => useMasterDataCRUD('tier_engagement_model_restrictions');
 export const usePricingParameters = () => useMasterDataCRUD('master_pricing_parameters');
 export const useSystemConfigurations = () => useMasterDataCRUD('master_system_configurations');
+export const useChallengeComplexity = () => useMasterDataCRUD('master_challenge_complexity');

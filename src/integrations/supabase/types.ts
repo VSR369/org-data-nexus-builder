@@ -286,6 +286,51 @@ export type Database = {
           },
         ]
       }
+      master_challenge_complexity: {
+        Row: {
+          consulting_fee_multiplier: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_user_created: boolean | null
+          level_order: number
+          management_fee_multiplier: number
+          name: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          consulting_fee_multiplier?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          level_order?: number
+          management_fee_multiplier?: number
+          name: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          consulting_fee_multiplier?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_user_created?: boolean | null
+          level_order?: number
+          management_fee_multiplier?: number
+          name?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
       master_communication_types: {
         Row: {
           created_at: string | null
