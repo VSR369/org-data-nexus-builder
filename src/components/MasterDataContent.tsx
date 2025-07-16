@@ -163,6 +163,78 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
             <ChallengeComplexityManager />
           </React.Suspense>
         );
+      case 'support-types':
+        const SupportTypesManager = React.lazy(() => 
+          import('./master-data/support-types/SupportTypesManager').then(m => ({ default: m.SupportTypesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SupportTypesManager />
+          </React.Suspense>
+        );
+      case 'analytics-access-types':
+        const AnalyticsAccessTypesManager = React.lazy(() => 
+          import('./master-data/analytics-access-types/AnalyticsAccessTypesManager').then(m => ({ default: m.AnalyticsAccessTypesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <AnalyticsAccessTypesManager />
+          </React.Suspense>
+        );
+      case 'workflow-templates':
+        const WorkflowTemplatesManager = React.lazy(() => 
+          import('./master-data/workflow-templates/WorkflowTemplatesManager').then(m => ({ default: m.WorkflowTemplatesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <WorkflowTemplatesManager />
+          </React.Suspense>
+        );
+      case 'onboarding-types':
+        const OnboardingTypesManager = React.lazy(() => 
+          import('./master-data/onboarding-types/OnboardingTypesManager').then(m => ({ default: m.OnboardingTypesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <OnboardingTypesManager />
+          </React.Suspense>
+        );
+      case 'tier-configurations':
+        const TierConfigurationsManager = React.lazy(() => 
+          import('./master-data/tier-configurations/TierConfigurationsManager').then(m => ({ default: m.TierConfigurationsManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <TierConfigurationsManager />
+          </React.Suspense>
+        );
+      case 'tier-engagement-access':
+        const TierEngagementAccessManager = React.lazy(() => 
+          import('./master-data/tier-engagement-access/TierEngagementAccessManager').then(m => ({ default: m.TierEngagementAccessManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <TierEngagementAccessManager />
+          </React.Suspense>
+        );
+      case 'challenge-overage-fees':
+        const ChallengeOverageFeesManager = React.lazy(() => 
+          import('./master-data/challenge-overage-fees/ChallengeOverageFeesManager').then(m => ({ default: m.ChallengeOverageFeesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <ChallengeOverageFeesManager />
+          </React.Suspense>
+        );
+      case 'system-feature-access':
+        const SystemFeatureAccessManager = React.lazy(() => 
+          import('./master-data/system-feature-access/SystemFeatureAccessManager').then(m => ({ default: m.SystemFeatureAccessManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SystemFeatureAccessManager />
+          </React.Suspense>
+        );
       default:
         return <MasterDataDiagnostics />;
     }

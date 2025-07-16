@@ -82,7 +82,15 @@ type TableName =
   | 'tier_engagement_model_restrictions'
   
   | 'master_system_configurations'
-  | 'master_challenge_complexity';
+  | 'master_challenge_complexity'
+  | 'master_support_types'
+  | 'master_analytics_access_types'
+  | 'master_workflow_templates'
+  | 'master_onboarding_types'
+  | 'master_tier_configurations'
+  | 'master_tier_engagement_model_access'
+  | 'master_challenge_overage_fees'
+  | 'master_system_feature_access';
 
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);

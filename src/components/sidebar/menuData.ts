@@ -26,7 +26,12 @@ import {
   Layers,
   CreditCard,
   TrendingUp,
-  Lock
+  Lock,
+  Headphones,
+  Workflow,
+  Zap,
+  AlertTriangle,
+  Database as DatabaseIcon
 } from 'lucide-react';
 
 export const customDataMenuItems = [
@@ -221,6 +226,54 @@ export const pricingConfigurationMenuItems = [
     title: 'Tier Engagement Restrictions',
     icon: Lock,
     description: 'Manage tier-based access control for engagement models'
+  },
+  {
+    id: 'support-types',
+    title: 'Support Types',
+    icon: Headphones,
+    description: 'Configure customer support service levels and response times'
+  },
+  {
+    id: 'analytics-access-types',
+    title: 'Analytics Access Types',
+    icon: BarChart3,
+    description: 'Define analytics dashboard access levels and features'
+  },
+  {
+    id: 'workflow-templates',
+    title: 'Workflow Templates',
+    icon: Workflow,
+    description: 'Manage workflow templates and customization levels'
+  },
+  {
+    id: 'onboarding-types',
+    title: 'Onboarding Types',
+    icon: UserCheck,
+    description: 'Configure onboarding service types and included resources'
+  },
+  {
+    id: 'tier-configurations',
+    title: 'Tier Configurations',
+    icon: DatabaseIcon,
+    description: 'Configure pricing tier settings and limits'
+  },
+  {
+    id: 'tier-engagement-access',
+    title: 'Tier Engagement Access',
+    icon: Lock,
+    description: 'Manage tier-based engagement model access control'
+  },
+  {
+    id: 'challenge-overage-fees',
+    title: 'Challenge Overage Fees',
+    icon: AlertTriangle,
+    description: 'Configure fees for additional challenges beyond tier limits'
+  },
+  {
+    id: 'system-feature-access',
+    title: 'System Feature Access',
+    icon: Zap,
+    description: 'Configure feature access levels by pricing tier'
   },
   {
     id: 'pricing-configurations',
