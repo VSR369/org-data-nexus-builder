@@ -107,6 +107,60 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
             <SystemConfigurationsManager />
           </React.Suspense>
         );
+      case 'pricing-parameters':
+        const PricingParametersManager = React.lazy(() => 
+          import('./master-data/pricing-parameters/PricingParametersManager').then(m => ({ default: m.PricingParametersManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <PricingParametersManager />
+          </React.Suspense>
+        );
+      case 'engagement-model-subtypes':
+        const EngagementModelSubtypesManager = React.lazy(() => 
+          import('./master-data/engagement-model-subtypes/EngagementModelSubtypesManager').then(m => ({ default: m.EngagementModelSubtypesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <EngagementModelSubtypesManager />
+          </React.Suspense>
+        );
+      case 'fee-components':
+        const FeeComponentsManager = React.lazy(() => 
+          import('./master-data/fee-components/FeeComponentsManager').then(m => ({ default: m.FeeComponentsManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <FeeComponentsManager />
+          </React.Suspense>
+        );
+      case 'platform-fee-formulas':
+        const PlatformFeeFormulasManager = React.lazy(() => 
+          import('./master-data/platform-fee-formulas/PlatformFeeFormulasManager').then(m => ({ default: m.PlatformFeeFormulasManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <PlatformFeeFormulasManager />
+          </React.Suspense>
+        );
+      case 'advance-payment-types':
+        const AdvancePaymentTypesManager = React.lazy(() => 
+          import('./master-data/advance-payment-types/AdvancePaymentTypesManager').then(m => ({ default: m.AdvancePaymentTypesManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <AdvancePaymentTypesManager />
+          </React.Suspense>
+        );
+      case 'tier-engagement-restrictions':
+        const TierEngagementModelRestrictionsManager = React.lazy(() => 
+          import('./master-data/tier-engagement-restrictions/TierEngagementModelRestrictionsManager').then(m => ({ default: m.TierEngagementModelRestrictionsManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <TierEngagementModelRestrictionsManager />
+          </React.Suspense>
+        );
       default:
         return <MasterDataDiagnostics />;
     }

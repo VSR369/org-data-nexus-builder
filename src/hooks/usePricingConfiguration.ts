@@ -19,6 +19,13 @@ interface MasterData {
   unitsOfMeasure: any[];
   currencies: any[];
   billingFrequencies: any[];
+  pricingTiers: any[];
+  engagementModelSubtypes: any[];
+  feeComponents: any[];
+  platformFeeFormulas: any[];
+  advancePaymentTypes: any[];
+  systemConfigurations: any[];
+  pricingParameters: any[];
 }
 
 export const usePricingConfiguration = () => {
@@ -32,7 +39,14 @@ export const usePricingConfiguration = () => {
     membershipStatuses: [],
     unitsOfMeasure: [],
     currencies: [],
-    billingFrequencies: []
+    billingFrequencies: [],
+    pricingTiers: [],
+    engagementModelSubtypes: [],
+    feeComponents: [],
+    platformFeeFormulas: [],
+    advancePaymentTypes: [],
+    systemConfigurations: [],
+    pricingParameters: []
   });
   
   const [filters, setFilters] = useState<PricingFilters>({
@@ -56,7 +70,14 @@ export const usePricingConfiguration = () => {
         membershipStatusesRes,
         unitsOfMeasureRes,
         currenciesRes,
-        billingFrequenciesRes
+        billingFrequenciesRes,
+        pricingTiersRes,
+        engagementModelSubtypesRes,
+        feeComponentsRes,
+        platformFeeFormulasRes,
+        advancePaymentTypesRes,
+        systemConfigurationsRes,
+        pricingParametersRes
       ] = await Promise.all([
         supabase.from('master_countries').select('*').order('name'),
         supabase.from('master_engagement_models').select('*').order('name'),
@@ -65,7 +86,14 @@ export const usePricingConfiguration = () => {
         supabase.from('master_membership_statuses').select('*').order('name'),
         supabase.from('master_units_of_measure').select('*').order('name'),
         supabase.from('master_currencies').select('*').order('name'),
-        supabase.from('master_billing_frequencies').select('*').order('name')
+        supabase.from('master_billing_frequencies').select('*').order('name'),
+        supabase.from('master_pricing_tiers').select('*').order('level_order'),
+        supabase.from('master_engagement_model_subtypes').select('*').order('name'),
+        supabase.from('master_fee_components').select('*').order('name'),
+        supabase.from('master_platform_fee_formulas').select('*').order('formula_name'),
+        supabase.from('master_advance_payment_types').select('*').order('name'),
+        supabase.from('master_system_configurations').select('*').order('config_key'),
+        supabase.from('master_pricing_parameters').select('*').order('created_at')
       ]);
 
       setMasterData({
@@ -76,7 +104,14 @@ export const usePricingConfiguration = () => {
         membershipStatuses: membershipStatusesRes.data || [],
         unitsOfMeasure: unitsOfMeasureRes.data || [],
         currencies: currenciesRes.data || [],
-        billingFrequencies: billingFrequenciesRes.data || []
+        billingFrequencies: billingFrequenciesRes.data || [],
+        pricingTiers: pricingTiersRes.data || [],
+        engagementModelSubtypes: engagementModelSubtypesRes.data || [],
+        feeComponents: feeComponentsRes.data || [],
+        platformFeeFormulas: platformFeeFormulasRes.data || [],
+        advancePaymentTypes: advancePaymentTypesRes.data || [],
+        systemConfigurations: systemConfigurationsRes.data || [],
+        pricingParameters: pricingParametersRes.data || []
       });
     } catch (error) {
       console.error('Error loading master data:', error);
