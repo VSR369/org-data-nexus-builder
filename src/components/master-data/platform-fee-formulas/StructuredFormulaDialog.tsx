@@ -141,6 +141,9 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
           setFormData(prev => ({ ...prev, currency_id: countryCurrency.id }));
         }
       }
+    } else {
+      // Clear currency when no country is selected
+      setFormData(prev => ({ ...prev, currency_id: '' }));
     }
   }, [formData.country_id, countries, currencies]);
 
@@ -221,8 +224,9 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
                       <Select
                         value={formData.currency_id}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, currency_id: value }))}
+                        disabled={!!formData.country_id}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={formData.country_id ? 'opacity-50 cursor-not-allowed' : ''}>
                           <SelectValue placeholder="Select currency" />
                         </SelectTrigger>
                         <SelectContent>
@@ -233,6 +237,11 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
                           ))}
                         </SelectContent>
                       </Select>
+                      {formData.country_id && (
+                        <p className="text-xs text-muted-foreground">
+                          Currency auto-selected based on country
+                        </p>
+                      )}
                     </div>
                   </div>
 
