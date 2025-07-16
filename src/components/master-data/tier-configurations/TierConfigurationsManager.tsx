@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Database as DatabaseIcon, Plus, Edit, Trash2 } from 'lucide-react';
+import { Database as DatabaseIcon, Plus, Grid, Table, Edit, Trash2 } from 'lucide-react';
 import { useMasterDataCRUD } from '@/hooks/useMasterDataCRUD';
 import { DataTable } from '@/components/ui/data-table';
 import { TierConfigurationDialog } from './TierConfigurationDialog';
+import { TierConfigurationCard } from './TierConfigurationCard';
 
 export const TierConfigurationsManager: React.FC = () => {
   const { items: tierConfigurations, loading, refreshItems } = useMasterDataCRUD('master_tier_configurations');
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   const columns = [
     { accessorKey: 'pricing_tier_name', header: 'Pricing Tier' },
@@ -65,15 +66,35 @@ export const TierConfigurationsManager: React.FC = () => {
               <DatabaseIcon className="w-5 h-5" />
               Tier Configurations
             </div>
-            <TierConfigurationDialog
-              mode="add"
-              onSuccess={refreshItems}
-            >
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Configuration
-              </Button>
-            </TierConfigurationDialog>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="h-8 px-2"
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8 px-2"
+                >
+                  <Table className="w-4 h-4" />
+                </Button>
+              </div>
+              <TierConfigurationDialog
+                mode="add"
+                onSuccess={refreshItems}
+              >
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Configuration
+                </Button>
+              </TierConfigurationDialog>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -86,12 +107,49 @@ export const TierConfigurationsManager: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Data Table */}
-      <Card>
-        <CardContent>
-          <DataTable columns={columns} data={tierConfigurations} loading={loading} />
-        </CardContent>
-      </Card>
+      {/* Content */}
+      {viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="h-80 animate-pulse">
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted rounded"></div>
+                      <div className="h-3 bg-muted rounded w-2/3"></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : tierConfigurations.length === 0 ? (
+            <div className="col-span-full">
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-muted-foreground">No tier configurations found</p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            tierConfigurations.map((item) => (
+              <TierConfigurationCard
+                key={item.id}
+                item={item}
+                onRefresh={refreshItems}
+              />
+            ))
+          )}
+        </div>
+      ) : (
+        <Card>
+          <CardContent>
+            <DataTable columns={columns} data={tierConfigurations} loading={loading} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
