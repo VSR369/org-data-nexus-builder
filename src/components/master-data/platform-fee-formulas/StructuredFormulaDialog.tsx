@@ -39,16 +39,13 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
     base_management_fee: 0,
     base_consulting_fee: 0,
     advance_payment_percentage: 25,
-    challenge_complexity_id: '',
     formula_type: 'structured',
     configuration: {},
     is_active: true,
   });
 
-  const [selectedComplexity, setSelectedComplexity] = useState('');
   const [previewValues, setPreviewValues] = useState({
-    solutionFee: 50000,
-    complexityLevel: 'Medium'
+    solutionFee: 50000
   });
 
   const { items: engagementModels } = useMasterDataCRUD('master_engagement_models');
@@ -71,7 +68,6 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
         base_management_fee: formula.base_management_fee || 0,
         base_consulting_fee: formula.base_consulting_fee || 0,
         advance_payment_percentage: formula.advance_payment_percentage || 25,
-        challenge_complexity_id: formula.challenge_complexity_id || '',
         formula_type: formula.formula_type || 'structured',
         configuration: formula.configuration || {},
         is_active: formula.is_active !== false,
@@ -89,7 +85,6 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
         base_management_fee: 0,
         base_consulting_fee: 0,
         advance_payment_percentage: 25,
-        challenge_complexity_id: '',
         formula_type: 'structured',
         configuration: {},
         is_active: true,
@@ -144,7 +139,6 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
   }, [formData.country_id, countries, currencies]);
 
   const selectedEngagementModel = engagementModels.find(m => m.id === formData.engagement_model_id);
-  const selectedComplexityData = complexityLevels.find(c => c.name === previewValues.complexityLevel);
   const selectedCountry = countries.find(c => c.id === formData.country_id);
   const selectedCurrency = currencies.find(c => c.id === formData.currency_id);
   const selectedSubtype = engagementModelSubtypes.find(s => s.id === formData.engagement_model_subtype_id);
@@ -276,24 +270,6 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="challenge_complexity">Challenge Complexity *</Label>
-                    <Select
-                      value={formData.challenge_complexity_id}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, challenge_complexity_id: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select challenge complexity" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {complexityLevels.map((level: any) => (
-                          <SelectItem key={level.id} value={level.id}>
-                            {level.name} (Management: ×{level.management_fee_multiplier}, Consulting: ×{level.consulting_fee_multiplier})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>

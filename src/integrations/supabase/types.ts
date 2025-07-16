@@ -1005,7 +1005,6 @@ export type Database = {
           advance_payment_percentage: number | null
           base_consulting_fee: number | null
           base_management_fee: number | null
-          challenge_complexity_id: string | null
           configuration: Json | null
           country_id: string | null
           created_at: string
@@ -1029,7 +1028,6 @@ export type Database = {
           advance_payment_percentage?: number | null
           base_consulting_fee?: number | null
           base_management_fee?: number | null
-          challenge_complexity_id?: string | null
           configuration?: Json | null
           country_id?: string | null
           created_at?: string
@@ -1053,7 +1051,6 @@ export type Database = {
           advance_payment_percentage?: number | null
           base_consulting_fee?: number | null
           base_management_fee?: number | null
-          challenge_complexity_id?: string | null
           configuration?: Json | null
           country_id?: string | null
           created_at?: string
@@ -1074,13 +1071,6 @@ export type Database = {
           version?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "master_platform_fee_formulas_challenge_complexity_id_fkey"
-            columns: ["challenge_complexity_id"]
-            isOneToOne: false
-            referencedRelation: "master_challenge_complexity"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "master_platform_fee_formulas_country_id_fkey"
             columns: ["country_id"]
