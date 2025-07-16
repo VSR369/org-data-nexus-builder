@@ -221,6 +221,12 @@ export const pricingConfigurationMenuItems = [
     title: 'Tier Engagement Restrictions',
     icon: Lock,
     description: 'Manage tier-based access control for engagement models'
+  },
+  {
+    id: 'pricing-configurations',
+    title: 'Pricing Configurations List',
+    icon: DollarSign,
+    description: 'View and manage pricing configurations in an organized card layout'
   }
 ];
 

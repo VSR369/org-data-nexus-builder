@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, Plus, Upload, Download, BarChart3, Settings } from 'lucide-react';
+import { DollarSign, Plus, Upload, Download, BarChart3, Settings, Grid, List } from 'lucide-react';
 import { PricingConfigurationFilters } from './PricingConfigurationFilters';
 import { PricingConfigurationGrid } from './PricingConfigurationGrid';
+import { PricingConfigurationsList } from './PricingConfigurationsList';
 import { PricingConfigurationStats } from './PricingConfigurationStats';
 import { EnhancedPricingConfigurationDialog } from './EnhancedPricingConfigurationDialog';
 import { usePricingConfiguration } from '../../../hooks/usePricingConfiguration';
@@ -14,6 +15,7 @@ const EngagementPricingManager: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
   const [activeTab, setActiveTab] = useState('configurations');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   
   const {
     configurations,
@@ -132,25 +134,62 @@ const EngagementPricingManager: React.FC = () => {
         </TabsList>
 
         <TabsContent value="configurations" className="space-y-4">
-          {/* Filters */}
-          <PricingConfigurationFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            masterData={masterData}
-            loading={loading}
-          />
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="h-4 w-4 mr-2" />
+              Grid View
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4 mr-2" />
+              List View
+            </Button>
+          </div>
 
-          {/* Configuration Grid */}
-          <PricingConfigurationGrid
-            configurations={configurations}
-            loading={loading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDuplicate={(config) => {
-              setEditingConfig({ ...config, id: null });
-              setIsDialogOpen(true);
-            }}
-          />
+          {viewMode === 'grid' ? (
+            <>
+              {/* Filters */}
+              <PricingConfigurationFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                masterData={masterData}
+                loading={loading}
+              />
+
+              {/* Configuration Grid */}
+              <PricingConfigurationGrid
+                configurations={configurations}
+                loading={loading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onDuplicate={(config) => {
+                  setEditingConfig({ ...config, id: null });
+                  setIsDialogOpen(true);
+                }}
+              />
+            </>
+          ) : (
+            /* Configuration List */
+            <PricingConfigurationsList
+              configurations={configurations}
+              loading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onDuplicate={(config) => {
+                setEditingConfig({ ...config, id: null });
+                setIsDialogOpen(true);
+              }}
+              masterData={masterData}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="analytics">

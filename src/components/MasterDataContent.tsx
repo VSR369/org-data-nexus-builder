@@ -77,6 +77,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <UnitsOfMeasureConfig />;
       case 'pricing':
         return <EngagementPricingManager />;
+      case 'pricing-configurations':
+        return <EngagementPricingManager />;
       case 'events-calendar':
         return <EventsCalendarConfig />;
       case 'global-cache-manager':
