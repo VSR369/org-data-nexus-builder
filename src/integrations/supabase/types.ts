@@ -1007,10 +1007,13 @@ export type Database = {
           base_management_fee: number | null
           challenge_complexity_id: string | null
           configuration: Json | null
+          country_id: string | null
           created_at: string
           created_by: string | null
+          currency_id: string | null
           description: string | null
           engagement_model_id: string
+          engagement_model_subtype_id: string | null
           formula_expression: string
           formula_name: string
           formula_type: string | null
@@ -1028,10 +1031,13 @@ export type Database = {
           base_management_fee?: number | null
           challenge_complexity_id?: string | null
           configuration?: Json | null
+          country_id?: string | null
           created_at?: string
           created_by?: string | null
+          currency_id?: string | null
           description?: string | null
           engagement_model_id: string
+          engagement_model_subtype_id?: string | null
           formula_expression: string
           formula_name: string
           formula_type?: string | null
@@ -1049,10 +1055,13 @@ export type Database = {
           base_management_fee?: number | null
           challenge_complexity_id?: string | null
           configuration?: Json | null
+          country_id?: string | null
           created_at?: string
           created_by?: string | null
+          currency_id?: string | null
           description?: string | null
           engagement_model_id?: string
+          engagement_model_subtype_id?: string | null
           formula_expression?: string
           formula_name?: string
           formula_type?: string | null
@@ -1073,10 +1082,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "master_platform_fee_formulas_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "master_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_platform_fee_formulas_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["country_id"]
+          },
+          {
+            foreignKeyName: "master_platform_fee_formulas_currency_id_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "master_currencies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "master_platform_fee_formulas_engagement_model_id_fkey"
             columns: ["engagement_model_id"]
             isOneToOne: false
             referencedRelation: "master_engagement_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_platform_fee_formulas_engagement_model_subtype_id_fkey"
+            columns: ["engagement_model_subtype_id"]
+            isOneToOne: false
+            referencedRelation: "master_engagement_model_subtypes"
             referencedColumns: ["id"]
           },
         ]

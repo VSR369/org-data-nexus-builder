@@ -107,7 +107,10 @@ export function useMasterDataCRUD(tableName: TableName) {
           .from(tableName)
           .select(`
             *,
-            engagement_model:master_engagement_models(name)
+            engagement_model:master_engagement_models(name),
+            country:master_countries(name),
+            currency:master_currencies(name, code, symbol),
+            engagement_model_subtype:master_engagement_model_subtypes(name)
           `)
           .order('created_at', { ascending: false });
       } else {
@@ -137,10 +140,15 @@ export function useMasterDataCRUD(tableName: TableName) {
         }));
         setItems(processedData || []);
       } else if (tableName === 'master_platform_fee_formulas' && data) {
-        // For platform fee formulas, flatten the joined data to include readable engagement model name
+        // For platform fee formulas, flatten the joined data to include readable names
         const processedData = data.map((item: any) => ({
           ...item,
-          engagement_model_name: item.engagement_model?.name || 'Unknown Model'
+          engagement_model_name: item.engagement_model?.name || 'Unknown Model',
+          country_name: item.country?.name || 'Unknown Country',
+          currency_name: item.currency?.name || 'Unknown Currency',
+          currency_code: item.currency?.code || 'USD',
+          currency_symbol: item.currency?.symbol || '$',
+          engagement_model_subtype_name: item.engagement_model_subtype?.name || null
         }));
         setItems(processedData || []);
       } else {

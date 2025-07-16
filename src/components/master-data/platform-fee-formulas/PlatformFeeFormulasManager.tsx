@@ -75,9 +75,30 @@ export const PlatformFeeFormulasManager: React.FC = () => {
       accessorKey: 'engagement_model_name',
       header: 'Engagement Model',
       cell: ({ row }: any) => (
-        <span className="font-medium">
-          {row.original.engagement_model_name || 'Unknown Model'}
-        </span>
+        <div>
+          <span className="font-medium">
+            {row.original.engagement_model_name || 'Unknown Model'}
+          </span>
+          {row.original.engagement_model_subtype_name && (
+            <div className="text-xs text-muted-foreground">
+              {row.original.engagement_model_subtype_name}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'country_name',
+      header: 'Country',
+      cell: ({ row }: any) => (
+        <div>
+          <span className="font-medium">
+            {row.original.country_name || 'Unknown Country'}
+          </span>
+          <div className="text-xs text-muted-foreground">
+            {row.original.currency_name} ({row.original.currency_symbol})
+          </div>
+        </div>
       ),
     },
     {
@@ -115,12 +136,12 @@ export const PlatformFeeFormulasManager: React.FC = () => {
               )}
               {row.original.base_management_fee > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  Management: ${row.original.base_management_fee}
+                  Management: {row.original.currency_symbol}{row.original.base_management_fee}
                 </Badge>
               )}
               {row.original.base_consulting_fee > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  Consulting: ${row.original.base_consulting_fee}
+                  Consulting: {row.original.currency_symbol}{row.original.base_consulting_fee}
                 </Badge>
               )}
             </div>

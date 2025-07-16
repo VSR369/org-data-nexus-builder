@@ -16,6 +16,7 @@ interface FeeCalculationPreviewProps {
   onPreviewValuesChange: (values: any) => void;
   complexityLevels: any[];
   engagementModel?: any;
+  selectedCurrency?: any;
 }
 
 export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
@@ -24,6 +25,7 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
   onPreviewValuesChange,
   complexityLevels,
   engagementModel,
+  selectedCurrency,
 }) => {
   const [calculationResult, setCalculationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -57,13 +59,12 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
       if (engagementModel) {
         switch (engagementModel.name) {
           case 'Market Place':
-            totalFee = platformUsageFee + managementFee;
+            // Check if consulting fee should be included based on subtype
+            const includeConsultingFee = formula.base_consulting_fee > 0;
+            totalFee = platformUsageFee + managementFee + (includeConsultingFee ? consultingFee : 0);
             break;
           case 'Market Place & Aggregator':
             totalFee = platformUsageFee + managementFee + consultingFee;
-            break;
-          case 'Platform as a Service':
-            totalFee = platformUsageFee + consultingFee;
             break;
           default: // Aggregator
             totalFee = platformUsageFee;
@@ -98,9 +99,10 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
+    const currency = selectedCurrency?.code || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -113,13 +115,19 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="w-5 h-5" />
-            Preview Calculator
+            Testing Calculator
           </CardTitle>
+          <div className="flex items-center gap-2 mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+            <Calculator className="w-4 h-4 text-blue-600" />
+            <p className="text-sm text-blue-700">
+              Testing: Solution Fee - Enter amount for calculation testing (not saved to database)
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="solution_fee">Solution Fee</Label>
+              <Label htmlFor="solution_fee">Testing: Solution Fee</Label>
               <Input
                 id="solution_fee"
                 type="number"
@@ -130,6 +138,9 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
                 })}
                 placeholder="50000"
               />
+              <p className="text-xs text-muted-foreground">
+                Currency: {selectedCurrency?.name || 'USD'} ({selectedCurrency?.symbol || '$'})
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -178,6 +189,12 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
               <DollarSign className="w-5 h-5" />
               Calculation Results
             </CardTitle>
+            <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+              <DollarSign className="w-4 h-4 text-green-600" />
+              <p className="text-sm text-green-700">
+                Results are for display only. Actual calculations happen during challenge creation.
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Fee Breakdown */}
