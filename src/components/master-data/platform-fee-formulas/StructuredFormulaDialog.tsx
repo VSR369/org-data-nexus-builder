@@ -119,10 +119,16 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
       }
     }
     
-    onSave({
+    // Convert empty strings to null for UUID fields to prevent database errors
+    const processedFormData = {
       ...formData,
+      country_id: formData.country_id || null,
+      currency_id: formData.currency_id || null,
+      engagement_model_subtype_id: formData.engagement_model_subtype_id || null,
       formula_expression: expression
-    });
+    };
+    
+    onSave(processedFormData);
   };
 
   // Auto-populate currency when country changes
