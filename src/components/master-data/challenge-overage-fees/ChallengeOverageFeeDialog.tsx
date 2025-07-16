@@ -247,10 +247,6 @@ export const ChallengeOverageFeeDialog: React.FC<ChallengeOverageFeeDialogProps>
           <Button 
             variant={mode === 'delete' ? 'destructive' : 'default'} 
             size="sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
           >
             {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
             {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
