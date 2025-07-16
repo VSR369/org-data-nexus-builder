@@ -94,11 +94,9 @@ export const PlatformFeeFormulasManager: React.FC = () => {
           <Badge variant="outline" className="text-xs">
             Platform Usage: {row.platform_usage_fee_percentage || 0}%
           </Badge>
-          {row.membership_discount_percentage > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              Membership Discount: {row.membership_discount_percentage}%
-            </Badge>
-          )}
+          <Badge variant="secondary" className="text-xs">
+            Membership Discount: {row.membership_discount_percentage || 0}%
+          </Badge>
         </div>
       );
     } else if (engagementModel === 'Market Place') {
@@ -119,11 +117,9 @@ export const PlatformFeeFormulasManager: React.FC = () => {
               Consulting: {row.currency_symbol}{row.base_consulting_fee}
             </Badge>
           )}
-          {row.membership_discount_percentage > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              Membership Discount: {row.membership_discount_percentage}%
-            </Badge>
-          )}
+          <Badge variant="secondary" className="text-xs">
+            Membership Discount: {row.membership_discount_percentage || 0}%
+          </Badge>
         </div>
       );
     }
