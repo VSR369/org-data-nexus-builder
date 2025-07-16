@@ -361,7 +361,7 @@ export const useEngagementModelSubtypes = () => useMasterDataCRUD('master_engage
 export const useFeeComponents = () => useMasterDataCRUD('master_fee_components');
 export const usePlatformFeeFormulas = () => useMasterDataCRUD('master_platform_fee_formulas');
 export const useAdvancePaymentTypes = () => useMasterDataCRUD('master_advance_payment_types');
-export const useTierEngagementModelRestrictions = () => useMasterDataCRUD('tier_engagement_model_restrictions');
+export const useTierEngagementModelAccess = () => useMasterDataCRUD('master_tier_engagement_model_access');
 
 export const useSystemConfigurations = () => useMasterDataCRUD('master_system_configurations');
 export const useChallengeComplexity = () => useMasterDataCRUD('master_challenge_complexity');

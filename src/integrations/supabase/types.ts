@@ -1992,6 +1992,8 @@ export type Database = {
       }
       master_tier_engagement_model_access: {
         Row: {
+          allows_multiple_challenges: boolean
+          business_rules: Json | null
           created_at: string
           created_by: string | null
           engagement_model_id: string
@@ -2000,12 +2002,17 @@ export type Database = {
           is_allowed: boolean
           is_default: boolean
           is_user_created: boolean | null
+          max_concurrent_models: number
           pricing_tier_id: string
+          selection_scope: string
           selection_type: string
+          switch_requirements: string
           updated_at: string
           version: number | null
         }
         Insert: {
+          allows_multiple_challenges?: boolean
+          business_rules?: Json | null
           created_at?: string
           created_by?: string | null
           engagement_model_id: string
@@ -2014,12 +2021,17 @@ export type Database = {
           is_allowed?: boolean
           is_default?: boolean
           is_user_created?: boolean | null
+          max_concurrent_models?: number
           pricing_tier_id: string
+          selection_scope?: string
           selection_type?: string
+          switch_requirements?: string
           updated_at?: string
           version?: number | null
         }
         Update: {
+          allows_multiple_challenges?: boolean
+          business_rules?: Json | null
           created_at?: string
           created_by?: string | null
           engagement_model_id?: string
@@ -2028,8 +2040,11 @@ export type Database = {
           is_allowed?: boolean
           is_default?: boolean
           is_user_created?: boolean | null
+          max_concurrent_models?: number
           pricing_tier_id?: string
+          selection_scope?: string
           selection_type?: string
+          switch_requirements?: string
           updated_at?: string
           version?: number | null
         }
@@ -2803,6 +2818,10 @@ export type Database = {
         }
         Returns: number
       }
+      check_active_challenges_for_user: {
+        Args: { user_id_param: string }
+        Returns: number
+      }
       check_fee_component_dependencies: {
         Args: { component_id: string }
         Returns: Json
@@ -2840,8 +2859,20 @@ export type Database = {
           ordinal_position: number
         }[]
       }
+      get_user_current_global_model: {
+        Args: { user_id_param: string }
+        Returns: Json
+      }
       safe_delete_fee_component: {
         Args: { component_id: string; cascade_delete?: boolean }
+        Returns: Json
+      }
+      validate_engagement_model_switch: {
+        Args: {
+          user_id_param: string
+          tier_id_param: string
+          new_model_id: string
+        }
         Returns: Json
       }
     }

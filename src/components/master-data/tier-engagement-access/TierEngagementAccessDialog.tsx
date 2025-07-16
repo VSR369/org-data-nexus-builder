@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,6 +31,11 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
     is_allowed: true,
     is_default: false,
     selection_type: 'per_challenge',
+    selection_scope: 'per_challenge',
+    max_concurrent_models: 1,
+    switch_requirements: 'none',
+    allows_multiple_challenges: true,
+    business_rules: {},
     is_active: true
   });
   
@@ -47,6 +54,11 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
         is_allowed: item.is_allowed ?? true,
         is_default: item.is_default ?? false,
         selection_type: item.selection_type || 'per_challenge',
+        selection_scope: item.selection_scope || 'per_challenge',
+        max_concurrent_models: item.max_concurrent_models || 1,
+        switch_requirements: item.switch_requirements || 'none',
+        allows_multiple_challenges: item.allows_multiple_challenges ?? true,
+        business_rules: item.business_rules || {},
         is_active: item.is_active ?? true
       });
     }
@@ -201,6 +213,97 @@ export const TierEngagementAccessDialog: React.FC<TierEngagementAccessDialogProp
             </Select>
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="selection_scope">Selection Scope</Label>
+            <Select
+              value={formData.selection_scope}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, selection_scope: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="global">Global (Basic Tier)</SelectItem>
+                <SelectItem value="per_challenge">Per Challenge (Standard/Premium)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="max_concurrent_models">Max Concurrent Models</Label>
+            <Input
+              id="max_concurrent_models"
+              type="number"
+              min="1"
+              max="999"
+              value={formData.max_concurrent_models}
+              onChange={(e) => setFormData(prev => ({ ...prev, max_concurrent_models: parseInt(e.target.value) || 1 }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="switch_requirements">Switch Requirements</Label>
+            <Select
+              value={formData.switch_requirements}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, switch_requirements: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select requirements" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no_active_challenges">No Active Challenges (Basic)</SelectItem>
+                <SelectItem value="pause_all">Pause All Active</SelectItem>
+                <SelectItem value="complete_all">Complete All Active</SelectItem>
+                <SelectItem value="none">None (Standard/Premium)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center space-x-2 mt-6">
+            <Switch
+              id="allows_multiple_challenges"
+              checked={formData.allows_multiple_challenges}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allows_multiple_challenges: checked }))}
+            />
+            <Label htmlFor="allows_multiple_challenges">Allows Multiple Challenges</Label>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="business_rules">Business Rules (JSON)</Label>
+          <Textarea
+            id="business_rules"
+            placeholder='{"description": "Tier-specific rules", "restrictions": []}'
+            value={JSON.stringify(formData.business_rules, null, 2)}
+            onChange={(e) => {
+              try {
+                const parsed = JSON.parse(e.target.value || '{}');
+                setFormData(prev => ({ ...prev, business_rules: parsed }));
+              } catch (error) {
+                // Keep the text as-is if not valid JSON
+              }
+            }}
+            className="min-h-[100px] font-mono text-sm"
+          />
+        </div>
+
+        {formData.selection_scope === 'global' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-2">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-900">Basic Tier Rules</h4>
+                <ul className="text-sm text-blue-800 mt-1 space-y-1">
+                  <li>• Multiple challenges allowed but only one global engagement model</li>
+                  <li>• Must complete/pause all active challenges before switching models</li>
+                  <li>• Selected model applies to all challenges within the tier</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
