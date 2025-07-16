@@ -194,7 +194,7 @@ export const pricingConfigurationMenuItems = [
   },
   {
     id: 'pricing-parameters',
-    title: 'Pricing Parameters',
+    title: 'Management Fee',
     icon: Calculator,
     description: 'Configure country/currency-specific pricing parameters'
   },
