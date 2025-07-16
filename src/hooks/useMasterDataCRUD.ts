@@ -115,6 +115,39 @@ export function useMasterDataCRUD(tableName: TableName) {
             engagement_model_subtype:master_engagement_model_subtypes(name)
           `)
           .order('created_at', { ascending: false });
+      } else if (tableName === 'master_tier_configurations') {
+        query = supabase
+          .from(tableName)
+          .select(`
+            *,
+            pricing_tier:master_pricing_tiers(name),
+            country:master_countries(name),
+            currency:master_currencies(name, code, symbol),
+            analytics_access:master_analytics_access_types(name),
+            onboarding_type:master_onboarding_types(name),
+            support_type:master_support_types(name),
+            workflow_template:master_workflow_templates(name)
+          `)
+          .order('created_at', { ascending: false });
+      } else if (tableName === 'master_tier_engagement_model_access') {
+        query = supabase
+          .from(tableName)
+          .select(`
+            *,
+            pricing_tier:master_pricing_tiers(name),
+            engagement_model:master_engagement_models(name)
+          `)
+          .order('created_at', { ascending: false });
+      } else if (tableName === 'master_challenge_overage_fees') {
+        query = supabase
+          .from(tableName)
+          .select(`
+            *,
+            country:master_countries(name),
+            currency:master_currencies(name, code, symbol),
+            pricing_tier:master_pricing_tiers(name)
+          `)
+          .order('created_at', { ascending: false });
       } else {
         // Default case for other tables
         query = supabase
@@ -151,6 +184,37 @@ export function useMasterDataCRUD(tableName: TableName) {
           console.log('Processed item:', processed);
           return processed;
         });
+        setItems(processedData || []);
+      } else if (tableName === 'master_tier_configurations' && data) {
+        const processedData = data.map((item: any) => ({
+          ...item,
+          pricing_tier_name: item.pricing_tier?.name || 'Unknown Tier',
+          country_name: item.country?.name || 'Unknown Country',
+          currency_name: item.currency?.name || 'Unknown Currency',
+          currency_code: item.currency?.code || 'USD',
+          currency_symbol: item.currency?.symbol || '$',
+          analytics_access_name: item.analytics_access?.name || null,
+          onboarding_type_name: item.onboarding_type?.name || null,
+          support_type_name: item.support_type?.name || null,
+          workflow_template_name: item.workflow_template?.name || null
+        }));
+        setItems(processedData || []);
+      } else if (tableName === 'master_tier_engagement_model_access' && data) {
+        const processedData = data.map((item: any) => ({
+          ...item,
+          pricing_tier_name: item.pricing_tier?.name || 'Unknown Tier',
+          engagement_model_name: item.engagement_model?.name || 'Unknown Model'
+        }));
+        setItems(processedData || []);
+      } else if (tableName === 'master_challenge_overage_fees' && data) {
+        const processedData = data.map((item: any) => ({
+          ...item,
+          country_name: item.country?.name || 'Unknown Country',
+          currency_name: item.currency?.name || 'Unknown Currency',
+          currency_code: item.currency?.code || 'USD',
+          currency_symbol: item.currency?.symbol || '$',
+          pricing_tier_name: item.pricing_tier?.name || 'Unknown Tier'
+        }));
         setItems(processedData || []);
       } else {
         setItems((data as MasterDataItem[]) || []);
