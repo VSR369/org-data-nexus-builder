@@ -27,6 +27,16 @@ import SeekingOrgValidationDashboard from "./master-data/solution-seekers/Seekin
 import MigrationTester from "./MigrationTester";
 import MasterDataTableTester from "./master-data/MasterDataTableTester";
 
+// Tier-based pricing master data components
+import { SupportTypesManager } from "./master-data/support-types/SupportTypesManager";
+import { AnalyticsAccessTypesManager } from "./master-data/analytics-access-types/AnalyticsAccessTypesManager";
+import { WorkflowTemplatesManager } from "./master-data/workflow-templates/WorkflowTemplatesManager";
+import { OnboardingTypesManager } from "./master-data/onboarding-types/OnboardingTypesManager";
+import { TierConfigurationsManager } from "./master-data/tier-configurations/TierConfigurationsManager";
+import { TierEngagementAccessManager } from "./master-data/tier-engagement-access/TierEngagementAccessManager";
+import { ChallengeOverageFeesManager } from "./master-data/challenge-overage-fees/ChallengeOverageFeesManager";
+import { SystemFeatureAccessManager } from "./master-data/system-feature-access/SystemFeatureAccessManager";
+
 interface MasterDataContentProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
@@ -164,77 +174,21 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
           </React.Suspense>
         );
       case 'support-types':
-        const SupportTypesManager = React.lazy(() => 
-          import('./master-data/support-types/SupportTypesManager').then(m => ({ default: m.SupportTypesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <SupportTypesManager />
-          </React.Suspense>
-        );
+        return <SupportTypesManager />;
       case 'analytics-access-types':
-        const AnalyticsAccessTypesManager = React.lazy(() => 
-          import('./master-data/analytics-access-types/AnalyticsAccessTypesManager').then(m => ({ default: m.AnalyticsAccessTypesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <AnalyticsAccessTypesManager />
-          </React.Suspense>
-        );
+        return <AnalyticsAccessTypesManager />;
       case 'workflow-templates':
-        const WorkflowTemplatesManager = React.lazy(() => 
-          import('./master-data/workflow-templates/WorkflowTemplatesManager').then(m => ({ default: m.WorkflowTemplatesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <WorkflowTemplatesManager />
-          </React.Suspense>
-        );
+        return <WorkflowTemplatesManager />;
       case 'onboarding-types':
-        const OnboardingTypesManager = React.lazy(() => 
-          import('./master-data/onboarding-types/OnboardingTypesManager').then(m => ({ default: m.OnboardingTypesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <OnboardingTypesManager />
-          </React.Suspense>
-        );
+        return <OnboardingTypesManager />;
       case 'tier-configurations':
-        const TierConfigurationsManager = React.lazy(() => 
-          import('./master-data/tier-configurations/TierConfigurationsManager').then(m => ({ default: m.TierConfigurationsManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <TierConfigurationsManager />
-          </React.Suspense>
-        );
+        return <TierConfigurationsManager />;
       case 'tier-engagement-access':
-        const TierEngagementAccessManager = React.lazy(() => 
-          import('./master-data/tier-engagement-access/TierEngagementAccessManager').then(m => ({ default: m.TierEngagementAccessManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <TierEngagementAccessManager />
-          </React.Suspense>
-        );
+        return <TierEngagementAccessManager />;
       case 'challenge-overage-fees':
-        const ChallengeOverageFeesManager = React.lazy(() => 
-          import('./master-data/challenge-overage-fees/ChallengeOverageFeesManager').then(m => ({ default: m.ChallengeOverageFeesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <ChallengeOverageFeesManager />
-          </React.Suspense>
-        );
+        return <ChallengeOverageFeesManager />;
       case 'system-feature-access':
-        const SystemFeatureAccessManager = React.lazy(() => 
-          import('./master-data/system-feature-access/SystemFeatureAccessManager').then(m => ({ default: m.SystemFeatureAccessManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <SystemFeatureAccessManager />
-          </React.Suspense>
-        );
+        return <SystemFeatureAccessManager />;
       default:
         return <MasterDataDiagnostics />;
     }
