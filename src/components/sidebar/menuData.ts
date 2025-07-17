@@ -276,6 +276,12 @@ export const pricingConfigurationMenuItems = [
     description: 'Configure feature access levels by pricing tier'
   },
   {
+    id: 'business-models',
+    title: 'Business Models',
+    icon: Building2,
+    description: 'Consolidated view of tier configurations with engagement model pricing'
+  },
+  {
     id: 'pricing-configurations',
     title: 'Pricing Configurations List',
     icon: DollarSign,
