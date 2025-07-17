@@ -189,6 +189,15 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <ChallengeOverageFeesManager />;
       case 'system-feature-access':
         return <SystemFeatureAccessManager />;
+      case 'business-models':
+        const BusinessModelsManager = React.lazy(() => 
+          import('./master-data/business-models/BusinessModelsManager').then(m => ({ default: m.BusinessModelsManager }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <BusinessModelsManager />
+          </React.Suspense>
+        );
       default:
         return <MasterDataDiagnostics />;
     }
