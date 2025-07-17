@@ -402,21 +402,26 @@ export const TierConfigurationDialog: React.FC<TierConfigurationDialogProps> = (
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button 
-          variant={mode === 'delete' ? 'destructive' : 'default'} 
-          size="sm"
-        >
-          {children || (
-            <>
-              {mode === 'add' && <Plus className="w-4 h-4 mr-2" />}
-              {mode === 'edit' && <Edit className="w-4 h-4 mr-2" />}
-              {mode === 'delete' && <Trash2 className="w-4 h-4 mr-2" />}
-              {mode.charAt(0).toUpperCase() + mode.slice(1)}
-            </>
-          )}
-        </Button>
-      </DialogTrigger>
+      {children ? (
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      ) : (
+        <DialogTrigger asChild>
+          <Button 
+            variant={mode === 'delete' ? 'destructive' : 'default'} 
+            size="sm"
+            className="gap-2"
+          >
+            {mode === 'add' && <Plus className="w-4 h-4" />}
+            {mode === 'edit' && <Edit className="w-4 h-4" />}
+            {mode === 'delete' && <Trash2 className="w-4 h-4" />}
+            {mode === 'add' && 'Add Configuration'}
+            {mode === 'edit' && 'Edit'}
+            {mode === 'delete' && 'Delete'}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>

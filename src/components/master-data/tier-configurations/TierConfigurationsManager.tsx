@@ -61,18 +61,19 @@ export const TierConfigurationsManager: React.FC = () => {
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-2">
               <DatabaseIcon className="w-5 h-5" />
               Tier Configurations
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center border rounded-lg p-1">
                 <Button
                   variant={viewMode === 'cards' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('cards')}
                   className="h-8 px-2"
+                  aria-label="Card view"
                 >
                   <Grid className="w-4 h-4" />
                 </Button>
@@ -81,6 +82,7 @@ export const TierConfigurationsManager: React.FC = () => {
                   size="sm"
                   onClick={() => setViewMode('table')}
                   className="h-8 px-2"
+                  aria-label="Table view"
                 >
                   <Table className="w-4 h-4" />
                 </Button>
@@ -89,9 +91,10 @@ export const TierConfigurationsManager: React.FC = () => {
                 mode="add"
                 onSuccess={refreshItems}
               >
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Configuration
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Add Configuration</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </TierConfigurationDialog>
             </div>

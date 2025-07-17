@@ -128,9 +128,9 @@ export const TierConfigurationCard: React.FC<TierConfigurationCardProps> = ({ it
             item={item}
             onSuccess={onRefresh}
           >
-            <Button variant="outline" size="sm">
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
+            <Button variant="outline" size="sm" className="gap-1 min-h-[36px]">
+              <Edit className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit</span>
             </Button>
           </TierConfigurationDialog>
           <TierConfigurationDialog
@@ -138,9 +138,9 @@ export const TierConfigurationCard: React.FC<TierConfigurationCardProps> = ({ it
             item={item}
             onSuccess={onRefresh}
           >
-            <Button variant="destructive" size="sm">
-              <Trash2 className="w-4 h-4 mr-1" />
-              Delete
+            <Button variant="destructive" size="sm" className="gap-1 min-h-[36px]">
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Delete</span>
             </Button>
           </TierConfigurationDialog>
         </div>
