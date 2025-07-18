@@ -89,7 +89,7 @@ export class MembershipDataService {
       const { data: countryData } = await supabase
         .from('master_countries')
         .select('id')
-        .ilike('name', tierName)
+        .ilike('name', country)
         .single();
 
       if (!countryData) return null;
@@ -145,7 +145,7 @@ export class MembershipDataService {
         .eq('is_active', true)
         .single();
 
-      return tierConfig?.data || null;
+      return tierConfig || null;
     } catch (error) {
       console.error('Error in getTierConfiguration:', error);
       return null;
