@@ -96,20 +96,29 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const updateWorkflowStep = async (step: WorkflowStep, additionalData: any = {}) => {
     try {
+      const updateData = {
+        user_id: userId,
+        workflow_step: step,
+        country: profile.country,
+        organization_type: profile.organization_type,
+        membership_status: membershipStatus || 'inactive',
+        engagement_model: selectedEngagementModel || 'marketplace',
+        ...additionalData,
+        updated_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('engagement_activations')
-        .upsert({
-          user_id: userId,
-          workflow_step: step,
-          country: profile.country,
-          organization_type: profile.organization_type,
-          ...additionalData,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
+        .upsert(updateData, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upsert error:', error);
+        throw error;
+      }
+      
       setCurrentStep(step);
     } catch (error) {
       console.error('Error updating workflow step:', error);
