@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,19 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, CheckCircle, Users, Zap } from 'lucide-react';
 
-// Import new components
-import { TierSelectionCard } from './TierSelectionCard';
+// Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
 import { EngagementModelDetailCard } from './EngagementModelDetailCard';
 import { ActivationSummaryCard } from './ActivationSummaryCard';
 import { SimpleEngagementModelSelection } from './SimpleEngagementModelSelection';
+import { MembershipSummaryCard } from './MembershipSummaryCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
   userId: string;
 }
 
-type WorkflowStep = 'membership_decision' | 'payment' | 'tier_selection' | 'engagement_model' | 'details_review' | 'activation_complete';
+type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'engagement_model' | 'details_review' | 'activation_complete';
 type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed';
 
 export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProps> = ({ profile, userId }) => {
@@ -133,7 +134,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       if (status === 'active') {
         await updateWorkflowStep('payment', { membership_status: 'active' });
       } else {
-        await updateWorkflowStep('tier_selection', { membership_status: 'inactive' });
+        await updateWorkflowStep('membership_summary', { membership_status: 'inactive' });
       }
     } catch (error) {
       toast({
@@ -155,7 +156,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       const annualFee = membershipFees[0]?.annual_amount || 990;
       const currency = membershipFees[0]?.annual_currency || 'USD';
 
-      await updateWorkflowStep('tier_selection', {
+      await updateWorkflowStep('membership_summary', {
         payment_simulation_status: 'success',
         mem_payment_status: 'paid',
         mem_payment_amount: annualFee,
@@ -188,10 +189,9 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleTierSelection = async (tier: string) => {
     try {
       setSelectedTier(tier);
-      await updateWorkflowStep('engagement_model', {
+      await updateWorkflowStep('membership_summary', {
         pricing_tier: tier,
-        tier_selected_at: new Date().toISOString(),
-        tier_features: getTierFeatures(tier)
+        tier_selected_at: new Date().toISOString()
       });
     } catch (error) {
       toast({
@@ -202,13 +202,27 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const handleProceedToEngagementModel = async () => {
+    try {
+      await updateWorkflowStep('engagement_model', {
+        pricing_tier: selectedTier,
+        tier_confirmed_at: new Date().toISOString()
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to proceed to engagement model selection. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleEngagementModelSelection = async (model: 'marketplace' | 'aggregator') => {
     try {
       setSelectedEngagementModel(model);
       await updateWorkflowStep('details_review', {
         engagement_model: model.charAt(0).toUpperCase() + model.slice(1),
-        engagement_model_selected_at: new Date().toISOString(),
-        engagement_model_details: getEngagementModelDetails(model)
+        engagement_model_selected_at: new Date().toISOString()
       });
     } catch (error) {
       toast({
@@ -222,10 +236,13 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleFinalActivation = async () => {
     setIsProcessing(true);
     try {
+      const selectedTierData = { basic: 990, standard: 2990, premium: 6990 };
+      const finalPrice = selectedTierData[selectedTier as keyof typeof selectedTierData] || 990;
+      
       await updateWorkflowStep('activation_complete', {
         workflow_completed: true,
         activation_status: 'Activated',
-        final_calculated_price: getTierPrice(selectedTier || 'basic'),
+        final_calculated_price: finalPrice,
         currency: membershipFees[0]?.annual_currency || 'USD'
       });
 
@@ -234,7 +251,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: "Your membership has been successfully activated. Welcome to CoInnovator Platform!",
       });
 
-      // Refresh data to show new state
       await loadWorkflowData();
     } catch (error) {
       toast({
@@ -245,29 +261,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const getTierFeatures = (tier: string) => {
-    const features = {
-      basic: ['5 challenges/month', 'Basic analytics', 'Email support'],
-      standard: ['20 challenges/month', 'Advanced analytics', 'Priority support', 'Custom branding'],
-      premium: ['Unlimited challenges', 'Real-time analytics', 'Dedicated manager', 'White-label']
-    };
-    return features[tier as keyof typeof features] || [];
-  };
-
-  const getEngagementModelDetails = (model: string) => {
-    return {
-      type: model,
-      features: model === 'marketplace' ? 
-        ['Direct marketplace access', 'Challenge posting', 'Solution review'] :
-        ['Multi-platform aggregation', 'Unified interface', 'Cross-platform analytics']
-    };
-  };
-
-  const getTierPrice = (tier: string) => {
-    const prices = { basic: 99, standard: 299, premium: 699 };
-    return prices[tier as keyof typeof prices] || 99;
   };
 
   if (loading) {
@@ -318,7 +311,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Render workflow steps with improved layout and spacing
+  // Render workflow steps
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'membership_decision':
@@ -374,14 +367,20 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         }
         return null;
 
-      case 'tier_selection':
-        return (
-          <TierSelectionCard
-            selectedTier={selectedTier}
-            onTierSelect={handleTierSelection}
-            currency={membershipFees[0]?.annual_currency || 'USD'}
-          />
-        );
+      case 'membership_summary':
+        if (membershipStatus) {
+          return (
+            <MembershipSummaryCard
+              membershipStatus={membershipStatus}
+              membershipFees={membershipFees}
+              selectedTier={selectedTier}
+              onTierSelect={handleTierSelection}
+              onProceedToNext={handleProceedToEngagementModel}
+              currency={membershipFees[0]?.annual_currency || 'USD'}
+            />
+          );
+        }
+        return null;
 
       case 'engagement_model':
         if (selectedTier) {
