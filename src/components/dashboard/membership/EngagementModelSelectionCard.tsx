@@ -21,22 +21,6 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
 }) => {
   const { engagementModels, loading, error } = useEngagementModelPricing(selectedTier, profile);
 
-  if (!selectedTier) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-orange-600" />
-            Tier Selection Required
-          </CardTitle>
-          <CardDescription>
-            Please select a pricing tier first before choosing an engagement model.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
   if (loading) {
     return (
       <Card className="w-full">
@@ -75,7 +59,7 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
             No Engagement Models Available
           </CardTitle>
           <CardDescription>
-            No engagement models are available for the {selectedTier} tier in {profile?.country || 'your country'}.
+            No engagement models are available for {profile?.country || 'your country'}.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -87,13 +71,13 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
       <CardHeader>
         <CardTitle>Select Your Engagement Model</CardTitle>
         <CardDescription>
-          Choose the engagement model that best fits your organization's needs for the {selectedTier} tier
+          Choose the engagement model that best fits your organization's needs
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {engagementModels.map((model) => {
-            const isSelected = selectedModel === model.name;
+            const isSelected = selectedModel === model.displayName;
             
             return (
               <div
@@ -103,12 +87,17 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                     ? 'border-primary bg-primary/5 shadow-lg'
                     : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                 }`}
-                onClick={() => onModelSelect(model.name)}
+                onClick={() => onModelSelect(model.displayName)}
               >
                 <div className="space-y-4">
                   {/* Model Header */}
                   <div className="text-center">
-                    <h3 className="text-lg font-semibold mb-2">{model.name}</h3>
+                    <h3 className="text-lg font-semibold mb-2">{model.displayName}</h3>
+                    {model.subtype && (
+                      <Badge variant="outline" className="mb-2">
+                        {model.subtype}
+                      </Badge>
+                    )}
                     {model.description && (
                       <p className="text-sm text-muted-foreground mb-3">{model.description}</p>
                     )}
@@ -185,7 +174,7 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                   <Button
                     variant={isSelected ? "default" : "outline"}
                     className="w-full"
-                    onClick={() => onModelSelect(model.name)}
+                    onClick={() => onModelSelect(model.displayName)}
                   >
                     {isSelected ? (
                       <>
@@ -194,7 +183,7 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                       </>
                     ) : (
                       <>
-                        Select {model.name}
+                        Select {model.displayName}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </>
                     )}

@@ -17,15 +17,9 @@ interface EngagementModelWithPricing {
     membership_discount_percentage: number;
   } | null;
   currency: string;
+  subtype?: string;
+  displayName: string;
 }
-
-// Utility function to convert tier names to proper case for database queries
-const normalizeTierName = (tierName: string): string => {
-  if (!tierName) return '';
-  
-  // Convert to proper case (first letter uppercase, rest lowercase)
-  return tierName.charAt(0).toUpperCase() + tierName.slice(1).toLowerCase();
-};
 
 export const useEngagementModelPricing = (selectedTier: string | null, profile: any) => {
   const [engagementModels, setEngagementModels] = useState<EngagementModelWithPricing[]>([]);
@@ -34,26 +28,16 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
 
   useEffect(() => {
     const fetchEngagementModelsWithPricing = async () => {
-      if (!selectedTier) {
-        setEngagementModels([]);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
-        console.log('🔄 Loading engagement models for tier:', selectedTier);
-
-        // Since all engagement models are available to all tiers, 
-        // we can directly fetch all active engagement models
-        console.log('🔄 Loading all engagement models (tier-agnostic)');
+        console.log('🔄 Loading engagement models with subtypes');
 
         // Fetch all active engagement models
         const { data: allModels, error: modelsError } = await supabase
           .from('master_engagement_models')
           .select('*')
-          .eq('is_user_created', false) // Only get system models
+          .eq('is_user_created', false)
           .order('name');
 
         if (modelsError) {
@@ -68,12 +52,10 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
           return;
         }
 
-        console.log('✅ Found engagement models:', allModels);
-
-        // Get engagement model IDs
-        const engagementModelIds = allModels.map(model => model.id);
-
-        // Fetch platform fee formulas for these engagement models
+        // Get country for filtering formulas
+        const profileCountry = profile?.country || 'India';
+        
+        // Fetch platform fee formulas with subtype information
         const { data: formulas, error: formulaError } = await supabase
           .from('master_platform_fee_formulas')
           .select(`
@@ -85,15 +67,24 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
             base_consulting_fee,
             advance_payment_percentage,
             membership_discount_percentage,
-            engagement_model_id
+            engagement_model_id,
+            engagement_model_subtype_id,
+            country_id,
+            master_engagement_model_subtypes!inner(
+              id,
+              name,
+              description
+            ),
+            master_countries!inner(
+              name
+            )
           `)
-          .in('engagement_model_id', engagementModelIds)
           .eq('is_active', true)
-          .eq('formula_type', 'structured');
+          .eq('formula_type', 'structured')
+          .eq('master_countries.name', profileCountry);
 
         if (formulaError) {
           console.error('❌ Error loading formulas:', formulaError);
-          // Continue without formulas rather than failing completely
         }
 
         // Get currency for the country
@@ -110,16 +101,76 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
           }
         }
 
-        // Combine the data
-        const modelsWithPricing: EngagementModelWithPricing[] = allModels
-          .map(model => {
-            if (!model) return null;
+        // Create engagement models array with subtypes
+        const modelsWithPricing: EngagementModelWithPricing[] = [];
 
-            const formula = formulas?.find(f => f.engagement_model_id === model.id);
+        allModels.forEach(model => {
+          if (model.name === 'Market Place') {
+            // For Market Place, create separate entries for General and Program Managed
+            const generalFormula = formulas?.find(f => 
+              f.engagement_model_id === model.id && 
+              f.master_engagement_model_subtypes?.name === 'General'
+            );
+            
+            const programManagedFormula = formulas?.find(f => 
+              f.engagement_model_id === model.id && 
+              f.master_engagement_model_subtypes?.name === 'Program Managed'
+            );
 
-            return {
+            // Add Market Place General
+            if (generalFormula) {
+              modelsWithPricing.push({
+                id: `${model.id}-general`,
+                name: 'Market Place',
+                displayName: 'Market Place General',
+                description: 'Direct marketplace access with general support',
+                subtype: 'General',
+                formula: {
+                  id: generalFormula.id,
+                  formula_name: generalFormula.formula_name,
+                  formula_expression: generalFormula.formula_expression,
+                  platform_usage_fee_percentage: generalFormula.platform_usage_fee_percentage || 0,
+                  base_management_fee: generalFormula.base_management_fee || 0,
+                  base_consulting_fee: generalFormula.base_consulting_fee || 0,
+                  advance_payment_percentage: generalFormula.advance_payment_percentage || 0,
+                  membership_discount_percentage: generalFormula.membership_discount_percentage || 0,
+                },
+                currency
+              });
+            }
+
+            // Add Market Place Program Managed
+            if (programManagedFormula) {
+              modelsWithPricing.push({
+                id: `${model.id}-program-managed`,
+                name: 'Market Place',
+                displayName: 'Market Place Program Managed',
+                description: 'Marketplace access with comprehensive program management',
+                subtype: 'Program Managed',
+                formula: {
+                  id: programManagedFormula.id,
+                  formula_name: programManagedFormula.formula_name,
+                  formula_expression: programManagedFormula.formula_expression,
+                  platform_usage_fee_percentage: programManagedFormula.platform_usage_fee_percentage || 0,
+                  base_management_fee: programManagedFormula.base_management_fee || 0,
+                  base_consulting_fee: programManagedFormula.base_consulting_fee || 0,
+                  advance_payment_percentage: programManagedFormula.advance_payment_percentage || 0,
+                  membership_discount_percentage: programManagedFormula.membership_discount_percentage || 0,
+                },
+                currency
+              });
+            }
+          } else {
+            // For other models, add them as single entries
+            const formula = formulas?.find(f => 
+              f.engagement_model_id === model.id && 
+              !f.engagement_model_subtype_id // Models without subtypes
+            );
+
+            modelsWithPricing.push({
               id: model.id,
               name: model.name,
+              displayName: model.name,
               description: model.description,
               formula: formula ? {
                 id: formula.id,
@@ -132,11 +183,11 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
                 membership_discount_percentage: formula.membership_discount_percentage || 0,
               } : null,
               currency
-            };
-          })
-          .filter(Boolean) as EngagementModelWithPricing[];
+            });
+          }
+        });
 
-        console.log('✅ Loaded engagement models with pricing:', modelsWithPricing.length);
+        console.log('✅ Loaded engagement models with subtypes:', modelsWithPricing.length);
         setEngagementModels(modelsWithPricing);
 
       } catch (err) {
