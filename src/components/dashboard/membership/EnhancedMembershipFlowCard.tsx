@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle, Eye } from 'lucide-react';
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
@@ -14,6 +14,7 @@ import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
 import { SelectedTierSummaryCard } from './SelectedTierSummaryCard';
 import { MembershipDetailsModal } from './MembershipDetailsModal';
 import { PreviewConfirmationCard } from './PreviewConfirmationCard';
+import { EnrollmentDetailsView } from './EnrollmentDetailsView';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -30,12 +31,14 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [showTierSelection, setShowTierSelection] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
+  const [engagementModelPricing, setEngagementModelPricing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -116,6 +119,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
       setMembershipFees(membershipFeesData || []);
       console.log('💰 Loaded membership fees:', membershipFeesData?.length || 0);
+
+      // Load engagement model pricing if tier and model are selected
+      if (existingActivation?.pricing_tier && existingActivation?.engagement_model) {
+        await loadEngagementModelPricing(existingActivation.pricing_tier, existingActivation.engagement_model);
+      }
       
     } catch (error) {
       console.error('❌ Error loading workflow data:', error);
@@ -126,6 +134,39 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEngagementModelPricing = async (tier: string, model: string) => {
+    try {
+      console.log('💰 Loading engagement model pricing for:', { tier, model });
+      
+      // Mock pricing data for demonstration
+      const mockPricing = [
+        {
+          id: '1',
+          config_name: 'Platform Fee',
+          base_value: 2500,
+          calculated_value: 2250,
+          currency_code: 'USD',
+          membership_discount: 10,
+          unit_symbol: '$'
+        },
+        {
+          id: '2',
+          config_name: 'Management Fee',
+          base_value: 1500,
+          calculated_value: 1350,
+          currency_code: 'USD',
+          membership_discount: 10,
+          unit_symbol: '$'
+        }
+      ];
+      
+      setEngagementModelPricing(mockPricing);
+      console.log('💰 Loaded engagement model pricing:', mockPricing.length);
+    } catch (error) {
+      console.error('❌ Error loading engagement model pricing:', error);
     }
   };
 
@@ -472,8 +513,21 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // If workflow is complete, show summary
+  // If workflow is complete, show summary or detailed view
   if (currentStep === 'activation_complete') {
+    if (showDetails) {
+      return (
+        <EnrollmentDetailsView
+          membershipStatus={membershipStatus}
+          selectedTier={selectedTier}
+          selectedEngagementModel={selectedEngagementModel}
+          membershipFees={membershipFees}
+          engagementModelPricing={engagementModelPricing}
+          onBack={() => setShowDetails(false)}
+        />
+      );
+    }
+
     return (
       <Card className="w-full border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
         <CardHeader>
@@ -500,7 +554,14 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               <div className="font-medium">{selectedEngagementModel || 'Not Selected'}</div>
             </div>
           </div>
-          <div className="text-center">
+          <div className="flex justify-center gap-4">
+            <Button 
+              onClick={() => setShowDetails(true)}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              View Details
+            </Button>
             <Button onClick={() => window.location.reload()} variant="outline">
               Refresh Dashboard
             </Button>
