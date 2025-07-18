@@ -9,18 +9,17 @@ import { ArrowRight, CheckCircle, Users, Zap } from 'lucide-react';
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
-import { EngagementModelDetailCard } from './EngagementModelDetailCard';
 import { ActivationSummaryCard } from './ActivationSummaryCard';
-import { SimpleEngagementModelSelection } from './SimpleEngagementModelSelection';
 import { MembershipSummaryOnlyCard } from './MembershipSummaryOnlyCard';
-import { TierSelectionCard } from './TierSelectionCard';
+import { SimpleTierSelectionCard } from './SimpleTierSelectionCard';
+import { SimpleEngagementModelCard } from './SimpleEngagementModelCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
   userId: string;
 }
 
-type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model' | 'details_review' | 'activation_complete';
+type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model_selection' | 'activation_complete';
 type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed';
 
 export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProps> = ({ profile, userId }) => {
@@ -29,12 +28,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [membershipStatus, setMembershipStatus] = useState<'active' | 'inactive' | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
-  const [selectedEngagementModel, setSelectedEngagementModel] = useState<'marketplace' | 'aggregator' | null>(null);
+  const [selectedEngagementModel, setSelectedEngagementModel] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
-  const [pricingData, setPricingData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,89 +41,63 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   }, [profile]);
 
-  // Validate workflow step consistency
-  const validateWorkflowStep = (dbStep: WorkflowStep, dbMembershipStatus: string | null, dbPaymentStatus: string | null): WorkflowStep => {
-    console.log('Validating workflow step:', { dbStep, dbMembershipStatus, dbPaymentStatus });
+  const validateRequiredFields = (additionalData: any = {}) => {
+    console.log('🔍 Validating required fields with data:', additionalData);
     
-    // If no membership status is set, start from beginning
-    if (!dbMembershipStatus) {
-      return 'membership_decision';
+    const finalUserId = userId;
+    const finalMembershipStatus = additionalData.membership_status || membershipStatus || 'inactive';
+    
+    if (!finalUserId) {
+      throw new Error('User ID is required but not provided');
     }
-    
-    // If membership status is active but no payment processed, go to payment
-    if (dbMembershipStatus === 'active' && (!dbPaymentStatus || dbPaymentStatus === 'pending')) {
-      return 'payment';
+
+    if (!finalMembershipStatus) {
+      throw new Error('Membership status is required but not provided');
     }
-    
-    // If membership status is active and payment is successful, go to summary
-    if (dbMembershipStatus === 'active' && dbPaymentStatus === 'success') {
-      return 'membership_summary';
-    }
-    
-    // If membership status is inactive, go directly to summary
-    if (dbMembershipStatus === 'inactive') {
-      return 'membership_summary';
-    }
-    
-    // For other cases, validate the step progression
-    const stepOrder: WorkflowStep[] = ['membership_decision', 'payment', 'membership_summary', 'tier_selection', 'engagement_model', 'details_review', 'activation_complete'];
-    const currentIndex = stepOrder.indexOf(dbStep);
-    
-    // If step is valid and conditions are met, return it
-    if (currentIndex >= 0) {
-      return dbStep;
-    }
-    
-    // Default fallback
-    return 'membership_decision';
+
+    console.log('✅ Validation passed:', {
+      userId: finalUserId,
+      membershipStatus: finalMembershipStatus
+    });
+
+    return {
+      finalUserId,
+      finalMembershipStatus
+    };
   };
 
   const loadWorkflowData = async () => {
     try {
       setLoading(true);
+      console.log('📊 Loading workflow data for user:', userId);
       
       // Check existing workflow status
       const { data: existingActivation } = await supabase
         .from('engagement_activations')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      console.log('Existing activation data:', existingActivation);
+      console.log('📋 Existing activation data:', existingActivation);
 
       if (existingActivation) {
         const dbStep = (existingActivation.workflow_step as WorkflowStep) || 'membership_decision';
         const dbMembershipStatus = existingActivation.membership_status;
         const dbPaymentStatus = existingActivation.payment_simulation_status;
         
-        // Validate and potentially correct the workflow step
-        const validatedStep = validateWorkflowStep(dbStep, dbMembershipStatus, dbPaymentStatus);
-        
-        console.log('Setting workflow state:', {
-          validatedStep,
+        console.log('🔄 Setting workflow state from database:', {
+          step: dbStep,
           membershipStatus: dbMembershipStatus,
-          paymentStatus: dbPaymentStatus
+          paymentStatus: dbPaymentStatus,
+          tier: existingActivation.pricing_tier,
+          engagementModel: existingActivation.engagement_model
         });
         
-        setCurrentStep(validatedStep);
+        setCurrentStep(dbStep);
         setMembershipStatus(dbMembershipStatus === 'active' ? 'active' : 'inactive');
         setPaymentStatus((dbPaymentStatus as PaymentStatus) || 'pending');
         setSelectedTier(existingActivation.pricing_tier);
-        
-        if (existingActivation.engagement_model) {
-          setSelectedEngagementModel(
-            existingActivation.engagement_model.toLowerCase().includes('marketplace') ? 'marketplace' : 'aggregator'
-          );
-        }
-        
-        // If the validated step is different from database step, update it
-        if (validatedStep !== dbStep) {
-          console.log('Correcting workflow step from', dbStep, 'to', validatedStep);
-          await updateWorkflowStep(validatedStep, { 
-            workflow_step_corrected: true,
-            previous_step: dbStep 
-          });
-        }
+        setSelectedEngagementModel(existingActivation.engagement_model);
       }
 
       // Load membership fees
@@ -136,19 +108,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .eq('organization_type', profile.organization_type)
         .eq('entity_type', profile.entity_type);
 
-      // Load pricing configurations
-      const { data: pricingConfigData } = await supabase
-        .from('pricing_configurations_detailed')
-        .select('*')
-        .eq('country_name', profile.country)
-        .eq('organization_type', profile.organization_type)
-        .eq('entity_type', profile.entity_type)
-        .eq('is_active', true);
-
       setMembershipFees(membershipFeesData || []);
-      setPricingData(pricingConfigData || []);
+      console.log('💰 Loaded membership fees:', membershipFeesData?.length || 0);
+      
     } catch (error) {
-      console.error('Error loading workflow data:', error);
+      console.error('❌ Error loading workflow data:', error);
       toast({
         title: "Error Loading Data",
         description: "Failed to load membership workflow data. Please refresh the page.",
@@ -159,57 +123,29 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const validateRequiredFields = (step: WorkflowStep, additionalData: any = {}) => {
-    console.log('Validating required fields for step:', step, 'with data:', additionalData);
-    
-    // Ensure we have required base values
-    const finalMembershipStatus = additionalData.membership_status || membershipStatus || 'inactive';
-    const finalEngagementModel = additionalData.engagement_model || selectedEngagementModel || 'marketplace';
-    
-    console.log('Final values for validation:', {
-      finalMembershipStatus,
-      finalEngagementModel,
-      userId,
-      step
-    });
-
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
-    if (!finalMembershipStatus) {
-      throw new Error('Membership status is required');
-    }
-
-    if (!finalEngagementModel) {
-      throw new Error('Engagement model is required');
-    }
-
-    return {
-      finalMembershipStatus,
-      finalEngagementModel
-    };
-  };
-
   const updateWorkflowStep = async (step: WorkflowStep, additionalData: any = {}) => {
     try {
-      console.log('Updating workflow step to:', step, 'with data:', additionalData);
+      console.log('🔄 Updating workflow step to:', step, 'with data:', additionalData);
       
-      // Validate required fields first
-      const { finalMembershipStatus, finalEngagementModel } = validateRequiredFields(step, additionalData);
+      // Validate required fields
+      const { finalUserId, finalMembershipStatus } = validateRequiredFields(additionalData);
       
       const updateData = {
-        user_id: userId,
+        user_id: finalUserId,
         workflow_step: step,
         country: profile?.country || 'Unknown',
         organization_type: profile?.organization_type || 'Unknown',
         membership_status: finalMembershipStatus,
-        engagement_model: finalEngagementModel,
         ...additionalData,
         updated_at: new Date().toISOString()
       };
 
-      console.log('Final update data being sent to database:', updateData);
+      // Only set engagement_model if it's provided or already exists
+      if (selectedEngagementModel || additionalData.engagement_model) {
+        updateData.engagement_model = additionalData.engagement_model || selectedEngagementModel;
+      }
+
+      console.log('📤 Final update data being sent to database:', updateData);
 
       const { error, data } = await supabase
         .from('engagement_activations')
@@ -220,23 +156,17 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .select();
 
       if (error) {
-        console.error('Database upsert error:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('❌ Database upsert error:', error);
         throw new Error(`Database operation failed: ${error.message}`);
       }
       
-      console.log('Database operation successful:', data);
+      console.log('✅ Database operation successful:', data);
       setCurrentStep(step);
-      console.log('Workflow step updated successfully to:', step);
-    } catch (error) {
-      console.error('Error updating workflow step:', error);
+      console.log('🎯 Workflow step updated successfully to:', step);
       
-      // Enhanced error message for user
+    } catch (error) {
+      console.error('❌ Error updating workflow step:', error);
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Workflow Update Failed",
@@ -250,17 +180,16 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleMembershipDecision = async (status: 'active' | 'inactive') => {
     try {
-      console.log('Membership decision:', status);
+      console.log('👤 Membership decision:', status);
       setMembershipStatus(status);
       
       if (status === 'active') {
         await updateWorkflowStep('payment', { membership_status: 'active' });
       } else {
-        // For inactive membership, go directly to summary
         await updateWorkflowStep('membership_summary', { membership_status: 'inactive' });
       }
     } catch (error) {
-      console.error('Error in handleMembershipDecision:', error);
+      console.error('❌ Error in handleMembershipDecision:', error);
       toast({
         title: "Error",
         description: "Failed to update membership status. Please try again.",
@@ -299,7 +228,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       });
 
     } catch (error) {
-      console.error('Error in handlePaymentSubmit:', error);
+      console.error('❌ Error in handlePaymentSubmit:', error);
       setPaymentStatus('failed');
       toast({
         title: "Payment Failed",
@@ -313,24 +242,15 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleProceedToTierSelection = async () => {
     try {
-      console.log('Proceeding to tier selection');
-      console.log('Current state before tier selection:', {
-        membershipStatus,
-        selectedEngagementModel,
-        userId,
-        profileData: profile
-      });
-      
-      await updateWorkflowStep('tier_selection', {
-        membership_summary_completed: true
-      });
+      console.log('🎯 Proceeding to tier selection');
+      await updateWorkflowStep('tier_selection');
       
       toast({
         title: "Success",
         description: "Proceeding to tier selection.",
       });
     } catch (error) {
-      console.error('Error in handleProceedToTierSelection:', error);
+      console.error('❌ Error in handleProceedToTierSelection:', error);
       toast({
         title: "Error",
         description: "Failed to proceed to tier selection. Please try again.",
@@ -341,19 +261,19 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleTierSelection = async (tier: string) => {
     try {
-      console.log('Tier selected:', tier);
+      console.log('🏷️ Tier selected:', tier);
       setSelectedTier(tier);
-      await updateWorkflowStep('engagement_model', {
+      await updateWorkflowStep('engagement_model_selection', {
         pricing_tier: tier,
         tier_selected_at: new Date().toISOString()
       });
       
       toast({
         title: "Tier Selected",
-        description: `${tier.charAt(0).toUpperCase() + tier.slice(1)} tier has been selected.`,
+        description: `${tier} tier has been selected.`,
       });
     } catch (error) {
-      console.error('Error in handleTierSelection:', error);
+      console.error('❌ Error in handleTierSelection:', error);
       toast({
         title: "Error",
         description: "Failed to save tier selection. Please try again.",
@@ -362,72 +282,28 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const handleProceedToEngagementModel = async () => {
+  const handleEngagementModelSelection = async (modelName: string) => {
     try {
-      await updateWorkflowStep('engagement_model', {
-        pricing_tier: selectedTier,
-        tier_confirmed_at: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error in handleProceedToEngagementModel:', error);
-      toast({
-        title: "Error",
-        description: "Failed to proceed to engagement model selection. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEngagementModelSelection = async (model: 'marketplace' | 'aggregator') => {
-    try {
-      setSelectedEngagementModel(model);
-      await updateWorkflowStep('details_review', {
-        engagement_model: model.charAt(0).toUpperCase() + model.slice(1),
-        engagement_model_selected_at: new Date().toISOString()
+      console.log('🤝 Engagement model selected:', modelName);
+      setSelectedEngagementModel(modelName);
+      await updateWorkflowStep('activation_complete', {
+        engagement_model: modelName,
+        engagement_model_selected_at: new Date().toISOString(),
+        workflow_completed: true,
+        activation_status: 'Activated'
       });
       
       toast({
         title: "Engagement Model Selected",
-        description: `${model.charAt(0).toUpperCase() + model.slice(1)} model has been selected.`,
+        description: `${modelName} engagement model has been selected and your membership is now active!`,
       });
     } catch (error) {
-      console.error('Error in handleEngagementModelSelection:', error);
+      console.error('❌ Error in handleEngagementModelSelection:', error);
       toast({
         title: "Error",
         description: "Failed to save engagement model selection. Please try again.",
         variant: "destructive"
       });
-    }
-  };
-
-  const handleFinalActivation = async () => {
-    setIsProcessing(true);
-    try {
-      const selectedTierData = { basic: 990, standard: 2990, premium: 6990 };
-      const finalPrice = selectedTierData[selectedTier as keyof typeof selectedTierData] || 990;
-      
-      await updateWorkflowStep('activation_complete', {
-        workflow_completed: true,
-        activation_status: 'Activated',
-        final_calculated_price: finalPrice,
-        currency: membershipFees[0]?.annual_currency || 'USD'
-      });
-
-      toast({
-        title: "Membership Activated!",
-        description: "Your membership has been successfully activated. Welcome to CoInnovator Platform!",
-      });
-
-      await loadWorkflowData();
-    } catch (error) {
-      console.error('Error in handleFinalActivation:', error);
-      toast({
-        title: "Activation Failed",
-        description: "There was an error activating your membership. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -462,11 +338,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             </div>
             <div className="text-center p-4 bg-white rounded-lg border border-blue-200">
               <Badge className="mb-2 bg-blue-600">Tier</Badge>
-              <div className="font-medium">{selectedTier?.charAt(0).toUpperCase() + selectedTier?.slice(1)}</div>
+              <div className="font-medium">{selectedTier || 'Not Selected'}</div>
             </div>
             <div className="text-center p-4 bg-white rounded-lg border border-purple-200">
               <Badge className="mb-2 bg-purple-600">Model</Badge>
-              <div className="font-medium">{selectedEngagementModel?.charAt(0).toUpperCase() + selectedEngagementModel?.slice(1)}</div>
+              <div className="font-medium">{selectedEngagementModel || 'Not Selected'}</div>
             </div>
           </div>
           <div className="text-center">
@@ -481,7 +357,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   // Render workflow steps
   const renderCurrentStep = () => {
-    console.log('Rendering step:', currentStep, 'with membership status:', membershipStatus);
+    console.log('🎨 Rendering step:', currentStep, 'with membership status:', membershipStatus);
     
     switch (currentStep) {
       case 'membership_decision':
@@ -538,7 +414,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         return null;
 
       case 'membership_summary':
-        console.log('Rendering membership summary with status:', membershipStatus);
         if (membershipStatus) {
           return (
             <div className="max-w-4xl mx-auto">
@@ -556,7 +431,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       case 'tier_selection':
         return (
           <div className="max-w-4xl mx-auto">
-            <TierSelectionCard
+            <SimpleTierSelectionCard
               selectedTier={selectedTier}
               onTierSelect={handleTierSelection}
               countryName={profile?.country}
@@ -564,46 +439,15 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           </div>
         );
 
-      case 'engagement_model':
-        if (selectedTier) {
-          return (
-            <SimpleEngagementModelSelection
+      case 'engagement_model_selection':
+        return (
+          <div className="max-w-4xl mx-auto">
+            <SimpleEngagementModelCard
               selectedModel={selectedEngagementModel}
               onModelSelect={handleEngagementModelSelection}
-              selectedTier={selectedTier}
-              pricingData={pricingData}
             />
-          );
-        }
-        return null;
-
-      case 'details_review':
-        if (selectedEngagementModel) {
-          return (
-            <div className="space-y-8">
-              <EngagementModelDetailCard
-                selectedModel={selectedEngagementModel}
-                selectedTier={selectedTier as any}
-                pricingData={pricingData}
-                currency={membershipFees[0]?.annual_currency || 'USD'}
-              />
-              <div className="max-w-4xl mx-auto">
-                <ActivationSummaryCard
-                  membershipStatus={membershipStatus}
-                  selectedTier={selectedTier}
-                  selectedEngagementModel={selectedEngagementModel}
-                  membershipFees={membershipFees}
-                  pricingData={pricingData}
-                  paymentStatus={paymentStatus}
-                  isProcessing={isProcessing}
-                  onActivate={handleFinalActivation}
-                  canActivate={Boolean(membershipStatus && selectedTier && selectedEngagementModel)}
-                />
-              </div>
-            </div>
-          );
-        }
-        return null;
+          </div>
+        );
 
       default:
         return null;
