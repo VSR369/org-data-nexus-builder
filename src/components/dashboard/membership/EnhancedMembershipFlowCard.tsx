@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle, Users, Zap, FileText } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle } from 'lucide-react';
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
@@ -201,8 +202,10 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       setMembershipStatus(status);
       
       if (status === 'active') {
+        // For active membership, MUST go to payment step first
         await updateWorkflowStep('payment', { membership_status: 'active' });
       } else {
+        // For inactive membership, skip payment and go directly to summary
         await updateWorkflowStep('membership_summary', { membership_status: 'inactive' });
       }
     } catch (error) {
@@ -281,6 +284,17 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleProceedToTierSelection = async () => {
     try {
       console.log('🎯 Proceeding to tier selection');
+      
+      // Check if payment is required and completed for active membership
+      if (membershipStatus === 'active' && paymentStatus !== 'success') {
+        toast({
+          title: "Payment Required",
+          description: "Please complete your membership payment before proceeding to tier selection.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       setShowTierSelection(true);
       await updateWorkflowStep('tier_selection');
       
@@ -423,7 +437,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   }
 
   // Check if we should show the persistent membership summary
-  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision';
+  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision' && currentStep !== 'payment';
 
   // Render the current step content
   const renderCurrentStepContent = () => {
@@ -470,7 +484,21 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       case 'payment':
         if (membershipStatus === 'active') {
           return (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto space-y-4">
+              {/* Payment Required Alert */}
+              <Card className="border-amber-200 bg-amber-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-800">
+                    <AlertCircle className="h-5 w-5" />
+                    Payment Required
+                  </CardTitle>
+                  <CardDescription className="text-amber-700">
+                    Complete your membership payment to continue with tier selection and platform access.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              
+              {/* Payment Form */}
               <PaymentSimulationCard
                 membershipFees={membershipFees}
                 isProcessing={isProcessing}
@@ -522,7 +550,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         </div>
       )}
       
-      {/* Persistent Membership Summary - Show above current step when membership decision is made */}
+      {/* Persistent Membership Summary - Show above current step when membership decision is made and payment is complete */}
       {shouldShowMembershipSummary && (
         <div className="max-w-4xl mx-auto">
           <MembershipSummaryOnlyCard
