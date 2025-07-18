@@ -76,7 +76,7 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
               </div>
             </div>
 
-            {/* Show Review Card if both tier and engagement model are selected */}
+            {/* Show Review Card if both tier and engagement model are selected - NO EDIT OPTION for active members */}
             {selectedTier && selectedEngagementModel ? (
               <div className="space-y-4">
                 <div className="p-4 border border-blue-200 bg-blue-50 rounded-md">
@@ -94,7 +94,7 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
                     </div>
                   </div>
                   <p className="text-sm text-blue-700 mt-2">
-                    Your pricing tier and engagement model are ready. Review your selections or make changes if needed.
+                    Your pricing tier and engagement model are ready for activation.
                   </p>
                 </div>
                 
@@ -105,14 +105,6 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
                   >
                     Review & Finalize
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button 
-                    onClick={onChangeSelections}
-                    variant="outline"
-                    className="flex items-center gap-1"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Change Selections
                   </Button>
                 </div>
               </div>
@@ -146,6 +138,8 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
                 </Button>
               )}
             </div>
+
+            {/* Show member benefits */}
             <div className="p-4 border border-orange-200 bg-orange-50 rounded-md">
               <h4 className="text-sm font-medium text-orange-800">Member Benefits:</h4>
               <ul className="text-sm text-orange-700 mt-2 space-y-1 list-disc pl-5">
@@ -155,7 +149,7 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
               </ul>
             </div>
 
-            {/* Show Review Card for non-members too if selections are made */}
+            {/* Show Review Card for non-members with edit options */}
             {selectedTier && selectedEngagementModel ? (
               <div className="space-y-4">
                 <div className="p-4 border border-blue-200 bg-blue-50 rounded-md">
@@ -173,7 +167,7 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
                     </div>
                   </div>
                   <p className="text-sm text-blue-700 mt-2">
-                    Your pricing tier and engagement model are ready. Review your selections or make changes if needed.
+                    Your pricing tier and engagement model are ready. Consider becoming a member to save on fees, or review your selections.
                   </p>
                 </div>
                 
