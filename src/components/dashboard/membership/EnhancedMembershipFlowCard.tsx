@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,20 +8,19 @@ import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle } from 'luci
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
-import { ActivationSummaryCard } from './ActivationSummaryCard';
 import { MembershipSummaryOnlyCard } from './MembershipSummaryOnlyCard';
 import { SimpleTierSelectionCard } from './SimpleTierSelectionCard';
-import { SimpleEngagementModelCard } from './SimpleEngagementModelCard';
 import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
 import { SelectedTierSummaryCard } from './SelectedTierSummaryCard';
 import { MembershipDetailsModal } from './MembershipDetailsModal';
+import { PreviewConfirmationCard } from './PreviewConfirmationCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
   userId: string;
 }
 
-type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model' | 'activation_complete';
+type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model' | 'preview_confirmation' | 'activation_complete';
 type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed';
 
 export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProps> = ({ profile, userId }) => {
@@ -365,27 +363,56 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleEngagementModelSelection = async (modelName: string) => {
     try {
-      console.log('🤝 Engagement model selected:', modelName);
+      console.log('🤝 Engagement model selected (preview only):', modelName);
       setSelectedEngagementModel(modelName);
+      
+      // Move to preview step instead of saving immediately
+      setCurrentStep('preview_confirmation');
+      
+      toast({
+        title: "Model Selected",
+        description: `${modelName} selected. Please review your selections below.`,
+      });
+    } catch (error) {
+      console.error('❌ Error in handleEngagementModelSelection:', error);
+      toast({
+        title: "Error",
+        description: "Failed to select engagement model. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFinalConfirmation = async () => {
+    try {
+      setIsProcessing(true);
+      console.log('✅ Final confirmation and save');
+      
       await updateWorkflowStep('activation_complete', {
-        engagement_model: modelName,
+        engagement_model: selectedEngagementModel,
         engagement_model_selected_at: new Date().toISOString(),
         workflow_completed: true,
         activation_status: 'Activated'
       });
       
       toast({
-        title: "Engagement Model Selected",
-        description: `${modelName} engagement model has been selected and your membership is now active!`,
+        title: "Membership Activated!",
+        description: "Your membership has been successfully activated with all selected options.",
       });
     } catch (error) {
-      console.error('❌ Error in handleEngagementModelSelection:', error);
+      console.error('❌ Error in handleFinalConfirmation:', error);
       toast({
         title: "Error",
-        description: "Failed to save engagement model selection. Please try again.",
+        description: "Failed to activate membership. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  const handleEditStep = (step: string) => {
+    setCurrentStep(step as WorkflowStep);
   };
 
   if (loading) {
@@ -437,7 +464,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   }
 
   // Check if we should show the persistent membership summary
-  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision' && currentStep !== 'payment';
+  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision' && currentStep !== 'payment' && currentStep !== 'preview_confirmation';
 
   // Render the current step content
   const renderCurrentStepContent = () => {
@@ -485,7 +512,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         if (membershipStatus === 'active') {
           return (
             <div className="max-w-2xl mx-auto space-y-4">
-              {/* Payment Required Alert */}
               <Card className="border-amber-200 bg-amber-50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-amber-800">
@@ -498,7 +524,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                 </CardHeader>
               </Card>
               
-              {/* Payment Form */}
               <PaymentSimulationCard
                 membershipFees={membershipFees}
                 isProcessing={isProcessing}
@@ -522,12 +547,24 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           </div>
         );
 
+      case 'preview_confirmation':
+        return (
+          <PreviewConfirmationCard
+            membershipStatus={membershipStatus}
+            selectedTier={selectedTier}
+            selectedEngagementModel={selectedEngagementModel}
+            membershipFees={membershipFees}
+            onEdit={handleEditStep}
+            onConfirm={handleFinalConfirmation}
+            isProcessing={isProcessing}
+          />
+        );
+
       case 'engagement_model':
-        return null; // We will render this separately
+        return null; // This will be rendered separately
 
       case 'membership_summary':
-        // This step is now handled by the persistent summary above, no additional content needed
-        return null;
+        return null; // This step is handled by the persistent summary
 
       default:
         return null;
@@ -537,7 +574,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   return (
     <div className="w-full space-y-6">
       {/* Details Button - Show when user has made membership decision */}
-      {membershipStatus && (
+      {membershipStatus && currentStep !== 'preview_confirmation' && (
         <div className="max-w-4xl mx-auto text-center">
           <Button
             onClick={() => setShowDetailsModal(true)}
@@ -550,7 +587,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         </div>
       )}
       
-      {/* Persistent Membership Summary - Show above current step when membership decision is made and payment is complete */}
+      {/* Persistent Membership Summary */}
       {shouldShowMembershipSummary && (
         <div className="max-w-4xl mx-auto">
           <MembershipSummaryOnlyCard
@@ -563,8 +600,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         </div>
       )}
       
-      {/* Persistent Tier Selection Summary - Show when tier is selected */}
-      {selectedTier && currentStep !== 'tier_selection' && (
+      {/* Persistent Tier Selection Summary */}
+      {selectedTier && currentStep !== 'tier_selection' && currentStep !== 'preview_confirmation' && (
         <div className="max-w-4xl mx-auto">
           <SelectedTierSummaryCard 
             selectedTier={selectedTier}
