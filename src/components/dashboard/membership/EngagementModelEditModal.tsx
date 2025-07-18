@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, X, AlertTriangle, DollarSign, TrendingUp, Users, Briefcase } from 'lucide-react';
+import { CheckCircle, Zap, X, AlertTriangle, DollarSign, TrendingUp, Users, Briefcase, Calculator } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { GlobalEngagementModelService } from '@/services/globalEngagementModelService';
@@ -35,6 +35,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   const [availableModels, setAvailableModels] = useState<any[]>([]);
   const [modelDetails, setModelDetails] = useState<any[]>([]);
   const [modelPricing, setModelPricing] = useState<any[]>([]);
+  const [complexityPricing, setComplexityPricing] = useState<any>({});
   const [validationResult, setValidationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -100,8 +101,8 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       // Load detailed information for each model
       await loadModelDetails(tierModelAccess || []);
       
-      // Load pricing for all models
-      await loadModelPricing();
+      // Load pricing for all models including complexity
+      await loadModelPricingWithComplexity();
     } catch (error) {
       console.error('❌ Error loading models:', error);
       toast({
@@ -134,10 +135,11 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
     }
   };
 
-  const loadModelPricing = async () => {
+  const loadModelPricingWithComplexity = async () => {
     try {
       if (!profile) return;
 
+      // Load standard pricing
       const { data: pricingData, error } = await supabase
         .rpc('get_pricing_configuration', {
           p_country_name: profile.country,
@@ -153,6 +155,23 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       }
 
       setModelPricing(pricingData || []);
+
+      // Load complexity pricing for marketplace models
+      const complexityData = {};
+      const marketplaceModels = ['Market Place', 'Market Place & Aggregator', 'Aggregator'];
+      
+      for (const model of marketplaceModels) {
+        const complexityPricingData = await MembershipDataService.getMarketplacePricingWithComplexity(
+          profile.country,
+          profile.organization_type,
+          profile.entity_type,
+          model,
+          membershipStatus === 'active' ? 'Active' : 'Not Active'
+        );
+        complexityData[model] = complexityPricingData;
+      }
+      
+      setComplexityPricing(complexityData);
     } catch (error) {
       console.error('Error loading model pricing:', error);
     }
@@ -224,6 +243,89 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       return "Open marketplace where multiple solution providers compete for your challenges";
     }
     return details?.description || "Customized engagement model for your specific needs";
+  };
+
+  const isMarketplaceModel = (modelName: string) => {
+    const marketplaceModels = ['Market Place', 'Market Place & Aggregator', 'Aggregator'];
+    return marketplaceModels.includes(modelName);
+  };
+
+  const renderComplexityPricing = (modelName: string) => {
+    const complexityData = complexityPricing[modelName];
+    if (!complexityData?.complexityPricing?.length) return null;
+
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-lg space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-blue-800">
+          <Calculator className="h-4 w-4" />
+          Complexity-Based Pricing
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {complexityData.complexityPricing.map((complexity: any) => (
+            <div key={complexity.id} className="bg-white p-3 rounded border space-y-2">
+              <div className="font-medium text-xs text-gray-800">{complexity.name}</div>
+              {complexity.fees.map((fee: any, index: number) => (
+                <div key={index} className="space-y-1">
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Consulting:</span>
+                      <div className="text-right">
+                        {membershipStatus === 'active' && fee.membership_discount > 0 ? (
+                          <>
+                            <div className="line-through text-gray-400 text-xs">
+                              {MembershipDataService.formatCurrency(fee.original_consulting_fee, fee.currency_code, fee.currency_symbol)}
+                            </div>
+                            <div className="font-medium text-green-600">
+                              {MembershipDataService.formatCurrency(fee.calculated_consulting_fee, fee.currency_code, fee.currency_symbol)}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="font-medium">
+                            {MembershipDataService.formatCurrency(fee.calculated_consulting_fee, fee.currency_code, fee.currency_symbol)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Management:</span>
+                      <div className="text-right">
+                        {membershipStatus === 'active' && fee.membership_discount > 0 ? (
+                          <>
+                            <div className="line-through text-gray-400 text-xs">
+                              {MembershipDataService.formatCurrency(fee.original_management_fee, fee.currency_code, fee.currency_symbol)}
+                            </div>
+                            <div className="font-medium text-green-600">
+                              {MembershipDataService.formatCurrency(fee.calculated_management_fee, fee.currency_code, fee.currency_symbol)}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="font-medium">
+                            {MembershipDataService.formatCurrency(fee.calculated_management_fee, fee.currency_code, fee.currency_symbol)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Platform Fee:</span>
+                      <span className="font-medium">{fee.platform_fee_percentage}%</span>
+                    </div>
+                  </div>
+                  {membershipStatus === 'active' && fee.membership_discount > 0 && (
+                    <div className="bg-green-100 p-1 rounded text-green-800 text-xs flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
+                      {fee.membership_discount}% member savings
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-gray-600 italic">
+          * Complexity level is selected during challenge submission based on your specific requirements
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -341,6 +443,11 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                           </div>
                         </div>
 
+                        {/* Complexity-Based Pricing for Marketplace Models */}
+                        {isMarketplaceModel(modelName) && (
+                          renderComplexityPricing(modelName)
+                        )}
+
                         {/* Platform Fee Information */}
                         {details?.platform_fee_formulas && details.platform_fee_formulas.length > 0 && (
                           <div className="bg-blue-50 p-3 rounded-lg space-y-2">
@@ -366,7 +473,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                                   </div>
                                   {formula.base_consulting_fee > 0 && (
                                     <div>
-                                      <span className="text-gray-600">Consulting:</span>
+                                      <span className="text-gray-600">Base Consulting:</span>
                                       <div className="font-medium">
                                         {MembershipDataService.formatCurrency(
                                           formula.base_consulting_fee,
@@ -378,7 +485,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                                   )}
                                   {formula.base_management_fee > 0 && (
                                     <div>
-                                      <span className="text-gray-600">Management:</span>
+                                      <span className="text-gray-600">Base Management:</span>
                                       <div className="font-medium">
                                         {MembershipDataService.formatCurrency(
                                           formula.base_management_fee,
@@ -389,10 +496,10 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                                     </div>
                                   )}
                                 </div>
-                                {formula.membership_discount_percentage > 0 && (
+                                {formula.membership_discount_percentage > 0 && membershipStatus === 'active' && (
                                   <div className="bg-green-100 p-1 rounded text-green-800">
                                     <TrendingUp className="h-3 w-3 inline mr-1" />
-                                    {formula.membership_discount_percentage}% member discount
+                                    {formula.membership_discount_percentage}% member discount applied
                                   </div>
                                 )}
                               </div>
@@ -413,7 +520,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                         {/* Current Pricing Context */}
                         {isSelected && modelPricing.length > 0 && (
                           <div className="bg-green-50 p-3 rounded-lg">
-                            <div className="text-sm font-medium text-green-800 mb-2">Your Pricing:</div>
+                            <div className="text-sm font-medium text-green-800 mb-2">Your Current Pricing:</div>
                             {modelPricing.slice(0, 3).map((pricing, index) => (
                               <div key={index} className="flex justify-between text-xs mb-1">
                                 <span>{pricing.config_name}:</span>

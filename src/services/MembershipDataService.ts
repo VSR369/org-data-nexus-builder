@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export class MembershipDataService {
@@ -77,6 +76,111 @@ export class MembershipDataService {
     } catch (error) {
       console.error('Error in getAvailableTiers:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get complexity levels with multipliers from master data
+   */
+  static async getComplexityLevels() {
+    try {
+      const { data, error } = await supabase
+        .from('master_challenge_complexity')
+        .select('*')
+        .eq('is_active', true)
+        .order('level_order');
+
+      if (error) {
+        console.error('Error fetching complexity levels:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getComplexityLevels:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get marketplace pricing with complexity breakdown for specific engagement model
+   */
+  static async getMarketplacePricingWithComplexity(
+    country: string,
+    organizationType: string,
+    entityType: string,
+    engagementModel: string,
+    membershipStatus: 'Active' | 'Not Active'
+  ) {
+    try {
+      // Get base pricing configuration
+      const pricingData = await this.getPricingConfiguration(
+        country,
+        organizationType,
+        entityType,
+        engagementModel,
+        membershipStatus
+      );
+
+      // Get complexity levels
+      const complexityLevels = await this.getComplexityLevels();
+
+      // Get engagement model details for platform fee formulas
+      const modelDetails = await this.getEngagementModelDetails(engagementModel, country);
+
+      if (!pricingData.length || !complexityLevels.length || !modelDetails?.platform_fee_formulas?.length) {
+        return { basePricing: pricingData, complexityPricing: [] };
+      }
+
+      // Calculate complexity-based pricing using master data multipliers
+      const complexityPricing = complexityLevels.map(complexity => {
+        const complexityData = {
+          id: complexity.id,
+          name: complexity.name,
+          level_order: complexity.level_order,
+          consulting_multiplier: complexity.consulting_fee_multiplier,
+          management_multiplier: complexity.management_fee_multiplier,
+          fees: []
+        };
+
+        // Calculate fees for each complexity level using platform fee formulas
+        modelDetails.platform_fee_formulas.forEach(formula => {
+          const baseConsultingFee = formula.base_consulting_fee || 0;
+          const baseManagementFee = formula.base_management_fee || 0;
+          
+          const consultingFee = baseConsultingFee * complexity.consulting_fee_multiplier;
+          const managementFee = baseManagementFee * complexity.management_fee_multiplier;
+          
+          // Apply membership discount if member is active
+          const discountPercentage = membershipStatus === 'Active' ? (formula.membership_discount_percentage || 0) : 0;
+          const discountMultiplier = 1 - (discountPercentage / 100);
+          
+          complexityData.fees.push({
+            formula_name: formula.formula_name,
+            base_consulting_fee: baseConsultingFee,
+            base_management_fee: baseManagementFee,
+            calculated_consulting_fee: consultingFee * discountMultiplier,
+            calculated_management_fee: managementFee * discountMultiplier,
+            platform_fee_percentage: formula.platform_usage_fee_percentage || 0,
+            advance_payment_percentage: formula.advance_payment_percentage || 25,
+            currency_code: formula.master_currencies?.code || 'USD',
+            currency_symbol: formula.master_currencies?.symbol || '$',
+            membership_discount: discountPercentage,
+            original_consulting_fee: consultingFee,
+            original_management_fee: managementFee
+          });
+        });
+
+        return complexityData;
+      });
+
+      return {
+        basePricing: pricingData,
+        complexityPricing
+      };
+    } catch (error) {
+      console.error('Error in getMarketplacePricingWithComplexity:', error);
+      return { basePricing: [], complexityPricing: [] };
     }
   }
 
@@ -241,7 +345,7 @@ export class MembershipDataService {
   }
 
   /**
-   * Get engagement model details with platform fee formulas
+   * Get engagement model details with platform fee formulas and complexity pricing
    */
   static async getEngagementModelDetails(modelName: string, country?: string) {
     try {
@@ -254,8 +358,8 @@ export class MembershipDataService {
 
       if (!modelData) return null;
 
-      // Get platform fee formulas for this model
-      const { data: platformFees } = await supabase
+      // Get platform fee formulas for this model with country filter if provided
+      let platformFeesQuery = supabase
         .from('master_platform_fee_formulas')
         .select(`
           *,
@@ -269,6 +373,21 @@ export class MembershipDataService {
         `)
         .eq('engagement_model_id', modelData.id)
         .eq('is_active', true);
+
+      // Filter by country if provided
+      if (country) {
+        const { data: countryData } = await supabase
+          .from('master_countries')
+          .select('id')
+          .ilike('name', country)
+          .single();
+        
+        if (countryData) {
+          platformFeesQuery = platformFeesQuery.eq('country_id', countryData.id);
+        }
+      }
+
+      const { data: platformFees } = await platformFeesQuery;
 
       return {
         ...modelData,
