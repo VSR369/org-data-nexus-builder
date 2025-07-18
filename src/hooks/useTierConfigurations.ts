@@ -46,8 +46,7 @@ export function useTierConfigurations(countryName?: string) {
           support_type:master_support_types(name),
           workflow_template:master_workflow_templates(name)
         `)
-        .eq('is_active', true)
-        .order('level_order', { ascending: true });
+        .eq('is_active', true);
 
       if (countryName) {
         // Join with countries table to filter by country name
@@ -88,7 +87,10 @@ export function useTierConfigurations(countryName?: string) {
         is_active: item.is_active
       }));
 
-      setTierConfigurations(processedData);
+      // Sort by level_order after processing the data
+      const sortedData = processedData.sort((a, b) => a.level_order - b.level_order);
+
+      setTierConfigurations(sortedData);
     } catch (error) {
       console.error('Error loading tier configurations:', error);
       toast({
