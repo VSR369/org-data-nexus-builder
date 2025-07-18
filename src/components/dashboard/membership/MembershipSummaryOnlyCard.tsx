@@ -384,15 +384,19 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
         isOpen={showTierEditModal}
         onClose={() => setShowTierEditModal(false)}
         currentTier={selectedTier}
-        onTierSelect={handleTierSelect}
-        country={profile?.country || 'India'}
+        onTierChange={handleTierSelect}
+        countryName={profile?.country || 'India'}
       />
 
       <EngagementModelEditModal
         isOpen={showModelEditModal}
         onClose={() => setShowModelEditModal(false)}
         currentModel={selectedEngagementModel}
-        onModelSelect={handleModelSelect}
+        onModelChange={handleModelSelect}
+        selectedTier={selectedTier}
+        userId={profile?.id || ''}
+        membershipStatus="active"
+        profile={profile}
       />
     </>
   );

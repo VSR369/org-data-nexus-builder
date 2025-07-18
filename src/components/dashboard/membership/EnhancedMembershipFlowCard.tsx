@@ -428,6 +428,160 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  // All missing workflow handlers
+  const handleProceedToTierSelection = async () => {
+    try {
+      setIsProcessing(true);
+      await updateWorkflowStep('tier_selection');
+      setShowTierSelection(true);
+    } catch (error) {
+      console.error('❌ Error proceeding to tier selection:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleActivateMembership = async () => {
+    try {
+      setIsProcessing(true);
+      setMembershipStatus('active');
+      await updateWorkflowStep('payment', { membership_status: 'active' });
+    } catch (error) {
+      console.error('❌ Error activating membership:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReviewAndFinalize = async () => {
+    try {
+      setIsProcessing(true);
+      await updateWorkflowStep('preview_confirmation');
+    } catch (error) {
+      console.error('❌ Error proceeding to review:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleChangeSelections = async () => {
+    try {
+      setIsProcessing(true);
+      await updateWorkflowStep('tier_selection');
+      setShowTierSelection(true);
+    } catch (error) {
+      console.error('❌ Error changing selections:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMembershipDecision = async (decision: 'active' | 'inactive') => {
+    try {
+      setIsProcessing(true);
+      setMembershipStatus(decision);
+      
+      if (decision === 'active') {
+        await updateWorkflowStep('payment', { membership_status: 'active' });
+      } else {
+        await updateWorkflowStep('tier_selection', { membership_status: 'inactive' });
+        setShowTierSelection(true);
+      }
+    } catch (error) {
+      console.error('❌ Error handling membership decision:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentSubmit = async () => {
+    try {
+      setIsProcessing(true);
+      setPaymentStatus('processing');
+      
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setPaymentStatus('success');
+      await updateWorkflowStep('tier_selection', { 
+        mem_payment_status: 'paid',
+        payment_simulation_status: 'success' 
+      });
+      setShowTierSelection(true);
+    } catch (error) {
+      console.error('❌ Error processing payment:', error);
+      setPaymentStatus('failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTierSelection = async (tier: string) => {
+    try {
+      setIsProcessing(true);
+      setSelectedTier(tier);
+      await loadTierConfiguration(tier);
+      await updateWorkflowStep('engagement_model', { 
+        pricing_tier: tier.toLowerCase(),
+        tier_selected_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Error selecting tier:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEditStep = async (step: string) => {
+    try {
+      setIsProcessing(true);
+      await updateWorkflowStep(step as WorkflowStep);
+    } catch (error) {
+      console.error('❌ Error editing step:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleFinalConfirmation = async () => {
+    try {
+      setIsProcessing(true);
+      await updateWorkflowStep('activation_complete', { 
+        workflow_completed: true,
+        activation_status: 'Activated'
+      });
+    } catch (error) {
+      console.error('❌ Error finalizing confirmation:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEditTier = () => {
+    setShowTierEditModal(true);
+  };
+
+  const handleEngagementModelSelection = async (model: string) => {
+    try {
+      setIsProcessing(true);
+      setSelectedEngagementModel(model);
+      await loadEngagementModelDetails(model);
+      
+      if (selectedTier) {
+        await loadEngagementModelPricing(selectedTier, model);
+      }
+      
+      await updateWorkflowStep('preview_confirmation', { 
+        engagement_model: model,
+        engagement_model_selected_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Error selecting engagement model:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // If workflow is complete, show summary with enhanced edit functionality
   if (currentStep === 'activation_complete') {
     return (
