@@ -58,7 +58,7 @@ export class MembershipDataService {
   }
 
   /**
-   * Get available pricing tiers
+   * Get available pricing tiers with full configuration details
    */
   static async getAvailableTiers() {
     try {
@@ -76,6 +76,72 @@ export class MembershipDataService {
       return data || [];
     } catch (error) {
       console.error('Error in getAvailableTiers:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get tier configurations by country with full details
+   */
+  static async getTierConfigurationsByCountry(country: string) {
+    try {
+      // Get country ID first
+      const { data: countryData } = await supabase
+        .from('master_countries')
+        .select('id')
+        .eq('name', country)
+        .single();
+
+      if (!countryData) {
+        console.error('Country not found:', country);
+        return [];
+      }
+
+      // Get tier configurations with all related data
+      const { data: tierConfigs } = await supabase
+        .from('master_tier_configurations')
+        .select(`
+          *,
+          master_pricing_tiers (
+            id,
+            name,
+            level_order,
+            description
+          ),
+          master_analytics_access_types (
+            name,
+            description,
+            features_included
+          ),
+          master_support_types (
+            name,
+            service_level,
+            response_time,
+            availability
+          ),
+          master_onboarding_types (
+            name,
+            service_type,
+            resources_included
+          ),
+          master_workflow_templates (
+            name,
+            template_type,
+            customization_level,
+            template_count
+          ),
+          master_currencies (
+            code,
+            symbol
+          )
+        `)
+        .eq('country_id', countryData.id)
+        .eq('is_active', true)
+        .order('master_pricing_tiers(level_order)');
+
+      return tierConfigs || [];
+    } catch (error) {
+      console.error('Error in getTierConfigurationsByCountry:', error);
       return [];
     }
   }
@@ -153,7 +219,7 @@ export class MembershipDataService {
   }
 
   /**
-   * Get available engagement models
+   * Get available engagement models with platform fee details
    */
   static async getAvailableEngagementModels() {
     try {
@@ -171,6 +237,46 @@ export class MembershipDataService {
     } catch (error) {
       console.error('Error in getAvailableEngagementModels:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get engagement model details with platform fee formulas
+   */
+  static async getEngagementModelDetails(modelName: string, country?: string) {
+    try {
+      // Get basic model details
+      const { data: modelData } = await supabase
+        .from('master_engagement_models')
+        .select('*')
+        .eq('name', modelName)
+        .single();
+
+      if (!modelData) return null;
+
+      // Get platform fee formulas for this model
+      const { data: platformFees } = await supabase
+        .from('master_platform_fee_formulas')
+        .select(`
+          *,
+          master_currencies (
+            code,
+            symbol
+          ),
+          master_countries (
+            name
+          )
+        `)
+        .eq('engagement_model_id', modelData.id)
+        .eq('is_active', true);
+
+      return {
+        ...modelData,
+        platform_fee_formulas: platformFees || []
+      };
+    } catch (error) {
+      console.error('Error in getEngagementModelDetails:', error);
+      return null;
     }
   }
 
@@ -205,5 +311,26 @@ export class MembershipDataService {
       console.error('Error in getUserActivationRecord:', error);
       return null;
     }
+  }
+
+  /**
+   * Format currency with proper symbol and formatting
+   */
+  static formatCurrency(amount: number, currencyCode: string = 'USD', symbol?: string): string {
+    if (!amount && amount !== 0) return 'N/A';
+    
+    // Use provided symbol or fall back to Intl formatting
+    if (symbol) {
+      return `${symbol} ${amount.toLocaleString()}`;
+    }
+    
+    const validCurrency = currencyCode && currencyCode.trim() !== '' ? currencyCode : 'USD';
+    
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: validCurrency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   }
 }

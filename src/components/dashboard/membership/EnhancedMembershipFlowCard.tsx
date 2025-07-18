@@ -14,7 +14,8 @@ import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
 import { SelectedTierSummaryCard } from './SelectedTierSummaryCard';
 import { MembershipDetailsModal } from './MembershipDetailsModal';
 import { PreviewConfirmationCard } from './PreviewConfirmationCard';
-
+import { TierEditModal } from './TierEditModal';
+import { EngagementModelEditModal } from './EngagementModelEditModal';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -43,6 +44,10 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [engagementModelDetails, setEngagementModelDetails] = useState<any>(null);
   const [activationRecord, setActivationRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Enhanced edit modal states
+  const [showTierEditModal, setShowTierEditModal] = useState(false);
+  const [showEngagementModelEditModal, setShowEngagementModelEditModal] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -340,7 +345,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  // New handlers for edit functionality
+  // New handlers for edit functionality using enhanced modals
   const handleTierChange = async (newTier: string) => {
     try {
       setIsProcessing(true);
@@ -423,336 +428,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const handleMembershipActivation = async () => {
-    try {
-      setIsProcessing(true);
-      console.log('💳 Handling membership activation');
-
-      // Set membership status to active
-      setMembershipStatus('active');
-
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      const annualFee = membershipFees[0]?.annual_amount || 990;
-      const currency = membershipFees[0]?.annual_currency || 'USD';
-
-      // Update workflow with membership activation
-      await updateWorkflowStep(currentStep, {
-        membership_status: 'active',
-        payment_simulation_status: 'success',
-        mem_payment_status: 'paid',
-        mem_payment_amount: annualFee,
-        mem_payment_currency: currency,
-        mem_payment_date: new Date().toISOString(),
-        mem_payment_method: 'credit_card',
-        mem_receipt_number: `RCP-${Date.now()}`,
-        mem_terms: true
-      });
-
-      // Reload engagement model pricing with membership discount
-      if (selectedTier && selectedEngagementModel) {
-        await loadEngagementModelPricing(selectedTier, selectedEngagementModel);
-      }
-
-      // Reload workflow data to ensure consistency
-      await loadWorkflowData();
-
-      toast({
-        title: "Membership Activated!",
-        description: `Annual membership fee of ${currency} ${annualFee} has been processed. Your engagement model pricing has been updated with member discounts.`,
-      });
-    } catch (error) {
-      console.error('❌ Error activating membership:', error);
-      toast({
-        title: "Activation Failed",
-        description: "Failed to activate membership. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleMembershipDecision = async (status: 'active' | 'inactive') => {
-    try {
-      console.log('👤 Membership decision:', status);
-      setMembershipStatus(status);
-      
-      if (status === 'active') {
-        // For active membership, MUST go to payment step first
-        await updateWorkflowStep('payment', { membership_status: 'active' });
-      } else {
-        // For inactive membership, skip payment and go directly to summary
-        await updateWorkflowStep('membership_summary', { membership_status: 'inactive' });
-      }
-    } catch (error) {
-      console.error('❌ Error in handleMembershipDecision:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update membership status. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleActivateMembership = async () => {
-    try {
-      console.log('👤 Activating membership for inactive user');
-      setMembershipStatus('active');
-      await updateWorkflowStep('payment', { membership_status: 'active' });
-    } catch (error) {
-      console.error('❌ Error in handleActivateMembership:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update membership status. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handlePaymentSubmit = async () => {
-    setIsProcessing(true);
-    setPaymentStatus('processing');
-    
-    try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      const annualFee = membershipFees[0]?.annual_amount || 990;
-      const currency = membershipFees[0]?.annual_currency || 'USD';
-
-      // Keep the existing pricing tier and engagement model
-      const updateData = {
-        payment_simulation_status: 'success',
-        mem_payment_status: 'paid',
-        mem_payment_amount: annualFee,
-        mem_payment_currency: currency,
-        mem_payment_date: new Date().toISOString(),
-        mem_payment_method: 'credit_card',
-        mem_receipt_number: `RCP-${Date.now()}`,
-        mem_terms: true,
-        // Don't change pricing_tier or engagement_model if they're already set
-        ...(selectedTier && { pricing_tier: selectedTier }),
-        ...(selectedEngagementModel && { engagement_model: selectedEngagementModel })
-      };
-
-      await updateWorkflowStep('membership_summary', updateData);
-
-      setPaymentStatus('success');
-      
-      toast({
-        title: "Payment Successful",
-        description: `Annual membership fee of ${currency} ${annualFee} has been processed successfully.`,
-      });
-
-    } catch (error) {
-      console.error('❌ Error in handlePaymentSubmit:', error);
-      setPaymentStatus('failed');
-      toast({
-        title: "Payment Failed",
-        description: "There was an error processing your payment. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleProceedToTierSelection = async () => {
-    try {
-      console.log('🎯 Smart navigation - checking current selections');
-      
-      // Check if payment is required and completed for active membership
-      if (membershipStatus === 'active' && paymentStatus !== 'success') {
-        toast({
-          title: "Payment Required",
-          description: "Please complete your membership payment before proceeding.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Smart navigation based on current selections
-      if (!selectedTier) {
-        console.log('📍 No tier selected - proceeding to tier selection');
-        setShowTierSelection(true);
-        await updateWorkflowStep('tier_selection');
-      } else if (selectedTier && !selectedEngagementModel) {
-        console.log('📍 Tier selected but no engagement model - proceeding to engagement model selection');
-        await updateWorkflowStep('engagement_model');
-      } else if (selectedTier && selectedEngagementModel) {
-        console.log('📍 Both tier and engagement model selected - proceeding to preview');
-        await updateWorkflowStep('preview_confirmation');
-      }
-      
-      toast({
-        title: "Success",
-        description: "Navigating to next step.",
-      });
-    } catch (error) {
-      console.error('❌ Error in handleProceedToTierSelection:', error);
-      toast({
-        title: "Error",
-        description: "Failed to proceed. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleReviewAndFinalize = async () => {
-    try {
-      console.log('✅ Proceeding to review and finalize');
-      await updateWorkflowStep('preview_confirmation');
-      toast({
-        title: "Success",
-        description: "Proceeding to final review.",
-      });
-    } catch (error) {
-      console.error('❌ Error in handleReviewAndFinalize:', error);
-      toast({
-        title: "Error",
-        description: "Failed to proceed to review. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleChangeSelections = async () => {
-    try {
-      console.log('🔄 Allowing user to change selections');
-      setShowTierSelection(true);
-      await updateWorkflowStep('tier_selection');
-      toast({
-        title: "Edit Mode",
-        description: "You can now modify your selections.",
-      });
-    } catch (error) {
-      console.error('❌ Error in handleChangeSelections:', error);
-      toast({
-        title: "Error",
-        description: "Failed to enter edit mode. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleTierSelection = async (tier: string) => {
-    try {
-      console.log('🏷️ Tier selected:', tier);
-      
-      // Validate that we have the required data
-      if (!userId) {
-        throw new Error('User ID is required for tier selection');
-      }
-      
-      if (!tier || tier.trim() === '') {
-        throw new Error('Valid tier selection is required');
-      }
-      
-      setSelectedTier(tier);
-      setShowTierSelection(true);
-      
-      // Convert tier to lowercase for database storage (constraint requirement)
-      const tierForDatabase = tier.toLowerCase();
-      console.log('🔽 Converting tier for database:', { original: tier, database: tierForDatabase });
-      
-      // Update workflow with proper error handling - using 'engagement_model' instead of 'engagement_model_selection'
-      await updateWorkflowStep('engagement_model', {
-        pricing_tier: tierForDatabase, // Use lowercase for database
-        tier_selected_at: new Date().toISOString(),
-        membership_status: membershipStatus || 'active' // Ensure membership status is set
-      });
-      
-      toast({
-        title: "Tier Selected",
-        description: `${tier} tier has been selected successfully.`,
-      });
-    } catch (error) {
-      console.error('❌ Error in handleTierSelection:', error);
-      
-      // Reset selected tier on error
-      setSelectedTier(null);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        title: "Tier Selection Failed",
-        description: `Failed to save tier selection: ${errorMessage}`,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEditTier = () => {
-    setShowTierSelection(true);
-    updateWorkflowStep('tier_selection');
-  };
-
-  const handleEngagementModelSelection = async (modelName: string) => {
-    try {
-      console.log('🤝 Engagement model selected (preview only):', modelName);
-      setSelectedEngagementModel(modelName);
-      
-      // Move to preview step instead of saving immediately
-      setCurrentStep('preview_confirmation');
-      
-      toast({
-        title: "Model Selected",
-        description: `${modelName} selected. Please review your selections below.`,
-      });
-    } catch (error) {
-      console.error('❌ Error in handleEngagementModelSelection:', error);
-      toast({
-        title: "Error",
-        description: "Failed to select engagement model. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleFinalConfirmation = async () => {
-    try {
-      setIsProcessing(true);
-      console.log('✅ Final confirmation and save');
-      
-      await updateWorkflowStep('activation_complete', {
-        engagement_model: selectedEngagementModel,
-        engagement_model_selected_at: new Date().toISOString(),
-        workflow_completed: true,
-        activation_status: 'Activated'
-      });
-      
-      toast({
-        title: "Enrollment Activated!",
-        description: "Your enrollment as Solution Seeking Organization has been successfully activated with all selected options.",
-      });
-    } catch (error) {
-      console.error('❌ Error in handleFinalConfirmation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to activate membership. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleEditStep = (step: string) => {
-    setCurrentStep(step as WorkflowStep);
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-        ))}
-      </div>
-    );
-  }
-
-  // If workflow is complete, show summary with edit functionality
+  // If workflow is complete, show summary with enhanced edit functionality
   if (currentStep === 'activation_complete') {
     return (
       <div className="w-full space-y-6">
@@ -779,7 +455,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowTierSelection(true)}
+                    onClick={() => setShowTierEditModal(true)}
                     className="absolute top-2 right-2 h-6 w-6 p-0"
                   >
                     <Edit className="h-3 w-3" />
@@ -793,7 +469,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentStep('engagement_model')}
+                    onClick={() => setShowEngagementModelEditModal(true)}
                     className="absolute top-2 right-2 h-6 w-6 p-0"
                   >
                     <Edit className="h-3 w-3" />
@@ -826,6 +502,26 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             onEngagementModelChange={handleEngagementModelChange}
           />
         </div>
+
+        {/* Enhanced Edit Modals */}
+        <TierEditModal
+          isOpen={showTierEditModal}
+          onClose={() => setShowTierEditModal(false)}
+          currentTier={selectedTier}
+          countryName={profile?.country || 'India'}
+          onTierChange={handleTierChange}
+        />
+
+        <EngagementModelEditModal
+          isOpen={showEngagementModelEditModal}
+          onClose={() => setShowEngagementModelEditModal(false)}
+          currentModel={selectedEngagementModel}
+          selectedTier={selectedTier}
+          userId={userId}
+          membershipStatus={membershipStatus || 'inactive'}
+          profile={profile}
+          onModelChange={handleEngagementModelChange}
+        />
       </div>
     );
   }
