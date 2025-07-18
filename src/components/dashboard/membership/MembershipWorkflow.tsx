@@ -3,9 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, AlertCircle, Eye, DollarSign, Settings, Zap } from 'lucide-react';
+import { CheckCircle, Clock, DollarSign, Settings, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { ComprehensiveEnrollmentView } from './ComprehensiveEnrollmentView';
 import { toast } from '@/hooks/use-toast';
 
 interface WorkflowStatus {
@@ -21,7 +20,6 @@ interface MembershipWorkflowProps {
 
 export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }) => {
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus | null>(null);
-  const [showComprehensiveView, setShowComprehensiveView] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,11 +47,6 @@ export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }
 
       console.log('📊 Workflow status loaded:', data);
       setWorkflowStatus(data as unknown as WorkflowStatus);
-
-      // Show comprehensive view by default if user has any enrollment data
-      if (data && (data as unknown as WorkflowStatus).has_workflow) {
-        setShowComprehensiveView(true);
-      }
     } catch (error) {
       console.error('❌ Error in loadWorkflowStatus:', error);
     } finally {
@@ -62,34 +55,8 @@ export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }
   };
 
   const handleStepNavigation = (step: string) => {
-    setShowComprehensiveView(false);
-    // Additional navigation logic can be added here
-  };
-
-  const handleViewDetails = () => {
-    setShowComprehensiveView(true);
-  };
-
-  const handleBackFromView = () => {
-    setShowComprehensiveView(false);
-  };
-
-  const handleTierChange = async (tier: string) => {
-    console.log('🔄 Updating tier to:', tier);
-    // Tier change logic is handled by the comprehensive view
-    await loadWorkflowStatus();
-  };
-
-  const handleEngagementModelChange = async (model: string) => {
-    console.log('🔄 Updating engagement model to:', model);
-    // Model change logic is handled by the comprehensive view
-    await loadWorkflowStatus();
-  };
-
-  const handleMembershipActivate = async () => {
-    console.log('🔄 Activating membership');
-    // Activation logic is handled by the comprehensive view
-    await loadWorkflowStatus();
+    console.log('🧭 Navigating to step:', step);
+    // Navigation logic can be implemented here
   };
 
   if (loading) {
@@ -103,20 +70,6 @@ export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }
     );
   }
 
-  // Show comprehensive view by default if user has enrollment data
-  if (showComprehensiveView && workflowStatus?.has_workflow) {
-    return (
-      <ComprehensiveEnrollmentView
-        userId={userId}
-        onBack={handleBackFromView}
-        onTierChange={handleTierChange}
-        onEngagementModelChange={handleEngagementModelChange}
-        onMembershipActivate={handleMembershipActivate}
-      />
-    );
-  }
-
-  // Show workflow steps if no enrollment data or user navigated back
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -124,12 +77,6 @@ export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }
           <h2 className="text-2xl font-bold text-green-800">Membership & Enrollment</h2>
           <p className="text-green-600">Manage your membership and platform access</p>
         </div>
-        {workflowStatus?.has_workflow && (
-          <Button onClick={handleViewDetails} className="bg-green-600 hover:bg-green-700">
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-        )}
       </div>
 
       {/* Workflow Status Overview */}

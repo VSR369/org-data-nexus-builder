@@ -14,7 +14,7 @@ import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
 import { SelectedTierSummaryCard } from './SelectedTierSummaryCard';
 import { MembershipDetailsModal } from './MembershipDetailsModal';
 import { PreviewConfirmationCard } from './PreviewConfirmationCard';
-import { EnrollmentDetailsView } from './EnrollmentDetailsView';
+
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -31,7 +31,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
+  
   const [showTierSelection, setShowTierSelection] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -751,29 +751,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // If workflow is complete, show summary or detailed view
+  // If workflow is complete, show summary
   if (currentStep === 'activation_complete') {
-    if (showDetails) {
-      return (
-        <EnrollmentDetailsView
-          membershipStatus={membershipStatus}
-          selectedTier={selectedTier}
-          selectedEngagementModel={selectedEngagementModel}
-          membershipFees={membershipFees}
-          engagementModelPricing={engagementModelPricing}
-          tierConfiguration={tierConfiguration}
-          engagementModelDetails={engagementModelDetails}
-          activationRecord={activationRecord}
-          profile={profile}
-          userId={userId}
-          onBack={() => setShowDetails(false)}
-          onTierChange={handleTierEdit}
-          onEngagementModelChange={handleEngagementModelEdit}
-          onMembershipActivate={handleMembershipActivation}
-        />
-      );
-    }
-
     return (
       <Card className="w-full border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
         <CardHeader>
@@ -801,13 +780,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             </div>
           </div>
           <div className="flex justify-center gap-4">
-            <Button 
-              onClick={() => setShowDetails(true)}
-              className="flex items-center gap-2"
-            >
-              <FileText className="h-4 w-4" />
-              View Details
-            </Button>
             <Button onClick={() => window.location.reload()} variant="outline">
               Refresh Dashboard
             </Button>
@@ -927,19 +899,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   return (
     <div className="w-full space-y-6">
-      {/* Details Button - Show when user has made membership decision */}
-      {membershipStatus && currentStep !== 'preview_confirmation' && (
-        <div className="max-w-4xl mx-auto text-center">
-          <Button
-            onClick={() => setShowDetailsModal(true)}
-            variant="outline"
-            className="mb-4"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-        </div>
-      )}
       
       {/* Persistent Membership Summary - Enhanced with Review Card functionality */}
       {shouldShowMembershipSummary && (
