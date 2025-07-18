@@ -46,97 +46,88 @@ export const TierFeatureSection: React.FC<TierFeatureSectionProps> = ({
   currencySymbol = 'INR',
   currencyCode = 'INR'
 }) => {
-  const features = [];
-
-  // Challenge limits
-  if (monthlyLimit) {
-    features.push({
-      icon: CheckCircle,
-      text: `Up to ${monthlyLimit} challenges per month`,
-      category: 'limits'
-    });
-  } else {
-    features.push({
-      icon: CheckCircle,
-      text: 'Unlimited challenges per month',
-      category: 'limits'
-    });
-  }
-
-  // Solutions per challenge
-  features.push({
-    icon: CheckCircle,
-    text: `${solutionsPerChallenge} solution${solutionsPerChallenge > 1 ? 's' : ''} per challenge`,
-    category: 'limits'
-  });
-
-  // Analytics Access
-  if (analyticsAccess) {
-    const AnalyticsIcon = getFeatureIcon('analytics');
-    features.push({
-      icon: AnalyticsIcon,
-      text: `Analytics: ${analyticsAccess}`,
-      category: 'analytics'
-    });
-  }
-
-  // Support Type
-  if (supportType) {
-    const SupportIcon = getFeatureIcon('support');
-    features.push({
-      icon: SupportIcon,
-      text: `Support: ${supportType}`,
-      category: 'support'
-    });
-  }
-
-  // Onboarding Type
-  if (onboardingType) {
-    const OnboardingIcon = getFeatureIcon('onboarding');
-    features.push({
-      icon: OnboardingIcon,
-      text: `Onboarding: ${onboardingType}`,
-      category: 'onboarding'
-    });
-  }
-
-  // Workflow Template
-  if (workflowTemplate) {
-    const WorkflowIcon = getFeatureIcon('workflow');
-    features.push({
-      icon: WorkflowIcon,
-      text: `Workflow: ${workflowTemplate}`,
-      category: 'workflow'
-    });
-  }
-
-  // Overage Information
-  if (allowsOverage && overageFeePerChallenge && overageFeePerChallenge > 0) {
-    const OverageIcon = getFeatureIcon('overage');
-    features.push({
-      icon: OverageIcon,
-      text: `Challenge Overage: ${formatCurrency(overageFeePerChallenge, currencySymbol, currencyCode)}/challenge`,
-      category: 'overage'
-    });
-  } else if (allowsOverage && (!overageFeePerChallenge || overageFeePerChallenge === 0)) {
-    features.push({
-      icon: CheckCircle,
-      text: 'No overage fees',
-      category: 'overage'
-    });
-  }
-
   return (
-    <div className="space-y-2">
-      {features.map((feature, index) => {
-        const Icon = feature.icon;
-        return (
-          <div key={index} className="flex items-start gap-2">
-            <Icon className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-            <span className="text-left text-sm">{feature.text}</span>
+    <div className="space-y-4">
+      {/* Pricing Details Section */}
+      <div>
+        <h4 className="font-semibold text-sm text-gray-900 mb-3 flex items-center gap-2">
+          <DollarSign className="h-4 w-4" />
+          Pricing Details
+        </h4>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Monthly Limit</span>
+            <span className="text-sm font-bold text-gray-900">
+              {monthlyLimit ? `${monthlyLimit} challenges` : 'Unlimited challenges'}
+            </span>
           </div>
-        );
-      })}
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Solutions/Challenge</span>
+            <span className="text-sm font-bold text-gray-900">{solutionsPerChallenge}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Fixed Charge</span>
+            <span className="text-sm font-bold text-gray-900">
+              {overageFeePerChallenge && overageFeePerChallenge > 0 ? 
+                formatCurrency(overageFeePerChallenge, currencySymbol, currencyCode) : 
+                `${currencyCode}0.00`
+              }
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Overage Allowed</span>
+            <span className="text-sm font-bold text-gray-900">
+              {allowsOverage ? 'Yes' : 'No'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Features & Services Section */}
+      <div>
+        <h4 className="font-semibold text-sm text-gray-900 mb-3 flex items-center gap-2">
+          <Settings className="h-4 w-4" />
+          Features & Services
+        </h4>
+        <div className="space-y-2">
+          {analyticsAccess && (
+            <div className="flex items-center gap-2">
+              <BarChart className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              <div className="flex justify-between items-center w-full">
+                <span className="text-sm text-gray-600">Analytics:</span>
+                <span className="text-sm font-bold text-gray-900">{analyticsAccess}</span>
+              </div>
+            </div>
+          )}
+          {onboardingType && (
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <div className="flex justify-between items-center w-full">
+                <span className="text-sm text-gray-600">Onboarding:</span>
+                <span className="text-sm font-bold text-gray-900">{onboardingType}</span>
+              </div>
+            </div>
+          )}
+          {supportType && (
+            <div className="flex items-center gap-2">
+              <Headphones className="h-4 w-4 text-purple-500 flex-shrink-0" />
+              <div className="flex justify-between items-center w-full">
+                <span className="text-sm text-gray-600">Support:</span>
+                <span className="text-sm font-bold text-gray-900">{supportType}</span>
+              </div>
+            </div>
+          )}
+          {workflowTemplate && (
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-orange-500 flex-shrink-0" />
+              <div className="flex justify-between items-center w-full">
+                <span className="text-sm text-gray-600">Workflow:</span>
+                <span className="text-sm font-bold text-gray-900">{workflowTemplate}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
