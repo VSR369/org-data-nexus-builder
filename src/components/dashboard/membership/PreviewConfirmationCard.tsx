@@ -138,7 +138,7 @@ export const PreviewConfirmationCard: React.FC<PreviewConfirmationCardProps> = (
             <div className="flex items-center justify-center gap-2">
               <CheckCircle className="h-6 w-6 text-green-600" />
               <h3 className="text-lg font-semibold text-green-800">
-                Ready to Activate Your Membership?
+                Ready to Activate Your Enrollment?
               </h3>
             </div>
             <p className="text-sm text-green-700 max-w-md mx-auto">
@@ -150,7 +150,7 @@ export const PreviewConfirmationCard: React.FC<PreviewConfirmationCardProps> = (
               className="bg-green-600 hover:bg-green-700"
               size="lg"
             >
-              {isProcessing ? 'Activating...' : 'Confirm & Activate Membership'}
+              {isProcessing ? 'Activating...' : 'Confirm & Activate Enrollment'}
             </Button>
           </div>
         </CardContent>
