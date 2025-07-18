@@ -38,15 +38,15 @@ export const BusinessModelsManager: React.FC = () => {
           aggregatorFormula: aggregatorFormula || null,
         };
       }).sort((a, b) => {
-        // Define the desired order
-        const tierOrder = { 'Basic': 1, 'Standard': 2, 'Premium': 3 };
-        const aTierName = a.pricing_tier_name || '';
-        const bTierName = b.pricing_tier_name || '';
+        // Map level_order to desired order: Basic (1), Standard (2), Premium (3)
+        const getOrder = (level_order: number) => {
+          if (level_order === 1) return 1; // Basic
+          if (level_order === 2) return 2; // Standard  
+          if (level_order === 3) return 3; // Premium
+          return level_order || 999; // fallback
+        };
         
-        const aOrder = tierOrder[aTierName as keyof typeof tierOrder] || 999;
-        const bOrder = tierOrder[bTierName as keyof typeof tierOrder] || 999;
-        
-        return aOrder - bOrder;
+        return getOrder(a.level_order || 0) - getOrder(b.level_order || 0);
       });
 
       setBusinessModels(consolidatedModels);
