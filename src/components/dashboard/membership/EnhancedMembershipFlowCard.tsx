@@ -340,10 +340,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const handleTierEdit = async (newTier: string) => {
+  // New handlers for edit functionality
+  const handleTierChange = async (newTier: string) => {
     try {
       setIsProcessing(true);
-      console.log('🏷️ Handling tier edit from', selectedTier, 'to', newTier);
+      console.log('🏷️ Handling tier change from', selectedTier, 'to', newTier);
 
       // Update tier in database
       await updateWorkflowStep(currentStep, {
@@ -381,10 +382,10 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const handleEngagementModelEdit = async (newModel: string) => {
+  const handleEngagementModelChange = async (newModel: string) => {
     try {
       setIsProcessing(true);
-      console.log('🤝 Handling engagement model edit from', selectedEngagementModel, 'to', newModel);
+      console.log('🤝 Handling engagement model change from', selectedEngagementModel, 'to', newModel);
 
       // Update engagement model in database
       await updateWorkflowStep(currentStep, {
@@ -913,6 +914,9 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             selectedEngagementModel={selectedEngagementModel}
             onReviewAndFinalize={handleReviewAndFinalize}
             onChangeSelections={handleChangeSelections}
+            profile={profile}
+            onTierChange={handleTierChange}
+            onEngagementModelChange={handleEngagementModelChange}
           />
         </div>
       )}
