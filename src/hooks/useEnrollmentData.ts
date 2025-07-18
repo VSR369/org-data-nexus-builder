@@ -93,12 +93,60 @@ export const useEnrollmentData = (userId: string) => {
         tierConfiguration = tierConfig;
       }
 
-      // Load engagement model details
+      // Load comprehensive engagement model details
       let engagementModelDetails = null;
       if (selectedEngagementModel) {
         const { data: modelData } = await supabase
           .from('master_engagement_models')
-          .select('*')
+          .select(`
+            *,
+            master_engagement_model_subtypes (
+              id,
+              name,
+              description,
+              required_fields,
+              optional_fields,
+              is_active
+            ),
+            engagement_model_fee_mapping (
+              id,
+              fee_component_id,
+              calculation_order,
+              is_required,
+              master_fee_components (
+                id,
+                name,
+                description,
+                component_type,
+                default_rate_type
+              )
+            ),
+            master_tier_engagement_model_access (
+              id,
+              pricing_tier_id,
+              selection_scope,
+              max_concurrent_models,
+              allows_multiple_challenges,
+              switch_requirements,
+              business_rules,
+              is_allowed,
+              is_default,
+              master_pricing_tiers (name)
+            ),
+            master_platform_fee_formulas (
+              id,
+              formula_name,
+              formula_expression,
+              description,
+              base_consulting_fee,
+              base_management_fee,
+              platform_usage_fee_percentage,
+              advance_payment_percentage,
+              membership_discount_percentage,
+              configuration,
+              variables
+            )
+          `)
           .eq('name', selectedEngagementModel)
           .maybeSingle();
 

@@ -96,16 +96,94 @@ export const ComprehensiveEnrollmentView: React.FC<ComprehensiveEnrollmentViewPr
   };
 
   const getEngagementModelFeatures = () => {
-    if (!engagementModelDetails?.description) {
+    if (!engagementModelDetails) {
       return ['Loading model details...'];
     }
     
-    const description = engagementModelDetails.description;
-    const features = description.includes('.') 
-      ? description.split('.').filter(f => f.trim().length > 0).map(f => f.trim() + '.')
-      : [description];
+    const features = [];
     
-    return features;
+    // Add basic description
+    if (engagementModelDetails.description) {
+      features.push(`Description: ${engagementModelDetails.description}`);
+    }
+    
+    // Add subtypes information
+    if (engagementModelDetails.master_engagement_model_subtypes?.length > 0) {
+      features.push('Available Subtypes:');
+      engagementModelDetails.master_engagement_model_subtypes.forEach(subtype => {
+        if (subtype.is_active) {
+          features.push(`  • ${subtype.name}: ${subtype.description || 'No description'}`);
+          if (subtype.required_fields?.length > 0) {
+            features.push(`    Required fields: ${subtype.required_fields.join(', ')}`);
+          }
+          if (subtype.optional_fields?.length > 0) {
+            features.push(`    Optional fields: ${subtype.optional_fields.join(', ')}`);
+          }
+        }
+      });
+    }
+    
+    // Add fee components information
+    if (engagementModelDetails.engagement_model_fee_mapping?.length > 0) {
+      features.push('Fee Components:');
+      engagementModelDetails.engagement_model_fee_mapping
+        .sort((a, b) => a.calculation_order - b.calculation_order)
+        .forEach(mapping => {
+          const component = mapping.master_fee_components;
+          if (component) {
+            features.push(`  • ${component.name} (${component.component_type})${mapping.is_required ? ' - Required' : ' - Optional'}`);
+            if (component.description) {
+              features.push(`    ${component.description}`);
+            }
+          }
+        });
+    }
+    
+    // Add access rules information
+    if (engagementModelDetails.master_tier_engagement_model_access?.length > 0) {
+      features.push('Access Rules:');
+      engagementModelDetails.master_tier_engagement_model_access.forEach(access => {
+        if (access.is_allowed) {
+          const tierName = access.master_pricing_tiers?.name || 'Unknown tier';
+          features.push(`  • ${tierName}: ${access.selection_scope} selection`);
+          features.push(`    Max concurrent models: ${access.max_concurrent_models}`);
+          features.push(`    Multiple challenges: ${access.allows_multiple_challenges ? 'Yes' : 'No'}`);
+          features.push(`    Switch requirements: ${access.switch_requirements}`);
+          
+          if (access.business_rules && Object.keys(access.business_rules).length > 0) {
+            features.push(`    Business rules: ${JSON.stringify(access.business_rules)}`);
+          }
+        }
+      });
+    }
+    
+    // Add platform fee formulas information
+    if (engagementModelDetails.master_platform_fee_formulas?.length > 0) {
+      features.push('Platform Fee Formulas:');
+      engagementModelDetails.master_platform_fee_formulas.forEach(formula => {
+        features.push(`  • ${formula.formula_name}`);
+        if (formula.description) {
+          features.push(`    ${formula.description}`);
+        }
+        if (formula.base_consulting_fee > 0) {
+          features.push(`    Base consulting fee: ${formatCurrency(formula.base_consulting_fee)}`);
+        }
+        if (formula.base_management_fee > 0) {
+          features.push(`    Base management fee: ${formatCurrency(formula.base_management_fee)}`);
+        }
+        if (formula.platform_usage_fee_percentage > 0) {
+          features.push(`    Platform usage fee: ${formula.platform_usage_fee_percentage}%`);
+        }
+        if (formula.advance_payment_percentage > 0) {
+          features.push(`    Advance payment: ${formula.advance_payment_percentage}%`);
+        }
+        if (formula.membership_discount_percentage > 0) {
+          features.push(`    Membership discount: ${formula.membership_discount_percentage}%`);
+        }
+      });
+    }
+    
+    return features.length > 0 ? features : ['No detailed configuration found'];
   };
 
   const handleTierChange = async (tier: string) => {
