@@ -42,6 +42,43 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   }, [profile]);
 
+  // Validate workflow step consistency
+  const validateWorkflowStep = (dbStep: WorkflowStep, dbMembershipStatus: string | null, dbPaymentStatus: string | null): WorkflowStep => {
+    console.log('Validating workflow step:', { dbStep, dbMembershipStatus, dbPaymentStatus });
+    
+    // If no membership status is set, start from beginning
+    if (!dbMembershipStatus) {
+      return 'membership_decision';
+    }
+    
+    // If membership status is active but no payment processed, go to payment
+    if (dbMembershipStatus === 'active' && (!dbPaymentStatus || dbPaymentStatus === 'pending')) {
+      return 'payment';
+    }
+    
+    // If membership status is active and payment is successful, go to summary
+    if (dbMembershipStatus === 'active' && dbPaymentStatus === 'success') {
+      return 'membership_summary';
+    }
+    
+    // If membership status is inactive, go directly to summary
+    if (dbMembershipStatus === 'inactive') {
+      return 'membership_summary';
+    }
+    
+    // For other cases, validate the step progression
+    const stepOrder: WorkflowStep[] = ['membership_decision', 'payment', 'membership_summary', 'tier_selection', 'engagement_model', 'details_review', 'activation_complete'];
+    const currentIndex = stepOrder.indexOf(dbStep);
+    
+    // If step is valid and conditions are met, return it
+    if (currentIndex >= 0) {
+      return dbStep;
+    }
+    
+    // Default fallback
+    return 'membership_decision';
+  };
+
   const loadWorkflowData = async () => {
     try {
       setLoading(true);
@@ -53,15 +90,40 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .eq('user_id', userId)
         .single();
 
+      console.log('Existing activation data:', existingActivation);
+
       if (existingActivation) {
-        setCurrentStep((existingActivation.workflow_step as WorkflowStep) || 'membership_decision');
-        setMembershipStatus(existingActivation.membership_status === 'active' ? 'active' : 'inactive');
-        setPaymentStatus((existingActivation.payment_simulation_status as PaymentStatus) || 'pending');
+        const dbStep = (existingActivation.workflow_step as WorkflowStep) || 'membership_decision';
+        const dbMembershipStatus = existingActivation.membership_status;
+        const dbPaymentStatus = existingActivation.payment_simulation_status;
+        
+        // Validate and potentially correct the workflow step
+        const validatedStep = validateWorkflowStep(dbStep, dbMembershipStatus, dbPaymentStatus);
+        
+        console.log('Setting workflow state:', {
+          validatedStep,
+          membershipStatus: dbMembershipStatus,
+          paymentStatus: dbPaymentStatus
+        });
+        
+        setCurrentStep(validatedStep);
+        setMembershipStatus(dbMembershipStatus === 'active' ? 'active' : 'inactive');
+        setPaymentStatus((dbPaymentStatus as PaymentStatus) || 'pending');
         setSelectedTier(existingActivation.pricing_tier);
+        
         if (existingActivation.engagement_model) {
           setSelectedEngagementModel(
             existingActivation.engagement_model.toLowerCase().includes('marketplace') ? 'marketplace' : 'aggregator'
           );
+        }
+        
+        // If the validated step is different from database step, update it
+        if (validatedStep !== dbStep) {
+          console.log('Correcting workflow step from', dbStep, 'to', validatedStep);
+          await updateWorkflowStep(validatedStep, { 
+            workflow_step_corrected: true,
+            previous_step: dbStep 
+          });
         }
       }
 
@@ -98,6 +160,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const updateWorkflowStep = async (step: WorkflowStep, additionalData: any = {}) => {
     try {
+      console.log('Updating workflow step to:', step, 'with data:', additionalData);
+      
       const updateData = {
         user_id: userId,
         workflow_step: step,
@@ -122,6 +186,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       }
       
       setCurrentStep(step);
+      console.log('Workflow step updated successfully to:', step);
     } catch (error) {
       console.error('Error updating workflow step:', error);
       throw error;
@@ -130,10 +195,13 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleMembershipDecision = async (status: 'active' | 'inactive') => {
     try {
+      console.log('Membership decision:', status);
       setMembershipStatus(status);
+      
       if (status === 'active') {
         await updateWorkflowStep('payment', { membership_status: 'active' });
       } else {
+        // For inactive membership, go directly to summary
         await updateWorkflowStep('membership_summary', { membership_status: 'inactive' });
       }
     } catch (error) {
@@ -188,6 +256,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleProceedToTierSelection = async () => {
     try {
+      console.log('Proceeding to tier selection');
       await updateWorkflowStep('tier_selection', {
         membership_summary_completed: true
       });
@@ -202,6 +271,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleTierSelection = async (tier: string) => {
     try {
+      console.log('Tier selected:', tier);
       setSelectedTier(tier);
       await updateWorkflowStep('engagement_model', {
         pricing_tier: tier,
@@ -327,6 +397,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   // Render workflow steps
   const renderCurrentStep = () => {
+    console.log('Rendering step:', currentStep, 'with membership status:', membershipStatus);
+    
     switch (currentStep) {
       case 'membership_decision':
         return (
@@ -382,6 +454,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         return null;
 
       case 'membership_summary':
+        console.log('Rendering membership summary with status:', membershipStatus);
         if (membershipStatus) {
           return (
             <div className="max-w-4xl mx-auto">
