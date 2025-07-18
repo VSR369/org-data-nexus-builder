@@ -443,8 +443,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       });
       
       toast({
-        title: "Membership Activated!",
-        description: "Your membership has been successfully activated with all selected options.",
+        title: "Enrollment Activated!",
+        description: "Your enrollment as Solution Seeking Organization has been successfully activated with all selected options.",
       });
     } catch (error) {
       console.error('❌ Error in handleFinalConfirmation:', error);
@@ -479,7 +479,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-green-800">
             <CheckCircle className="h-6 w-6" />
-            Membership Activated Successfully!
+            Enrollment Activated Successfully!
           </CardTitle>
           <CardDescription className="text-green-700">
             Your membership is now active and you have full access to the platform
