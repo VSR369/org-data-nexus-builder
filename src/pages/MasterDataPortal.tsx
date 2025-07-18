@@ -146,25 +146,25 @@ const MasterDataPortal = () => {
           {/* Main Content Area */}
           <SidebarInset className="flex-1 min-w-0 no-horizontal-scroll">
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 shadow-sm z-10 sticky top-0 w-full">
-              <div className="px-4 lg:px-6 w-full">
-                <div className="flex items-center justify-between h-16 w-full">
-                  <div className="flex items-center space-x-2 lg:space-x-4 min-w-0 flex-1">
-                    <SidebarTrigger />
+            <header className="bg-background border-b border-border shadow-sm z-10 sticky top-0 w-full">
+              <div className="px-3 sm:px-4 lg:px-6 w-full">
+                <div className="flex items-center justify-between h-14 sm:h-16 w-full">
+                  <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 min-w-0 flex-1">
+                    <SidebarTrigger className="md:hidden" />
                     <Link to="/">
-                      <Button variant="ghost" size="sm" className="flex items-center gap-2 shrink-0">
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline">Back to CoInnovator</span>
-                        <span className="sm:hidden">Back</span>
+                      <Button variant="ghost" size="sm" className="flex items-center gap-1 sm:gap-2 shrink-0 px-2 sm:px-3">
+                        <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline text-sm">Back to CoInnovator</span>
+                        <span className="sm:hidden text-xs">Back</span>
                       </Button>
                     </Link>
-                    <div className="h-6 w-px bg-gray-300 shrink-0 hidden sm:block" />
-                    <div className="flex items-center space-x-2 lg:space-x-3 min-w-0 flex-1">
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                        <Database className="h-4 w-4 text-white" />
+                    <div className="h-4 sm:h-6 w-px bg-border shrink-0 hidden sm:block" />
+                    <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shrink-0">
+                        <Database className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h1 className="font-bold text-lg lg:text-xl text-gray-900 truncate">
+                        <h1 className="font-bold text-sm sm:text-lg lg:text-xl text-foreground truncate">
                           Master Data Portal
                         </h1>
                         <p className="text-xs lg:text-sm text-muted-foreground truncate hidden sm:block">
@@ -174,24 +174,37 @@ const MasterDataPortal = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2 shrink-0">
-              <Button
-                variant="outline"
-                onClick={handleRestoreEntityTypes}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Restore Entity Types
-              </Button>
-              <Button
+                  <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      onClick={handleRestoreEntityTypes}
+                      size="sm"
+                      className="hidden md:flex items-center gap-2 px-2 lg:px-3"
+                    >
+                      <RefreshCw className="h-3 w-3 lg:h-4 lg:w-4" />
+                      <span className="hidden lg:inline text-xs lg:text-sm">Restore Entity Types</span>
+                      <span className="lg:hidden text-xs">Restore ET</span>
+                    </Button>
+                    <Button
                       onClick={handleRestoreCustomData}
                       variant="outline" 
                       size="sm" 
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1 sm:gap-2 px-2 lg:px-3"
                     >
-                      <RefreshCw className="h-4 w-4" />
-                      <span className="hidden lg:inline">Restore Custom Data</span>
-                      <span className="lg:hidden">Restore</span>
+                      <RefreshCw className="h-3 w-3 lg:h-4 lg:w-4" />
+                      <span className="hidden lg:inline text-xs lg:text-sm">Restore Custom Data</span>
+                      <span className="hidden sm:inline lg:hidden text-xs">Restore Data</span>
+                      <span className="sm:hidden text-xs">Restore</span>
+                    </Button>
+                    {/* Mobile menu for first button */}
+                    <Button
+                      variant="outline"
+                      onClick={handleRestoreEntityTypes}
+                      size="sm"
+                      className="md:hidden flex items-center gap-1 px-2"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      <span className="text-xs">ET</span>
                     </Button>
                   </div>
                 </div>

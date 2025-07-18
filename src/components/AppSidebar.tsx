@@ -49,9 +49,9 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
   };
 
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="offcanvas" className="border-r border-border">
       <AppSidebarHeader />
-      <SidebarContent className="gap-0">
+      <SidebarContent className="gap-0 px-2 md:px-3">
         <SidebarMenuGroup
           title="🎯 Custom Data Management"
           items={customDataMenuItems}

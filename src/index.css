@@ -288,6 +288,36 @@
     .auto-stack-grid {
       @apply grid-cols-1;
     }
+
+    /* Mobile responsive grid optimization */
+    .auto-grid-responsive {
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    }
+
+    /* Mobile touch targets */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Mobile text optimization */
+    .mobile-text-sm {
+      @apply text-xs sm:text-sm;
+    }
+
+    .mobile-text-base {
+      @apply text-sm sm:text-base;
+    }
+
+    /* Mobile card optimization */
+    .mobile-card-padding {
+      @apply p-3 sm:p-4 lg:p-6;
+    }
+
+    /* Mobile grid spacing */
+    .mobile-grid-gap {
+      @apply gap-3 sm:gap-4 lg:gap-6;
+    }
   }
 }
 

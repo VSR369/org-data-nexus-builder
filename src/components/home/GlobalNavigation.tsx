@@ -22,9 +22,9 @@ export const GlobalNavigation = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-[60] bg-white border-b border-gray-200 shadow-sm">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
+    <nav className="sticky top-0 z-[60] bg-background border-b border-border shadow-sm">
+      <div className="container mx-auto px-3 sm:px-6">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <NavigationLogo />
 

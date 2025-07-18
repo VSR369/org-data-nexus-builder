@@ -63,11 +63,11 @@ export const BusinessModelsManager: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Business Models
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-lg sm:text-xl">Business Models</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center border rounded-lg p-1">
@@ -75,33 +75,35 @@ export const BusinessModelsManager: React.FC = () => {
                   variant={viewMode === 'cards' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('cards')}
-                  className="h-8 px-2"
+                  className="h-7 sm:h-8 px-2"
                 >
-                  <Grid className="w-4 h-4" />
+                  <Grid className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline ml-1 text-xs">Cards</span>
                 </Button>
                 <Button
                   variant={viewMode === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('table')}
-                  className="h-8 px-2"
+                  className="h-7 sm:h-8 px-2"
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline ml-1 text-xs">Table</span>
                 </Button>
               </div>
-              <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
+              <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading} className="h-7 sm:h-8">
+                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm">Refresh</span>
               </Button>
             </div>
           </CardTitle>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Consolidated view of pricing tiers with Marketplace and Aggregator model details
           </p>
         </CardHeader>
       </Card>
 
       {/* Business Models Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="h-full">

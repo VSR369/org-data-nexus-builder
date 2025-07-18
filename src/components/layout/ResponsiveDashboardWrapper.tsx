@@ -44,41 +44,43 @@ const ResponsiveDashboardWrapper: React.FC<ResponsiveDashboardWrapperProps> = ({
   maxHeight,
   showBackground = false,
 }) => {
-  // Gap classes
+  // Gap classes with mobile-first approach
   const gapClasses = {
-    sm: 'gap-3',
-    md: 'gap-4 lg:gap-6',
-    lg: 'gap-6 lg:gap-8'
+    sm: 'gap-2 sm:gap-3',
+    md: 'gap-3 sm:gap-4 lg:gap-6',
+    lg: 'gap-4 sm:gap-6 lg:gap-8'
   };
 
-  // Padding classes
+  // Padding classes with mobile-first approach
   const paddingClasses = {
     none: '',
-    sm: 'p-3 lg:p-4',
-    md: 'p-4 lg:p-6',
-    lg: 'p-6 lg:p-8'
+    sm: 'p-2 sm:p-3 lg:p-4',
+    md: 'p-3 sm:p-4 lg:p-6',
+    lg: 'p-4 sm:p-6 lg:p-8'
   };
 
-  // Layout classes
+  // Layout classes with improved mobile responsiveness
   const layoutClasses = {
-    grid: `grid grid-cols-1 ${minItemWidth <= 250 ? 'sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : minItemWidth <= 300 ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-2 xl:grid-cols-3'}`,
-    flex: 'flex flex-wrap',
+    grid: `grid grid-cols-1 ${minItemWidth <= 250 ? 'sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : minItemWidth <= 300 ? 'sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`,
+    flex: 'flex flex-wrap items-start',
     stack: 'flex flex-col'
   };
 
-  // Dynamic grid template for larger screens
+  // Dynamic grid template with mobile optimization
+  const mobileMinWidth = Math.min(minItemWidth, 280); // Ensure mobile cards don't get too narrow
   const gridStyle = layout === 'grid' ? {
     '--min-item-width': `${minItemWidth}px`,
-    gridTemplateColumns: `repeat(auto-fit, minmax(min(${minItemWidth}px, 100%), 1fr))`
+    '--mobile-min-width': `${mobileMinWidth}px`,
+    gridTemplateColumns: `repeat(auto-fit, minmax(min(var(--min-item-width), 100%), 1fr))`
   } as React.CSSProperties : {};
 
   return (
     <div
       className={cn(
-        // Base container styles
-        'w-full max-w-full overflow-x-hidden',
-        // Background
-        showBackground && 'bg-gradient-to-br from-slate-50/50 to-gray-50/50 dark:from-gray-900/50 dark:to-slate-900/50',
+        // Base container styles with mobile optimization
+        'w-full max-w-full overflow-x-hidden min-h-0',
+        // Background with mobile-friendly gradients
+        showBackground && 'bg-gradient-to-br from-background/50 to-muted/30',
         // Padding
         paddingClasses[padding],
         // Custom className
@@ -92,10 +94,12 @@ const ResponsiveDashboardWrapper: React.FC<ResponsiveDashboardWrapperProps> = ({
           layoutClasses[layout],
           // Gap classes
           gapClasses[gap],
-          // Responsive behavior
-          'w-full max-w-full',
+          // Responsive behavior with mobile touch optimization
+          'w-full max-w-full touch-manipulation',
           // Scroll behavior if maxHeight is set
-          maxHeight && 'overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent'
+          maxHeight && 'overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent',
+          // Mobile-specific optimizations
+          'scroll-smooth'
         )}
         style={gridStyle}
       >

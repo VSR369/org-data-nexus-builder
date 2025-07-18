@@ -45,11 +45,11 @@ export const SidebarMenuGroup: React.FC<SidebarMenuGroupProps> = ({
                   onItemClick(item.id);
                 }}
                 isActive={activeSection === item.id && isOnMasterDataPortal}
-                className="w-full justify-start cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                className="w-full justify-start cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors py-2 px-3 text-sm md:text-base"
                 style={{ pointerEvents: 'auto' }}
               >
-                <item.icon className="w-4 h-4" />
-                <span className="font-medium">{item.title}</span>
+                <item.icon className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
+                <span className="font-medium truncate text-xs md:text-sm">{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
