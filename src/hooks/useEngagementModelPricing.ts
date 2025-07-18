@@ -19,6 +19,14 @@ interface EngagementModelWithPricing {
   currency: string;
 }
 
+// Utility function to convert tier names to proper case for database queries
+const normalizeTierName = (tierName: string): string => {
+  if (!tierName) return '';
+  
+  // Convert to proper case (first letter uppercase, rest lowercase)
+  return tierName.charAt(0).toUpperCase() + tierName.slice(1).toLowerCase();
+};
+
 export const useEngagementModelPricing = (selectedTier: string | null, profile: any) => {
   const [engagementModels, setEngagementModels] = useState<EngagementModelWithPricing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,11 +45,11 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
         setError(null);
         console.log('🔄 Loading engagement models for tier:', selectedTier);
 
-        // Convert tier to lowercase for database queries (since we store it lowercase)
-        const tierForQuery = selectedTier.toLowerCase();
+        // Normalize tier name to proper case for database queries
+        const tierForQuery = normalizeTierName(selectedTier);
         console.log('🔽 Using tier for database query:', tierForQuery);
 
-        // First, get the tier ID using lowercase name
+        // First, get the tier ID using proper case name
         const { data: tierData, error: tierError } = await supabase
           .from('master_pricing_tiers')
           .select('id')
