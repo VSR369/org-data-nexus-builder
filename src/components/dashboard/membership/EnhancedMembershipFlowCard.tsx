@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle, Eye } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle } from 'lucide-react';
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
@@ -559,7 +559,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               onClick={() => setShowDetails(true)}
               className="flex items-center gap-2"
             >
-              <Eye className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
               View Details
             </Button>
             <Button onClick={() => window.location.reload()} variant="outline">
