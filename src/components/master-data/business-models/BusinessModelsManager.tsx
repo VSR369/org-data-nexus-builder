@@ -17,8 +17,15 @@ export const BusinessModelsManager: React.FC = () => {
   useEffect(() => {
     if (!tierLoading && !formulaLoading) {
       const consolidatedModels = tierConfigurations.map(tier => {
-        const marketplaceFormula = platformFormulas.find(
-          f => f.engagement_model_name === 'Market Place' && f.country_id === tier.country_id
+        const marketplaceGeneralFormula = platformFormulas.find(
+          f => f.engagement_model_name === 'Market Place' && 
+              f.engagement_model_subtype_name === 'General' && 
+              f.country_id === tier.country_id
+        );
+        const marketplaceProgramManagedFormula = platformFormulas.find(
+          f => f.engagement_model_name === 'Market Place' && 
+              f.engagement_model_subtype_name === 'Program Managed' && 
+              f.country_id === tier.country_id
         );
         const aggregatorFormula = platformFormulas.find(
           f => f.engagement_model_name === 'Aggregator' && f.country_id === tier.country_id
@@ -26,10 +33,11 @@ export const BusinessModelsManager: React.FC = () => {
 
         return {
           ...tier,
-          marketplaceFormula: marketplaceFormula || null,
+          marketplaceGeneralFormula: marketplaceGeneralFormula || null,
+          marketplaceProgramManagedFormula: marketplaceProgramManagedFormula || null,
           aggregatorFormula: aggregatorFormula || null,
         };
-      }).sort((a, b) => a.level_order - b.level_order);
+      }).sort((a, b) => (a.level_order || 0) - (b.level_order || 0));
 
       setBusinessModels(consolidatedModels);
       setLoading(false);

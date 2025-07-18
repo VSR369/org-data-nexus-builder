@@ -106,10 +106,16 @@ export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) =
           </div>
         </div>
 
-        {/* Marketplace Model */}
+        {/* Marketplace General Model */}
         <div className="border border-blue-200 bg-blue-50/50 rounded-lg p-3">
-          <h4 className="font-medium text-sm mb-2 text-blue-800">Marketplace Model</h4>
-          {getModelDetails(model.marketplaceFormula, 'Marketplace')}
+          <h4 className="font-medium text-sm mb-2 text-blue-800">Marketplace General</h4>
+          {getModelDetails(model.marketplaceGeneralFormula, 'Marketplace')}
+        </div>
+
+        {/* Marketplace Program Managed Model */}
+        <div className="border border-purple-200 bg-purple-50/50 rounded-lg p-3">
+          <h4 className="font-medium text-sm mb-2 text-purple-800">Marketplace Program Managed</h4>
+          {getModelDetails(model.marketplaceProgramManagedFormula, 'Marketplace')}
         </div>
 
         {/* Aggregator Model */}
