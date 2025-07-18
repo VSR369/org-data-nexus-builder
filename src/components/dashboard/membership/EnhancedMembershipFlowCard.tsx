@@ -437,16 +437,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         );
 
       case 'membership_summary':
-        // This step is now handled by the persistent summary, so we skip to tier selection
-        return (
-          <div className="max-w-4xl mx-auto">
-            <SimpleTierSelectionCard
-              selectedTier={selectedTier}
-              onTierSelect={handleTierSelection}
-              countryName={profile?.country}
-            />
-          </div>
-        );
+        // This step is now handled by the persistent summary above, no additional content needed
+        return null;
 
       default:
         return null;
