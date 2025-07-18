@@ -13,6 +13,7 @@ import { MembershipSummaryOnlyCard } from './MembershipSummaryOnlyCard';
 import { SimpleTierSelectionCard } from './SimpleTierSelectionCard';
 import { SimpleEngagementModelCard } from './SimpleEngagementModelCard';
 import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
+import { SelectedTierSummaryCard } from './SelectedTierSummaryCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -30,6 +31,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showTierSelection, setShowTierSelection] = useState(false);
 
   // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
@@ -98,6 +100,9 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         setPaymentStatus((dbPaymentStatus as PaymentStatus) || 'pending');
         setSelectedTier(existingActivation.pricing_tier);
         setSelectedEngagementModel(existingActivation.engagement_model);
+        
+        // Show tier selection if a tier has been selected or if on tier_selection step
+        setShowTierSelection(!!existingActivation.pricing_tier || dbStep === 'tier_selection');
       }
 
       // Load membership fees
@@ -148,6 +153,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       // Only set engagement_model if it's provided or already exists
       if (selectedEngagementModel || additionalData.engagement_model) {
         updateData.engagement_model = additionalData.engagement_model || selectedEngagementModel;
+      }
+
+      // Only set pricing_tier if it's provided or already exists
+      if (selectedTier || additionalData.pricing_tier) {
+        updateData.pricing_tier = additionalData.pricing_tier || selectedTier;
       }
 
       console.log('📤 Final update data being sent to database:', updateData);
@@ -203,6 +213,21 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const handleActivateMembership = async () => {
+    try {
+      console.log('👤 Activating membership for inactive user');
+      setMembershipStatus('active');
+      await updateWorkflowStep('payment', { membership_status: 'active' });
+    } catch (error) {
+      console.error('❌ Error in handleActivateMembership:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update membership status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handlePaymentSubmit = async () => {
     setIsProcessing(true);
     setPaymentStatus('processing');
@@ -214,7 +239,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       const annualFee = membershipFees[0]?.annual_amount || 990;
       const currency = membershipFees[0]?.annual_currency || 'USD';
 
-      await updateWorkflowStep('membership_summary', {
+      // Keep the existing pricing tier and engagement model
+      const updateData = {
         payment_simulation_status: 'success',
         mem_payment_status: 'paid',
         mem_payment_amount: annualFee,
@@ -223,7 +249,18 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         mem_payment_method: 'credit_card',
         mem_receipt_number: `RCP-${Date.now()}`,
         mem_terms: true
-      });
+      };
+      
+      // Don't change pricing_tier or engagement_model if they're already set
+      if (selectedTier) {
+        updateData.pricing_tier = selectedTier;
+      }
+      
+      if (selectedEngagementModel) {
+        updateData.engagement_model = selectedEngagementModel;
+      }
+
+      await updateWorkflowStep('membership_summary', updateData);
 
       setPaymentStatus('success');
       
@@ -248,6 +285,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleProceedToTierSelection = async () => {
     try {
       console.log('🎯 Proceeding to tier selection');
+      setShowTierSelection(true);
       await updateWorkflowStep('tier_selection');
       
       toast({
@@ -278,6 +316,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       }
       
       setSelectedTier(tier);
+      setShowTierSelection(true);
       
       // Convert tier to lowercase for database storage (constraint requirement)
       const tierForDatabase = tier.toLowerCase();
@@ -307,6 +346,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         variant: "destructive"
       });
     }
+  };
+
+  const handleEditTier = () => {
+    setShowTierSelection(true);
+    updateWorkflowStep('tier_selection');
   };
 
   const handleEngagementModelSelection = async (modelName: string) => {
@@ -455,16 +499,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         );
 
       case 'engagement_model':
-        return (
-          <div className="max-w-4xl mx-auto">
-            <EngagementModelSelectionCard
-              selectedTier={selectedTier}
-              selectedModel={selectedEngagementModel}
-              onModelSelect={handleEngagementModelSelection}
-              profile={profile}
-            />
-          </div>
-        );
+        return null; // We will render this separately
 
       case 'membership_summary':
         // This step is now handled by the persistent summary above, no additional content needed
@@ -485,12 +520,47 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             membershipFees={membershipFees}
             onProceedToTierSelection={handleProceedToTierSelection}
             currency={membershipFees[0]?.annual_currency || 'USD'}
+            onActivateMembership={membershipStatus === 'inactive' ? handleActivateMembership : undefined}
+          />
+        </div>
+      )}
+      
+      {/* Persistent Tier Selection Summary - Show when tier is selected */}
+      {selectedTier && currentStep !== 'tier_selection' && (
+        <div className="max-w-4xl mx-auto">
+          <SelectedTierSummaryCard 
+            selectedTier={selectedTier}
+            onEditTier={handleEditTier}
           />
         </div>
       )}
       
       {/* Current Step Content */}
       {renderCurrentStepContent()}
+
+      {/* Always show tier selection if it should be visible */}
+      {showTierSelection && currentStep === 'tier_selection' && (
+        <div className="max-w-4xl mx-auto">
+          <SimpleTierSelectionCard
+            selectedTier={selectedTier}
+            onTierSelect={handleTierSelection}
+            countryName={profile?.country}
+          />
+        </div>
+      )}
+      
+      {/* Always show engagement model selection if we're on that step */}
+      {currentStep === 'engagement_model' && (
+        <div className="max-w-4xl mx-auto">
+          <EngagementModelSelectionCard
+            selectedTier={selectedTier}
+            selectedModel={selectedEngagementModel}
+            onModelSelect={handleEngagementModelSelection}
+            profile={profile}
+            membershipStatus={membershipStatus || 'inactive'}
+          />
+        </div>
+      )}
     </div>
   );
 };

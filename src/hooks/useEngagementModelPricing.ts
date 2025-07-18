@@ -19,9 +19,19 @@ interface EngagementModelWithPricing {
   currency: string;
   subtype?: string;
   displayName: string;
+  // Added field to show original prices for comparison
+  originalPrices?: {
+    platform_usage_fee_percentage: number;
+    base_management_fee: number;
+    base_consulting_fee: number;
+  };
 }
 
-export const useEngagementModelPricing = (selectedTier: string | null, profile: any) => {
+export const useEngagementModelPricing = (
+  selectedTier: string | null, 
+  profile: any, 
+  membershipStatus: 'active' | 'inactive' = 'inactive' // Added parameter to handle membership status
+) => {
   const [engagementModels, setEngagementModels] = useState<EngagementModelWithPricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +42,7 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
         setLoading(true);
         setError(null);
         console.log('🔄 Loading engagement models with subtypes');
+        console.log('🔄 User membership status:', membershipStatus);
 
         // Fetch all active engagement models
         const { data: allModels, error: modelsError } = await supabase
@@ -87,6 +98,8 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
           console.error('❌ Error loading formulas:', formulaError);
         }
 
+        console.log('📊 Loaded formulas:', formulas?.length || 0);
+
         // Get currency for the country
         let currency = 'USD';
         if (profile?.country) {
@@ -105,6 +118,7 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
         const modelsWithPricing: EngagementModelWithPricing[] = [];
 
         allModels.forEach(model => {
+          // Special handling for Market Place with subtypes
           if (model.name === 'Market Place') {
             // For Market Place, create separate entries for General and Program Managed
             const generalFormula = formulas?.find(f => 
@@ -119,6 +133,26 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
 
             // Add Market Place General
             if (generalFormula) {
+              // Apply membership discount if user has active membership
+              let platformFeePercentage = generalFormula.platform_usage_fee_percentage || 0;
+              let baseManagementFee = generalFormula.base_management_fee || 0;
+              let baseConsultingFee = generalFormula.base_consulting_fee || 0;
+              
+              // Store original prices for comparison
+              const originalPrices = {
+                platform_usage_fee_percentage: platformFeePercentage,
+                base_management_fee: baseManagementFee,
+                base_consulting_fee: baseConsultingFee
+              };
+
+              // Apply discount if membership is active
+              if (membershipStatus === 'active' && generalFormula.membership_discount_percentage) {
+                const discountMultiplier = 1 - (generalFormula.membership_discount_percentage / 100);
+                platformFeePercentage *= discountMultiplier;
+                baseManagementFee *= discountMultiplier;
+                baseConsultingFee *= discountMultiplier;
+              }
+
               modelsWithPricing.push({
                 id: `${model.id}-general`,
                 name: 'Market Place',
@@ -129,18 +163,39 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
                   id: generalFormula.id,
                   formula_name: generalFormula.formula_name,
                   formula_expression: generalFormula.formula_expression,
-                  platform_usage_fee_percentage: generalFormula.platform_usage_fee_percentage || 0,
-                  base_management_fee: generalFormula.base_management_fee || 0,
-                  base_consulting_fee: generalFormula.base_consulting_fee || 0,
+                  platform_usage_fee_percentage: platformFeePercentage,
+                  base_management_fee: baseManagementFee,
+                  base_consulting_fee: baseConsultingFee,
                   advance_payment_percentage: generalFormula.advance_payment_percentage || 0,
                   membership_discount_percentage: generalFormula.membership_discount_percentage || 0,
                 },
+                originalPrices: membershipStatus === 'active' ? originalPrices : undefined,
                 currency
               });
             }
 
             // Add Market Place Program Managed
             if (programManagedFormula) {
+              // Apply membership discount if user has active membership
+              let platformFeePercentage = programManagedFormula.platform_usage_fee_percentage || 0;
+              let baseManagementFee = programManagedFormula.base_management_fee || 0;
+              let baseConsultingFee = programManagedFormula.base_consulting_fee || 0;
+              
+              // Store original prices for comparison
+              const originalPrices = {
+                platform_usage_fee_percentage: platformFeePercentage,
+                base_management_fee: baseManagementFee,
+                base_consulting_fee: baseConsultingFee
+              };
+
+              // Apply discount if membership is active
+              if (membershipStatus === 'active' && programManagedFormula.membership_discount_percentage) {
+                const discountMultiplier = 1 - (programManagedFormula.membership_discount_percentage / 100);
+                platformFeePercentage *= discountMultiplier;
+                baseManagementFee *= discountMultiplier;
+                baseConsultingFee *= discountMultiplier;
+              }
+
               modelsWithPricing.push({
                 id: `${model.id}-program-managed`,
                 name: 'Market Place',
@@ -151,21 +206,53 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
                   id: programManagedFormula.id,
                   formula_name: programManagedFormula.formula_name,
                   formula_expression: programManagedFormula.formula_expression,
-                  platform_usage_fee_percentage: programManagedFormula.platform_usage_fee_percentage || 0,
-                  base_management_fee: programManagedFormula.base_management_fee || 0,
-                  base_consulting_fee: programManagedFormula.base_consulting_fee || 0,
+                  platform_usage_fee_percentage: platformFeePercentage,
+                  base_management_fee: baseManagementFee,
+                  base_consulting_fee: baseConsultingFee,
                   advance_payment_percentage: programManagedFormula.advance_payment_percentage || 0,
                   membership_discount_percentage: programManagedFormula.membership_discount_percentage || 0,
                 },
+                originalPrices: membershipStatus === 'active' ? originalPrices : undefined,
                 currency
               });
             }
-          } else {
-            // For other models, add them as single entries
-            const formula = formulas?.find(f => 
+          } 
+          // Special handling for Aggregator model
+          else if (model.name === 'Aggregator') {
+            // For Aggregator, find the formula without subtype
+            const aggregatorFormula = formulas?.find(f => 
               f.engagement_model_id === model.id && 
               !f.engagement_model_subtype_id // Models without subtypes
             );
+            
+            console.log('🔍 Looking for Aggregator formula:', {
+              modelId: model.id,
+              formulaFound: !!aggregatorFormula,
+              allFormulas: formulas?.length || 0
+            });
+            
+            // Even if no formula is found, still add the model with empty pricing
+            const formula = aggregatorFormula || null;
+            
+            // Apply membership discount if user has active membership
+            let platformFeePercentage = formula?.platform_usage_fee_percentage || 0;
+            let baseManagementFee = formula?.base_management_fee || 0;
+            let baseConsultingFee = formula?.base_consulting_fee || 0;
+            
+            // Store original prices for comparison
+            const originalPrices = formula ? {
+              platform_usage_fee_percentage: platformFeePercentage,
+              base_management_fee: baseManagementFee,
+              base_consulting_fee: baseConsultingFee
+            } : undefined;
+
+            // Apply discount if membership is active
+            if (membershipStatus === 'active' && formula?.membership_discount_percentage) {
+              const discountMultiplier = 1 - (formula.membership_discount_percentage / 100);
+              platformFeePercentage *= discountMultiplier;
+              baseManagementFee *= discountMultiplier;
+              baseConsultingFee *= discountMultiplier;
+            }
 
             modelsWithPricing.push({
               id: model.id,
@@ -176,12 +263,59 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
                 id: formula.id,
                 formula_name: formula.formula_name,
                 formula_expression: formula.formula_expression,
-                platform_usage_fee_percentage: formula.platform_usage_fee_percentage || 0,
-                base_management_fee: formula.base_management_fee || 0,
-                base_consulting_fee: formula.base_consulting_fee || 0,
+                platform_usage_fee_percentage: platformFeePercentage,
+                base_management_fee: baseManagementFee,
+                base_consulting_fee: baseConsultingFee,
                 advance_payment_percentage: formula.advance_payment_percentage || 0,
                 membership_discount_percentage: formula.membership_discount_percentage || 0,
               } : null,
+              originalPrices: membershipStatus === 'active' ? originalPrices : undefined,
+              currency
+            });
+          }
+          // For other models, add them as single entries
+          else {
+            const formula = formulas?.find(f => 
+              f.engagement_model_id === model.id && 
+              !f.engagement_model_subtype_id // Models without subtypes
+            );
+
+            // Apply membership discount if user has active membership
+            let platformFeePercentage = formula?.platform_usage_fee_percentage || 0;
+            let baseManagementFee = formula?.base_management_fee || 0;
+            let baseConsultingFee = formula?.base_consulting_fee || 0;
+            
+            // Store original prices for comparison
+            const originalPrices = formula ? {
+              platform_usage_fee_percentage: platformFeePercentage,
+              base_management_fee: baseManagementFee,
+              base_consulting_fee: baseConsultingFee
+            } : undefined;
+
+            // Apply discount if membership is active
+            if (membershipStatus === 'active' && formula?.membership_discount_percentage) {
+              const discountMultiplier = 1 - (formula.membership_discount_percentage / 100);
+              platformFeePercentage *= discountMultiplier;
+              baseManagementFee *= discountMultiplier;
+              baseConsultingFee *= discountMultiplier;
+            }
+
+            modelsWithPricing.push({
+              id: model.id,
+              name: model.name,
+              displayName: model.name,
+              description: model.description,
+              formula: formula ? {
+                id: formula.id,
+                formula_name: formula.formula_name,
+                formula_expression: formula.formula_expression,
+                platform_usage_fee_percentage: platformFeePercentage,
+                base_management_fee: baseManagementFee,
+                base_consulting_fee: baseConsultingFee,
+                advance_payment_percentage: formula.advance_payment_percentage || 0,
+                membership_discount_percentage: formula.membership_discount_percentage || 0,
+              } : null,
+              originalPrices: membershipStatus === 'active' ? originalPrices : undefined,
               currency
             });
           }
@@ -200,7 +334,7 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
     };
 
     fetchEngagementModelsWithPricing();
-  }, [selectedTier, profile?.country]);
+  }, [selectedTier, profile?.country, membershipStatus]);
 
   return {
     engagementModels,

@@ -1,117 +1,89 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Calendar, DollarSign, ArrowRight, AlertCircle } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Users, ArrowRight, DollarSign } from 'lucide-react';
 
 interface MembershipSummaryOnlyCardProps {
-  membershipStatus: 'active' | 'inactive';
+  membershipStatus: 'active' | 'inactive' | null;
   membershipFees: any[];
   onProceedToTierSelection: () => void;
-  currency?: string;
+  currency: string;
+  onActivateMembership?: () => void;
 }
 
 export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps> = ({
   membershipStatus,
   membershipFees,
   onProceedToTierSelection,
-  currency = 'USD'
+  currency,
+  onActivateMembership
 }) => {
-  const membershipFee = membershipFees[0]?.annual_amount || 990;
-  const startDate = new Date();
-  const endDate = new Date(startDate);
-  endDate.setFullYear(endDate.getFullYear() + 1);
-
+  const fee = membershipFees?.[0] || { annual_amount: 0 };
+  
   return (
-    <Card className={`w-full ${membershipStatus === 'active' ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'}`}>
+    <Card className={membershipStatus === 'active' ? 'border-green-200 bg-green-50' : 'border-gray-200'}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {membershipStatus === 'active' ? (
-            <>
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <span className="text-green-800">Membership Activated Successfully!</span>
-            </>
-          ) : (
-            <>
-              <AlertCircle className="h-6 w-6 text-orange-600" />
-              <span className="text-orange-800">Limited Access Mode</span>
-            </>
-          )}
+          <Users className="h-5 w-5 text-blue-600" />
+          Membership Status
         </CardTitle>
-        <CardDescription>
-          {membershipStatus === 'active' 
-            ? 'Your annual membership has been activated with full platform access'
-            : 'You are continuing with limited access - upgrade anytime to unlock full features'
-          }
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Payment Details */}
-          <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-            <DollarSign className={`h-6 w-6 mx-auto mb-2 ${membershipStatus === 'active' ? 'text-green-600' : 'text-gray-400'}`} />
-            <div className="font-medium text-gray-900">
-              {membershipStatus === 'active' ? `${currency} ${membershipFee}` : 'No Payment'}
+        {membershipStatus === 'active' ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Badge className="bg-green-600">Active Member</Badge>
+                <p className="text-sm text-muted-foreground mt-1">
+                  You are enjoying member benefits including discounts on engagement models
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="block text-sm text-gray-500">Annual Membership Fee</span>
+                <span className="text-lg font-bold">{currency} {fee.annual_amount}</span>
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              {membershipStatus === 'active' ? 'Annual Membership Fee' : 'Limited Access'}
-            </div>
+            <Button onClick={onProceedToTierSelection} className="w-full">
+              Continue to Pricing Tier Selection
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Start Date */}
-          <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-            <Calendar className={`h-6 w-6 mx-auto mb-2 ${membershipStatus === 'active' ? 'text-blue-600' : 'text-gray-400'}`} />
-            <div className="font-medium text-gray-900">
-              {startDate.toLocaleDateString()}
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Badge variant="outline" className="border-gray-300">Not a Member</Badge>
+                <p className="text-sm text-muted-foreground mt-1">
+                  You're currently not a member. Membership provides discounted pricing.
+                </p>
+              </div>
+              {onActivateMembership && (
+                <Button 
+                  onClick={onActivateMembership}
+                  variant="outline"
+                  className="flex items-center gap-1"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Become a Member
+                </Button>
+              )}
             </div>
-            <div className="text-sm text-gray-500">
-              {membershipStatus === 'active' ? 'Membership Start' : 'Access Start'}
+            <div className="p-4 border border-orange-200 bg-orange-50 rounded-md">
+              <h4 className="text-sm font-medium text-orange-800">Member Benefits:</h4>
+              <ul className="text-sm text-orange-700 mt-2 space-y-1 list-disc pl-5">
+                <li>Save up to 20% on engagement model fees</li>
+                <li>Priority support and faster turnaround times</li>
+                <li>Access to exclusive member resources</li>
+              </ul>
             </div>
-          </div>
-
-          {/* End Date / Status */}
-          <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-            <Calendar className={`h-6 w-6 mx-auto mb-2 ${membershipStatus === 'active' ? 'text-purple-600' : 'text-gray-400'}`} />
-            <div className="font-medium text-gray-900">
-              {membershipStatus === 'active' ? endDate.toLocaleDateString() : 'Ongoing'}
-            </div>
-            <div className="text-sm text-gray-500">
-              {membershipStatus === 'active' ? 'Membership Expires' : 'Limited Access'}
-            </div>
-          </div>
-        </div>
-
-        {membershipStatus === 'active' && (
-          <div className="mb-6 p-3 bg-green-100 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-2 text-green-800">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                Receipt #RCP-{Date.now().toString().slice(-8)} | Payment Method: Credit Card
-              </span>
-            </div>
-          </div>
-        )}
-
-        {membershipStatus === 'inactive' && (
-          <div className="mb-6 p-3 bg-orange-100 border border-orange-200 rounded-lg">
-            <div className="flex items-center gap-2 text-orange-800">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                Limited to 2 challenges per month. Upgrade to unlock full features.
-              </span>
-            </div>
+            <Button onClick={onProceedToTierSelection} className="w-full">
+              Continue without Membership
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         )}
-
-        <div className="text-center">
-          <Button 
-            onClick={onProceedToTierSelection}
-            className="w-full md:w-auto"
-          >
-            Proceed to Pricing Tier Selection
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, DollarSign, Settings, AlertCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, DollarSign, Settings, AlertCircle, ArrowRight, Tag } from 'lucide-react';
 import { useEngagementModelPricing } from '@/hooks/useEngagementModelPricing';
 
 interface EngagementModelSelectionCardProps {
@@ -11,15 +11,17 @@ interface EngagementModelSelectionCardProps {
   selectedModel: string | null;
   onModelSelect: (modelName: string) => void;
   profile: any;
+  membershipStatus?: 'active' | 'inactive';
 }
 
 export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCardProps> = ({
   selectedTier,
   selectedModel,
   onModelSelect,
-  profile
+  profile,
+  membershipStatus = 'inactive'
 }) => {
-  const { engagementModels, loading, error } = useEngagementModelPricing(selectedTier, profile);
+  const { engagementModels, loading, error } = useEngagementModelPricing(selectedTier, profile, membershipStatus);
 
   if (loading) {
     return (
@@ -72,6 +74,16 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
         <CardTitle>Select Your Engagement Model</CardTitle>
         <CardDescription>
           Choose the engagement model that best fits your organization's needs
+          {membershipStatus === 'active' && (
+            <span className="text-green-700 ml-1 font-medium">
+              (Member pricing applied)
+            </span>
+          )}
+          {membershipStatus === 'inactive' && (
+            <span className="text-gray-500 ml-1">
+              (Standard pricing)
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -109,6 +121,12 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <DollarSign className="h-4 w-4" />
                         Pricing Structure
+                        {membershipStatus === 'active' && model.originalPrices && (
+                          <Badge className="bg-green-100 text-green-800 ml-auto">
+                            <Tag className="h-3 w-3 mr-1" />
+                            Member Price
+                          </Badge>
+                        )}
                       </div>
                       
                       <div className="bg-gray-50 rounded-lg p-3 space-y-2">
@@ -116,7 +134,16 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                         {model.formula.platform_usage_fee_percentage > 0 && (
                           <div className="flex justify-between text-sm">
                             <span>Platform Usage Fee:</span>
-                            <span className="font-medium">{model.formula.platform_usage_fee_percentage}%</span>
+                            <div>
+                              {membershipStatus === 'active' && model.originalPrices && (
+                                <span className="line-through text-gray-500 text-xs mr-2">
+                                  {model.originalPrices.platform_usage_fee_percentage}%
+                                </span>
+                              )}
+                              <span className={membershipStatus === 'active' ? "font-medium text-green-700" : "font-medium"}>
+                                {model.formula.platform_usage_fee_percentage}%
+                              </span>
+                            </div>
                           </div>
                         )}
                         
@@ -124,7 +151,16 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                         {model.formula.base_management_fee > 0 && (
                           <div className="flex justify-between text-sm">
                             <span>Base Management Fee:</span>
-                            <span className="font-medium">{model.currency} {model.formula.base_management_fee}</span>
+                            <div>
+                              {membershipStatus === 'active' && model.originalPrices && (
+                                <span className="line-through text-gray-500 text-xs mr-2">
+                                  {model.currency} {model.originalPrices.base_management_fee}
+                                </span>
+                              )}
+                              <span className={membershipStatus === 'active' ? "font-medium text-green-700" : "font-medium"}>
+                                {model.currency} {model.formula.base_management_fee}
+                              </span>
+                            </div>
                           </div>
                         )}
                         
@@ -132,7 +168,16 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
                         {model.formula.base_consulting_fee > 0 && (
                           <div className="flex justify-between text-sm">
                             <span>Base Consulting Fee:</span>
-                            <span className="font-medium">{model.currency} {model.formula.base_consulting_fee}</span>
+                            <div>
+                              {membershipStatus === 'active' && model.originalPrices && (
+                                <span className="line-through text-gray-500 text-xs mr-2">
+                                  {model.currency} {model.originalPrices.base_consulting_fee}
+                                </span>
+                              )}
+                              <span className={membershipStatus === 'active' ? "font-medium text-green-700" : "font-medium"}>
+                                {model.currency} {model.formula.base_consulting_fee}
+                              </span>
+                            </div>
                           </div>
                         )}
                         
@@ -146,9 +191,11 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
 
                         {/* Membership Discount */}
                         {model.formula.membership_discount_percentage > 0 && (
-                          <div className="flex justify-between text-sm text-green-600">
+                          <div className="flex justify-between text-sm">
                             <span>Member Discount:</span>
-                            <span className="font-medium">-{model.formula.membership_discount_percentage}%</span>
+                            <span className={membershipStatus === 'active' ? "font-medium text-green-700" : "font-medium text-gray-500"}>
+                              {membershipStatus === 'active' ? 'Applied' : 'Available'}: {model.formula.membership_discount_percentage}%
+                            </span>
                           </div>
                         )}
                       </div>
