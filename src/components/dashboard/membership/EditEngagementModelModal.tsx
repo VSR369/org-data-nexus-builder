@@ -52,20 +52,34 @@ export const EditEngagementModelModal: React.FC<EditEngagementModelModalProps> =
   const loadAvailableModels = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Loading available models for tier:', selectedTier);
       
-      if (!selectedTier) return;
+      if (!selectedTier) {
+        console.log('❌ No selected tier provided');
+        return;
+      }
 
-      // Get tier ID
-      const { data: tierData } = await supabase
+      // Get tier ID using case-insensitive matching
+      const { data: tierData, error: tierError } = await supabase
         .from('master_pricing_tiers')
         .select('id')
-        .eq('name', selectedTier)
+        .ilike('name', selectedTier)
         .single();
 
-      if (!tierData) return;
+      if (tierError) {
+        console.error('❌ Error fetching tier data:', tierError);
+        return;
+      }
+
+      if (!tierData) {
+        console.log('❌ No tier found with name:', selectedTier);
+        return;
+      }
+
+      console.log('✅ Found tier:', tierData);
 
       // Get available models for this tier
-      const { data: tierModelAccess } = await supabase
+      const { data: tierModelAccess, error: accessError } = await supabase
         .from('master_tier_engagement_model_access')
         .select(`
           *,
@@ -75,12 +89,18 @@ export const EditEngagementModelModal: React.FC<EditEngagementModelModalProps> =
         .eq('is_active', true)
         .eq('is_allowed', true);
 
+      if (accessError) {
+        console.error('❌ Error fetching model access:', accessError);
+        return;
+      }
+
+      console.log('✅ Found available models:', tierModelAccess);
       setAvailableModels(tierModelAccess || []);
 
       // Load pricing for all models
       await loadModelPricing();
     } catch (error) {
-      console.error('Error loading models:', error);
+      console.error('❌ Error loading models:', error);
       toast({
         title: "Error",
         description: "Failed to load available engagement models.",
@@ -119,17 +139,17 @@ export const EditEngagementModelModal: React.FC<EditEngagementModelModalProps> =
     try {
       if (!selectedModel || !selectedTier) return;
 
-      // Get tier and model IDs for validation
+      // Get tier and model IDs for validation using case-insensitive matching
       const { data: tierData } = await supabase
         .from('master_pricing_tiers')
         .select('id')
-        .eq('name', selectedTier)
+        .ilike('name', selectedTier)
         .single();
 
       const { data: modelData } = await supabase
         .from('master_engagement_models')
         .select('id')
-        .eq('name', selectedModel)
+        .ilike('name', selectedModel)
         .single();
 
       if (!tierData || !modelData) return;
@@ -213,72 +233,85 @@ export const EditEngagementModelModal: React.FC<EditEngagementModelModalProps> =
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {availableModels.map((modelAccess) => (
-                <Card 
-                  key={modelAccess.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedModel === modelAccess.engagement_model?.name
-                      ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
-                      : 'hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedModel(modelAccess.engagement_model?.name)}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{modelAccess.engagement_model?.name}</span>
-                      {selectedModel === modelAccess.engagement_model?.name && (
-                        <CheckCircle className="h-5 w-5 text-purple-600" />
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      {modelAccess.engagement_model?.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Selection Scope:</span>
-                        <Badge variant="outline">
-                          {modelAccess.selection_scope === 'global' ? 'Global' : 'Per Challenge'}
-                        </Badge>
+            {availableModels.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <Zap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Models Available</h3>
+                <p className="text-gray-600">
+                  No engagement models are configured for your current tier "{selectedTier}".
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Please contact support to configure engagement models for your tier.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableModels.map((modelAccess) => (
+                  <Card 
+                    key={modelAccess.id}
+                    className={`cursor-pointer transition-all ${
+                      selectedModel === modelAccess.engagement_model?.name
+                        ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
+                        : 'hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedModel(modelAccess.engagement_model?.name)}
+                  >
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>{modelAccess.engagement_model?.name}</span>
+                        {selectedModel === modelAccess.engagement_model?.name && (
+                          <CheckCircle className="h-5 w-5 text-purple-600" />
+                        )}
+                      </CardTitle>
+                      <CardDescription>
+                        {modelAccess.engagement_model?.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Selection Scope:</span>
+                          <Badge variant="outline">
+                            {modelAccess.selection_scope === 'global' ? 'Global' : 'Per Challenge'}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Max Concurrent:</span>
+                          <span className="font-medium">{modelAccess.max_concurrent_models}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Multiple Challenges:</span>
+                          <Badge variant={modelAccess.allows_multiple_challenges ? "default" : "secondary"}>
+                            {modelAccess.allows_multiple_challenges ? 'Yes' : 'No'}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Max Concurrent:</span>
-                        <span className="font-medium">{modelAccess.max_concurrent_models}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Multiple Challenges:</span>
-                        <Badge variant={modelAccess.allows_multiple_challenges ? "default" : "secondary"}>
-                          {modelAccess.allows_multiple_challenges ? 'Yes' : 'No'}
-                        </Badge>
-                      </div>
-                    </div>
 
-                    {modelPricing.length > 0 && selectedModel === modelAccess.engagement_model?.name && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm font-medium mb-2">Pricing:</p>
-                        {modelPricing.map((pricing, index) => (
-                          <div key={index} className="text-sm">
-                            <div className="flex justify-between">
-                              <span>{pricing.config_name}:</span>
-                              <span className="font-medium">
-                                {formatCurrency(pricing.calculated_value, pricing.currency_code)}
-                              </span>
+                      {modelPricing.length > 0 && selectedModel === modelAccess.engagement_model?.name && (
+                        <div className="pt-2 border-t">
+                          <p className="text-sm font-medium mb-2">Pricing:</p>
+                          {modelPricing.map((pricing, index) => (
+                            <div key={index} className="text-sm">
+                              <div className="flex justify-between">
+                                <span>{pricing.config_name}:</span>
+                                <span className="font-medium">
+                                  {formatCurrency(pricing.calculated_value, pricing.currency_code)}
+                                </span>
+                              </div>
+                              {pricing.membership_discount > 0 && (
+                                <p className="text-green-600 text-xs">
+                                  {pricing.membership_discount}% member discount applied
+                                </p>
+                              )}
                             </div>
-                            {pricing.membership_discount > 0 && (
-                              <p className="text-green-600 text-xs">
-                                {pricing.membership_discount}% member discount applied
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button variant="outline" onClick={onClose}>

@@ -69,28 +69,32 @@ export const useEnrollmentData = (userId: string) => {
       // Load tier configuration if tier is selected
       let tierConfiguration = null;
       if (selectedTier && orgContext.country_id) {
-        const { data: tierConfig } = await supabase
-          .from('master_tier_configurations')
-          .select(`
-            *,
-            master_pricing_tiers (name, level_order, description),
-            master_analytics_access_types (name),
-            master_support_types (name, response_time),
-            master_onboarding_types (name),
-            master_workflow_templates (name, template_count),
-            master_currencies (code, symbol)
-          `)
-          .eq('country_id', orgContext.country_id)
-          .eq('pricing_tier_id', (await supabase
-            .from('master_pricing_tiers')
-            .select('id')
-            .eq('name', selectedTier)
-            .single()
-          ).data?.id)
-          .eq('is_active', true)
-          .maybeSingle();
+        // First, get the tier ID using case-insensitive matching
+        const { data: tierData } = await supabase
+          .from('master_pricing_tiers')
+          .select('id')
+          .ilike('name', selectedTier)
+          .single();
 
-        tierConfiguration = tierConfig;
+        if (tierData) {
+          const { data: tierConfig } = await supabase
+            .from('master_tier_configurations')
+            .select(`
+              *,
+              master_pricing_tiers (name, level_order, description),
+              master_analytics_access_types (name),
+              master_support_types (name, response_time),
+              master_onboarding_types (name),
+              master_workflow_templates (name, template_count),
+              master_currencies (code, symbol)
+            `)
+            .eq('country_id', orgContext.country_id)
+            .eq('pricing_tier_id', tierData.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          tierConfiguration = tierConfig;
+        }
       }
 
       // Load comprehensive engagement model details
@@ -147,7 +151,7 @@ export const useEnrollmentData = (userId: string) => {
               variables
             )
           `)
-          .eq('name', selectedEngagementModel)
+          .ilike('name', selectedEngagementModel)
           .maybeSingle();
 
         engagementModelDetails = modelData;
@@ -215,8 +219,22 @@ export const useEnrollmentData = (userId: string) => {
         hasTierConfig: !!tierConfiguration,
         hasModelDetails: !!engagementModelDetails,
         membershipFeesCount: membershipFees.length,
-        pricingCount: engagementModelPricing.length
+        pricingCount: engagementModelPricing.length,
+        tierConfiguration: tierConfiguration ? 'Loaded' : 'Not loaded',
+        engagementModelDetails: engagementModelDetails ? 'Loaded' : 'Not loaded'
       });
+
+      // Debug: Log engagement model details structure
+      if (engagementModelDetails) {
+        console.log('📋 Engagement model details structure:', {
+          name: engagementModelDetails.name,
+          description: engagementModelDetails.description,
+          subtypes: engagementModelDetails.master_engagement_model_subtypes?.length || 0,
+          feeMapping: engagementModelDetails.engagement_model_fee_mapping?.length || 0,
+          tierAccess: engagementModelDetails.master_tier_engagement_model_access?.length || 0,
+          platformFormulas: engagementModelDetails.master_platform_fee_formulas?.length || 0
+        });
+      }
 
     } catch (error) {
       console.error('❌ Error loading enrollment data:', error);
