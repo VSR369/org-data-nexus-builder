@@ -24,6 +24,8 @@ export type Database = {
           discount_percentage: number | null
           engagement_locked: boolean | null
           engagement_model: string
+          engagement_model_details: Json | null
+          engagement_model_selected_at: string | null
           enm_terms: boolean | null
           final_calculated_price: number | null
           frequency_change_history: Json | null
@@ -41,14 +43,20 @@ export type Database = {
           membership_status: string
           membership_type: string | null
           organization_type: string | null
+          payment_simulation_status: string | null
           platform_fee_percentage: number | null
           pricing_locked: boolean | null
+          pricing_tier: string | null
           selected_frequency: string | null
           terms_accepted: boolean | null
+          tier_features: Json | null
+          tier_selected_at: string | null
           total_payments_made: number | null
           updated_at: string
           updated_platform_fee_percentage: number | null
           user_id: string | null
+          workflow_completed: boolean | null
+          workflow_step: string | null
         }
         Insert: {
           activation_status?: string | null
@@ -59,6 +67,8 @@ export type Database = {
           discount_percentage?: number | null
           engagement_locked?: boolean | null
           engagement_model: string
+          engagement_model_details?: Json | null
+          engagement_model_selected_at?: string | null
           enm_terms?: boolean | null
           final_calculated_price?: number | null
           frequency_change_history?: Json | null
@@ -76,14 +86,20 @@ export type Database = {
           membership_status: string
           membership_type?: string | null
           organization_type?: string | null
+          payment_simulation_status?: string | null
           platform_fee_percentage?: number | null
           pricing_locked?: boolean | null
+          pricing_tier?: string | null
           selected_frequency?: string | null
           terms_accepted?: boolean | null
+          tier_features?: Json | null
+          tier_selected_at?: string | null
           total_payments_made?: number | null
           updated_at?: string
           updated_platform_fee_percentage?: number | null
           user_id?: string | null
+          workflow_completed?: boolean | null
+          workflow_step?: string | null
         }
         Update: {
           activation_status?: string | null
@@ -94,6 +110,8 @@ export type Database = {
           discount_percentage?: number | null
           engagement_locked?: boolean | null
           engagement_model?: string
+          engagement_model_details?: Json | null
+          engagement_model_selected_at?: string | null
           enm_terms?: boolean | null
           final_calculated_price?: number | null
           frequency_change_history?: Json | null
@@ -111,14 +129,20 @@ export type Database = {
           membership_status?: string
           membership_type?: string | null
           organization_type?: string | null
+          payment_simulation_status?: string | null
           platform_fee_percentage?: number | null
           pricing_locked?: boolean | null
+          pricing_tier?: string | null
           selected_frequency?: string | null
           terms_accepted?: boolean | null
+          tier_features?: Json | null
+          tier_selected_at?: string | null
           total_payments_made?: number | null
           updated_at?: string
           updated_platform_fee_percentage?: number | null
           user_id?: string | null
+          workflow_completed?: boolean | null
+          workflow_step?: string | null
         }
         Relationships: []
       }
@@ -2826,6 +2850,10 @@ export type Database = {
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_membership_workflow_status: {
+        Args: { user_id_param: string }
+        Returns: Json
       }
       get_pricing_configuration: {
         Args: {

@@ -4,7 +4,7 @@ import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Hom
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
-import { MembershipPricingCard } from "@/components/dashboard/MembershipPricingCard";
+import { EnhancedMembershipFlowCard } from "@/components/dashboard/membership/EnhancedMembershipFlowCard";
 
 const OrganizationDashboard = () => {
   const { user, profile, signOut, loading } = useSupabaseAuth();
@@ -229,8 +229,8 @@ const OrganizationDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Membership Pricing Card - Right Side */}
-          <MembershipPricingCard profile={profile} />
+          {/* Enhanced Membership Flow Card - Right Side */}
+          <EnhancedMembershipFlowCard profile={profile} userId={user?.id || ''} />
         </div>
 
         {/* Organization Overview */}
