@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +19,7 @@ interface EnhancedMembershipFlowCardProps {
   userId: string;
 }
 
-type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model_selection' | 'activation_complete';
+type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model' | 'activation_complete';
 type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed';
 
 export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProps> = ({ profile, userId }) => {
@@ -284,8 +283,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       const tierForDatabase = tier.toLowerCase();
       console.log('🔽 Converting tier for database:', { original: tier, database: tierForDatabase });
       
-      // Update workflow with proper error handling
-      await updateWorkflowStep('engagement_model_selection', {
+      // Update workflow with proper error handling - using 'engagement_model' instead of 'engagement_model_selection'
+      await updateWorkflowStep('engagement_model', {
         pricing_tier: tierForDatabase, // Use lowercase for database
         tier_selected_at: new Date().toISOString(),
         membership_status: membershipStatus || 'active' // Ensure membership status is set
@@ -455,7 +454,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           </div>
         );
 
-      case 'engagement_model_selection':
+      case 'engagement_model':
         return (
           <div className="max-w-4xl mx-auto">
             <EngagementModelSelectionCard
