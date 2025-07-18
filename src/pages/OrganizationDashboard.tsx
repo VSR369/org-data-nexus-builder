@@ -91,7 +91,8 @@ const OrganizationDashboard = () => {
       </header>
 
       {/* Main Dashboard Content */}
-      <main className="max-w-7xl mx-auto px-4 py-12">
+      <main className="max-w-7xl mx-auto px-4 py-12 space-y-8">
+        {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome back, {profile.contact_person_name}!
@@ -101,8 +102,8 @@ const OrganizationDashboard = () => {
           </p>
         </div>
 
-        {/* Organization Information and Pricing Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
+        {/* Organization Information Grid - Horizontal Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Organization Details Card */}
           <Card className="h-full">
             <CardHeader>
@@ -141,7 +142,7 @@ const OrganizationDashboard = () => {
               <div className="pt-4">
                 <Button variant="outline" className="w-full">
                   <Settings className="h-4 w-4 mr-2" />
-                  Edit Organization Profile
+                  Edit Profile
                 </Button>
               </div>
             </CardContent>
@@ -220,16 +221,24 @@ const OrganizationDashboard = () => {
               </div>
               <div className="pt-4 space-y-2">
                 <Button variant="outline" className="w-full" size="sm">
-                  Download Organization Data
+                  Download Data
                 </Button>
                 <Button variant="outline" className="w-full" size="sm">
-                  Account Settings
+                  Settings
                 </Button>
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Enhanced Membership Flow Card - Right Side */}
+        {/* Membership Workflow Section - Full Width */}
+        <div className="mb-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Membership & Engagement Setup</h2>
+            <p className="text-gray-600">
+              Complete your membership activation to unlock full platform capabilities
+            </p>
+          </div>
           <EnhancedMembershipFlowCard profile={profile} userId={user?.id || ''} />
         </div>
 

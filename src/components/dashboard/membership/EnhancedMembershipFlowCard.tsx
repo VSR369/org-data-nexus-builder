@@ -11,6 +11,7 @@ import { TierSelectionCard } from './TierSelectionCard';
 import { PaymentSimulationCard } from './PaymentSimulationCard';
 import { EngagementModelDetailCard } from './EngagementModelDetailCard';
 import { ActivationSummaryCard } from './ActivationSummaryCard';
+import { SimpleEngagementModelSelection } from './SimpleEngagementModelSelection';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -317,156 +318,120 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
+  // Render workflow steps with improved layout and spacing
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 'membership_decision':
+        return (
+          <div className="max-w-2xl mx-auto">
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Membership Activation
+                </CardTitle>
+                <CardDescription>
+                  Do you want to activate your membership to access premium features?
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                    onClick={() => handleMembershipDecision('active')}
+                  >
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                    <span>Activate Membership</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                    onClick={() => handleMembershipDecision('inactive')}
+                  >
+                    <Zap className="h-6 w-6 text-gray-600" />
+                    <span>Continue without Membership</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'payment':
+        if (membershipStatus === 'active') {
+          return (
+            <div className="max-w-2xl mx-auto">
+              <PaymentSimulationCard
+                membershipFees={membershipFees}
+                isProcessing={isProcessing}
+                paymentStatus={paymentStatus}
+                onPaymentSubmit={handlePaymentSubmit}
+                selectedTier={selectedTier || 'basic'}
+              />
+            </div>
+          );
+        }
+        return null;
+
+      case 'tier_selection':
+        return (
+          <TierSelectionCard
+            selectedTier={selectedTier}
+            onTierSelect={handleTierSelection}
+            currency={membershipFees[0]?.annual_currency || 'USD'}
+          />
+        );
+
+      case 'engagement_model':
+        if (selectedTier) {
+          return (
+            <SimpleEngagementModelSelection
+              selectedModel={selectedEngagementModel}
+              onModelSelect={handleEngagementModelSelection}
+              selectedTier={selectedTier}
+              pricingData={pricingData}
+            />
+          );
+        }
+        return null;
+
+      case 'details_review':
+        if (selectedEngagementModel) {
+          return (
+            <div className="space-y-8">
+              <EngagementModelDetailCard
+                selectedModel={selectedEngagementModel}
+                selectedTier={selectedTier as any}
+                pricingData={pricingData}
+                currency={membershipFees[0]?.annual_currency || 'USD'}
+              />
+              <div className="max-w-4xl mx-auto">
+                <ActivationSummaryCard
+                  membershipStatus={membershipStatus}
+                  selectedTier={selectedTier}
+                  selectedEngagementModel={selectedEngagementModel}
+                  membershipFees={membershipFees}
+                  pricingData={pricingData}
+                  paymentStatus={paymentStatus}
+                  isProcessing={isProcessing}
+                  onActivate={handleFinalActivation}
+                  canActivate={Boolean(membershipStatus && selectedTier && selectedEngagementModel)}
+                />
+              </div>
+            </div>
+          );
+        }
+        return null;
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Step 1: Membership Decision */}
-      {currentStep === 'membership_decision' && (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              Membership Activation
-            </CardTitle>
-            <CardDescription>
-              Do you want to activate your membership to access premium features?
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center space-y-2"
-                  onClick={() => handleMembershipDecision('active')}
-                >
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                  <span>Activate Membership</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center space-y-2"
-                  onClick={() => handleMembershipDecision('inactive')}
-                >
-                  <Zap className="h-6 w-6 text-gray-600" />
-                  <span>Continue without Membership</span>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 2: Payment (if membership is active) */}
-      {currentStep === 'payment' && membershipStatus === 'active' && (
-        <PaymentSimulationCard
-          membershipFees={membershipFees}
-          isProcessing={isProcessing}
-          paymentStatus={paymentStatus}
-          onPaymentSubmit={handlePaymentSubmit}
-          selectedTier={selectedTier || 'basic'}
-        />
-      )}
-
-      {/* Step 3: Tier Selection */}
-      {currentStep === 'tier_selection' && (
-        <TierSelectionCard
-          selectedTier={selectedTier}
-          onTierSelect={handleTierSelection}
-          currency={membershipFees[0]?.annual_currency || 'USD'}
-        />
-      )}
-
-      {/* Step 4: Engagement Model Selection */}
-      {currentStep === 'engagement_model' && selectedTier && (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Select Your Engagement Model</CardTitle>
-            <CardDescription>
-              Choose how you want to engage with our innovation platform
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div
-                className={`p-6 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedEngagementModel === 'marketplace'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-                onClick={() => handleEngagementModelSelection('marketplace')}
-              >
-                <div className="text-center">
-                  <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Users className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Marketplace</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Direct access to our innovation marketplace with challenge posting and solution review
-                  </p>
-                  <Button
-                    variant={selectedEngagementModel === 'marketplace' ? "default" : "outline"}
-                    className="w-full"
-                  >
-                    Select Marketplace
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div
-                className={`p-6 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedEngagementModel === 'aggregator'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-                onClick={() => handleEngagementModelSelection('aggregator')}
-              >
-                <div className="text-center">
-                  <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Zap className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Aggregator</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Access multiple innovation platforms through a unified aggregated interface
-                  </p>
-                  <Button
-                    variant={selectedEngagementModel === 'aggregator' ? "default" : "outline"}
-                    className="w-full"
-                  >
-                    Select Aggregator
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 5: Details Review */}
-      {currentStep === 'details_review' && selectedEngagementModel && (
-        <EngagementModelDetailCard
-          selectedModel={selectedEngagementModel}
-          selectedTier={selectedTier as any}
-          pricingData={pricingData}
-          currency={membershipFees[0]?.annual_currency || 'USD'}
-        />
-      )}
-
-      {/* Step 6: Final Activation */}
-      {currentStep === 'details_review' && (
-        <ActivationSummaryCard
-          membershipStatus={membershipStatus}
-          selectedTier={selectedTier}
-          selectedEngagementModel={selectedEngagementModel}
-          membershipFees={membershipFees}
-          pricingData={pricingData}
-          paymentStatus={paymentStatus}
-          isProcessing={isProcessing}
-          onActivate={handleFinalActivation}
-          canActivate={Boolean(membershipStatus && selectedTier && selectedEngagementModel)}
-        />
-      )}
+    <div className="w-full">
+      {renderCurrentStep()}
     </div>
   );
 };
