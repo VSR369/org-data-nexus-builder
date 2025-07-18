@@ -1,9 +1,11 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle, CreditCard, Calendar, Clock, DollarSign, Users, Zap, Settings, Trophy, Shield } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, Calendar, Clock, DollarSign, Users, Zap, Settings, Trophy, Shield, Edit } from 'lucide-react';
+import { EditTierModal } from './EditTierModal';
+import { EditEngagementModelModal } from './EditEngagementModelModal';
+import { MembershipActivationModal } from './MembershipActivationModal';
 
 interface EnrollmentDetailsViewProps {
   membershipStatus: string;
@@ -14,7 +16,12 @@ interface EnrollmentDetailsViewProps {
   tierConfiguration: any;
   engagementModelDetails: any;
   activationRecord: any;
+  profile: any;
+  userId: string;
   onBack: () => void;
+  onTierChange?: (tier: string) => void;
+  onEngagementModelChange?: (model: string) => void;
+  onMembershipActivate?: () => void;
 }
 
 export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
@@ -26,8 +33,18 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
   tierConfiguration,
   engagementModelDetails,
   activationRecord,
-  onBack
+  profile,
+  userId,
+  onBack,
+  onTierChange,
+  onEngagementModelChange,
+  onMembershipActivate
 }) => {
+  const [showEditTierModal, setShowEditTierModal] = useState(false);
+  const [showEditModelModal, setShowEditModelModal] = useState(false);
+  const [showActivationModal, setShowActivationModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -43,7 +60,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  // Get real tier features from database
   const getTierFeatures = () => {
     if (!tierConfiguration) return [];
     
@@ -78,13 +94,11 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
     return features;
   };
 
-  // Get real engagement model features from database
   const getEngagementModelFeatures = () => {
     if (!engagementModelDetails?.description) {
       return ['Model details not available'];
     }
     
-    // Split description into feature points if it contains bullet points or multiple sentences
     const description = engagementModelDetails.description;
     const features = description.includes('.') 
       ? description.split('.').filter(f => f.trim().length > 0).map(f => f.trim() + '.')
@@ -93,9 +107,48 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
     return features;
   };
 
+  const handleTierChange = (tier: string) => {
+    if (onTierChange) {
+      onTierChange(tier);
+    }
+  };
+
+  const handleModelChange = (model: string) => {
+    if (onEngagementModelChange) {
+      onEngagementModelChange(model);
+    }
+  };
+
+  const handleMembershipActivation = async () => {
+    setIsProcessing(true);
+    try {
+      if (onMembershipActivate) {
+        await onMembershipActivate();
+      }
+      setShowActivationModal(false);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const canEditTier = () => {
+    // Always allow tier editing - validation will be done in the modal
+    return true;
+  };
+
+  const canEditEngagementModel = () => {
+    // Allow editing if we have tier and user info
+    return selectedTier && userId;
+  };
+
+  const canActivateMembership = () => {
+    // Allow activation if membership is inactive
+    return membershipStatus !== 'active';
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Edit Options */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button onClick={onBack} variant="ghost" size="sm">
@@ -112,6 +165,47 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
           <Badge className="bg-green-600">Activated</Badge>
         </div>
       </div>
+
+      {/* Edit Actions Bar */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-blue-800">Quick Actions</h3>
+              <p className="text-sm text-blue-600">Edit your enrollment settings</p>
+            </div>
+            <div className="flex gap-2">
+              {canActivateMembership() && (
+                <Button 
+                  onClick={() => setShowActivationModal(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Activate Membership
+                </Button>
+              )}
+              {canEditTier() && (
+                <Button 
+                  onClick={() => setShowEditTierModal(true)}
+                  variant="outline"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Tier
+                </Button>
+              )}
+              {canEditEngagementModel() && (
+                <Button 
+                  onClick={() => setShowEditModelModal(true)}
+                  variant="outline"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Model
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Membership Details */}
       <Card className="border-green-200 bg-green-50">
@@ -140,7 +234,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Membership Benefits */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Membership Benefits</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -163,7 +256,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Membership Fees */}
           {membershipFees.length > 0 && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Membership Fees</label>
@@ -237,7 +329,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Real Tier Features from Database */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Tier Features & Benefits</label>
             <div className="bg-white p-4 rounded-lg border">
@@ -252,7 +343,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Real Tier Pricing from Database */}
           {tierConfiguration && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Tier Pricing Structure</label>
@@ -318,7 +408,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Real Model Features from Database */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Model Features & Benefits</label>
             <div className="bg-white p-4 rounded-lg border">
@@ -333,7 +422,6 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Real Model Pricing from Database */}
           {engagementModelPricing.length > 0 && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Model Pricing Structure</label>
@@ -364,7 +452,7 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
         </CardContent>
       </Card>
 
-      {/* Real Payment Information from Database */}
+      {/* Payment Information */}
       <Card className="border-orange-200 bg-orange-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -419,6 +507,35 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Modals */}
+      <EditTierModal
+        isOpen={showEditTierModal}
+        onClose={() => setShowEditTierModal(false)}
+        currentTier={selectedTier}
+        countryName={profile?.country || ''}
+        onTierChange={handleTierChange}
+      />
+
+      <EditEngagementModelModal
+        isOpen={showEditModelModal}
+        onClose={() => setShowEditModelModal(false)}
+        currentModel={selectedEngagementModel}
+        selectedTier={selectedTier}
+        userId={userId}
+        membershipStatus={membershipStatus}
+        profile={profile}
+        onModelChange={handleModelChange}
+      />
+
+      <MembershipActivationModal
+        isOpen={showActivationModal}
+        onClose={() => setShowActivationModal(false)}
+        membershipFees={membershipFees}
+        currentEngagementPricing={engagementModelPricing}
+        onActivate={handleMembershipActivation}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };

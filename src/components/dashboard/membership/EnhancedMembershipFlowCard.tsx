@@ -340,6 +340,139 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const handleTierEdit = async (newTier: string) => {
+    try {
+      setIsProcessing(true);
+      console.log('🏷️ Handling tier edit from', selectedTier, 'to', newTier);
+
+      // Update tier in database
+      await updateWorkflowStep(currentStep, {
+        pricing_tier: newTier.toLowerCase(),
+        tier_selected_at: new Date().toISOString()
+      });
+
+      // Update local state
+      setSelectedTier(newTier);
+
+      // Reload tier configuration
+      await loadTierConfiguration(newTier);
+
+      // If engagement model is selected, reload its pricing with new tier context
+      if (selectedEngagementModel) {
+        await loadEngagementModelPricing(newTier, selectedEngagementModel);
+      }
+
+      // Reload workflow data to ensure consistency
+      await loadWorkflowData();
+
+      toast({
+        title: "Tier Updated",
+        description: `Your pricing tier has been changed to ${newTier}.`,
+      });
+    } catch (error) {
+      console.error('❌ Error updating tier:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update pricing tier. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEngagementModelEdit = async (newModel: string) => {
+    try {
+      setIsProcessing(true);
+      console.log('🤝 Handling engagement model edit from', selectedEngagementModel, 'to', newModel);
+
+      // Update engagement model in database
+      await updateWorkflowStep(currentStep, {
+        engagement_model: newModel,
+        engagement_model_selected_at: new Date().toISOString()
+      });
+
+      // Update local state
+      setSelectedEngagementModel(newModel);
+
+      // Reload engagement model details
+      await loadEngagementModelDetails(newModel);
+
+      // Reload pricing with new model
+      if (selectedTier) {
+        await loadEngagementModelPricing(selectedTier, newModel);
+      }
+
+      // Reload workflow data to ensure consistency
+      await loadWorkflowData();
+
+      toast({
+        title: "Engagement Model Updated",
+        description: `Your engagement model has been changed to ${newModel}.`,
+      });
+    } catch (error) {
+      console.error('❌ Error updating engagement model:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update engagement model. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMembershipActivation = async () => {
+    try {
+      setIsProcessing(true);
+      console.log('💳 Handling membership activation');
+
+      // Set membership status to active
+      setMembershipStatus('active');
+
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const annualFee = membershipFees[0]?.annual_amount || 990;
+      const currency = membershipFees[0]?.annual_currency || 'USD';
+
+      // Update workflow with membership activation
+      await updateWorkflowStep(currentStep, {
+        membership_status: 'active',
+        payment_simulation_status: 'success',
+        mem_payment_status: 'paid',
+        mem_payment_amount: annualFee,
+        mem_payment_currency: currency,
+        mem_payment_date: new Date().toISOString(),
+        mem_payment_method: 'credit_card',
+        mem_receipt_number: `RCP-${Date.now()}`,
+        mem_terms: true
+      });
+
+      // Reload engagement model pricing with membership discount
+      if (selectedTier && selectedEngagementModel) {
+        await loadEngagementModelPricing(selectedTier, selectedEngagementModel);
+      }
+
+      // Reload workflow data to ensure consistency
+      await loadWorkflowData();
+
+      toast({
+        title: "Membership Activated!",
+        description: `Annual membership fee of ${currency} ${annualFee} has been processed. Your engagement model pricing has been updated with member discounts.`,
+      });
+    } catch (error) {
+      console.error('❌ Error activating membership:', error);
+      toast({
+        title: "Activation Failed",
+        description: "Failed to activate membership. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleMembershipDecision = async (status: 'active' | 'inactive') => {
     try {
       console.log('👤 Membership decision:', status);
@@ -631,7 +764,12 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           tierConfiguration={tierConfiguration}
           engagementModelDetails={engagementModelDetails}
           activationRecord={activationRecord}
+          profile={profile}
+          userId={userId}
           onBack={() => setShowDetails(false)}
+          onTierChange={handleTierEdit}
+          onEngagementModelChange={handleEngagementModelEdit}
+          onMembershipActivate={handleMembershipActivation}
         />
       );
     }
