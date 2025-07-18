@@ -45,63 +45,33 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
         setError(null);
         console.log('🔄 Loading engagement models for tier:', selectedTier);
 
-        // Normalize tier name to proper case for database queries
-        const tierForQuery = normalizeTierName(selectedTier);
-        console.log('🔽 Using tier for database query:', tierForQuery);
+        // Since all engagement models are available to all tiers, 
+        // we can directly fetch all active engagement models
+        console.log('🔄 Loading all engagement models (tier-agnostic)');
 
-        // First, get the tier ID using proper case name
-        const { data: tierData, error: tierError } = await supabase
-          .from('master_pricing_tiers')
-          .select('id')
-          .eq('name', tierForQuery)
-          .eq('is_active', true)
-          .single();
+        // Fetch all active engagement models
+        const { data: allModels, error: modelsError } = await supabase
+          .from('master_engagement_models')
+          .select('*')
+          .eq('is_user_created', false) // Only get system models
+          .order('name');
 
-        if (tierError) {
-          console.error('❌ Tier query error:', tierError);
-          throw new Error(`Failed to find tier: ${tierError.message}`);
+        if (modelsError) {
+          console.error('❌ Error fetching engagement models:', modelsError);
+          throw new Error(`Failed to load engagement models: ${modelsError.message}`);
         }
 
-        if (!tierData) {
-          throw new Error(`Tier "${selectedTier}" not found`);
-        }
-
-        console.log('✅ Found tier data:', tierData);
-
-        // Get engagement models allowed for this tier
-        const { data: tierModelAccess, error: accessError } = await supabase
-          .from('master_tier_engagement_model_access')
-          .select(`
-            engagement_model_id,
-            is_allowed,
-            master_engagement_models (
-              id,
-              name,
-              description
-            )
-          `)
-          .eq('pricing_tier_id', tierData.id)
-          .eq('is_active', true)
-          .eq('is_allowed', true);
-
-        if (accessError) {
-          console.error('❌ Access query error:', accessError);
-          throw new Error(`Failed to load tier access: ${accessError.message}`);
-        }
-
-        if (!tierModelAccess || tierModelAccess.length === 0) {
-          console.log('ℹ️ No engagement models found for tier:', selectedTier);
+        if (!allModels || allModels.length === 0) {
+          console.log('ℹ️ No engagement models found');
           setEngagementModels([]);
           setLoading(false);
           return;
         }
 
-        console.log('✅ Found tier model access:', tierModelAccess);
+        console.log('✅ Found engagement models:', allModels);
 
         // Get engagement model IDs
-        const engagementModelIds = tierModelAccess
-          .map(access => access.engagement_model_id)
-          .filter(Boolean);
+        const engagementModelIds = allModels.map(model => model.id);
 
         // Fetch platform fee formulas for these engagement models
         const { data: formulas, error: formulaError } = await supabase
@@ -115,12 +85,7 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
             base_consulting_fee,
             advance_payment_percentage,
             membership_discount_percentage,
-            engagement_model_id,
-            master_engagement_models (
-              id,
-              name,
-              description
-            )
+            engagement_model_id
           `)
           .in('engagement_model_id', engagementModelIds)
           .eq('is_active', true)
@@ -146,9 +111,8 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
         }
 
         // Combine the data
-        const modelsWithPricing: EngagementModelWithPricing[] = tierModelAccess
-          .map(access => {
-            const model = access.master_engagement_models;
+        const modelsWithPricing: EngagementModelWithPricing[] = allModels
+          .map(model => {
             if (!model) return null;
 
             const formula = formulas?.find(f => f.engagement_model_id === model.id);
