@@ -6,10 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, AlertCircle, Eye, DollarSign, Settings, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ComprehensiveEnrollmentView } from './ComprehensiveEnrollmentView';
-import { MembershipDecisionStep } from './MembershipDecisionStep';
-import { TierSelectionStep } from './TierSelectionStep';
-import { EngagementModelStep } from './EngagementModelStep';
-import { PreviewConfirmationStep } from './PreviewConfirmationStep';
 import { toast } from '@/hooks/use-toast';
 
 interface WorkflowStatus {
@@ -52,10 +48,10 @@ export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }
       }
 
       console.log('📊 Workflow status loaded:', data);
-      setWorkflowStatus(data);
+      setWorkflowStatus(data as unknown as WorkflowStatus);
 
       // Show comprehensive view by default if user has any enrollment data
-      if (data && data.has_workflow) {
+      if (data && (data as unknown as WorkflowStatus).has_workflow) {
         setShowComprehensiveView(true);
       }
     } catch (error) {
@@ -216,11 +212,19 @@ export const MembershipWorkflow: React.FC<MembershipWorkflowProps> = ({ userId }
 
       {/* Workflow Steps */}
       {!workflowStatus?.has_workflow && (
-        <MembershipDecisionStep
-          userId={userId}
-          onNext={() => loadWorkflowStatus()}
-          onComplete={() => loadWorkflowStatus()}
-        />
+        <Card className="border-gray-200">
+          <CardHeader>
+            <CardTitle>Start Your Membership Journey</CardTitle>
+            <CardDescription>
+              Begin by making a membership decision to access premium features
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              Click on one of the quick actions above to get started with your membership enrollment.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
