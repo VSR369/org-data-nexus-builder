@@ -51,14 +51,6 @@ export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) =
             <span className="font-medium">{formula.platform_usage_fee_percentage || 0}%</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>Management Fee:</span>
-            <span className="text-muted-foreground">N/A</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Consulting Fee:</span>
-            <span className="text-muted-foreground">N/A</span>
-          </div>
-          <div className="flex justify-between text-sm">
             <span>Membership Discount:</span>
             <span className="font-medium">{formula.membership_discount_percentage || 0}%</span>
           </div>
