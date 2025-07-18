@@ -29,7 +29,7 @@ export const BusinessModelsManager: React.FC = () => {
           marketplaceFormula: marketplaceFormula || null,
           aggregatorFormula: aggregatorFormula || null,
         };
-      });
+      }).sort((a, b) => a.level_order - b.level_order);
 
       setBusinessModels(consolidatedModels);
       setLoading(false);
