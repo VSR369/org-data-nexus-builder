@@ -248,17 +248,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         mem_payment_date: new Date().toISOString(),
         mem_payment_method: 'credit_card',
         mem_receipt_number: `RCP-${Date.now()}`,
-        mem_terms: true
+        mem_terms: true,
+        // Don't change pricing_tier or engagement_model if they're already set
+        ...(selectedTier && { pricing_tier: selectedTier }),
+        ...(selectedEngagementModel && { engagement_model: selectedEngagementModel })
       };
-      
-      // Don't change pricing_tier or engagement_model if they're already set
-      if (selectedTier) {
-        updateData.pricing_tier = selectedTier;
-      }
-      
-      if (selectedEngagementModel) {
-        updateData.engagement_model = selectedEngagementModel;
-      }
 
       await updateWorkflowStep('membership_summary', updateData);
 
