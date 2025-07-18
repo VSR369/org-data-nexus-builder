@@ -84,7 +84,7 @@ export const MembershipFlowCard: React.FC<MembershipFlowCardProps> = ({ profile,
         .from('engagement_activations')
         .upsert({
           user_id: userId,
-          engagement_model: 'Platform as a Service', // Default engagement model for membership payment
+          engagement_model: 'Market Place', // Default engagement model for membership payment
           membership_status: 'active',
           mem_payment_status: 'paid',
           mem_payment_amount: annualFee,

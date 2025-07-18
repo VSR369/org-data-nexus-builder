@@ -174,9 +174,7 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
                  {pricingData.paymentStatus === 'paid' && pricingData.paymentAmount > 0 && (
                    <div className="flex gap-2 flex-wrap">
                      <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
-                       ✅ Paid: {pricingData.engagementModel?.toLowerCase().includes('platform as a service') || pricingData.engagementModel?.toLowerCase().includes('paas') 
-                         ? `${pricingData.paymentCurrency} ${pricingData.paymentAmount}`
-                         : `${pricingData.paymentAmount}%`}
+                        ✅ Paid: {pricingData.paymentAmount}%
                      </Badge>
                      {pricingData.paidAt && (
                        <Badge variant="outline" className="text-xs">
@@ -295,9 +293,7 @@ const SeekerCard: React.FC<SeekerCardProps> = ({ seeker, handlers, processing })
                 </Badge>
               </div>
               {pricingData?.paymentStatus === 'paid' && pricingData?.paymentAmount > 0 && (
-                <div><span className="font-medium">Amount:</span> {pricingData.engagementModel?.toLowerCase().includes('platform as a service') || pricingData.engagementModel?.toLowerCase().includes('paas') 
-                  ? `${pricingData.paymentCurrency} ${pricingData.paymentAmount}`
-                  : `${pricingData.paymentAmount}%`}</div>
+                 <div><span className="font-medium">Amount:</span> {pricingData.paymentAmount}%</div>
               )}
               {pricingData?.paidAt && (
                 <div><span className="font-medium">Paid On:</span> {new Date(pricingData.paidAt).toLocaleDateString()}</div>

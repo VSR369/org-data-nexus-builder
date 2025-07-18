@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { safeRender, isPaaSModel } from '../utils/viewDetailsHelpers';
+import { safeRender } from '../utils/viewDetailsHelpers';
 // Simple helpers - removed pricing dependencies
 
 interface PaymentDetailsSectionProps {

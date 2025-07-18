@@ -97,7 +97,7 @@ export class MembershipService {
           selected_frequency: pricing.frequency,
           mem_payment_date: new Date().toISOString(),
           activation_status: 'Activated',
-          engagement_model: 'Platform as a Service' // Default engagement model
+          engagement_model: 'Market Place' // Default engagement model
         }, {
           onConflict: 'user_id'
         });

@@ -57,8 +57,7 @@ export const PricingSummaryCard: React.FC<PricingSummaryCardProps> = ({
     return membershipTermsOk && engagementTermsOk && selectedEngagementModel;
   };
 
-  const isPaasModel = selectedEngagementModel === 'Platform as a Service';
-  const needsFrequencySelection = isPaasModel && !selectedFrequency;
+  const needsFrequencySelection = false; // No special frequency selection needed
 
   if (!membershipStatus || !selectedEngagementModel) {
     return (
@@ -167,13 +166,6 @@ export const PricingSummaryCard: React.FC<PricingSummaryCardProps> = ({
             </div>
           )}
 
-          {needsFrequencySelection && (
-            <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
-              <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                Please select a billing frequency for Platform as a Service
-              </p>
-            </div>
-          )}
         </div>
 
         <Separator />

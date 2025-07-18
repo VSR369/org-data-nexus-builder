@@ -88,18 +88,6 @@ Selected Model: ${model}
    - Customer dispute resolution procedures
         `;
       
-      case 'Platform as a Service':
-        return baseTerms + `
-   - Fixed recurring fees based on selected frequency
-   - Payment due at beginning of billing cycle
-   - Service suspension for non-payment after 7 days
-
-3. PLATFORM SERVICE TERMS
-   - Service level agreements apply
-   - API usage limits and fair use policy
-   - Technical support included during business hours
-        `;
-      
       default:
         return baseTerms + `
    - Terms vary based on selected engagement model

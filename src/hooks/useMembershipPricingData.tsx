@@ -107,6 +107,6 @@ const getEngagementModelIcon = (modelName: string): React.ReactNode => {
   if (name.includes('consulting')) return <Users className="w-5 h-5" />;
   if (name.includes('development')) return <Code className="w-5 h-5" />;
   if (name.includes('support')) return <Headphones className="w-5 h-5" />;
-  if (name.includes('platform') || name.includes('paas')) return <Server className="w-5 h-5" />;
+  
   return <Users className="w-5 h-5" />;
 };

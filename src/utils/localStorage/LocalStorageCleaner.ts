@@ -58,7 +58,7 @@ export class LocalStorageCleaner {
       'pricing_configurations',
       'engagement_pricing',
       'membership_pricing',
-      'paas_pricing',
+      
       'marketplace_pricing',
       'pricing_backup',
       'pricing_protection',

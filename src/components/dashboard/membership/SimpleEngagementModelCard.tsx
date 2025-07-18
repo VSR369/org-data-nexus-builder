@@ -22,7 +22,7 @@ const getModelIcon = (modelName: string) => {
   const lowerName = modelName.toLowerCase();
   if (lowerName.includes('marketplace') || lowerName.includes('market place')) return ShoppingCart;
   if (lowerName.includes('aggregator')) return Building;
-  if (lowerName.includes('platform') || lowerName.includes('paas')) return Users;
+  
   return Users;
 };
 
@@ -30,7 +30,7 @@ const getModelColor = (modelName: string) => {
   const lowerName = modelName.toLowerCase();
   if (lowerName.includes('marketplace') || lowerName.includes('market place')) return 'text-blue-600';
   if (lowerName.includes('aggregator')) return 'text-green-600';
-  if (lowerName.includes('platform') || lowerName.includes('paas')) return 'text-purple-600';
+  
   return 'text-blue-600';
 };
 
@@ -43,9 +43,6 @@ const getModelDescription = (modelName: string, description: string | null) => {
   }
   if (lowerName.includes('aggregator')) {
     return 'Work with curated solution providers through our aggregated platform';
-  }
-  if (lowerName.includes('platform') || lowerName.includes('paas')) {
-    return 'Use our platform as a service with comprehensive tools and support';
   }
   return 'Choose this engagement model for your challenges';
 };

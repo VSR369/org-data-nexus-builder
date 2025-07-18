@@ -32,7 +32,7 @@ interface MembershipConfig {
   marketplaceFee: number;
   aggregatorFee: number;
   marketplacePlusAggregatorFee: number;
-  internalPaasPricing: PricingData[];
+  internalPricing: PricingData[];
 }
 
 export const useMembershipData = (entityType?: string, country?: string, organizationType?: string) => {
@@ -140,7 +140,7 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
         marketplaceFee: 0,
         aggregatorFee: 0,
         marketplacePlusAggregatorFee: 0,
-        internalPaasPricing: [{
+        internalPricing: [{
           id: matchingFee.id,
           country: matchingFee.country,
           currency: matchingFee.quarterlyCurrency || 'USD',
@@ -153,7 +153,7 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
       debug.push('Successfully created membership config from Supabase data');
       
       setMembershipData(membershipConfig);
-      setCountryPricing(membershipConfig.internalPaasPricing[0]);
+      setCountryPricing(membershipConfig.internalPricing[0]);
       setDebugInfo(debug);
 
     } catch (error) {

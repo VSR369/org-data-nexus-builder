@@ -80,9 +80,6 @@ export class StructuredFormulaService {
         case 'Market Place & Aggregator':
           totalFee = platformUsageFee + managementFee + consultingFee;
           break;
-        case 'Platform as a Service':
-          totalFee = platformUsageFee + consultingFee;
-          break;
         default: // Aggregator
           totalFee = platformUsageFee;
       }

@@ -158,7 +158,7 @@ const MasterDataTableTester = () => {
     {
       tableName: 'pricing_configs',
       displayName: 'Pricing Configurations',
-      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee', 'platform_fee_percentage', 'discount_percentage', 'internal_paas_pricing', 'created_at', 'updated_at', 'version'],
+      frontendFields: ['id', 'country', 'organization_type', 'entity_type', 'engagement_model', 'membership_status', 'config_id', 'currency', 'annual_fee', 'half_yearly_fee', 'quarterly_fee', 'platform_fee_percentage', 'discount_percentage', 'created_at', 'updated_at', 'version'],
       isSupabaseEnabled: true,
       relationshipType: 'configuration' as const
     },

@@ -26,14 +26,6 @@ const defaultEngagementModels: EngagementModel[] = [
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'platform-service',
-    name: 'Platform as a Service',
-    description: 'Complete platform infrastructure and services for solution development and deployment',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
@@ -80,9 +72,9 @@ export const getCleanEngagementModels = (): EngagementModel[] => {
     
     console.log('✅ Found', uniqueModels.length, 'unique engagement models');
     
-    // If we don't have exactly 4 models or have duplicates, reset to default
-    if (uniqueModels.length !== 4) {
-      console.log('🔄 Detected missing or duplicate engagement models, resetting to default 4 models');
+    // If we don't have exactly 3 models or have duplicates, reset to default
+    if (uniqueModels.length !== 3) {
+      console.log('🔄 Detected missing or duplicate engagement models, resetting to default 3 models');
       engagementModelsDataManager.saveData(defaultEngagementModels);
       return defaultEngagementModels;
     }

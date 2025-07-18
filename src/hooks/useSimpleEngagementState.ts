@@ -30,17 +30,10 @@ export const useSimpleEngagementState = () => {
   };
 
   const updateEngagementModel = (model: string | null) => {
-    setState(prev => {
-      // Auto-select default frequency for PaaS models
-      const isPaaS = model === 'Platform as a Service';
-      const defaultFrequency = isPaaS ? 'quarterly' : null;
-      
-      return { 
-        ...prev, 
-        selected_engagement_model: model,
-        selected_frequency: isPaaS ? defaultFrequency : prev.selected_frequency
-      };
-    });
+    setState(prev => ({ 
+      ...prev, 
+      selected_engagement_model: model
+    }));
   };
 
   const updateFrequency = (frequency: SimpleEngagementState['selected_frequency']) => {

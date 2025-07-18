@@ -57,11 +57,6 @@ export const getIndustrySegmentDisplayName = (industrySegmentValue: any): string
   return String(industrySegmentValue);
 };
 
-// Helper function to check if engagement model is Platform as a Service (PaaS)
-export const isPaaSModel = (engagementModel: string) => {
-  return engagementModel?.toLowerCase().includes('platform as a service') || 
-         engagementModel?.toLowerCase().includes('paas');
-};
 
 // Helper function to check if administrator exists
 export const checkAdministratorExists = (seeker: any) => {
