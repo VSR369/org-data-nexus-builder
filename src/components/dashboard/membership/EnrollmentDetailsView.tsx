@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,9 @@ interface EnrollmentDetailsViewProps {
   selectedEngagementModel: string;
   membershipFees: any[];
   engagementModelPricing: any[];
+  tierConfiguration: any;
+  engagementModelDetails: any;
+  activationRecord: any;
   onBack: () => void;
 }
 
@@ -19,69 +23,11 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
   selectedEngagementModel,
   membershipFees,
   engagementModelPricing,
+  tierConfiguration,
+  engagementModelDetails,
+  activationRecord,
   onBack
 }) => {
-  const getTierFeatures = (tier: string) => {
-    const features = {
-      'standard': [
-        'Up to 3 concurrent challenges',
-        'Basic analytics dashboard',
-        'Email support (24-48 hours)',
-        'Standard onboarding process',
-        'Basic workflow templates',
-        'Monthly challenge limit: 10'
-      ],
-      'premium': [
-        'Up to 8 concurrent challenges',
-        'Advanced analytics dashboard',
-        'Priority email support (12-24 hours)',
-        'Enhanced onboarding with dedicated support',
-        'Advanced workflow templates',
-        'Monthly challenge limit: 25',
-        'Custom reporting features'
-      ],
-      'enterprise': [
-        'Unlimited concurrent challenges',
-        'Full analytics suite with custom dashboards',
-        'Phone & email support (4-8 hours)',
-        'White-glove onboarding experience',
-        'Custom workflow templates',
-        'No monthly challenge limits',
-        'Advanced reporting & analytics',
-        'Dedicated account manager',
-        'Custom integrations available'
-      ]
-    };
-    return features[tier.toLowerCase()] || [];
-  };
-
-  const getEngagementModelFeatures = (model: string) => {
-    const features = {
-      'marketplace': [
-        'Solution providers compete for your challenges',
-        'Competitive pricing through bidding',
-        'Quality assurance through provider ratings',
-        'Flexible engagement terms',
-        'Multi-provider comparison tools'
-      ],
-      'aggregator': [
-        'Curated network of pre-vetted solution providers',
-        'Bundled service packages',
-        'Streamlined procurement process',
-        'Volume discounts available',
-        'Simplified vendor management'
-      ],
-      'platform as a service': [
-        'Self-service platform access',
-        'Direct provider collaboration tools',
-        'Automated matching algorithms',
-        'Real-time project tracking',
-        'Integrated communication suite'
-      ]
-    };
-    return features[model.toLowerCase()] || [];
-  };
-
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -90,6 +36,61 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
       maximumFractionDigits: 0,
     });
     return formatter.format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not available';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  // Get real tier features from database
+  const getTierFeatures = () => {
+    if (!tierConfiguration) return [];
+    
+    const features = [];
+    
+    if (tierConfiguration.monthly_challenge_limit) {
+      features.push(`Monthly challenge limit: ${tierConfiguration.monthly_challenge_limit}`);
+    } else {
+      features.push('Unlimited monthly challenges');
+    }
+    
+    features.push(`Solutions per challenge: ${tierConfiguration.solutions_per_challenge || 'Not specified'}`);
+    features.push(`Fixed charge per challenge: ${formatCurrency(tierConfiguration.fixed_charge_per_challenge || 0, tierConfiguration.master_currencies?.code || 'USD')}`);
+    features.push(`Overage allowed: ${tierConfiguration.allows_overage ? 'Yes' : 'No'}`);
+    
+    if (tierConfiguration.master_analytics_access_types) {
+      features.push(`Analytics: ${tierConfiguration.master_analytics_access_types.name}`);
+    }
+    
+    if (tierConfiguration.master_support_types) {
+      features.push(`Support: ${tierConfiguration.master_support_types.name} (${tierConfiguration.master_support_types.response_time})`);
+    }
+    
+    if (tierConfiguration.master_onboarding_types) {
+      features.push(`Onboarding: ${tierConfiguration.master_onboarding_types.name}`);
+    }
+    
+    if (tierConfiguration.master_workflow_templates) {
+      features.push(`Workflow templates: ${tierConfiguration.master_workflow_templates.template_count || 1} ${tierConfiguration.master_workflow_templates.name}`);
+    }
+    
+    return features;
+  };
+
+  // Get real engagement model features from database
+  const getEngagementModelFeatures = () => {
+    if (!engagementModelDetails?.description) {
+      return ['Model details not available'];
+    }
+    
+    // Split description into feature points if it contains bullet points or multiple sentences
+    const description = engagementModelDetails.description;
+    const features = description.includes('.') 
+      ? description.split('.').filter(f => f.trim().length > 0).map(f => f.trim() + '.')
+      : [description];
+    
+    return features;
   };
 
   return (
@@ -126,12 +127,16 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
               <label className="text-sm font-medium text-gray-700">Status</label>
               <div className="flex items-center gap-2">
                 <Badge className="bg-green-600">{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge>
-                <span className="text-sm text-gray-600">Annual Membership</span>
+                <span className="text-sm text-gray-600">
+                  {activationRecord?.selected_frequency || 'Annual'} Membership
+                </span>
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Activation Date</label>
-              <p className="text-sm text-gray-800">{new Date().toLocaleDateString()}</p>
+              <p className="text-sm text-gray-800">
+                {formatDate(activationRecord?.created_at)}
+              </p>
             </div>
           </div>
 
@@ -166,10 +171,38 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {membershipFees.map((fee, index) => (
                     <div key={index} className="text-center p-3 bg-gray-50 rounded-lg">
-                      <div className="font-medium text-gray-900">
-                        {fee.monthly_amount && formatCurrency(fee.monthly_amount, fee.monthly_currency)}
-                      </div>
-                      <div className="text-sm text-gray-600">Monthly</div>
+                      {fee.monthly_amount && (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {formatCurrency(fee.monthly_amount, fee.monthly_currency)}
+                          </div>
+                          <div className="text-sm text-gray-600">Monthly</div>
+                        </div>
+                      )}
+                      {fee.quarterly_amount && (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {formatCurrency(fee.quarterly_amount, fee.quarterly_currency)}
+                          </div>
+                          <div className="text-sm text-gray-600">Quarterly</div>
+                        </div>
+                      )}
+                      {fee.half_yearly_amount && (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {formatCurrency(fee.half_yearly_amount, fee.half_yearly_currency)}
+                          </div>
+                          <div className="text-sm text-gray-600">Half-Yearly</div>
+                        </div>
+                      )}
+                      {fee.annual_amount && (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {formatCurrency(fee.annual_amount, fee.annual_currency)}
+                          </div>
+                          <div className="text-sm text-gray-600">Annual</div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -198,16 +231,18 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Selection Date</label>
-              <p className="text-sm text-gray-800">{new Date().toLocaleDateString()}</p>
+              <p className="text-sm text-gray-800">
+                {formatDate(activationRecord?.tier_selected_at)}
+              </p>
             </div>
           </div>
 
-          {/* Tier Features */}
+          {/* Real Tier Features from Database */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Tier Features & Benefits</label>
             <div className="bg-white p-4 rounded-lg border">
               <div className="grid grid-cols-1 gap-2">
-                {getTierFeatures(selectedTier).map((feature, index) => (
+                {getTierFeatures().map((feature, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                     <span className="text-sm text-gray-700">{feature}</span>
@@ -217,34 +252,44 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Tier Pricing */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Tier Pricing Structure</label>
-            <div className="bg-white p-4 rounded-lg border">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Fixed Charge per Challenge:</span>
-                    <span className="text-sm font-medium">$500</span>
+          {/* Real Tier Pricing from Database */}
+          {tierConfiguration && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Tier Pricing Structure</label>
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Fixed Charge per Challenge:</span>
+                      <span className="text-sm font-medium">
+                        {formatCurrency(tierConfiguration.fixed_charge_per_challenge || 0, tierConfiguration.master_currencies?.code || 'USD')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Monthly Challenge Limit:</span>
+                      <span className="text-sm font-medium">
+                        {tierConfiguration.monthly_challenge_limit || 'Unlimited'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Monthly Challenge Limit:</span>
-                    <span className="text-sm font-medium">10</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Solutions per Challenge:</span>
-                    <span className="text-sm font-medium">5</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Overage Allowed:</span>
-                    <span className="text-sm font-medium">Yes</span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Solutions per Challenge:</span>
+                      <span className="text-sm font-medium">
+                        {tierConfiguration.solutions_per_challenge || 'Not specified'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Overage Allowed:</span>
+                      <span className="text-sm font-medium">
+                        {tierConfiguration.allows_overage ? 'Yes' : 'No'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -267,16 +312,18 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Selection Date</label>
-              <p className="text-sm text-gray-800">{new Date().toLocaleDateString()}</p>
+              <p className="text-sm text-gray-800">
+                {formatDate(activationRecord?.engagement_model_selected_at)}
+              </p>
             </div>
           </div>
 
-          {/* Model Features */}
+          {/* Real Model Features from Database */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Model Features & Benefits</label>
             <div className="bg-white p-4 rounded-lg border">
               <div className="grid grid-cols-1 gap-2">
-                {getEngagementModelFeatures(selectedEngagementModel).map((feature, index) => (
+                {getEngagementModelFeatures().map((feature, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                     <span className="text-sm text-gray-700">{feature}</span>
@@ -286,7 +333,7 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
             </div>
           </div>
 
-          {/* Model Pricing */}
+          {/* Real Model Pricing from Database */}
           {engagementModelPricing.length > 0 && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Model Pricing Structure</label>
@@ -317,7 +364,7 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
         </CardContent>
       </Card>
 
-      {/* Payment Information */}
+      {/* Real Payment Information from Database */}
       <Card className="border-orange-200 bg-orange-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -329,24 +376,45 @@ export const EnrollmentDetailsView: React.FC<EnrollmentDetailsViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Payment Status</label>
-              <Badge className="bg-green-600">Verified</Badge>
+              <Badge className={activationRecord?.mem_payment_status === 'paid' ? "bg-green-600" : "bg-yellow-600"}>
+                {activationRecord?.mem_payment_status === 'paid' ? 'Verified' : activationRecord?.mem_payment_status || 'Pending'}
+              </Badge>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Payment Method</label>
-              <p className="text-sm text-gray-800">Credit Card (**** 4567)</p>
+              <p className="text-sm text-gray-800">
+                {activationRecord?.mem_payment_method === 'credit_card' ? 'Credit Card' : activationRecord?.mem_payment_method || 'Not specified'}
+              </p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Next Billing Date</label>
+              <label className="text-sm font-medium text-gray-700">Payment Amount</label>
+              <p className="text-sm text-gray-800">
+                {activationRecord?.mem_payment_amount 
+                  ? formatCurrency(activationRecord.mem_payment_amount, activationRecord.mem_payment_currency || 'USD')
+                  : 'Not available'
+                }
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Payment Date</label>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-600" />
                 <p className="text-sm text-gray-800">
-                  {new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString()}
+                  {formatDate(activationRecord?.mem_payment_date)}
                 </p>
               </div>
             </div>
+            {activationRecord?.mem_receipt_number && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Receipt Number</label>
+                <p className="text-sm text-gray-800">{activationRecord.mem_receipt_number}</p>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Billing Frequency</label>
-              <p className="text-sm text-gray-800">Annual</p>
+              <p className="text-sm text-gray-800">
+                {activationRecord?.selected_frequency || 'Annual'}
+              </p>
             </div>
           </div>
         </CardContent>

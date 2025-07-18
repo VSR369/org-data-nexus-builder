@@ -39,6 +39,9 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
   const [engagementModelPricing, setEngagementModelPricing] = useState<any[]>([]);
+  const [tierConfiguration, setTierConfiguration] = useState<any>(null);
+  const [engagementModelDetails, setEngagementModelDetails] = useState<any>(null);
+  const [activationRecord, setActivationRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,6 +88,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .maybeSingle();
 
       console.log('📋 Existing activation data:', existingActivation);
+      setActivationRecord(existingActivation);
 
       if (existingActivation) {
         const dbStep = (existingActivation.workflow_step as WorkflowStep) || 'membership_decision';
@@ -107,6 +111,21 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         
         // Show tier selection if a tier has been selected or if on tier_selection step
         setShowTierSelection(!!existingActivation.pricing_tier || dbStep === 'tier_selection');
+
+        // Load tier configuration if tier is selected
+        if (existingActivation.pricing_tier) {
+          await loadTierConfiguration(existingActivation.pricing_tier);
+        }
+
+        // Load engagement model details if model is selected
+        if (existingActivation.engagement_model) {
+          await loadEngagementModelDetails(existingActivation.engagement_model);
+        }
+
+        // Load engagement model pricing if both tier and model are selected
+        if (existingActivation.pricing_tier && existingActivation.engagement_model) {
+          await loadEngagementModelPricing(existingActivation.pricing_tier, existingActivation.engagement_model);
+        }
       }
 
       // Load membership fees
@@ -119,11 +138,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
       setMembershipFees(membershipFeesData || []);
       console.log('💰 Loaded membership fees:', membershipFeesData?.length || 0);
-
-      // Load engagement model pricing if tier and model are selected
-      if (existingActivation?.pricing_tier && existingActivation?.engagement_model) {
-        await loadEngagementModelPricing(existingActivation.pricing_tier, existingActivation.engagement_model);
-      }
       
     } catch (error) {
       console.error('❌ Error loading workflow data:', error);
@@ -137,34 +151,125 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const loadTierConfiguration = async (tierName: string) => {
+    try {
+      console.log('🏷️ Loading tier configuration for:', tierName);
+      
+      // Get country ID first
+      const { data: countryData } = await supabase
+        .from('master_countries')
+        .select('id')
+        .eq('name', profile.country)
+        .single();
+
+      if (!countryData) {
+        console.error('❌ Country not found:', profile.country);
+        return;
+      }
+
+      // Get pricing tier ID
+      const { data: tierData } = await supabase
+        .from('master_pricing_tiers')
+        .select('id')
+        .eq('name', tierName)
+        .single();
+
+      if (!tierData) {
+        console.error('❌ Pricing tier not found:', tierName);
+        return;
+      }
+
+      // Get tier configuration with related data
+      const { data: tierConfig } = await supabase
+        .from('master_tier_configurations')
+        .select(`
+          *,
+          master_pricing_tiers (
+            name,
+            level_order,
+            description
+          ),
+          master_analytics_access_types (
+            name,
+            description,
+            features_included
+          ),
+          master_support_types (
+            name,
+            service_level,
+            response_time,
+            availability
+          ),
+          master_onboarding_types (
+            name,
+            service_type,
+            resources_included
+          ),
+          master_workflow_templates (
+            name,
+            template_type,
+            customization_level,
+            template_count
+          ),
+          master_currencies (
+            code,
+            symbol
+          )
+        `)
+        .eq('country_id', countryData.id)
+        .eq('pricing_tier_id', tierData.id)
+        .eq('is_active', true)
+        .single();
+
+      if (tierConfig) {
+        setTierConfiguration(tierConfig);
+        console.log('✅ Loaded tier configuration:', tierConfig);
+      }
+    } catch (error) {
+      console.error('❌ Error loading tier configuration:', error);
+    }
+  };
+
+  const loadEngagementModelDetails = async (modelName: string) => {
+    try {
+      console.log('🤝 Loading engagement model details for:', modelName);
+      
+      const { data: modelDetails } = await supabase
+        .from('master_engagement_models')
+        .select('*')
+        .eq('name', modelName)
+        .single();
+
+      if (modelDetails) {
+        setEngagementModelDetails(modelDetails);
+        console.log('✅ Loaded engagement model details:', modelDetails);
+      }
+    } catch (error) {
+      console.error('❌ Error loading engagement model details:', error);
+    }
+  };
+
   const loadEngagementModelPricing = async (tier: string, model: string) => {
     try {
       console.log('💰 Loading engagement model pricing for:', { tier, model });
       
-      // Mock pricing data for demonstration
-      const mockPricing = [
-        {
-          id: '1',
-          config_name: 'Platform Fee',
-          base_value: 2500,
-          calculated_value: 2250,
-          currency_code: 'USD',
-          membership_discount: 10,
-          unit_symbol: '$'
-        },
-        {
-          id: '2',
-          config_name: 'Management Fee',
-          base_value: 1500,
-          calculated_value: 1350,
-          currency_code: 'USD',
-          membership_discount: 10,
-          unit_symbol: '$'
-        }
-      ];
+      // Use the pricing configuration function to get real pricing data
+      const { data: pricingData, error } = await supabase
+        .rpc('get_pricing_configuration', {
+          p_country_name: profile.country,
+          p_organization_type: profile.organization_type,
+          p_entity_type: profile.entity_type,
+          p_engagement_model: model,
+          p_membership_status: membershipStatus === 'active' ? 'Active' : 'Not Active'
+        });
+
+      if (error) {
+        console.error('❌ Error loading pricing configuration:', error);
+        return;
+      }
       
-      setEngagementModelPricing(mockPricing);
-      console.log('💰 Loaded engagement model pricing:', mockPricing.length);
+      setEngagementModelPricing(pricingData || []);
+      console.log('💰 Loaded engagement model pricing:', pricingData?.length || 0);
     } catch (error) {
       console.error('❌ Error loading engagement model pricing:', error);
     }
@@ -523,6 +628,9 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           selectedEngagementModel={selectedEngagementModel}
           membershipFees={membershipFees}
           engagementModelPricing={engagementModelPricing}
+          tierConfiguration={tierConfiguration}
+          engagementModelDetails={engagementModelDetails}
+          activationRecord={activationRecord}
           onBack={() => setShowDetails(false)}
         />
       );
