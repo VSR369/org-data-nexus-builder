@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -355,8 +354,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Render workflow steps
-  const renderCurrentStep = () => {
+  // Check if we should show the persistent membership summary
+  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision';
+
+  // Render the current step content
+  const renderCurrentStepContent = () => {
     console.log('🎨 Rendering step:', currentStep, 'with membership status:', membershipStatus);
     
     switch (currentStep) {
@@ -413,40 +415,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         }
         return null;
 
-      case 'membership_summary':
-        console.log('🎯 Rendering membership_summary step with membershipStatus:', membershipStatus);
-        console.log('🎯 Membership fees data:', membershipFees);
-        if (membershipStatus) {
-          return (
-            <div className="max-w-4xl mx-auto">
-              <MembershipSummaryOnlyCard
-                membershipStatus={membershipStatus}
-                membershipFees={membershipFees}
-                onProceedToTierSelection={handleProceedToTierSelection}
-                currency={membershipFees[0]?.annual_currency || 'USD'}
-              />
-            </div>
-          );
-        } else {
-          console.log('❌ No membership status available for membership_summary step');
-          return (
-            <div className="max-w-4xl mx-auto">
-              <Card className="w-full border-red-200 bg-red-50">
-                <CardHeader>
-                  <CardTitle className="text-red-800">Debug: Membership Status Missing</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Current step: {currentStep}</p>
-                  <p>Membership status: {membershipStatus || 'null'}</p>
-                  <Button onClick={() => handleMembershipDecision('inactive')}>
-                    Set to Inactive and Continue
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          );
-        }
-
       case 'tier_selection':
         return (
           <div className="max-w-4xl mx-auto">
@@ -468,14 +436,39 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           </div>
         );
 
+      case 'membership_summary':
+        // This step is now handled by the persistent summary, so we skip to tier selection
+        return (
+          <div className="max-w-4xl mx-auto">
+            <SimpleTierSelectionCard
+              selectedTier={selectedTier}
+              onTierSelect={handleTierSelection}
+              countryName={profile?.country}
+            />
+          </div>
+        );
+
       default:
         return null;
     }
   };
 
   return (
-    <div className="w-full">
-      {renderCurrentStep()}
+    <div className="w-full space-y-6">
+      {/* Persistent Membership Summary - Show above current step when membership decision is made */}
+      {shouldShowMembershipSummary && (
+        <div className="max-w-4xl mx-auto">
+          <MembershipSummaryOnlyCard
+            membershipStatus={membershipStatus}
+            membershipFees={membershipFees}
+            onProceedToTierSelection={handleProceedToTierSelection}
+            currency={membershipFees[0]?.annual_currency || 'USD'}
+          />
+        </div>
+      )}
+      
+      {/* Current Step Content */}
+      {renderCurrentStepContent()}
     </div>
   );
 };
