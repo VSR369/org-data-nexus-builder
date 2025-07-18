@@ -1,115 +1,154 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 export interface TierConfiguration {
   id: string;
-  pricing_tier_id: string;
   pricing_tier_name: string;
   level_order: number;
-  country_id: string;
-  country_name: string;
-  currency_id: string;
-  currency_name: string;
-  currency_code: string;
-  currency_symbol: string;
-  fixed_charge_per_challenge: number;
+  analytics_access_name: string;
+  support_type_name: string;
+  onboarding_type_name: string;
+  workflow_template_name: string;
   monthly_challenge_limit: number | null;
   solutions_per_challenge: number;
   allows_overage: boolean;
-  analytics_access_name: string | null;
-  support_type_name: string | null;
-  onboarding_type_name: string | null;
-  workflow_template_name: string | null;
-  is_active: boolean;
+  fixed_charge_per_challenge: number;
+  currency_symbol: string;
+  currency_code: string;
 }
 
-export function useTierConfigurations(countryName?: string) {
+export const useTierConfigurations = (countryName?: string) => {
   const [tierConfigurations, setTierConfigurations] = useState<TierConfiguration[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
-  const loadTierConfigurations = async () => {
-    try {
-      setLoading(true);
-      
-      let query = supabase
-        .from('master_tier_configurations')
-        .select(`
-          *,
-          pricing_tier:master_pricing_tiers(name, level_order),
-          country:master_countries(name),
-          currency:master_currencies(name, code, symbol),
-          analytics_access:master_analytics_access_types(name),
-          onboarding_type:master_onboarding_types(name),
-          support_type:master_support_types(name),
-          workflow_template:master_workflow_templates(name)
-        `)
-        .eq('is_active', true);
-
-      if (countryName) {
-        // Join with countries table to filter by country name
-        const { data: countryData } = await supabase
-          .from('master_countries')
-          .select('id')
-          .eq('name', countryName)
-          .single();
-
-        if (countryData) {
-          query = query.eq('country_id', countryData.id);
-        }
-      }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      const processedData = (data || []).map((item: any) => ({
-        id: item.id,
-        pricing_tier_id: item.pricing_tier_id,
-        pricing_tier_name: item.pricing_tier?.name || 'Unknown Tier',
-        level_order: item.pricing_tier?.level_order || 0,
-        country_id: item.country_id,
-        country_name: item.country?.name || 'Unknown Country',
-        currency_id: item.currency_id,
-        currency_name: item.currency?.name || 'Unknown Currency',
-        currency_code: item.currency?.code || 'USD',
-        currency_symbol: item.currency?.symbol || '$',
-        fixed_charge_per_challenge: item.fixed_charge_per_challenge || 0,
-        monthly_challenge_limit: item.monthly_challenge_limit,
-        solutions_per_challenge: item.solutions_per_challenge || 1,
-        allows_overage: item.allows_overage || false,
-        analytics_access_name: item.analytics_access?.name || null,
-        support_type_name: item.support_type?.name || null,
-        onboarding_type_name: item.onboarding_type?.name || null,
-        workflow_template_name: item.workflow_template?.name || null,
-        is_active: item.is_active
-      }));
-
-      // Sort by level_order after processing the data
-      const sortedData = processedData.sort((a, b) => a.level_order - b.level_order);
-
-      setTierConfigurations(sortedData);
-    } catch (error) {
-      console.error('Error loading tier configurations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load tier configurations",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTierConfigurations();
+    const fetchTierConfigurations = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🔄 Loading tier configurations for country:', countryName);
+
+        // Get country ID first if country name is provided
+        let countryId = null;
+        if (countryName) {
+          const { data: countryData } = await supabase
+            .from('master_countries')
+            .select('id')
+            .eq('name', countryName)
+            .single();
+          
+          countryId = countryData?.id;
+        }
+
+        // Build query for tier configurations
+        let query = supabase
+          .from('master_tier_configurations')
+          .select(`
+            id,
+            pricing_tier_id,
+            monthly_challenge_limit,
+            solutions_per_challenge,
+            allows_overage,
+            fixed_charge_per_challenge,
+            analytics_access_id,
+            support_type_id,
+            onboarding_type_id,
+            workflow_template_id,
+            currency_id,
+            master_pricing_tiers (
+              name,
+              level_order
+            ),
+            master_analytics_access_types (
+              name
+            ),
+            master_support_types (
+              name
+            ),
+            master_onboarding_types (
+              name
+            ),
+            master_workflow_templates (
+              name
+            ),
+            master_currencies (
+              code,
+              symbol
+            )
+          `)
+          .eq('is_active', true);
+
+        // Filter by country if provided
+        if (countryId) {
+          query = query.eq('country_id', countryId);
+        }
+
+        const { data, error: queryError } = await query.order('pricing_tier_id');
+
+        if (queryError) {
+          throw new Error(`Failed to load tier configurations: ${queryError.message}`);
+        }
+
+        if (!data || data.length === 0) {
+          console.log('ℹ️ No tier configurations found for country:', countryName);
+          setTierConfigurations([]);
+          setLoading(false);
+          return;
+        }
+
+        // Transform the data
+        const configurations: TierConfiguration[] = data
+          .map(config => {
+            const tier = config.master_pricing_tiers;
+            const analytics = config.master_analytics_access_types;
+            const support = config.master_support_types;
+            const onboarding = config.master_onboarding_types;
+            const workflow = config.master_workflow_templates;
+            const currency = config.master_currencies;
+
+            if (!tier) return null;
+
+            return {
+              id: config.id,
+              pricing_tier_name: tier.name,
+              level_order: tier.level_order,
+              analytics_access_name: analytics?.name || 'Basic',
+              support_type_name: support?.name || 'Standard',
+              onboarding_type_name: onboarding?.name || 'Self-Service',
+              workflow_template_name: workflow?.name || 'Standard',
+              monthly_challenge_limit: config.monthly_challenge_limit,
+              solutions_per_challenge: config.solutions_per_challenge,
+              allows_overage: config.allows_overage,
+              fixed_charge_per_challenge: config.fixed_charge_per_challenge,
+              currency_symbol: currency?.symbol || '$',
+              currency_code: currency?.code || 'USD'
+            };
+          })
+          .filter(Boolean) as TierConfiguration[];
+
+        // Sort by level order
+        configurations.sort((a, b) => a.level_order - b.level_order);
+
+        console.log('✅ Loaded tier configurations:', configurations.length);
+        setTierConfigurations(configurations);
+
+      } catch (err) {
+        console.error('❌ Error loading tier configurations:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load tier configurations';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTierConfigurations();
   }, [countryName]);
 
   return {
     tierConfigurations,
     loading,
-    refreshTierConfigurations: loadTierConfigurations,
+    error,
   };
-}
+};

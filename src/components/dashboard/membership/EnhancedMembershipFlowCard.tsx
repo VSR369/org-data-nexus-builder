@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { ActivationSummaryCard } from './ActivationSummaryCard';
 import { MembershipSummaryOnlyCard } from './MembershipSummaryOnlyCard';
 import { SimpleTierSelectionCard } from './SimpleTierSelectionCard';
 import { SimpleEngagementModelCard } from './SimpleEngagementModelCard';
+import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -128,6 +130,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       // Validate required fields
       const { finalUserId, finalMembershipStatus } = validateRequiredFields(additionalData);
+      
+      // Ensure we have a valid user ID
+      if (!finalUserId) {
+        throw new Error('User ID is required for database operations');
+      }
       
       const updateData = {
         user_id: finalUserId,
@@ -261,21 +268,39 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleTierSelection = async (tier: string) => {
     try {
       console.log('🏷️ Tier selected:', tier);
+      
+      // Validate that we have the required data
+      if (!userId) {
+        throw new Error('User ID is required for tier selection');
+      }
+      
+      if (!tier || tier.trim() === '') {
+        throw new Error('Valid tier selection is required');
+      }
+      
       setSelectedTier(tier);
+      
+      // Update workflow with proper error handling
       await updateWorkflowStep('engagement_model_selection', {
         pricing_tier: tier,
-        tier_selected_at: new Date().toISOString()
+        tier_selected_at: new Date().toISOString(),
+        membership_status: membershipStatus || 'active' // Ensure membership status is set
       });
       
       toast({
         title: "Tier Selected",
-        description: `${tier} tier has been selected.`,
+        description: `${tier} tier has been selected successfully.`,
       });
     } catch (error) {
       console.error('❌ Error in handleTierSelection:', error);
+      
+      // Reset selected tier on error
+      setSelectedTier(null);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
-        title: "Error",
-        description: "Failed to save tier selection. Please try again.",
+        title: "Tier Selection Failed",
+        description: `Failed to save tier selection: ${errorMessage}`,
         variant: "destructive"
       });
     }
@@ -429,9 +454,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       case 'engagement_model_selection':
         return (
           <div className="max-w-4xl mx-auto">
-            <SimpleEngagementModelCard
+            <EngagementModelSelectionCard
+              selectedTier={selectedTier}
               selectedModel={selectedEngagementModel}
               onModelSelect={handleEngagementModelSelection}
+              profile={profile}
             />
           </div>
         );
