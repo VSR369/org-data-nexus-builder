@@ -281,30 +281,77 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleProceedToTierSelection = async () => {
     try {
-      console.log('🎯 Proceeding to tier selection');
+      console.log('🎯 Smart navigation - checking current selections');
       
       // Check if payment is required and completed for active membership
       if (membershipStatus === 'active' && paymentStatus !== 'success') {
         toast({
           title: "Payment Required",
-          description: "Please complete your membership payment before proceeding to tier selection.",
+          description: "Please complete your membership payment before proceeding.",
           variant: "destructive"
         });
         return;
       }
       
-      setShowTierSelection(true);
-      await updateWorkflowStep('tier_selection');
+      // Smart navigation based on current selections
+      if (!selectedTier) {
+        console.log('📍 No tier selected - proceeding to tier selection');
+        setShowTierSelection(true);
+        await updateWorkflowStep('tier_selection');
+      } else if (selectedTier && !selectedEngagementModel) {
+        console.log('📍 Tier selected but no engagement model - proceeding to engagement model selection');
+        await updateWorkflowStep('engagement_model');
+      } else if (selectedTier && selectedEngagementModel) {
+        console.log('📍 Both tier and engagement model selected - proceeding to preview');
+        await updateWorkflowStep('preview_confirmation');
+      }
       
       toast({
         title: "Success",
-        description: "Proceeding to tier selection.",
+        description: "Navigating to next step.",
       });
     } catch (error) {
       console.error('❌ Error in handleProceedToTierSelection:', error);
       toast({
         title: "Error",
-        description: "Failed to proceed to tier selection. Please try again.",
+        description: "Failed to proceed. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleReviewAndFinalize = async () => {
+    try {
+      console.log('✅ Proceeding to review and finalize');
+      await updateWorkflowStep('preview_confirmation');
+      toast({
+        title: "Success",
+        description: "Proceeding to final review.",
+      });
+    } catch (error) {
+      console.error('❌ Error in handleReviewAndFinalize:', error);
+      toast({
+        title: "Error",
+        description: "Failed to proceed to review. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleChangeSelections = async () => {
+    try {
+      console.log('🔄 Allowing user to change selections');
+      setShowTierSelection(true);
+      await updateWorkflowStep('tier_selection');
+      toast({
+        title: "Edit Mode",
+        description: "You can now modify your selections.",
+      });
+    } catch (error) {
+      console.error('❌ Error in handleChangeSelections:', error);
+      toast({
+        title: "Error",
+        description: "Failed to enter edit mode. Please try again.",
         variant: "destructive"
       });
     }
@@ -464,7 +511,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   }
 
   // Check if we should show the persistent membership summary
-  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision' && currentStep !== 'payment' && currentStep !== 'preview_confirmation';
+  const shouldShowMembershipSummary = membershipStatus && currentStep !== 'membership_decision' && currentStep !== 'preview_confirmation';
 
   // Render the current step content
   const renderCurrentStepContent = () => {
@@ -587,7 +634,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         </div>
       )}
       
-      {/* Persistent Membership Summary */}
+      {/* Persistent Membership Summary - Enhanced with Review Card functionality */}
       {shouldShowMembershipSummary && (
         <div className="max-w-4xl mx-auto">
           <MembershipSummaryOnlyCard
@@ -596,12 +643,16 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             onProceedToTierSelection={handleProceedToTierSelection}
             currency={membershipFees[0]?.annual_currency || 'USD'}
             onActivateMembership={membershipStatus === 'inactive' ? handleActivateMembership : undefined}
+            selectedTier={selectedTier}
+            selectedEngagementModel={selectedEngagementModel}
+            onReviewAndFinalize={handleReviewAndFinalize}
+            onChangeSelections={handleChangeSelections}
           />
         </div>
       )}
       
-      {/* Persistent Tier Selection Summary */}
-      {selectedTier && currentStep !== 'tier_selection' && currentStep !== 'preview_confirmation' && (
+      {/* Persistent Tier Selection Summary - only show if tier is selected but we're not in review mode */}
+      {selectedTier && currentStep !== 'tier_selection' && currentStep !== 'preview_confirmation' && !(selectedTier && selectedEngagementModel) && (
         <div className="max-w-4xl mx-auto">
           <SelectedTierSummaryCard 
             selectedTier={selectedTier}
