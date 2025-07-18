@@ -120,7 +120,7 @@ export function useMasterDataCRUD(tableName: TableName) {
           .from(tableName)
           .select(`
             *,
-            pricing_tier:master_pricing_tiers(name),
+            pricing_tier:master_pricing_tiers(name, level_order),
             country:master_countries(name),
             currency:master_currencies(name, code, symbol),
             analytics_access:master_analytics_access_types(name),
@@ -189,6 +189,7 @@ export function useMasterDataCRUD(tableName: TableName) {
         const processedData = data.map((item: any) => ({
           ...item,
           pricing_tier_name: item.pricing_tier?.name || 'Unknown Tier',
+          level_order: item.pricing_tier?.level_order || 0,
           country_name: item.country?.name || 'Unknown Country',
           currency_name: item.currency?.name || 'Unknown Currency',
           currency_code: item.currency?.code || 'USD',
