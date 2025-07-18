@@ -23,7 +23,7 @@ export type Database = {
           current_frequency: string | null
           discount_percentage: number | null
           engagement_locked: boolean | null
-          engagement_model: string
+          engagement_model: string | null
           engagement_model_details: Json | null
           engagement_model_selected_at: string | null
           enm_terms: boolean | null
@@ -66,7 +66,7 @@ export type Database = {
           current_frequency?: string | null
           discount_percentage?: number | null
           engagement_locked?: boolean | null
-          engagement_model: string
+          engagement_model?: string | null
           engagement_model_details?: Json | null
           engagement_model_selected_at?: string | null
           enm_terms?: boolean | null
@@ -109,7 +109,7 @@ export type Database = {
           current_frequency?: string | null
           discount_percentage?: number | null
           engagement_locked?: boolean | null
-          engagement_model?: string
+          engagement_model?: string | null
           engagement_model_details?: Json | null
           engagement_model_selected_at?: string | null
           enm_terms?: boolean | null

@@ -152,19 +152,15 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         updated_at: new Date().toISOString()
       };
 
-      // Always set engagement_model since it's required in the database
-      // Use selected model, provided model, or default to a placeholder
-      updateData.engagement_model = 
-        additionalData.engagement_model || 
-        selectedEngagementModel || 
-        'Market Place General'; // Default engagement model
+      // Only set engagement_model if it's explicitly provided
+      if (selectedEngagementModel || additionalData.engagement_model) {
+        updateData.engagement_model = additionalData.engagement_model || selectedEngagementModel;
+      }
 
-      // Always set pricing_tier since it might be required
-      // Use selected tier, provided tier, or default to a placeholder
-      updateData.pricing_tier = 
-        additionalData.pricing_tier || 
-        selectedTier || 
-        'standard'; // Default pricing tier
+      // Only set pricing_tier if it's explicitly provided
+      if (selectedTier || additionalData.pricing_tier) {
+        updateData.pricing_tier = additionalData.pricing_tier || selectedTier;
+      }
 
       console.log('📤 Final update data being sent to database:', updateData);
 
