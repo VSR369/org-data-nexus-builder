@@ -9,7 +9,7 @@ interface BusinessModelCardProps {
 }
 
 export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) => {
-  const getModelDetails = (formula: any, modelType: string) => {
+  const getModelDetails = (formula: any, modelType: string, subType?: string) => {
     if (!formula) {
       return (
         <div className="text-center py-4 text-muted-foreground">
@@ -19,6 +19,8 @@ export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) =
     }
 
     if (modelType === 'Marketplace') {
+      const isGeneralMarketplace = subType === 'General';
+      
       return (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
@@ -29,10 +31,12 @@ export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) =
             <span>Management Fee:</span>
             <span className="font-medium">{formula.currency_symbol}{formula.base_management_fee || 0}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span>Consulting Fee:</span>
-            <span className="font-medium">{formula.currency_symbol}{formula.base_consulting_fee || 0}</span>
-          </div>
+          {!isGeneralMarketplace && (
+            <div className="flex justify-between text-sm">
+              <span>Consulting Fee:</span>
+              <span className="font-medium">{formula.currency_symbol}{formula.base_consulting_fee || 0}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span>Membership Discount:</span>
             <span className="font-medium">{formula.membership_discount_percentage || 0}%</span>
@@ -109,13 +113,13 @@ export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) =
         {/* Marketplace General Model */}
         <div className="border border-blue-200 bg-blue-50/50 rounded-lg p-3">
           <h4 className="font-medium text-sm mb-2 text-blue-800">Marketplace General</h4>
-          {getModelDetails(model.marketplaceGeneralFormula, 'Marketplace')}
+          {getModelDetails(model.marketplaceGeneralFormula, 'Marketplace', 'General')}
         </div>
 
         {/* Marketplace Program Managed Model */}
         <div className="border border-purple-200 bg-purple-50/50 rounded-lg p-3">
           <h4 className="font-medium text-sm mb-2 text-purple-800">Marketplace Program Managed</h4>
-          {getModelDetails(model.marketplaceProgramManagedFormula, 'Marketplace')}
+          {getModelDetails(model.marketplaceProgramManagedFormula, 'Marketplace', 'Program Managed')}
         </div>
 
         {/* Aggregator Model */}
