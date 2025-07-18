@@ -96,9 +96,12 @@ export const EditTierModal: React.FC<EditTierModalProps> = ({
   };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
+    // Handle null, undefined, or empty currency codes
+    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: validCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
