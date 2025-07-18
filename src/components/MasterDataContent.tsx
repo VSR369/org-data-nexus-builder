@@ -130,7 +130,9 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         );
       case 'fee-components':
         const FeeComponentsManager = React.lazy(() => 
-          import('./master-data/fee-components/FeeComponentsManager').then(m => ({ default: m.FeeComponentsManager }))
+          import('./master-data/fee-components/FeeComponentsManager').then(module => ({ 
+            default: module.FeeComponentsManager 
+          }))
         );
         return (
           <React.Suspense fallback={<div>Loading...</div>}>
