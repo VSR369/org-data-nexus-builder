@@ -199,12 +199,10 @@ export const MembershipFlowCard: React.FC<MembershipFlowCardProps> = ({ profile,
 
       {/* Phase 2: Engagement Model Selection (Always Visible) */}
       <EngagementModelSelectionCard
-        profile={profile}
+        selectedTier={null}
         selectedModel={selectedEngagementModel}
-        selectedFrequency={selectedFrequency}
-        onModelChange={setSelectedEngagementModel}
-        onFrequencyChange={setSelectedFrequency}
-        membershipStatus={membershipStatus}
+        onModelSelect={setSelectedEngagementModel}
+        profile={profile}
       />
 
       {/* Phase 3: Terms and Conditions */}
