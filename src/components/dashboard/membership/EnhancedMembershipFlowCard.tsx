@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,14 +11,15 @@ import { PaymentSimulationCard } from './PaymentSimulationCard';
 import { EngagementModelDetailCard } from './EngagementModelDetailCard';
 import { ActivationSummaryCard } from './ActivationSummaryCard';
 import { SimpleEngagementModelSelection } from './SimpleEngagementModelSelection';
-import { MembershipSummaryCard } from './MembershipSummaryCard';
+import { MembershipSummaryOnlyCard } from './MembershipSummaryOnlyCard';
+import { TierSelectionCard } from './TierSelectionCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
   userId: string;
 }
 
-type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'engagement_model' | 'details_review' | 'activation_complete';
+type WorkflowStep = 'membership_decision' | 'payment' | 'membership_summary' | 'tier_selection' | 'engagement_model' | 'details_review' | 'activation_complete';
 type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed';
 
 export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProps> = ({ profile, userId }) => {
@@ -186,10 +186,24 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const handleProceedToTierSelection = async () => {
+    try {
+      await updateWorkflowStep('tier_selection', {
+        membership_summary_completed: true
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to proceed to tier selection. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleTierSelection = async (tier: string) => {
     try {
       setSelectedTier(tier);
-      await updateWorkflowStep('membership_summary', {
+      await updateWorkflowStep('engagement_model', {
         pricing_tier: tier,
         tier_selected_at: new Date().toISOString()
       });
@@ -370,17 +384,28 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       case 'membership_summary':
         if (membershipStatus) {
           return (
-            <MembershipSummaryCard
-              membershipStatus={membershipStatus}
-              membershipFees={membershipFees}
-              selectedTier={selectedTier}
-              onTierSelect={handleTierSelection}
-              onProceedToNext={handleProceedToEngagementModel}
-              currency={membershipFees[0]?.annual_currency || 'USD'}
-            />
+            <div className="max-w-4xl mx-auto">
+              <MembershipSummaryOnlyCard
+                membershipStatus={membershipStatus}
+                membershipFees={membershipFees}
+                onProceedToTierSelection={handleProceedToTierSelection}
+                currency={membershipFees[0]?.annual_currency || 'USD'}
+              />
+            </div>
           );
         }
         return null;
+
+      case 'tier_selection':
+        return (
+          <div className="max-w-4xl mx-auto">
+            <TierSelectionCard
+              selectedTier={selectedTier}
+              onTierSelect={handleTierSelection}
+              currency={membershipFees[0]?.annual_currency || 'USD'}
+            />
+          </div>
+        );
 
       case 'engagement_model':
         if (selectedTier) {
