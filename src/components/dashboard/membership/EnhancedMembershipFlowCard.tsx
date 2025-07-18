@@ -414,6 +414,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         return null;
 
       case 'membership_summary':
+        console.log('🎯 Rendering membership_summary step with membershipStatus:', membershipStatus);
+        console.log('🎯 Membership fees data:', membershipFees);
         if (membershipStatus) {
           return (
             <div className="max-w-4xl mx-auto">
@@ -425,8 +427,25 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               />
             </div>
           );
+        } else {
+          console.log('❌ No membership status available for membership_summary step');
+          return (
+            <div className="max-w-4xl mx-auto">
+              <Card className="w-full border-red-200 bg-red-50">
+                <CardHeader>
+                  <CardTitle className="text-red-800">Debug: Membership Status Missing</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Current step: {currentStep}</p>
+                  <p>Membership status: {membershipStatus || 'null'}</p>
+                  <Button onClick={() => handleMembershipDecision('inactive')}>
+                    Set to Inactive and Continue
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          );
         }
-        return null;
 
       case 'tier_selection':
         return (
