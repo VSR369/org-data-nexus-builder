@@ -482,7 +482,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             Enrollment Activated Successfully!
           </CardTitle>
           <CardDescription className="text-green-700">
-            Your membership is now active and you have full access to the platform
+            Your enrollment is now active and you have full access to the platform upon payment verification.
           </CardDescription>
         </CardHeader>
         <CardContent>
