@@ -280,9 +280,13 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       setSelectedTier(tier);
       
+      // Convert tier to lowercase for database storage (constraint requirement)
+      const tierForDatabase = tier.toLowerCase();
+      console.log('🔽 Converting tier for database:', { original: tier, database: tierForDatabase });
+      
       // Update workflow with proper error handling
       await updateWorkflowStep('engagement_model_selection', {
-        pricing_tier: tier,
+        pricing_tier: tierForDatabase, // Use lowercase for database
         tier_selected_at: new Date().toISOString(),
         membership_status: membershipStatus || 'active' // Ensure membership status is set
       });

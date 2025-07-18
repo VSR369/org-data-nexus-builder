@@ -37,21 +37,28 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
         setError(null);
         console.log('🔄 Loading engagement models for tier:', selectedTier);
 
-        // First, get the tier ID
+        // Convert tier to lowercase for database queries (since we store it lowercase)
+        const tierForQuery = selectedTier.toLowerCase();
+        console.log('🔽 Using tier for database query:', tierForQuery);
+
+        // First, get the tier ID using lowercase name
         const { data: tierData, error: tierError } = await supabase
           .from('master_pricing_tiers')
           .select('id')
-          .eq('name', selectedTier)
+          .eq('name', tierForQuery)
           .eq('is_active', true)
           .single();
 
         if (tierError) {
+          console.error('❌ Tier query error:', tierError);
           throw new Error(`Failed to find tier: ${tierError.message}`);
         }
 
         if (!tierData) {
           throw new Error(`Tier "${selectedTier}" not found`);
         }
+
+        console.log('✅ Found tier data:', tierData);
 
         // Get engagement models allowed for this tier
         const { data: tierModelAccess, error: accessError } = await supabase
@@ -70,6 +77,7 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
           .eq('is_allowed', true);
 
         if (accessError) {
+          console.error('❌ Access query error:', accessError);
           throw new Error(`Failed to load tier access: ${accessError.message}`);
         }
 
@@ -79,6 +87,8 @@ export const useEngagementModelPricing = (selectedTier: string | null, profile: 
           setLoading(false);
           return;
         }
+
+        console.log('✅ Found tier model access:', tierModelAccess);
 
         // Get engagement model IDs
         const engagementModelIds = tierModelAccess
