@@ -37,7 +37,17 @@ export const BusinessModelsManager: React.FC = () => {
           marketplaceProgramManagedFormula: marketplaceProgramManagedFormula || null,
           aggregatorFormula: aggregatorFormula || null,
         };
-      }).sort((a, b) => (a.level_order || 0) - (b.level_order || 0));
+      }).sort((a, b) => {
+        // Define the desired order
+        const tierOrder = { 'Basic': 1, 'Standard': 2, 'Premium': 3 };
+        const aTierName = a.pricing_tier_name || '';
+        const bTierName = b.pricing_tier_name || '';
+        
+        const aOrder = tierOrder[aTierName as keyof typeof tierOrder] || 999;
+        const bOrder = tierOrder[bTierName as keyof typeof tierOrder] || 999;
+        
+        return aOrder - bOrder;
+      });
 
       setBusinessModels(consolidatedModels);
       setLoading(false);
