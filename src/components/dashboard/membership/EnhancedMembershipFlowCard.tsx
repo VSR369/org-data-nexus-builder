@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -158,37 +159,91 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const validateRequiredFields = (step: WorkflowStep, additionalData: any = {}) => {
+    console.log('Validating required fields for step:', step, 'with data:', additionalData);
+    
+    // Ensure we have required base values
+    const finalMembershipStatus = additionalData.membership_status || membershipStatus || 'inactive';
+    const finalEngagementModel = additionalData.engagement_model || selectedEngagementModel || 'marketplace';
+    
+    console.log('Final values for validation:', {
+      finalMembershipStatus,
+      finalEngagementModel,
+      userId,
+      step
+    });
+
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    if (!finalMembershipStatus) {
+      throw new Error('Membership status is required');
+    }
+
+    if (!finalEngagementModel) {
+      throw new Error('Engagement model is required');
+    }
+
+    return {
+      finalMembershipStatus,
+      finalEngagementModel
+    };
+  };
+
   const updateWorkflowStep = async (step: WorkflowStep, additionalData: any = {}) => {
     try {
       console.log('Updating workflow step to:', step, 'with data:', additionalData);
       
+      // Validate required fields first
+      const { finalMembershipStatus, finalEngagementModel } = validateRequiredFields(step, additionalData);
+      
       const updateData = {
         user_id: userId,
         workflow_step: step,
-        country: profile.country,
-        organization_type: profile.organization_type,
-        membership_status: membershipStatus || 'inactive',
-        engagement_model: selectedEngagementModel || 'marketplace',
+        country: profile?.country || 'Unknown',
+        organization_type: profile?.organization_type || 'Unknown',
+        membership_status: finalMembershipStatus,
+        engagement_model: finalEngagementModel,
         ...additionalData,
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      console.log('Final update data being sent to database:', updateData);
+
+      const { error, data } = await supabase
         .from('engagement_activations')
         .upsert(updateData, {
           onConflict: 'user_id',
           ignoreDuplicates: false
-        });
+        })
+        .select();
 
       if (error) {
-        console.error('Upsert error:', error);
-        throw error;
+        console.error('Database upsert error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Database operation failed: ${error.message}`);
       }
       
+      console.log('Database operation successful:', data);
       setCurrentStep(step);
       console.log('Workflow step updated successfully to:', step);
     } catch (error) {
       console.error('Error updating workflow step:', error);
+      
+      // Enhanced error message for user
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
+        title: "Workflow Update Failed",
+        description: `Failed to update workflow step: ${errorMessage}`,
+        variant: "destructive"
+      });
+      
       throw error;
     }
   };
@@ -205,6 +260,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         await updateWorkflowStep('membership_summary', { membership_status: 'inactive' });
       }
     } catch (error) {
+      console.error('Error in handleMembershipDecision:', error);
       toast({
         title: "Error",
         description: "Failed to update membership status. Please try again.",
@@ -243,6 +299,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       });
 
     } catch (error) {
+      console.error('Error in handlePaymentSubmit:', error);
       setPaymentStatus('failed');
       toast({
         title: "Payment Failed",
@@ -257,10 +314,23 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleProceedToTierSelection = async () => {
     try {
       console.log('Proceeding to tier selection');
+      console.log('Current state before tier selection:', {
+        membershipStatus,
+        selectedEngagementModel,
+        userId,
+        profileData: profile
+      });
+      
       await updateWorkflowStep('tier_selection', {
         membership_summary_completed: true
       });
+      
+      toast({
+        title: "Success",
+        description: "Proceeding to tier selection.",
+      });
     } catch (error) {
+      console.error('Error in handleProceedToTierSelection:', error);
       toast({
         title: "Error",
         description: "Failed to proceed to tier selection. Please try again.",
@@ -277,7 +347,13 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         pricing_tier: tier,
         tier_selected_at: new Date().toISOString()
       });
+      
+      toast({
+        title: "Tier Selected",
+        description: `${tier.charAt(0).toUpperCase() + tier.slice(1)} tier has been selected.`,
+      });
     } catch (error) {
+      console.error('Error in handleTierSelection:', error);
       toast({
         title: "Error",
         description: "Failed to save tier selection. Please try again.",
@@ -293,6 +369,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         tier_confirmed_at: new Date().toISOString()
       });
     } catch (error) {
+      console.error('Error in handleProceedToEngagementModel:', error);
       toast({
         title: "Error",
         description: "Failed to proceed to engagement model selection. Please try again.",
@@ -308,7 +385,13 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         engagement_model: model.charAt(0).toUpperCase() + model.slice(1),
         engagement_model_selected_at: new Date().toISOString()
       });
+      
+      toast({
+        title: "Engagement Model Selected",
+        description: `${model.charAt(0).toUpperCase() + model.slice(1)} model has been selected.`,
+      });
     } catch (error) {
+      console.error('Error in handleEngagementModelSelection:', error);
       toast({
         title: "Error",
         description: "Failed to save engagement model selection. Please try again.",
@@ -337,6 +420,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
       await loadWorkflowData();
     } catch (error) {
+      console.error('Error in handleFinalActivation:', error);
       toast({
         title: "Activation Failed",
         description: "There was an error activating your membership. Please try again.",
