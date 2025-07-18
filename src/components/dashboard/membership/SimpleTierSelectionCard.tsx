@@ -29,14 +29,6 @@ const getTierColor = (tierName: string) => {
   return 'text-green-600';
 };
 
-const formatCurrency = (amount: number, symbol: string, code: string) => {
-  // Handle the specific case where symbol might be currency code like "INR"
-  if (symbol === code || symbol.length > 3) {
-    return `${code} ${amount.toFixed(2)}`;
-  }
-  return `${symbol}${amount.toFixed(2)} ${code}`;
-};
-
 export const SimpleTierSelectionCard: React.FC<SimpleTierSelectionCardProps> = ({
   selectedTier,
   onTierSelect,
@@ -117,9 +109,8 @@ export const SimpleTierSelectionCard: React.FC<SimpleTierSelectionCardProps> = (
                   <h3 className="text-lg font-semibold mb-2">{config.pricing_tier_name}</h3>
                   
                   <div className="mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(config.fixed_charge_per_challenge, config.currency_symbol, config.currency_code)}
-                      <span className="text-sm font-normal text-gray-500">/challenge</span>
+                    <div className="text-lg font-bold text-gray-900 mb-1">
+                      Contact for Pricing
                     </div>
                     {config.monthly_challenge_limit && (
                       <div className="text-sm text-gray-500">
@@ -142,6 +133,9 @@ export const SimpleTierSelectionCard: React.FC<SimpleTierSelectionCardProps> = (
                       monthlyLimit={config.monthly_challenge_limit}
                       solutionsPerChallenge={config.solutions_per_challenge}
                       allowsOverage={config.allows_overage}
+                      overageFeePerChallenge={config.fixed_charge_per_challenge}
+                      currencySymbol={config.currency_symbol}
+                      currencyCode={config.currency_code}
                     />
                   </div>
                   
