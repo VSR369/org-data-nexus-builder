@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,17 +22,9 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
   onPaymentSubmit,
   selectedTier = 'basic'
 }) => {
-  const [selectedFrequency, setSelectedFrequency] = useState<'monthly' | 'quarterly' | 'annual'>('annual');
-  
   const membershipFee = membershipFees[0];
-  const amounts = {
-    monthly: membershipFee?.monthly_amount || 99,
-    quarterly: membershipFee?.quarterly_amount || 270,
-    annual: membershipFee?.annual_amount || 990
-  };
-  
+  const annualAmount = membershipFee?.annual_amount || 990;
   const currency = membershipFee?.annual_currency || 'USD';
-  const savings = Math.round(((amounts.monthly * 12) - amounts.annual) / (amounts.monthly * 12) * 100);
 
   const getStatusIcon = () => {
     switch (paymentStatus) {
@@ -81,21 +74,21 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
             Payment Successful
           </CardTitle>
           <CardDescription className="text-green-700">
-            Your membership payment has been processed successfully
+            Your annual membership payment has been processed successfully
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="p-4 bg-white border border-green-200 rounded-lg">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">Amount Paid:</span>
+                <span className="font-medium">Annual Amount Paid:</span>
                 <span className="text-lg font-bold text-green-800">
-                  {currency} {amounts[selectedFrequency]}
+                  {currency} {annualAmount}
                 </span>
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Billing Frequency:</span>
-                <span className="text-sm font-medium capitalize">{selectedFrequency}</span>
+                <span className="text-sm font-medium">Annual</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Receipt Number:</span>
@@ -119,10 +112,10 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="h-5 w-5 text-blue-600" />
-          Membership Payment
+          Annual Membership Payment
         </CardTitle>
         <CardDescription>
-          Complete your membership payment to activate full platform access
+          Complete your annual membership payment to activate full platform access
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -133,48 +126,16 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
             <span className="font-medium">{getStatusText()}</span>
           </div>
 
-          {/* Billing Frequency Selection */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-3 block">
-              Select Billing Frequency:
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[
-                { key: 'monthly', label: 'Monthly', amount: amounts.monthly },
-                { key: 'quarterly', label: 'Quarterly', amount: amounts.quarterly },
-                { key: 'annual', label: 'Annual', amount: amounts.annual, badge: `Save ${savings}%` }
-              ].map((option) => (
-                <div
-                  key={option.key}
-                  className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                    selectedFrequency === option.key
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedFrequency(option.key as any)}
-                >
-                  {option.badge && (
-                    <Badge className="absolute -top-2 right-2 bg-green-600">
-                      {option.badge}
-                    </Badge>
-                  )}
-                  <div className="text-center">
-                    <div className="font-medium">{option.label}</div>
-                    <div className="text-lg font-bold text-primary">
-                      {currency} {option.amount}
-                    </div>
-                    {option.key === 'monthly' && (
-                      <div className="text-xs text-gray-500 mt-1">per month</div>
-                    )}
-                    {option.key === 'quarterly' && (
-                      <div className="text-xs text-gray-500 mt-1">every 3 months</div>
-                    )}
-                    {option.key === 'annual' && (
-                      <div className="text-xs text-gray-500 mt-1">per year</div>
-                    )}
-                  </div>
-                </div>
-              ))}
+          {/* Annual Membership Fee Display */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-center">
+              <Badge className="mb-2 bg-blue-600">Annual Membership</Badge>
+              <div className="text-2xl font-bold text-blue-800 mb-1">
+                {currency} {annualAmount}
+              </div>
+              <div className="text-sm text-blue-700">
+                Billed annually • Best value for full year access
+              </div>
             </div>
           </div>
 
@@ -183,8 +144,8 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
             <h3 className="font-medium mb-3">Payment Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Membership Fee ({selectedFrequency}):</span>
-                <span className="font-medium">{currency} {amounts[selectedFrequency]}</span>
+                <span>Annual Membership Fee:</span>
+                <span className="font-medium">{currency} {annualAmount}</span>
               </div>
               <div className="flex justify-between">
                 <span>Processing Fee:</span>
@@ -192,8 +153,8 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
               </div>
               <hr className="my-2" />
               <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span>{currency} {amounts[selectedFrequency]}</span>
+                <span>Total (Annual):</span>
+                <span>{currency} {annualAmount}</span>
               </div>
             </div>
           </div>
@@ -212,7 +173,7 @@ export const PaymentSimulationCard: React.FC<PaymentSimulationCardProps> = ({
             ) : (
               <>
                 <CreditCard className="mr-2 h-4 w-4" />
-                Pay {currency} {amounts[selectedFrequency]} - Simulate Payment
+                Pay {currency} {annualAmount} - Annual Membership
               </>
             )}
           </Button>

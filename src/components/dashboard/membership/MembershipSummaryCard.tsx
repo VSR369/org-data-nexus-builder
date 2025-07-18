@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ const TIER_OPTIONS = [
       'Email support',
       'Standard engagement models'
     ],
-    monthlyPrice: 99,
     annualPrice: 990
   },
   {
@@ -45,7 +43,6 @@ const TIER_OPTIONS = [
       'All engagement models available',
       'Custom branding options'
     ],
-    monthlyPrice: 299,
     annualPrice: 2990,
     recommended: true
   },
@@ -64,7 +61,6 @@ const TIER_OPTIONS = [
       'White-label solutions',
       'API access & integrations'
     ],
-    monthlyPrice: 699,
     annualPrice: 6990
   }
 ];
@@ -96,7 +92,7 @@ export const MembershipSummaryCard: React.FC<MembershipSummaryCardProps> = ({
             {membershipStatus === 'active' ? (
               <>
                 <CheckCircle className="h-6 w-6 text-green-600" />
-                <span className="text-green-800">Membership Activated</span>
+                <span className="text-green-800">Annual Membership Activated</span>
               </>
             ) : (
               <>
@@ -180,7 +176,7 @@ export const MembershipSummaryCard: React.FC<MembershipSummaryCardProps> = ({
             Select Your Pricing Tier
           </CardTitle>
           <CardDescription>
-            Choose the tier that best fits your organization's needs
+            Choose the tier that best fits your organization's needs • Annual billing only
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -211,12 +207,11 @@ export const MembershipSummaryCard: React.FC<MembershipSummaryCardProps> = ({
                     <p className="text-sm text-gray-600 mb-4">{tier.description}</p>
                     
                     <div className="mb-4">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {currency} {tier.monthlyPrice}
-                        <span className="text-sm font-normal text-gray-500">/month</span>
+                      <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {currency} {tier.annualPrice}
                       </div>
                       <div className="text-sm text-gray-500">
-                        or {currency} {tier.annualPrice}/year
+                        per year • Annual billing
                       </div>
                     </div>
                     
@@ -255,7 +250,7 @@ export const MembershipSummaryCard: React.FC<MembershipSummaryCardProps> = ({
           {selectedTier && (
             <div className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex justify-between items-center mb-4">
-                <h4 className="text-lg font-semibold text-gray-900">Cost Summary</h4>
+                <h4 className="text-lg font-semibold text-gray-900">Annual Cost Summary</h4>
                 <Badge variant="outline">Annual Billing</Badge>
               </div>
               
