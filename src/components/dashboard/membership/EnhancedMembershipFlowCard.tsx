@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle, Users, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, Zap, FileText } from 'lucide-react';
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
@@ -14,6 +14,7 @@ import { SimpleTierSelectionCard } from './SimpleTierSelectionCard';
 import { SimpleEngagementModelCard } from './SimpleEngagementModelCard';
 import { EngagementModelSelectionCard } from './EngagementModelSelectionCard';
 import { SelectedTierSummaryCard } from './SelectedTierSummaryCard';
+import { MembershipDetailsModal } from './MembershipDetailsModal';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -32,6 +33,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTierSelection, setShowTierSelection] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
@@ -506,6 +508,20 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   return (
     <div className="w-full space-y-6">
+      {/* Details Button - Show when user has made membership decision */}
+      {membershipStatus && (
+        <div className="max-w-4xl mx-auto text-center">
+          <Button
+            onClick={() => setShowDetailsModal(true)}
+            variant="outline"
+            className="mb-4"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+        </div>
+      )}
+      
       {/* Persistent Membership Summary - Show above current step when membership decision is made */}
       {shouldShowMembershipSummary && (
         <div className="max-w-4xl mx-auto">
@@ -555,6 +571,17 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           />
         </div>
       )}
+      
+      {/* Membership Details Modal */}
+      <MembershipDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        membershipStatus={membershipStatus}
+        selectedTier={selectedTier}
+        selectedEngagementModel={selectedEngagementModel}
+        membershipFees={membershipFees}
+        profile={profile}
+      />
     </div>
   );
 };
