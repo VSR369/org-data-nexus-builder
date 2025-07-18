@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, Zap, FileText, AlertCircle, Edit } from 'lucide-react';
 
 // Import components
 import { PaymentSimulationCard } from './PaymentSimulationCard';
@@ -752,41 +752,81 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // If workflow is complete, show summary
+  // If workflow is complete, show summary with edit functionality
   if (currentStep === 'activation_complete') {
     return (
-      <Card className="w-full border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
-            <CheckCircle className="h-6 w-6" />
-            Enrollment Activated Successfully!
-          </CardTitle>
-          <CardDescription className="text-green-700">
-            Your enrollment is now active and you have full access to the platform upon payment verification.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-white rounded-lg border border-green-200">
-              <Badge className="mb-2 bg-green-600">Membership</Badge>
-              <div className="font-medium">{membershipStatus === 'active' ? 'Active' : 'Inactive'}</div>
+      <div className="w-full space-y-6">
+        <Card className="w-full border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <CheckCircle className="h-6 w-6" />
+              Enrollment Activated Successfully!
+            </CardTitle>
+            <CardDescription className="text-green-700">
+              Your enrollment is now active and you have full access to the platform upon payment verification.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-white rounded-lg border border-green-200">
+                <Badge className="mb-2 bg-green-600">Membership</Badge>
+                <div className="font-medium">{membershipStatus === 'active' ? 'Active' : 'Inactive'}</div>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg border border-blue-200 relative">
+                <Badge className="mb-2 bg-blue-600">Tier</Badge>
+                <div className="font-medium">{selectedTier || 'Not Selected'}</div>
+                {selectedTier && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTierSelection(true)}
+                    className="absolute top-2 right-2 h-6 w-6 p-0"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg border border-purple-200 relative">
+                <Badge className="mb-2 bg-purple-600">Model</Badge>
+                <div className="font-medium">{selectedEngagementModel || 'Not Selected'}</div>
+                {selectedEngagementModel && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentStep('engagement_model')}
+                    className="absolute top-2 right-2 h-6 w-6 p-0"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="text-center p-4 bg-white rounded-lg border border-blue-200">
-              <Badge className="mb-2 bg-blue-600">Tier</Badge>
-              <div className="font-medium">{selectedTier || 'Not Selected'}</div>
+            <div className="flex justify-center gap-4">
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Refresh Dashboard
+              </Button>
             </div>
-            <div className="text-center p-4 bg-white rounded-lg border border-purple-200">
-              <Badge className="mb-2 bg-purple-600">Model</Badge>
-              <div className="font-medium">{selectedEngagementModel || 'Not Selected'}</div>
-            </div>
-          </div>
-          <div className="flex justify-center gap-4">
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Refresh Dashboard
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Add the full membership summary card with edit functionality */}
+        <div className="max-w-4xl mx-auto">
+          <MembershipSummaryOnlyCard
+            membershipStatus={membershipStatus}
+            membershipFees={membershipFees}
+            onProceedToTierSelection={handleProceedToTierSelection}
+            currency={membershipFees[0]?.annual_currency || 'USD'}
+            onActivateMembership={membershipStatus === 'inactive' ? handleActivateMembership : undefined}
+            selectedTier={selectedTier}
+            selectedEngagementModel={selectedEngagementModel}
+            onReviewAndFinalize={handleReviewAndFinalize}
+            onChangeSelections={handleChangeSelections}
+            profile={profile}
+            onTierChange={handleTierChange}
+            onEngagementModelChange={handleEngagementModelChange}
+          />
+        </div>
+      </div>
     );
   }
 
