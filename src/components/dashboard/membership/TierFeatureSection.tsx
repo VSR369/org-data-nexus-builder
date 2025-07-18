@@ -66,18 +66,12 @@ export const TierFeatureSection: React.FC<TierFeatureSectionProps> = ({
             <span className="text-sm font-bold text-gray-900">{solutionsPerChallenge}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Fixed Charge</span>
+            <span className="text-sm text-gray-600">Overage Charge</span>
             <span className="text-sm font-bold text-gray-900">
               {overageFeePerChallenge && overageFeePerChallenge > 0 ? 
                 formatCurrency(overageFeePerChallenge, currencySymbol, currencyCode) : 
                 `${currencyCode}0.00`
               }
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Overage Allowed</span>
-            <span className="text-sm font-bold text-gray-900">
-              {allowsOverage ? 'Yes' : 'No'}
             </span>
           </div>
         </div>
