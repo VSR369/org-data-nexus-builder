@@ -106,23 +106,7 @@ export const SimpleTierSelectionCard: React.FC<SimpleTierSelectionCardProps> = (
                 
                 <div className="text-center">
                   <Icon className={`h-8 w-8 mx-auto mb-3 ${getTierColor(config.pricing_tier_name)}`} />
-                  <h3 className="text-lg font-semibold mb-2">{config.pricing_tier_name}</h3>
-                  
-                  <div className="mb-4">
-                    <div className="text-lg font-bold text-gray-900 mb-1">
-                      Contact for Pricing
-                    </div>
-                    {config.monthly_challenge_limit && (
-                      <div className="text-sm text-gray-500">
-                        Up to {config.monthly_challenge_limit} challenges/month
-                      </div>
-                    )}
-                    {!config.monthly_challenge_limit && (
-                      <div className="text-sm text-gray-500">
-                        Unlimited challenges
-                      </div>
-                    )}
-                  </div>
+                  <h3 className="text-lg font-semibold mb-4">{config.pricing_tier_name}</h3>
                   
                   <div className="mb-6">
                     <TierFeatureSection
