@@ -63,9 +63,6 @@ export const FeeCalculationPreview: React.FC<FeeCalculationPreviewProps> = ({
               const includeConsultingFee = formula.base_consulting_fee > 0;
               totalFee = platformUsageFeeAfterDiscount + managementFee + (includeConsultingFee ? consultingFee : 0);
               break;
-            case 'Market Place & Aggregator':
-              totalFee = platformUsageFeeAfterDiscount + managementFee + consultingFee;
-              break;
             default: // Aggregator
               totalFee = platformUsageFeeAfterDiscount;
           }

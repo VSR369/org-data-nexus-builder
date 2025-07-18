@@ -31,7 +31,6 @@ interface MembershipConfig {
   organizationType: string;
   marketplaceFee: number;
   aggregatorFee: number;
-  marketplacePlusAggregatorFee: number;
   internalPricing: PricingData[];
 }
 
@@ -139,7 +138,6 @@ export const useMembershipData = (entityType?: string, country?: string, organiz
         organizationType: organizationType || '',
         marketplaceFee: 0,
         aggregatorFee: 0,
-        marketplacePlusAggregatorFee: 0,
         internalPricing: [{
           id: matchingFee.id,
           country: matchingFee.country,

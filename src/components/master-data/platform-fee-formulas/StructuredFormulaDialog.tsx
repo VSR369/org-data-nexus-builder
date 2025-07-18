@@ -158,8 +158,8 @@ export const StructuredFormulaDialog: React.FC<StructuredFormulaDialogProps> = (
   const selectedCurrency = currencies.find(c => c.id === formData.currency_id);
   const selectedSubtype = engagementModelSubtypes.find(s => s.id === formData.engagement_model_subtype_id);
   
-  // Filter out Market Place & Aggregator from engagement models
-  const filteredEngagementModels = engagementModels.filter(m => m.name !== 'Market Place & Aggregator');
+  // Use all engagement models
+  const filteredEngagementModels = engagementModels;
   
   // Filter subtypes based on selected engagement model
   const filteredSubtypes = engagementModelSubtypes.filter(s => 

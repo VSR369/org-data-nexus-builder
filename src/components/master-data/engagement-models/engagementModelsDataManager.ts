@@ -12,14 +12,6 @@ const defaultEngagementModels: EngagementModel[] = [
     updatedAt: new Date().toISOString()
   },
   {
-    id: 'marketplace-aggregator',
-    name: 'Market Place & Aggregator',
-    description: 'Combined marketplace and aggregation services for comprehensive solution management',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
     id: 'aggregator',
     name: 'Aggregator',
     description: 'Aggregation services that collect and organize solutions from multiple sources',
@@ -72,9 +64,9 @@ export const getCleanEngagementModels = (): EngagementModel[] => {
     
     console.log('✅ Found', uniqueModels.length, 'unique engagement models');
     
-    // If we don't have exactly 3 models or have duplicates, reset to default
-    if (uniqueModels.length !== 3) {
-      console.log('🔄 Detected missing or duplicate engagement models, resetting to default 3 models');
+    // If we don't have exactly 2 models or have duplicates, reset to default
+    if (uniqueModels.length !== 2) {
+      console.log('🔄 Detected missing or duplicate engagement models, resetting to default 2 models');
       engagementModelsDataManager.saveData(defaultEngagementModels);
       return defaultEngagementModels;
     }

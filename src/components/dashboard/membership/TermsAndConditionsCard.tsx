@@ -76,7 +76,6 @@ Selected Model: ${model}
     switch (model) {
       case 'Market Place':
       case 'Aggregator':
-      case 'Market Place & Aggregator':
         return baseTerms + `
    - Platform fees charged as percentage of solution fees
    - Fees deducted automatically from transactions
