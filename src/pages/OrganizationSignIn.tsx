@@ -24,12 +24,16 @@ export default function OrganizationSignIn() {
     setError('');
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      console.log('Attempting sign in with email:', cleanEmail);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password: password,
       });
 
       if (error) {
+        console.error('Supabase auth error:', error);
         if (error.message === 'Invalid login credentials') {
           setError('Invalid email or password. Please check your credentials and try again.');
         } else {
@@ -39,6 +43,7 @@ export default function OrganizationSignIn() {
       }
 
       if (data.user) {
+        console.log('Sign in successful for user:', data.user.email);
         toast.success('Successfully signed in!');
         navigate('/organization-dashboard');
       }
@@ -47,6 +52,29 @@ export default function OrganizationSignIn() {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Quick test function for debugging
+  const createTestUser = async () => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: 'test@example.com',
+        password: 'test123456',
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        console.error('Test user creation error:', error);
+        toast.error('Test user creation failed: ' + error.message);
+      } else {
+        console.log('Test user created:', data);
+        toast.success('Test user created! Email: test@example.com, Password: test123456');
+      }
+    } catch (err) {
+      console.error('Unexpected error creating test user:', err);
     }
   };
 
@@ -164,6 +192,23 @@ export default function OrganizationSignIn() {
                 <button className="text-blue-600 hover:underline">
                   Reset password
                 </button>
+              </div>
+
+              {/* Debug section - remove after testing */}
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-600 mb-2">Testing Helper:</p>
+                <Button 
+                  onClick={createTestUser} 
+                  variant="outline" 
+                  size="sm"
+                  className="text-xs"
+                >
+                  Create Test User (test@example.com)
+                </Button>
+                <div className="mt-2 text-xs text-gray-500">
+                  <p>Existing user: vsr@btbt.co.in</p>
+                  <p>Or use test@example.com / test123456</p>
+                </div>
               </div>
             </div>
           </CardContent>
