@@ -17,6 +17,8 @@ import OrganizationDashboard from "./pages/OrganizationDashboard";
 const queryClient = new QueryClient();
 
 function App() {
+  console.log('🚀 App component is rendering...');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
