@@ -80,7 +80,7 @@ export const useEngagementModelPricing = (
         // Get country for filtering formulas
         const profileCountry = profile?.country || 'India';
         
-        // Fetch platform fee formulas with subtype information
+        // Fetch platform fee formulas with subtype information - FIXED: Changed to LEFT JOIN
         const { data: formulas, error: formulaError } = await supabase
           .from('master_platform_fee_formulas')
           .select(`
@@ -95,7 +95,7 @@ export const useEngagementModelPricing = (
             engagement_model_id,
             engagement_model_subtype_id,
             country_id,
-            master_engagement_model_subtypes!inner(
+            master_engagement_model_subtypes(
               id,
               name,
               description
@@ -221,11 +221,11 @@ export const useEngagementModelPricing = (
               });
             }
           } 
-          // Handle other models including Aggregator
+          // Handle other models including Aggregator - FIXED: Now properly handles models without subtypes
           else {
             const formula = formulas?.find(f => 
               f.engagement_model_id === model.id && 
-              !f.engagement_model_subtype_id
+              (f.engagement_model_subtype_id === null || f.engagement_model_subtype_id === undefined)
             );
             
             console.log(`🔍 Processing ${model.name}:`, {
