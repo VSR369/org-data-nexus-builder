@@ -1,14 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Building2, DollarSign, Users, Eye } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Building2, DollarSign, Users, Eye, ChevronDown, ChevronRight, Calculator } from 'lucide-react';
 
 interface BusinessModelCardProps {
   model: any;
 }
 
+interface ComplexityLevel {
+  id: string;
+  name: string;
+  level_order: number;
+  management_fee_multiplier: number;
+  consulting_fee_multiplier: number;
+  color?: string;
+}
+
 export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) => {
+  const [managementFeeOpen, setManagementFeeOpen] = useState(false);
+  const [consultingFeeOpen, setConsultingFeeOpen] = useState(false);
+
+  const getComplexityColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'low': return 'text-green-600 bg-green-50 border-green-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'expert': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const formatCurrency = (amount: number, symbol: string = '$') => {
+    return `${symbol}${amount.toFixed(2)}`;
+  };
+
+  const renderComplexityBreakdown = (baseFee: number, feeType: 'management' | 'consulting', currency: string = '$') => {
+    const complexityLevels = model.complexityLevels || [];
+    if (!complexityLevels.length || !baseFee) return null;
+
+    const sortedLevels = [...complexityLevels].sort((a, b) => a.level_order - b.level_order);
+
+    return (
+      <div className="space-y-1">
+        {sortedLevels.map((level: ComplexityLevel) => {
+          const multiplier = feeType === 'management' ? level.management_fee_multiplier : level.consulting_fee_multiplier;
+          const finalFee = baseFee * multiplier;
+          
+          return (
+            <div key={level.id} className={`flex items-center justify-between p-1.5 rounded text-xs border ${getComplexityColor(level.name)}`}>
+              <div className="flex items-center gap-1">
+                <Calculator className="w-3 h-3" />
+                <span className="font-medium">{level.name}</span>
+                <span className="text-xs opacity-75">(×{multiplier})</span>
+              </div>
+              <span className="font-semibold">{formatCurrency(finalFee, currency)}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
   const getModelDetails = (formula: any, modelType: string, subType?: string) => {
     if (!formula) {
       return (
@@ -27,14 +80,34 @@ export const BusinessModelCard: React.FC<BusinessModelCardProps> = ({ model }) =
             <span className="text-muted-foreground">Platform Fee:</span>
             <span className="font-medium">{formula.platform_usage_fee_percentage || 0}%</span>
           </div>
-          <div className="flex justify-between items-center text-xs sm:text-sm">
-            <span className="text-muted-foreground">Management Fee:</span>
-            <span className="font-medium">{formula.currency_symbol}{formula.base_management_fee || 0}</span>
+          <div className="space-y-1">
+            <Collapsible open={managementFeeOpen} onOpenChange={setManagementFeeOpen}>
+              <div className="flex justify-between items-center text-xs sm:text-sm">
+                <CollapsibleTrigger className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                  {managementFeeOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <span>Management Fee:</span>
+                </CollapsibleTrigger>
+                <span className="font-medium">{formula.currency_symbol}{formula.base_management_fee || 0}</span>
+              </div>
+              <CollapsibleContent className="mt-2">
+                {renderComplexityBreakdown(formula.base_management_fee || 0, 'management', formula.currency_symbol)}
+              </CollapsibleContent>
+            </Collapsible>
           </div>
           {!isGeneralMarketplace && (
-            <div className="flex justify-between items-center text-xs sm:text-sm">
-              <span className="text-muted-foreground">Consulting Fee:</span>
-              <span className="font-medium">{formula.currency_symbol}{formula.base_consulting_fee || 0}</span>
+            <div className="space-y-1">
+              <Collapsible open={consultingFeeOpen} onOpenChange={setConsultingFeeOpen}>
+                <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <CollapsibleTrigger className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                    {consultingFeeOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                    <span>Consulting Fee:</span>
+                  </CollapsibleTrigger>
+                  <span className="font-medium">{formula.currency_symbol}{formula.base_consulting_fee || 0}</span>
+                </div>
+                <CollapsibleContent className="mt-2">
+                  {renderComplexityBreakdown(formula.base_consulting_fee || 0, 'consulting', formula.currency_symbol)}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           )}
           <div className="flex justify-between items-center text-xs sm:text-sm">

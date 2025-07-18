@@ -13,9 +13,10 @@ export const BusinessModelsManager: React.FC = () => {
 
   const { items: tierConfigurations, loading: tierLoading, refreshItems: refreshTiers } = useMasterDataCRUD('master_tier_configurations');
   const { items: platformFormulas, loading: formulaLoading, refreshItems: refreshFormulas } = useMasterDataCRUD('master_platform_fee_formulas');
+  const { items: complexityLevels, loading: complexityLoading, refreshItems: refreshComplexity } = useMasterDataCRUD('master_challenge_complexity');
 
   useEffect(() => {
-    if (!tierLoading && !formulaLoading) {
+    if (!tierLoading && !formulaLoading && !complexityLoading) {
       const consolidatedModels = tierConfigurations.map(tier => {
         const marketplaceGeneralFormula = platformFormulas.find(
           f => f.engagement_model_name === 'Market Place' && 
@@ -36,6 +37,7 @@ export const BusinessModelsManager: React.FC = () => {
           marketplaceGeneralFormula: marketplaceGeneralFormula || null,
           marketplaceProgramManagedFormula: marketplaceProgramManagedFormula || null,
           aggregatorFormula: aggregatorFormula || null,
+          complexityLevels: complexityLevels || [],
         };
       }).sort((a, b) => {
         // Map level_order to desired order: Basic (1), Standard (2), Premium (3)
@@ -52,11 +54,11 @@ export const BusinessModelsManager: React.FC = () => {
       setBusinessModels(consolidatedModels);
       setLoading(false);
     }
-  }, [tierConfigurations, platformFormulas, tierLoading, formulaLoading]);
+  }, [tierConfigurations, platformFormulas, complexityLevels, tierLoading, formulaLoading, complexityLoading]);
 
   const handleRefresh = async () => {
     setLoading(true);
-    await Promise.all([refreshTiers(), refreshFormulas()]);
+    await Promise.all([refreshTiers(), refreshFormulas(), refreshComplexity()]);
   };
 
   return (
