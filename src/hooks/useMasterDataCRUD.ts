@@ -366,3 +366,4 @@ export const useTierEngagementModelAccess = () => useMasterDataCRUD('master_tier
 
 export const useSystemConfigurations = () => useMasterDataCRUD('master_system_configurations');
 export const useChallengeComplexity = () => useMasterDataCRUD('master_challenge_complexity');
+export const useTierConfigurations = () => useMasterDataCRUD('master_tier_configurations');

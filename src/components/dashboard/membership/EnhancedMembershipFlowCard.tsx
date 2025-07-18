@@ -475,7 +475,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             <TierSelectionCard
               selectedTier={selectedTier}
               onTierSelect={handleTierSelection}
-              currency={membershipFees[0]?.annual_currency || 'USD'}
+              countryName={profile?.country}
             />
           </div>
         );
