@@ -77,15 +77,19 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
       }
 
       console.log('🔄 Loading tiers for country:', profileContext.country);
-      const configurations = await MembershipDataService.getTierConfigurations(profileContext.country);
-      setTierConfigurations(configurations);
-      console.log('✅ Loaded tier configurations:', configurations.length);
+      const configurations = await MembershipDataService.getMembershipFees(
+        profileContext.country,
+        profileContext.organization_type,
+        profileContext.entity_type
+      );
+      setTierConfigurations([configurations]);
+      console.log('✅ Loaded tier configurations:', configurations ? 1 : 0);
 
       // Load membership fees for all tiers
       await loadMembershipFees();
       
       // Load detailed tier information
-      await loadTierDetails(configurations);
+      await loadTierDetails([configurations]);
     } catch (error) {
       console.error('❌ Error loading available tiers:', error);
     }
@@ -112,16 +116,8 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
 
   const loadTierDetails = async (tiers: any[]) => {
     try {
-      const detailsPromises = tiers.map(async (tier) => {
-        const details = await MembershipDataService.getTierDetails(tier.tier_name, profileContext.country);
-        return {
-          ...tier,
-          detailed_info: details
-        };
-      });
-
-      const detailedTiers = await Promise.all(detailsPromises);
-      setTierDetails(detailedTiers);
+      // Set tier details directly from configurations
+      setTierDetails(tiers);
       console.log('✅ Loaded tier details with profile context');
     } catch (error) {
       console.error('❌ Error loading tier details:', error);
@@ -253,7 +249,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                         <div className="flex justify-between text-sm">
                           <span>Membership Fee:</span>
                           <span className="font-medium">
-                            {formatCurrency(fee.membership_fee, fee.currency_code, fee.currency_symbol)}
+                            {formatCurrency(fee.membership_fee, fee.currency_code)}
                           </span>
                         </div>
                       )}
@@ -265,13 +261,13 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                           <div className="flex justify-between">
                             <span>Setup Fee:</span>
                             <span className="font-medium">
-                              {formatCurrency(fee.setup_fee, fee.currency_code, fee.currency_symbol)}
+                              {formatCurrency(fee.setup_fee, fee.currency_code)}
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span>Monthly Fee:</span>
                             <span className="font-medium">
-                              {formatCurrency(fee.monthly_fee, fee.currency_code, fee.currency_symbol)}
+                              {formatCurrency(fee.monthly_fee, fee.currency_code)}
                             </span>
                           </div>
                           {membershipStatus === 'active' && fee.membership_discount > 0 && (

@@ -115,12 +115,12 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
       if (data) {
         setWorkflowStatus(data);
-        setCurrentStep(data.current_step || 'membership_decision');
-        setMembershipDecision(data.membership_decision || '');
+        setCurrentStep(data.workflow_step || 'membership_decision');
+        setMembershipDecision(data.membership_status || '');
         setSelectedTier(data.pricing_tier || '');
         setSelectedModel(data.engagement_model || '');
-        setSelectedFrequency(data.payment_frequency || '');
-        setSelectedPaymentMethod(data.payment_method || '');
+        setSelectedFrequency(data.selected_frequency || '');
+        setSelectedPaymentMethod(data.mem_payment_method || '');
         setTermsAccepted(data.terms_accepted || false);
         setMembershipStatus(data.activation_status === 'Activated' ? 'active' : 'inactive');
         
@@ -140,7 +140,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         return;
       }
 
-      const configurations = await MembershipDataService.getTierConfigurations(profile.country);
+      const configurations = await MembershipDataService.getMembershipFees(
+        profile.country,
+        profile.organization_type,
+        profile.entity_type
+      );
       setTierConfigurations(configurations);
       console.log('✅ Loaded tier configurations:', configurations.length);
     } catch (error) {
@@ -175,8 +179,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .from('engagement_activations')
         .upsert({
           user_id: userId,
-          membership_decision: decision,
-          current_step: decision === 'yes' ? 'tier_selection' : 'completed',
+          membership_status: decision === 'yes' ? 'active' : 'inactive',
+          workflow_step: decision === 'yes' ? 'tier_selection' : 'completed',
           country: profile.country,
           organization_type: profile.organization_type,
           entity_type: profile.entity_type,
