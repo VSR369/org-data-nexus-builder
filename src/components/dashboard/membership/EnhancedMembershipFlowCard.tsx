@@ -551,7 +551,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-purple-600" />
                     <span className="font-medium">Pricing Tier: {selectedTier}</span>
@@ -559,14 +559,18 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowTierModal(true)}
+                    onClick={() => {
+                      console.log('Opening tier modal...');
+                      setShowTierModal(true);
+                    }}
+                    className="hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-orange-600" />
                     <span className="font-medium">Engagement Model: {selectedEngagementModel}</span>
@@ -574,7 +578,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowModelModal(true)}
+                    onClick={() => {
+                      console.log('Opening model modal...');
+                      setShowModelModal(true);
+                    }}
+                    className="hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
