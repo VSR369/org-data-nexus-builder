@@ -19,8 +19,9 @@ export const isMembershipActive = (membershipData: any): boolean => {
   return (
     membershipData.status === 'member_paid' ||
     membershipData.status === 'Active' ||
-    (membershipData.paymentStatus === 'paid' && membershipData.membership_status === 'Active') ||
-    (membershipData.mem_payment_status === 'paid' && membershipData.membership_status === 'Active')
+    membershipData.membership_status === 'active' ||
+    (membershipData.paymentStatus === 'paid' && membershipData.membership_status === 'active') ||
+    (membershipData.mem_payment_status === 'paid' && membershipData.membership_status === 'active')
   );
 };
 
