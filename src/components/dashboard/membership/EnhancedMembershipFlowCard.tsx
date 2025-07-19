@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,12 @@ import { MembershipDataService } from '@/services/MembershipDataService';
 import { OrganizationDataService } from '@/services/OrganizationDataService';
 import { DetailedTierCard } from './DetailedTierCard';
 import { DetailedEngagementModelCard } from './DetailedEngagementModelCard';
-import { EnhancedMembershipCard } from './EnhancedMembershipCard';
+import { MembershipStatusSelectionCard } from './MembershipStatusSelectionCard';
 import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
 import { MembershipViewModal } from './MembershipViewModal';
 import { MembershipEditModal } from './MembershipEditModal';
+import { InactiveMemberEditView } from '@/components/master-data/solution-seekers/components/InactiveMemberEditView';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -167,7 +169,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         
         // Restore all saved state to maintain selections
         setCurrentStep(mappedStep);
-        setMembershipStatus(savedData.membership_status === 'active' ? 'active' : 'inactive');
+        setMembershipStatus(savedData.membership_status === 'Active' ? 'active' : 'inactive');
         setSelectedTier(savedData.pricing_tier);
         setSelectedEngagementModel(savedData.engagement_model);
         setTermsAccepted(savedData.terms_accepted || false);
@@ -244,7 +246,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .from('engagement_activations')
         .upsert({
           user_id: userId,
-          membership_status: membershipStatus || 'inactive',
+          membership_status: membershipStatus === 'active' ? 'Active' : 'Not Active',
           pricing_tier: selectedTier,
           engagement_model: selectedEngagementModel,
           terms_accepted: termsAccepted,
@@ -272,13 +274,24 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     try {
       console.log('🎯 Membership decision:', status);
       setMembershipStatus(status);
-      const nextStep = 'tier_selection';
-      setCurrentStep(nextStep);
       
-      await saveCurrentState({
-        membership_status: status,
-        workflow_step: nextStep
-      });
+      // For active membership, show payment immediately
+      if (status === 'active') {
+        const nextStep = 'payment';
+        setCurrentStep(nextStep);
+        await saveCurrentState({
+          membership_status: 'Active',
+          workflow_step: nextStep
+        });
+      } else {
+        // For inactive, proceed to tier selection
+        const nextStep = 'tier_selection';
+        setCurrentStep(nextStep);
+        await saveCurrentState({
+          membership_status: 'Not Active',
+          workflow_step: nextStep
+        });
+      }
 
       toast({
         title: "Membership Status Updated",
@@ -288,6 +301,31 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       toast({
         title: "Error",
         description: "Failed to save membership decision.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    try {
+      console.log('💳 Payment successful, proceeding to tier selection');
+      const nextStep = 'tier_selection';
+      setCurrentStep(nextStep);
+      
+      await saveCurrentState({
+        membership_status: 'Active',
+        workflow_step: nextStep,
+        mem_payment_status: 'paid'
+      });
+
+      toast({
+        title: "Payment Successful!",
+        description: "Your membership has been activated. Please select your pricing tier.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update membership status after payment.",
         variant: "destructive"
       });
     }
@@ -400,6 +438,30 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     return membershipStatus === 'active';
   };
 
+  // Show current selections card for all steps
+  const renderCurrentSelections = () => {
+    if (!membershipStatus && !selectedTier && !selectedEngagementModel) return null;
+
+    return (
+      <Card className="bg-blue-50 border-blue-200 mb-4">
+        <CardContent className="p-4">
+          <h4 className="font-medium mb-2">Current Selections:</h4>
+          <div className="text-sm space-y-1">
+            {membershipStatus && (
+              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+            )}
+            {selectedTier && (
+              <div>Tier: <span className="font-medium">{selectedTier}</span></div>
+            )}
+            {selectedEngagementModel && (
+              <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   if (loading) {
     return (
       <Card>
@@ -437,38 +499,45 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   if (currentStep === 'membership_decision') {
     return (
       <div className="space-y-4">
-        {/* Show current selections if any exist */}
-        {(membershipStatus || selectedTier || selectedEngagementModel) && (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <h4 className="font-medium mb-2">Current Selections:</h4>
-              <div className="text-sm space-y-1">
-                {membershipStatus && (
-                  <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
-                )}
-                {selectedTier && (
-                  <div>Tier: <span className="font-medium">{selectedTier}</span></div>
-                )}
-                {selectedEngagementModel && (
-                  <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {renderCurrentSelections()}
         
-        <EnhancedMembershipCard
-          membershipStatus={membershipStatus || 'inactive'}
-          membershipFees={membershipFees[0] || null}
-          onJoinMembership={() => handleMembershipDecision('active')}
-          onManageMembership={() => handleMembershipDecision('inactive')}
-          loading={false}
+        <MembershipStatusSelectionCard
+          membershipFees={membershipFees}
+          selectedStatus={membershipStatus}
+          onStatusChange={handleMembershipDecision}
+          profile={profileContext}
         />
       </div>
     );
   }
 
-  // Step 2: Tier Selection
+  // Step 2: Payment (for active members only)
+  if (currentStep === 'payment') {
+    return (
+      <div className="space-y-4">
+        {renderCurrentSelections()}
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Activate Your Membership
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InactiveMemberEditView
+              userId={userId}
+              organizationData={profileContext}
+              onPaymentSuccess={handlePaymentSuccess}
+              isMobile={false}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Step 3: Tier Selection
   if (currentStep === 'tier_selection') {
     // Transform available tiers to detailed tier card format
     const tierCardConfigs = availableTiers.map(tierConfig => ({
@@ -502,30 +571,41 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
     return (
       <div className="space-y-4">
-        {/* Show current selections */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <h4 className="font-medium mb-2">Current Selections:</h4>
-            <div className="text-sm space-y-1">
-              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
-              {selectedTier && (
-                <div>Tier: <span className="font-medium">{selectedTier}</span></div>
-              )}
-              {selectedEngagementModel && (
-                <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {renderCurrentSelections()}
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-purple-600" />
               Select Your Pricing Tier
+              {membershipStatus === 'inactive' && (
+                <Badge variant="outline" className="ml-2">
+                  Upgrade to Member anytime for discounts!
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {membershipStatus === 'inactive' && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <p className="text-orange-800 font-medium mb-2">💡 Want to save money?</p>
+                <p className="text-orange-700 text-sm mb-3">
+                  Members get exclusive discounts on all pricing tiers and additional benefits.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMembershipStatus('active');
+                    setCurrentStep('payment');
+                  }}
+                  className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                >
+                  Become a Member Now
+                </Button>
+              </div>
+            )}
+            
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tierCardConfigs.map((config, index) => (
                 <DetailedTierCard
@@ -544,23 +624,31 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 3: Engagement Model Selection
+  // Step 4: Engagement Model Selection
   if (currentStep === 'engagement_model_selection') {
     return (
       <div className="space-y-4">
-        {/* Show current selections */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <h4 className="font-medium mb-2">Current Selections:</h4>
-            <div className="text-sm space-y-1">
-              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
-              <div>Tier: <span className="font-medium">{selectedTier}</span></div>
-              {selectedEngagementModel && (
-                <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {renderCurrentSelections()}
+
+        {membershipStatus === 'inactive' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 font-medium mb-2">🎯 Maximize Your Value</p>
+            <p className="text-blue-700 text-sm mb-3">
+              Members get better rates on engagement models and priority support.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setMembershipStatus('active');
+                setCurrentStep('payment');
+              }}
+              className="text-blue-700 border-blue-300 hover:bg-blue-100"
+            >
+              Upgrade to Membership
+            </Button>
+          </div>
+        )}
 
         <DetailedEngagementModelCard
           selectedTier={selectedTier}
@@ -573,21 +661,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 4: Terms Acceptance
+  // Step 5: Terms Acceptance
   if (currentStep === 'terms_acceptance') {
     return (
       <div className="space-y-4">
-        {/* Show current selections */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <h4 className="font-medium mb-2">Current Selections:</h4>
-            <div className="text-sm space-y-1">
-              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
-              <div>Tier: <span className="font-medium">{selectedTier}</span></div>
-              <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
-            </div>
-          </CardContent>
-        </Card>
+        {renderCurrentSelections()}
 
         <Card>
           <CardHeader>
@@ -649,7 +727,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 5: Completed
+  // Step 6: Completed
   if (currentStep === 'completed') {
     return (
       <>
@@ -683,7 +761,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                       className="hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
                       <Edit className="h-3 w-3 mr-1" />
-                      {isMembershipActive() ? 'View' : 'Edit'}
+                      {isMembershipActive() ? 'View' : 'Upgrade'}
                     </Button>
                   </div>
 
