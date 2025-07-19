@@ -65,7 +65,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     const stepMapping: Record<string, string> = {
       'membership_decision': 'membership_decision',
       'tier_selection': 'tier_selection',
-      'engagement_model_selection': 'engagement_model',
+      'engagement_model_selection': 'engagement_model_selection',
       'terms_acceptance': 'preview_confirmation',
       'completed': 'activation_complete'
     };
@@ -184,7 +184,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         const frontendStepMapping: Record<string, string> = {
           'membership_decision': 'membership_decision',
           'tier_selection': 'tier_selection',
-          'engagement_model': 'engagement_model_selection',
+          'engagement_model_selection': 'engagement_model_selection',
           'preview_confirmation': 'terms_acceptance',
           'activation_complete': 'completed'
         };
