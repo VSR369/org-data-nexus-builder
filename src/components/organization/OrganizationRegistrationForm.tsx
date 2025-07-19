@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Eye, ArrowLeft, Loader2 } from 'lucide-react';
+import { Upload, Eye, ArrowLeft, Loader2, FileText } from 'lucide-react';
 import { useOrganizationRegistration } from '@/hooks/useOrganizationRegistration';
 import { OrganizationPreview } from './OrganizationPreview';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,8 @@ export const OrganizationRegistrationForm = () => {
     handleInputChange,
     handleFileChange,
     validateForm,
-    submitRegistration
+    submitRegistration,
+    isNonCommercialEntity
   } = useOrganizationRegistration();
 
   // Calculate form completion progress
@@ -39,7 +40,17 @@ export const OrganizationRegistrationForm = () => {
       'organizationName', 'organizationTypeId', 'entityTypeId', 'industrySegmentId',
       'countryId', 'address', 'contactPersonName', 'email', 'phoneNumber', 'password', 'confirmPassword'
     ];
-    const completedFields = requiredFields.filter(field => formData[field as keyof typeof formData]);
+    
+    // Add registration document to required fields for non-commercial entities
+    if (isNonCommercialEntity()) {
+      requiredFields.push('registrationDocument');
+    }
+    
+    const completedFields = requiredFields.filter(field => {
+      const value = formData[field as keyof typeof formData];
+      return value !== null && value !== '' && value !== undefined;
+    });
+    
     return Math.round((completedFields.length / requiredFields.length) * 100);
   };
 
@@ -69,7 +80,7 @@ export const OrganizationRegistrationForm = () => {
     }
   };
 
-  const handleFileInputChange = (field: 'companyProfileDocument' | 'companyLogo') => (
+  const handleFileInputChange = (field: 'companyProfileDocument' | 'companyLogo' | 'registrationDocument') => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0] || null;
@@ -292,6 +303,39 @@ export const OrganizationRegistrationForm = () => {
                   />
                 </div>
               </div>
+
+              {/* Conditional Registration Document Upload */}
+              {isNonCommercialEntity() && (
+                <div className="md:col-span-2">
+                  <Label htmlFor="registrationDocument">
+                    Registration Document *
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (Required for Trust, Society, and Non-Profit Organizations)
+                    </span>
+                  </Label>
+                  <div className={`border-2 border-dashed rounded-lg p-4 text-center ${
+                    errors.registrationDocument ? 'border-red-500' : 'border-muted-foreground/25'
+                  }`}>
+                    <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                    <Label htmlFor="registrationDocument" className="cursor-pointer text-sm">
+                      {formData.registrationDocument 
+                        ? formData.registrationDocument.name 
+                        : 'Upload Registration Certificate/Document (PDF/DOC)'
+                      }
+                    </Label>
+                    <Input
+                      id="registrationDocument"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileInputChange('registrationDocument')}
+                      className="hidden"
+                    />
+                  </div>
+                  {errors.registrationDocument && (
+                    <p className="text-red-500 text-sm mt-1">{errors.registrationDocument}</p>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

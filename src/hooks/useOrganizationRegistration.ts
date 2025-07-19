@@ -11,6 +11,7 @@ export const useOrganizationRegistration = () => {
     industrySegmentId: '',
     companyProfileDocument: null,
     companyLogo: null,
+    registrationDocument: null,
     website: '',
     countryId: '',
     address: '',
@@ -68,6 +69,15 @@ export const useOrganizationRegistration = () => {
     }
   }, [formData.countryId, countries]);
 
+  // Helper function to check if entity type is non-commercial
+  const isNonCommercialEntity = () => {
+    const selectedEntityType = entityTypes.find(et => et.id === formData.entityTypeId);
+    if (!selectedEntityType) return false;
+    
+    const nonCommercialTypes = ['Trust', 'Society', 'Non-Profit Organization'];
+    return nonCommercialTypes.includes(selectedEntityType.name);
+  };
+
   const handleInputChange = (field: keyof OrganizationFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -75,7 +85,7 @@ export const useOrganizationRegistration = () => {
     }
   };
 
-  const handleFileChange = (field: 'companyProfileDocument' | 'companyLogo', file: File | null) => {
+  const handleFileChange = (field: 'companyProfileDocument' | 'companyLogo' | 'registrationDocument', file: File | null) => {
     setFormData(prev => ({ ...prev, [field]: file }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -99,6 +109,11 @@ export const useOrganizationRegistration = () => {
     else if (formData.password.length < 3) newErrors.password = 'Password must be at least 3 characters';
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
+    // Conditional validation for registration document
+    if (isNonCommercialEntity() && !formData.registrationDocument) {
+      newErrors.registrationDocument = 'Registration document is required for this entity type';
+    }
+
     if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
       newErrors.website = 'Website must start with http:// or https://';
     }
@@ -106,7 +121,6 @@ export const useOrganizationRegistration = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
 
   const uploadFile = async (file: File, bucket: string, path: string): Promise<string> => {
     const { data, error } = await supabase.storage
@@ -183,6 +197,7 @@ export const useOrganizationRegistration = () => {
       // Upload files if provided
       let companyProfilePath = '';
       let companyLogoPath = '';
+      let registrationDocumentPath = '';
 
       if (formData.companyProfileDocument) {
         const timestamp = Date.now();
@@ -200,6 +215,16 @@ export const useOrganizationRegistration = () => {
         companyLogoPath = await uploadFile(
           formData.companyLogo,
           'organization-logos',
+          fileName
+        );
+      }
+
+      if (formData.registrationDocument) {
+        const timestamp = Date.now();
+        const fileName = `${timestamp}-${formData.registrationDocument.name}`;
+        registrationDocumentPath = await uploadFile(
+          formData.registrationDocument,
+          'organization-documents',
           fileName
         );
       }
@@ -253,6 +278,17 @@ export const useOrganizationRegistration = () => {
         });
       }
 
+      if (registrationDocumentPath && orgData) {
+        documentInserts.push({
+          organization_id: orgData.id,
+          document_type: 'registration_document',
+          file_name: formData.registrationDocument!.name,
+          file_path: registrationDocumentPath,
+          file_size: formData.registrationDocument!.size,
+          file_type: formData.registrationDocument!.type
+        });
+      }
+
       if (documentInserts.length > 0) {
         const { error: docError } = await supabase
           .from('organization_documents')
@@ -283,6 +319,7 @@ export const useOrganizationRegistration = () => {
     handleInputChange,
     handleFileChange,
     validateForm,
-    submitRegistration
+    submitRegistration,
+    isNonCommercialEntity
   };
 };
