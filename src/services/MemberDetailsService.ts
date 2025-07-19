@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { OrganizationDataService } from './OrganizationDataService';
 
 export interface ComprehensiveMemberData {
   membershipData: {
