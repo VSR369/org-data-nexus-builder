@@ -1,16 +1,16 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserPlus } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const SubDepartmentsManager: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sub-Departments Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Sub-Departments management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_sub_departments"
+      title="Sub-Departments Manager"
+      description="Manage sub-departments within organizational departments"
+      icon={UserPlus}
+    />
   );
 };
 

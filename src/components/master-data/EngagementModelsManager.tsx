@@ -1,16 +1,16 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Handshake } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const EngagementModelsManager: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Engagement Models Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Engagement Models management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_engagement_models"
+      title="Engagement Models Manager"
+      description="Manage engagement models for solution provider interactions"
+      icon={Handshake}
+    />
   );
 };
 

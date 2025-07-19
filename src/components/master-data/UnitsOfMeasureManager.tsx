@@ -1,16 +1,38 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Ruler } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const UnitsOfMeasureManager: React.FC = () => {
+  const additionalColumns = [
+    {
+      accessorKey: 'symbol',
+      header: 'Symbol',
+      cell: ({ row }: any) => (
+        <div className="font-mono text-sm">
+          {row.getValue('symbol') || 'N/A'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'is_percentage',
+      header: 'Percentage',
+      cell: ({ row }: any) => (
+        <div className="text-sm">
+          {row.getValue('is_percentage') ? 'Yes' : 'No'}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Units of Measure Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Units of Measure management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_units_of_measure"
+      title="Units of Measure Manager"
+      description="Manage units of measure for pricing and calculations"
+      icon={Ruler}
+      additionalColumns={additionalColumns}
+    />
   );
 };
 

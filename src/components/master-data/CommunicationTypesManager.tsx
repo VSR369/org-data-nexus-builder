@@ -1,16 +1,29 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageSquare } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const CommunicationTypesManager: React.FC = () => {
+  const additionalColumns = [
+    {
+      accessorKey: 'link',
+      header: 'Link',
+      cell: ({ row }: any) => (
+        <div className="text-sm font-mono max-w-xs truncate">
+          {row.getValue('link') || 'N/A'}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Communication Types Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Communication Types management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_communication_types"
+      title="Communication Types Manager"
+      description="Manage communication channels and contact methods"
+      icon={MessageSquare}
+      additionalColumns={additionalColumns}
+    />
   );
 };
 

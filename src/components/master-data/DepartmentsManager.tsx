@@ -1,16 +1,16 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const DepartmentsManager: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Departments Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Departments management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_departments"
+      title="Departments Manager"
+      description="Manage organizational departments and functional units"
+      icon={Users}
+    />
   );
 };
 

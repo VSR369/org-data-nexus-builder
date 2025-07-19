@@ -1,16 +1,29 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Crown } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const PricingTiersManager: React.FC = () => {
+  const additionalColumns = [
+    {
+      accessorKey: 'level_order',
+      header: 'Level Order',
+      cell: ({ row }: any) => (
+        <div className="text-sm font-mono">
+          {row.getValue('level_order')}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pricing Tiers Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Pricing Tiers management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_pricing_tiers"
+      title="Pricing Tiers Manager"
+      description="Manage pricing tiers and subscription levels"
+      icon={Crown}
+      additionalColumns={additionalColumns}
+    />
   );
 };
 

@@ -1,16 +1,16 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tag } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const CategoriesManager: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Categories Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Categories management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_categories"
+      title="Categories Manager"
+      description="Manage categories within domain groups for solution classification"
+      icon={Tag}
+    />
   );
 };
 

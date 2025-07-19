@@ -1,16 +1,16 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Factory } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const IndustrySegmentsManager: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Industry Segments Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Industry Segments management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_industry_segments"
+      title="Industry Segments Manager"
+      description="Manage industry segments for business categorization"
+      icon={Factory}
+    />  
   );
 };
 

@@ -1,16 +1,47 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const CurrenciesManager: React.FC = () => {
+  const additionalColumns = [
+    {
+      accessorKey: 'code',
+      header: 'Code',
+      cell: ({ row }: any) => (
+        <div className="font-mono text-sm">
+          {row.getValue('code') || 'N/A'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'symbol',
+      header: 'Symbol',
+      cell: ({ row }: any) => (
+        <div className="font-mono text-sm">
+          {row.getValue('symbol') || 'N/A'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'country',
+      header: 'Country',
+      cell: ({ row }: any) => (
+        <div className="text-sm">
+          {row.getValue('country') || 'N/A'}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Currencies Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Currencies management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_currencies"
+      title="Currencies Manager"
+      description="Manage currency master data and exchange rate configurations"
+      icon={DollarSign}
+      additionalColumns={additionalColumns}
+    />
   );
 };
 

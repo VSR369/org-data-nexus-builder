@@ -1,16 +1,29 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Globe } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const CountriesManager: React.FC = () => {
+  const additionalColumns = [
+    {
+      accessorKey: 'code',
+      header: 'Code',
+      cell: ({ row }: any) => (
+        <div className="font-mono text-sm">
+          {row.getValue('code') || 'N/A'}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Countries Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Countries management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_countries"
+      title="Countries Manager"
+      description="Manage country master data and regional configurations"
+      icon={Globe}
+      additionalColumns={additionalColumns}
+    />
   );
 };
 

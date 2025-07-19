@@ -1,16 +1,29 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Gift } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const RewardTypesManager: React.FC = () => {
+  const additionalColumns = [
+    {
+      accessorKey: 'type',
+      header: 'Reward Type',
+      cell: ({ row }: any) => (
+        <div className="text-sm font-medium">
+          {row.getValue('type') || 'N/A'}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Reward Types Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Reward Types management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_reward_types"
+      title="Reward Types Manager"
+      description="Manage reward types for incentive programs"
+      icon={Gift}
+      additionalColumns={additionalColumns}
+    />
   );
 };
 

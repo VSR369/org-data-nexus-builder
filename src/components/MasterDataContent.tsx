@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DomainGroupsManager from './master-data/DomainGroupsManager';
@@ -23,14 +24,14 @@ import PricingTiersManager from './master-data/PricingTiersManager';
 import TierConfigurationsManager from './master-data/TierConfigurationsManager';
 import TierEngagementModelAccessManager from './master-data/TierEngagementModelAccessManager';
 import SeekerMembershipFeesManager from './master-data/SeekerMembershipFeesManager';
-import ChallengeComplexityManager from './master-data/ChallengeComplexityManager';
-import ChallengeOverageFeesManager from './master-data/ChallengeOverageFeesManager';
-import AdvancePaymentTypesManager from './master-data/AdvancePaymentTypesManager';
-import AnalyticsAccessTypesManager from './master-data/AnalyticsAccessTypesManager';
+import { ChallengeComplexityManager } from './master-data/challenge-complexity/ChallengeComplexityManager';
+import { ChallengeOverageFeesManager } from './master-data/challenge-overage-fees/ChallengeOverageFeesManager';
+import { AdvancePaymentTypesManager } from './master-data/advance-payment-types/AdvancePaymentTypesManager';
+import { AnalyticsAccessTypesManager } from './master-data/analytics-access-types/AnalyticsAccessTypesManager';
 import SupportTypesManager from './master-data/SupportTypesManager';
 import OnboardingTypesManager from './master-data/OnboardingTypesManager';
 import WorkflowTemplatesManager from './master-data/WorkflowTemplatesManager';
-import SystemFeatureAccessManager from './master-data/SystemFeatureAccessManager';
+import { SystemFeatureAccessManager } from './master-data/system-feature-access/SystemFeatureAccessManager';
 import SystemConfigurationsManager from './master-data/SystemConfigurationsManager';
 import CapabilityLevelsManager from './master-data/CapabilityLevelsManager';
 import CompetencyCapabilitiesManager from './master-data/CompetencyCapabilitiesManager';
@@ -93,6 +94,9 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
 
         <TabsContent value="solution-seekers">
           <SolutionSeekersManager />
+        </TabsContent>
+        <TabsContent value="domain-groups">
+          <DomainGroupsManager />
         </TabsContent>
         <TabsContent value="categories">
           <CategoriesManager />

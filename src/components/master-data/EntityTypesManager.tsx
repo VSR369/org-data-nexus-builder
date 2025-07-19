@@ -1,16 +1,16 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building } from 'lucide-react';
+import { StandardDataManager } from './StandardDataManager';
 
 const EntityTypesManager: React.FC = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Entity Types Manager</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">Entity Types management interface will be implemented here.</p>
-      </CardContent>
-    </Card>
+    <StandardDataManager
+      tableName="master_entity_types"
+      title="Entity Types Manager"
+      description="Manage legal entity types for organization classification"
+      icon={Building}
+    />
   );
 };
 
