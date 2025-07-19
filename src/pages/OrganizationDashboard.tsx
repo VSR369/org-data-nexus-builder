@@ -242,24 +242,6 @@ const OrganizationDashboard = () => {
           <EnhancedMembershipFlowCard profile={profile} userId={user?.id || ''} />
         </div>
 
-        {/* Organization Overview */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Organization Overview</CardTitle>
-              <CardDescription>
-                Your organization details and basic information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Organization management features will be available here. 
-                This section previously contained the membership pricing system which has been removed.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="hover:shadow-lg transition-shadow">
