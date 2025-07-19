@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, X, AlertTriangle, Users, Briefcase } from 'lucide-react';
+import { CheckCircle, Zap, X, AlertTriangle, Users, Briefcase, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,6 +35,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
   useEffect(() => {
     if (isOpen && profileContext) {
+      console.log('⚡ EngagementModelEditModal opened with:', { currentModel, selectedTier, profileContext });
       loadAvailableModels();
       setSelectedModel(currentModel);
     }
@@ -46,31 +47,49 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       console.log('🔄 Loading engagement models for tier:', selectedTier);
       
       if (!selectedTier) {
-        // If no tier selected, show all models
+        console.log('📝 No tier selected, loading all available models');
+        
+        // Load all available models when no tier is specified
+        const { data: allModels, error } = await supabase
+          .from('master_engagement_models')
+          .select('*')
+          .order('name');
+        
+        if (error) {
+          console.error('❌ Error loading all models:', error);
+          throw error;
+        }
+
+        console.log('✅ Loaded all models:', allModels?.length);
+        setAvailableModels(allModels || []);
+        return;
+      }
+
+      // Get tier ID with case-insensitive matching
+      const { data: tierData, error: tierError } = await supabase
+        .from('master_pricing_tiers')
+        .select('id')
+        .ilike('name', selectedTier)
+        .single();
+
+      if (tierError || !tierData) {
+        console.error('❌ Tier not found:', selectedTier, tierError);
+        
+        // Fallback to loading all models if tier not found
         const { data: allModels } = await supabase
           .from('master_engagement_models')
           .select('*')
           .order('name');
         
         setAvailableModels(allModels || []);
-        console.log('✅ Loaded all models (no tier restriction):', allModels?.length);
+        console.log('📝 Loaded fallback models:', allModels?.length);
         return;
       }
 
-      // Get tier ID
-      const { data: tierData } = await supabase
-        .from('master_pricing_tiers')
-        .select('id')
-        .ilike('name', selectedTier)
-        .single();
-
-      if (!tierData) {
-        console.log('❌ No tier found with name:', selectedTier);
-        return;
-      }
+      console.log('✅ Found tier:', tierData);
 
       // Get available models for this tier
-      const { data: tierModelAccess } = await supabase
+      const { data: tierModelAccess, error: accessError } = await supabase
         .from('master_tier_engagement_model_access')
         .select(`
           *,
@@ -80,8 +99,28 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
         .eq('is_active', true)
         .eq('is_allowed', true);
 
-      setAvailableModels(tierModelAccess || []);
+      if (accessError) {
+        console.error('❌ Error loading model access:', accessError);
+        throw accessError;
+      }
+
       console.log('✅ Found available models for tier:', tierModelAccess?.length);
+      setAvailableModels(tierModelAccess || []);
+
+      // Validate current model selection
+      if (currentModel && tierModelAccess) {
+        const currentModelExists = tierModelAccess.some(access => 
+          access.engagement_model?.name?.toLowerCase() === currentModel.toLowerCase()
+        );
+        
+        if (!currentModelExists) {
+          console.log('⚠️ Current model not available for this tier, clearing selection');
+          setSelectedModel(null);
+        } else {
+          console.log('✅ Current model validated:', currentModel);
+        }
+      }
+
     } catch (error) {
       console.error('❌ Error loading models:', error);
       toast({
@@ -96,6 +135,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
   const handleConfirm = () => {
     if (selectedModel && selectedModel !== currentModel) {
+      console.log('⚡ Confirming model change:', currentModel, '->', selectedModel);
       onModelChange(selectedModel);
     }
     onClose();
@@ -108,8 +148,10 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
     return <Users className="h-5 w-5 text-purple-600" />;
   };
 
-  const getModelDescription = (modelName: string) => {
-    const name = modelName?.toLowerCase() || '';
+  const getModelDescription = (model: any) => {
+    if (model.description) return model.description;
+    
+    const name = model.name?.toLowerCase() || '';
     if (name.includes('aggregator')) {
       return "Direct engagement with curated solution providers through our aggregation platform";
     }
@@ -159,15 +201,17 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
             Change Engagement Model
           </DialogTitle>
           <DialogDescription>
-            Select a new engagement model. Your current model is <strong>{currentModel}</strong>.
+            Select a new engagement model. Your current model is <strong>{currentModel || 'None'}</strong>.
+            {selectedTier && <span> Available for tier: <strong>{selectedTier}</strong></span>}
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading available engagement models...</p>
+            </div>
           </div>
         ) : availableModels.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -175,6 +219,9 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Models Available</h3>
             <p className="text-gray-600">
               No engagement models are available for your current configuration.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Please contact support to configure engagement models.
             </p>
           </div>
         ) : (
@@ -193,9 +240,14 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                   className={`cursor-pointer transition-all ${
                     isSelected
                       ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
-                      : 'hover:border-gray-300'
+                      : isCurrent
+                        ? 'border-green-500 bg-green-50'
+                        : 'hover:border-gray-300'
                   }`}
-                  onClick={() => setSelectedModel(modelName)}
+                  onClick={() => {
+                    console.log('⚡ Selecting model:', modelName);
+                    setSelectedModel(modelName);
+                  }}
                 >
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center justify-between">
@@ -215,7 +267,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                       </div>
                     </CardTitle>
                     <CardDescription className="text-sm">
-                      {model.description || getModelDescription(modelName)}
+                      {getModelDescription(model)}
                     </CardDescription>
                   </CardHeader>
                   

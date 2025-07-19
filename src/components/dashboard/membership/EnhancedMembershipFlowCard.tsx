@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,13 +38,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [showTierModal, setShowTierModal] = useState(false);
   const [showModelModal, setShowModelModal] = useState(false);
 
-  // Normalized profile context
-  const profileContext = {
-    country: profile?.country || 'India',
-    organization_type: profile?.organization_type || '',
-    entity_type: profile?.entity_type || '',
-    original_profile: profile
-  };
+  // Enhanced profile context with fallback data
+  const [profileContext, setProfileContext] = useState<any>(null);
 
   useEffect(() => {
     if (userId && profile) {
@@ -53,15 +47,85 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   }, [userId, profile]);
 
+  const constructProfileContext = async (savedData: any = null) => {
+    try {
+      console.log('🔧 Constructing profile context with:', { profile, savedData });
+      
+      // Start with profile data
+      let contextData = {
+        country: profile?.country || 'India',
+        organization_type: profile?.organization_type || '',
+        entity_type: profile?.entity_type || '',
+        original_profile: profile
+      };
+
+      // If profile data is incomplete, use saved data as fallback
+      if (savedData) {
+        if (!contextData.country && savedData.country) {
+          contextData.country = savedData.country;
+        }
+        if (!contextData.organization_type && savedData.organization_type) {
+          contextData.organization_type = savedData.organization_type;
+        }
+        if (!contextData.entity_type && savedData.entity_type) {
+          contextData.entity_type = savedData.entity_type;
+        }
+      }
+
+      // If still missing critical data, try to get from organizations table
+      if (!contextData.organization_type || !contextData.entity_type) {
+        console.log('📋 Missing org data, fetching from organizations table...');
+        
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select(`
+            organization_type_id,
+            entity_type_id,
+            master_organization_types(name),
+            master_entity_types(name)
+          `)
+          .eq('user_id', userId)
+          .single();
+
+        if (orgData) {
+          if (!contextData.organization_type && orgData.master_organization_types?.name) {
+            contextData.organization_type = orgData.master_organization_types.name;
+          }
+          if (!contextData.entity_type && orgData.master_entity_types?.name) {
+            contextData.entity_type = orgData.master_entity_types.name;
+          }
+        }
+      }
+
+      console.log('✅ Final profile context:', contextData);
+      setProfileContext(contextData);
+      return contextData;
+    } catch (error) {
+      console.error('❌ Error constructing profile context:', error);
+      // Fallback to basic context
+      const fallbackContext = {
+        country: profile?.country || 'India',
+        organization_type: profile?.organization_type || 'Corporate',
+        entity_type: profile?.entity_type || 'Private Limited',
+        original_profile: profile
+      };
+      setProfileContext(fallbackContext);
+      return fallbackContext;
+    }
+  };
+
   const initializeComponent = async () => {
     try {
       setLoading(true);
       
       // Load saved data first
-      await loadSavedData();
+      const savedData = await loadSavedData();
       
-      // Load master data
-      await loadMasterData();
+      // Construct profile context with saved data as fallback
+      const context = await constructProfileContext(savedData);
+      
+      // Load master data with proper context
+      await loadMasterData(context);
       
     } catch (error) {
       console.error('❌ Error initializing component:', error);
@@ -88,7 +152,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       if (savedData) {
         console.log('✅ Loaded saved data:', savedData);
         
-        // Map database workflow_step to component currentStep
         const workflowStep = savedData.workflow_step || 'membership_decision';
         let mappedStep = workflowStep;
         
@@ -101,38 +164,54 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         setSelectedTier(savedData.pricing_tier);
         setSelectedEngagementModel(savedData.engagement_model);
         setTermsAccepted(savedData.terms_accepted || false);
+        
+        return savedData;
       } else {
         console.log('📝 No saved data found, starting fresh');
         setCurrentStep('membership_decision');
+        return null;
       }
     } catch (error) {
       console.error('❌ Error loading saved data:', error);
       setCurrentStep('membership_decision');
+      return null;
     }
   };
 
-  const loadMasterData = async () => {
+  const loadMasterData = async (context: any) => {
     try {
+      console.log('🔄 Loading master data with context:', context);
+
       // Load membership fees
       const fees = await MembershipDataService.getMembershipFees(
-        profileContext.country,
-        profileContext.organization_type,
-        profileContext.entity_type
+        context.country,
+        context.organization_type,
+        context.entity_type
       );
       setMembershipFees(Array.isArray(fees) ? fees : [fees].filter(Boolean));
 
-      // Load available tiers
-      const { data: tierConfigs } = await supabase
-        .from('master_tier_configurations')
-        .select(`
-          *,
-          master_pricing_tiers!inner(name, level_order, description),
-          master_currencies(code, symbol)
-        `)
-        .eq('is_active', true)
-        .order('master_pricing_tiers(level_order)');
+      // Load available tiers with country filter
+      const { data: countryData } = await supabase
+        .from('master_countries')
+        .select('id')
+        .eq('name', context.country)
+        .single();
 
-      setAvailableTiers(tierConfigs || []);
+      if (countryData) {
+        const { data: tierConfigs } = await supabase
+          .from('master_tier_configurations')
+          .select(`
+            *,
+            master_pricing_tiers!inner(name, level_order, description),
+            master_currencies(code, symbol)
+          `)
+          .eq('country_id', countryData.id)
+          .eq('is_active', true)
+          .order('master_pricing_tiers(level_order)');
+
+        setAvailableTiers(tierConfigs || []);
+        console.log('✅ Loaded tiers:', tierConfigs?.length);
+      }
 
       // Load available engagement models
       const { data: models } = await supabase
@@ -141,8 +220,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         .order('name');
 
       setAvailableModels(models || []);
+      console.log('✅ Loaded models:', models?.length);
 
-      console.log('✅ Loaded master data - Tiers:', tierConfigs?.length, 'Models:', models?.length);
     } catch (error) {
       console.error('❌ Error loading master data:', error);
     }
@@ -161,8 +240,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           engagement_model: selectedEngagementModel,
           terms_accepted: termsAccepted,
           workflow_step: currentStep,
-          country: profileContext.country,
-          organization_type: profileContext.organization_type,
+          country: profileContext?.country,
+          organization_type: profileContext?.organization_type,
           updated_at: new Date().toISOString(),
           ...updateData
         }, {
@@ -276,14 +355,24 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const handleTierEdit = (newTier: string) => {
+  const handleTierEdit = async (newTier: string) => {
+    console.log('🎯 Tier changed to:', newTier);
     setSelectedTier(newTier);
-    saveCurrentState({ pricing_tier: newTier });
+    await saveCurrentState({ pricing_tier: newTier });
+    toast({
+      title: "Tier Updated",
+      description: `Pricing tier changed to ${newTier}.`,
+    });
   };
 
-  const handleModelEdit = (newModel: string) => {
+  const handleModelEdit = async (newModel: string) => {
+    console.log('⚡ Model changed to:', newModel);
     setSelectedEngagementModel(newModel);
-    saveCurrentState({ engagement_model: newModel });
+    await saveCurrentState({ engagement_model: newModel });
+    toast({
+      title: "Model Updated",
+      description: `Engagement model changed to ${newModel}.`,
+    });
   };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
@@ -308,6 +397,26 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
+  if (!profileContext) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="text-center py-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="font-medium text-red-800 mb-2">Profile Context Missing</h3>
+          <p className="text-red-700 mb-4">
+            Unable to load profile context. Please ensure your profile is complete.
+          </p>
+          <Button 
+            onClick={() => window.location.reload()}
+            variant="outline"
+          >
+            Reload Page
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Step 1: Membership Decision
   if (currentStep === 'membership_decision') {
     const annualFee = membershipFees[0]?.annual_amount || 0;
@@ -323,7 +432,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Active Membership Option */}
             <Card className="cursor-pointer border-2 hover:border-green-500 transition-colors"
                   onClick={() => handleMembershipDecision('active')}>
               <CardHeader>
@@ -352,7 +460,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               </CardContent>
             </Card>
 
-            {/* Non-Member Option */}
             <Card className="cursor-pointer border-2 hover:border-blue-500 transition-colors"
                   onClick={() => handleMembershipDecision('inactive')}>
               <CardHeader>
@@ -529,77 +636,101 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Step 5: Completed
   if (currentStep === 'completed') {
     return (
-      <Card className="border-green-200 bg-green-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
-            <CheckCircle className="h-5 w-5" />
-            Setup Complete
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="p-4 bg-white rounded-lg border border-green-200">
-              <h4 className="font-medium mb-3">Your Current Configuration:</h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-green-600" />
-                    <span className="font-medium">Membership: </span>
-                    <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>
-                      {membershipStatus === 'active' ? 'Active Member' : 'Non-Member'}
-                    </Badge>
+      <>
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <CheckCircle className="h-5 w-5" />
+              Setup Complete
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="p-4 bg-white rounded-lg border border-green-200">
+                <h4 className="font-medium mb-3">Your Current Configuration:</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-green-600" />
+                      <span className="font-medium">Membership: </span>
+                      <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>
+                        {membershipStatus === 'active' ? 'Active Member' : 'Non-Member'}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-purple-600" />
-                    <span className="font-medium">Pricing Tier: {selectedTier}</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-purple-600" />
+                      <span className="font-medium">Pricing Tier: {selectedTier}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('🎯 Opening tier modal with context:', profileContext);
+                        setShowTierModal(true);
+                      }}
+                      className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      console.log('Opening tier modal...');
-                      setShowTierModal(true);
-                    }}
-                    className="hover:bg-primary hover:text-primary-foreground transition-colors"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-orange-600" />
-                    <span className="font-medium">Engagement Model: {selectedEngagementModel}</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-orange-600" />
+                      <span className="font-medium">Engagement Model: {selectedEngagementModel}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('⚡ Opening model modal with context:', profileContext);
+                        setShowModelModal(true);
+                      }}
+                      className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      console.log('Opening model modal...');
-                      setShowModelModal(true);
-                    }}
-                    className="hover:bg-primary hover:text-primary-foreground transition-colors"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
                 </div>
               </div>
-            </div>
 
-            <div className="text-center text-green-700">
-              <p>🎉 Your membership and engagement model setup is complete!</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                You can now start creating innovation challenges on the platform.
-              </p>
+              <div className="text-center text-green-700">
+                <p>🎉 Your membership and engagement model setup is complete!</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  You can now start creating innovation challenges on the platform.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Edit Modals */}
+        <TierEditModal
+          isOpen={showTierModal}
+          onClose={() => setShowTierModal(false)}
+          currentTier={selectedTier}
+          userId={userId}
+          membershipStatus={membershipStatus || 'inactive'}
+          profileContext={profileContext}
+          onTierChange={handleTierEdit}
+        />
+
+        <EngagementModelEditModal
+          isOpen={showModelModal}
+          onClose={() => setShowModelModal(false)}
+          currentModel={selectedEngagementModel}
+          selectedTier={selectedTier}
+          userId={userId}
+          membershipStatus={membershipStatus || 'inactive'}
+          profileContext={profileContext}
+          onModelChange={handleModelEdit}
+        />
+      </>
     );
   }
 
@@ -623,33 +754,5 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         </Button>
       </CardContent>
     </Card>
-  );
-
-  return (
-    <>
-      {/* Main component content above */}
-      
-      {/* Edit Modals */}
-      <TierEditModal
-        isOpen={showTierModal}
-        onClose={() => setShowTierModal(false)}
-        currentTier={selectedTier}
-        userId={userId}
-        membershipStatus={membershipStatus || 'inactive'}
-        profileContext={profileContext}
-        onTierChange={handleTierEdit}
-      />
-
-      <EngagementModelEditModal
-        isOpen={showModelModal}
-        onClose={() => setShowModelModal(false)}
-        currentModel={selectedEngagementModel}
-        selectedTier={selectedTier}
-        userId={userId}
-        membershipStatus={membershipStatus || 'inactive'}
-        profileContext={profileContext}
-        onModelChange={handleModelEdit}
-      />
-    </>
   );
 };

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Crown, X, AlertTriangle, DollarSign, TrendingUp } from 'lucide-react';
+import { CheckCircle, Crown, X, AlertTriangle, DollarSign, TrendingUp, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -33,6 +33,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
 
   useEffect(() => {
     if (isOpen && profileContext) {
+      console.log('🎯 TierEditModal opened with:', { currentTier, profileContext });
       loadAvailableTiers();
       setSelectedTier(currentTier);
     }
@@ -43,29 +44,46 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
       setLoading(true);
       console.log('🔄 Loading tiers for profile context:', profileContext);
 
-      // Get country ID
-      const { data: countryData } = await supabase
-        .from('master_countries')
-        .select('id')
-        .eq('name', profileContext.country)
-        .single();
-
-      if (!countryData) {
-        console.error('❌ Country not found:', profileContext.country);
+      if (!profileContext?.country) {
+        console.error('❌ No country in profile context');
+        toast({
+          title: "Error",
+          description: "Country information is missing from your profile.",
+          variant: "destructive"
+        });
         return;
       }
 
+      // Get country ID with case-insensitive matching
+      const { data: countryData, error: countryError } = await supabase
+        .from('master_countries')
+        .select('id')
+        .ilike('name', profileContext.country)
+        .single();
+
+      if (countryError || !countryData) {
+        console.error('❌ Country not found:', profileContext.country, countryError);
+        toast({
+          title: "Error",
+          description: `Country "${profileContext.country}" not found in our database.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Found country:', countryData);
+
       // Load tier configurations
-      const { data: tierConfigs } = await supabase
+      const { data: tierConfigs, error: tierError } = await supabase
         .from('master_tier_configurations')
         .select(`
           *,
-          master_pricing_tiers (
+          master_pricing_tiers!inner(
             name,
             level_order,
             description
           ),
-          master_currencies (
+          master_currencies(
             code,
             symbol
           )
@@ -74,8 +92,33 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
         .eq('is_active', true)
         .order('master_pricing_tiers(level_order)');
 
+      if (tierError) {
+        console.error('❌ Error loading tier configurations:', tierError);
+        toast({
+          title: "Error",
+          description: "Failed to load available tiers.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Loaded tier configurations:', tierConfigs?.length, tierConfigs);
       setTierConfigurations(tierConfigs || []);
-      console.log('✅ Loaded tier configurations:', tierConfigs?.length);
+
+      // Validate current tier selection
+      if (currentTier && tierConfigs) {
+        const currentTierExists = tierConfigs.some(config => 
+          config.master_pricing_tiers?.name?.toLowerCase() === currentTier.toLowerCase()
+        );
+        
+        if (!currentTierExists) {
+          console.log('⚠️ Current tier not found in available tiers, clearing selection');
+          setSelectedTier(null);
+        } else {
+          console.log('✅ Current tier validated:', currentTier);
+        }
+      }
+
     } catch (error) {
       console.error('❌ Error loading tiers:', error);
       toast({
@@ -90,6 +133,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
 
   const handleConfirm = () => {
     if (selectedTier && selectedTier !== currentTier) {
+      console.log('🎯 Confirming tier change:', currentTier, '->', selectedTier);
       onTierChange(selectedTier);
     }
     onClose();
@@ -146,15 +190,16 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
             Change Pricing Tier
           </DialogTitle>
           <DialogDescription>
-            Select a new pricing tier. Your current tier is <strong>{currentTier}</strong>.
+            Select a new pricing tier. Your current tier is <strong>{currentTier || 'None'}</strong>.
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading available tiers...</p>
+            </div>
           </div>
         ) : tierConfigurations.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -162,6 +207,9 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Tiers Available</h3>
             <p className="text-gray-600">
               No pricing tiers are configured for your location: {profileContext.country}.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Please contact support to configure tiers for your region.
             </p>
           </div>
         ) : (
@@ -177,9 +225,14 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                   className={`cursor-pointer transition-all ${
                     isSelected
                       ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
-                      : 'hover:border-gray-300'
+                      : isCurrent 
+                        ? 'border-green-500 bg-green-50'
+                        : 'hover:border-gray-300'
                   }`}
-                  onClick={() => setSelectedTier(tierName)}
+                  onClick={() => {
+                    console.log('🎯 Selecting tier:', tierName);
+                    setSelectedTier(tierName);
+                  }}
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -210,7 +263,10 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                       <div className="flex justify-between text-sm">
                         <span>Fixed Charge:</span>
                         <span className="font-medium">
-                          {formatCurrency(tierConfig.fixed_charge_per_challenge || 0, tierConfig.master_currencies?.code)}
+                          {formatCurrency(
+                            tierConfig.fixed_charge_per_challenge || 0, 
+                            tierConfig.master_currencies?.code
+                          )}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
