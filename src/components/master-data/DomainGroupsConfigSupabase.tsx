@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import SupabaseWizard from '../masterData/wizard/SupabaseWizard';
+import ExcelUploadSupabase from '../masterData/upload/ExcelUploadSupabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +60,26 @@ interface DomainGroup {
   };
 }
 
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  domain_group_id: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface SubCategory {
+  id: string;
+  name: string;
+  description?: string;
+  category_id: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface IndustrySegment {
   id: string;
   name: string;
@@ -85,6 +107,8 @@ type ViewMode = 'overview' | 'direct' | 'wizard' | 'excel';
 const DomainGroupsConfigSupabase = () => {
   const { toast } = useToast();
   const [domainGroups, setDomainGroups] = useState<DomainGroup[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
@@ -113,10 +137,6 @@ const DomainGroupsConfigSupabase = () => {
     }]
   });
 
-  // Excel upload state
-  const [excelFile, setExcelFile] = useState<File | null>(null);
-  const [excelProcessing, setExcelProcessing] = useState(false);
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -125,39 +145,38 @@ const DomainGroupsConfigSupabase = () => {
     try {
       setLoading(true);
       
-      const [domainGroupsResult, industrySegmentsResult] = await Promise.all([
-        supabase
-          .from('master_domain_groups')
-          .select(`
-            *,
-            master_industry_segments (
-              id,
-              name,
-              description
-            )
-          `)
-          .order('name'),
+      const [domainGroupsResult, categoriesResult, subCategoriesResult, industrySegmentsResult] = await Promise.all([
+        supabase.from('master_domain_groups').select('*').order('name'),
+        supabase.from('master_categories').select('*').order('name'),
+        supabase.from('master_sub_categories').select('*').order('name'),
         supabase.from('master_industry_segments').select('*').order('name')
       ]);
 
       if (domainGroupsResult.error) throw domainGroupsResult.error;
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (subCategoriesResult.error) throw subCategoriesResult.error;
       if (industrySegmentsResult.error) throw industrySegmentsResult.error;
 
-      // Transform domain groups data
-      const transformedDomainGroups: DomainGroup[] = (domainGroupsResult.data || []).map(dg => ({
-        id: dg.id,
-        name: dg.name,
-        description: dg.description,
-        industry_segment_id: dg.industry_segment_id,
-        industry_segment_name: dg.master_industry_segments?.name,
-        is_active: dg.is_active,
-        created_at: dg.created_at,
-        updated_at: dg.updated_at,
-        hierarchy: dg.hierarchy ? (typeof dg.hierarchy === 'string' ? JSON.parse(dg.hierarchy) : dg.hierarchy) : { categories: [] }
-      }));
+      // Transform domain groups data and add industry segment names
+      const transformedDomainGroups: DomainGroup[] = (domainGroupsResult.data || []).map(dg => {
+        const industrySegment = industrySegmentsResult.data?.find(is => is.id === dg.industry_segment_id);
+        return {
+          id: dg.id,
+          name: dg.name,
+          description: dg.description,
+          industry_segment_id: dg.industry_segment_id,
+          industry_segment_name: industrySegment?.name,
+          is_active: dg.is_active,
+          created_at: dg.created_at,
+          updated_at: dg.updated_at,
+          hierarchy: dg.hierarchy ? (typeof dg.hierarchy === 'string' ? JSON.parse(dg.hierarchy) : dg.hierarchy) : { categories: [] }
+        };
+      });
 
       console.log('✅ Domain Groups loaded:', transformedDomainGroups);
       setDomainGroups(transformedDomainGroups);
+      setCategories(categoriesResult.data || []);
+      setSubCategories(subCategoriesResult.data || []);
       setIndustrySegments(industrySegmentsResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -171,7 +190,7 @@ const DomainGroupsConfigSupabase = () => {
     }
   };
 
-  // Group domain groups by industry segment
+  // Group domain groups by industry segment for hierarchical display
   const getGroupedDomainGroups = () => {
     const grouped = domainGroups.reduce((acc, dg) => {
       const industryKey = dg.industry_segment_name || 'No Industry Segment';
@@ -185,11 +204,22 @@ const DomainGroupsConfigSupabase = () => {
     return grouped;
   };
 
+  // Get categories for a domain group
+  const getCategoriesForDomainGroup = (domainGroupId: string) => {
+    return categories.filter(cat => cat.domain_group_id === domainGroupId);
+  };
+
+  // Get sub-categories for a category
+  const getSubCategoriesForCategory = (categoryId: string) => {
+    return subCategories.filter(sub => sub.category_id === categoryId);
+  };
+
   // Get hierarchy counts
   const getHierarchyCounts = (domainGroup: DomainGroup) => {
-    const categories = domainGroup.hierarchy?.categories || [];
-    const subCategories = categories.reduce((sum, cat) => sum + (cat.subCategories?.length || 0), 0);
-    return { categories: categories.length, subCategories };
+    const domainCategories = getCategoriesForDomainGroup(domainGroup.id);
+    const domainSubCategories = domainCategories.reduce((sum, cat) => 
+      sum + getSubCategoriesForCategory(cat.id).length, 0);
+    return { categories: domainCategories.length, subCategories: domainSubCategories };
   };
 
   // Toggle group expansion
@@ -285,39 +315,61 @@ const DomainGroupsConfigSupabase = () => {
 
       setLoading(true);
 
-      // Build hierarchy structure
-      const categories = hierarchyForm.categories
-        .filter(cat => cat.name.trim())
-        .map(category => ({
-          id: category.id,
-          name: category.name.trim(),
-          description: category.description?.trim() || undefined,
-          subCategories: category.subCategories
-            .filter(sub => sub.name.trim())
-            .map(sub => ({
-              id: sub.id,
-              name: sub.name.trim(),
-              description: sub.description?.trim() || undefined
-            }))
-        }));
-
-      const { error } = await supabase
+      // Create Domain Group
+      const { data: domainGroupData, error: domainGroupError } = await supabase
         .from('master_domain_groups')
         .insert([{
           name: hierarchyForm.name.trim(),
           description: hierarchyForm.description?.trim() || null,
           industry_segment_id: hierarchyForm.industry_segment_id,
-          is_active: true,
-          hierarchy: { categories }
-        }]);
+          is_active: true
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (domainGroupError) throw domainGroupError;
 
-      const totalSubCategories = categories.reduce((sum, cat) => sum + cat.subCategories.length, 0);
+      // Create Categories and Sub-Categories
+      for (const category of hierarchyForm.categories) {
+        if (!category.name.trim()) continue;
+
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('master_categories')
+          .insert([{
+            name: category.name.trim(),
+            description: category.description?.trim() || null,
+            domain_group_id: domainGroupData.id,
+            is_active: true
+          }])
+          .select()
+          .single();
+
+        if (categoryError) throw categoryError;
+
+        // Create Sub-Categories
+        for (const subCategory of category.subCategories) {
+          if (!subCategory.name.trim()) continue;
+
+          const { error: subCategoryError } = await supabase
+            .from('master_sub_categories')
+            .insert([{
+              name: subCategory.name.trim(),
+              description: subCategory.description?.trim() || null,
+              category_id: categoryData.id,
+              is_active: true
+            }]);
+
+          if (subCategoryError) throw subCategoryError;
+        }
+      }
+
+      const totalCategories = hierarchyForm.categories.filter(cat => cat.name.trim()).length;
+      const totalSubCategories = hierarchyForm.categories.reduce((sum, cat) => 
+        sum + cat.subCategories.filter(sub => sub.name.trim()).length, 0);
 
       toast({
         title: "Success!",
-        description: `Created domain group "${hierarchyForm.name}" with ${categories.length} categories and ${totalSubCategories} sub-categories`,
+        description: `Created domain group "${hierarchyForm.name}" with ${totalCategories} categories and ${totalSubCategories} sub-categories`,
       });
 
       // Reset form
@@ -355,9 +407,10 @@ const DomainGroupsConfigSupabase = () => {
   const exportToExcel = () => {
     try {
       const exportData = domainGroups.map(dg => {
-        const categories = dg.hierarchy?.categories || [];
-        return categories.flatMap(cat => 
-          cat.subCategories?.map(sub => ({
+        const domainCategories = getCategoriesForDomainGroup(dg.id);
+        return domainCategories.flatMap(cat => {
+          const catSubCategories = getSubCategoriesForCategory(cat.id);
+          return catSubCategories.map(sub => ({
             'Industry Segment': dg.industry_segment_name || '',
             'Domain Group': dg.name,
             'Domain Group Description': dg.description || '',
@@ -367,8 +420,8 @@ const DomainGroupsConfigSupabase = () => {
             'Sub-Category Description': sub.description || '',
             'Active': dg.is_active ? 'Yes' : 'No',
             'Created At': dg.created_at ? new Date(dg.created_at).toLocaleDateString() : ''
-          })) || []
-        );
+          }));
+        });
       }).flat();
 
       const csvContent = [
@@ -408,7 +461,33 @@ const DomainGroupsConfigSupabase = () => {
     return <div className="flex items-center justify-center h-64">Loading domain groups...</div>;
   }
 
-  // Render based on view mode
+  // Render Wizard mode
+  if (viewMode === 'wizard') {
+    return (
+      <SupabaseWizard 
+        onCancel={() => setViewMode('overview')} 
+        onComplete={() => {
+          setViewMode('overview');
+          fetchData();
+        }} 
+      />
+    );
+  }
+
+  // Render Excel Upload mode
+  if (viewMode === 'excel') {
+    return (
+      <ExcelUploadSupabase 
+        onCancel={() => setViewMode('overview')} 
+        onComplete={() => {
+          setViewMode('overview');
+          fetchData();
+        }} 
+      />
+    );
+  }
+
+  // Render Direct Entry mode
   if (viewMode === 'direct') {
     return (
       <div className="space-y-6">
@@ -617,94 +696,6 @@ const DomainGroupsConfigSupabase = () => {
     );
   }
 
-  if (viewMode === 'wizard') {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setViewMode('overview')}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Overview
-                </Button>
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wand2 className="w-6 h-6" />
-                    Domain Group Creation Wizard
-                  </CardTitle>
-                  <CardDescription>
-                    Step-by-step guided creation of domain groups
-                  </CardDescription>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <Wand2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg font-medium mb-2">Wizard Mode Coming Soon</p>
-              <p className="text-muted-foreground mb-6">
-                The guided wizard for creating domain groups will be available soon.
-              </p>
-              <Button onClick={() => setViewMode('direct')}>
-                Use Direct Entry Instead
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (viewMode === 'excel') {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setViewMode('overview')}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Overview
-                </Button>
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Upload className="w-6 h-6" />
-                    Excel Upload & Management
-                  </CardTitle>
-                  <CardDescription>
-                    Upload and manage domain groups via Excel files
-                  </CardDescription>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <Upload className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg font-medium mb-2">Excel Upload Coming Soon</p>
-              <p className="text-muted-foreground mb-6">
-                Excel upload functionality for domain groups will be available soon.
-              </p>
-              <Button onClick={() => setViewMode('direct')}>
-                Use Direct Entry Instead
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Main overview mode
   return (
     <div className="space-y-6">
@@ -835,9 +826,7 @@ const DomainGroupsConfigSupabase = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {domainGroups.reduce((sum, dg) => sum + (dg.hierarchy?.categories?.length || 0), 0)}
-            </div>
+            <div className="text-2xl font-bold">{categories.length}</div>
             <div className="text-sm text-muted-foreground">Total categories</div>
           </CardContent>
         </Card>
@@ -849,12 +838,7 @@ const DomainGroupsConfigSupabase = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {domainGroups.reduce((sum, dg) => 
-                sum + (dg.hierarchy?.categories?.reduce((catSum, cat) => 
-                  catSum + (cat.subCategories?.length || 0), 0) || 0), 0
-              )}
-            </div>
+            <div className="text-2xl font-bold">{subCategories.length}</div>
             <div className="text-sm text-muted-foreground">Total sub-categories</div>
           </CardContent>
         </Card>
@@ -891,10 +875,10 @@ const DomainGroupsConfigSupabase = () => {
                         <h2 className="text-xl font-bold text-blue-900">{industrySegment}</h2>
                         <p className="text-sm text-blue-700">
                           {groups.length} Domain Group{groups.length !== 1 ? 's' : ''} • {' '}
-                          {groups.reduce((sum, dg) => sum + (dg.hierarchy?.categories?.length || 0), 0)} Categories • {' '}
+                          {groups.reduce((sum, dg) => sum + getCategoriesForDomainGroup(dg.id).length, 0)} Categories • {' '}
                           {groups.reduce((sum, dg) => 
-                            sum + (dg.hierarchy?.categories?.reduce((catSum, cat) => 
-                              catSum + (cat.subCategories?.length || 0), 0) || 0), 0
+                            sum + getCategoriesForDomainGroup(dg.id).reduce((catSum, cat) => 
+                              catSum + getSubCategoriesForCategory(cat.id).length, 0), 0
                           )} Sub-Categories
                         </p>
                       </div>
@@ -907,8 +891,9 @@ const DomainGroupsConfigSupabase = () => {
                   {/* Domain Groups */}
                   <div className="p-4 space-y-4">
                     {groups.map((domainGroup) => {
-                      const { categories, subCategories } = getHierarchyCounts(domainGroup);
+                      const { categories: catCount, subCategories: subCatCount } = getHierarchyCounts(domainGroup);
                       const isExpanded = expandedGroups.has(domainGroup.id);
+                      const domainCategories = getCategoriesForDomainGroup(domainGroup.id);
                       
                       return (
                         <AccordionItem key={domainGroup.id} value={domainGroup.id} className="border rounded-lg">
@@ -923,7 +908,7 @@ const DomainGroupsConfigSupabase = () => {
                               <div className="text-left flex-1">
                                 <div className="font-semibold text-lg">{domainGroup.name}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  {categories} Categories • {subCategories} Sub-Categories
+                                  {catCount} Categories • {subCatCount} Sub-Categories
                                   {domainGroup.description && ` • ${domainGroup.description}`}
                                 </div>
                               </div>
@@ -937,44 +922,47 @@ const DomainGroupsConfigSupabase = () => {
                           </AccordionTrigger>
                           <AccordionContent>
                             <div className="px-6 pb-4 space-y-3">
-                              {(domainGroup.hierarchy?.categories || []).map((category, categoryIndex) => (
-                                <div key={category.id} className="border-l-4 border-l-orange-500 bg-orange-50 rounded-lg p-4">
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                                      {categoryIndex + 1}
-                                    </span>
-                                    <div>
-                                      <h4 className="font-semibold text-orange-900">{category.name}</h4>
-                                      {category.description && (
-                                        <p className="text-sm text-orange-700">{category.description}</p>
-                                      )}
-                                    </div>
-                                    <Badge variant="outline" className="bg-orange-100 text-orange-800 ml-auto">
-                                      Category
-                                    </Badge>
-                                  </div>
-                                  
-                                  {/* Sub-Categories */}
-                                  <div className="space-y-2 ml-6">
-                                    {(category.subCategories || []).map((subCategory, subIndex) => (
-                                      <div key={subCategory.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-2 border-purple-300">
-                                        <span className="bg-purple-500 text-white px-2 py-1 rounded text-xs font-medium">
-                                          {categoryIndex + 1}.{subIndex + 1}
-                                        </span>
-                                        <div className="flex-1">
-                                          <h5 className="font-medium text-purple-900">{subCategory.name}</h5>
-                                          {subCategory.description && (
-                                            <p className="text-sm text-purple-700">{subCategory.description}</p>
-                                          )}
-                                        </div>
-                                        <Badge variant="outline" className="bg-purple-100 text-purple-800">
-                                          Sub-Category
-                                        </Badge>
+                              {domainCategories.map((category, categoryIndex) => {
+                                const categorySubCategories = getSubCategoriesForCategory(category.id);
+                                return (
+                                  <div key={category.id} className="border-l-4 border-l-orange-500 bg-orange-50 rounded-lg p-4">
+                                    <div className="flex items-center gap-3 mb-3">
+                                      <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                        {categoryIndex + 1}
+                                      </span>
+                                      <div>
+                                        <h4 className="font-semibold text-orange-900">{category.name}</h4>
+                                        {category.description && (
+                                          <p className="text-sm text-orange-700">{category.description}</p>
+                                        )}
                                       </div>
-                                    ))}
+                                      <Badge variant="outline" className="bg-orange-100 text-orange-800 ml-auto">
+                                        Category
+                                      </Badge>
+                                    </div>
+                                    
+                                    {/* Sub-Categories */}
+                                    <div className="space-y-2 ml-6">
+                                      {categorySubCategories.map((subCategory, subIndex) => (
+                                        <div key={subCategory.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border-l-2 border-purple-300">
+                                          <span className="bg-purple-500 text-white px-2 py-1 rounded text-xs font-medium">
+                                            {categoryIndex + 1}.{subIndex + 1}
+                                          </span>
+                                          <div className="flex-1">
+                                            <h5 className="font-medium text-purple-900">{subCategory.name}</h5>
+                                            {subCategory.description && (
+                                              <p className="text-sm text-purple-700">{subCategory.description}</p>
+                                            )}
+                                          </div>
+                                          <Badge variant="outline" className="bg-purple-100 text-purple-800">
+                                            Sub-Category
+                                          </Badge>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </AccordionContent>
                         </AccordionItem>
