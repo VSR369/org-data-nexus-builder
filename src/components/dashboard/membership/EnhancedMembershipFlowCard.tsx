@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Target, Zap, CheckCircle, Edit, AlertTriangle, Eye } from 'lucide-react';
+import { Loader2, Users, Target, Zap, CheckCircle, Edit, AlertTriangle, ArrowLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MembershipDataService } from '@/services/MembershipDataService';
@@ -14,6 +14,7 @@ import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
 import { MembershipViewModal } from './MembershipViewModal';
 import { MembershipEditModal } from './MembershipEditModal';
+import { PreviewConfirmationCard } from './PreviewConfirmationCard';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -38,6 +39,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
   const [availableTiers, setAvailableTiers] = useState<any[]>([]);
+  const [selectedTierDetails, setSelectedTierDetails] = useState<any>(null);
 
   // Modal state
   const [showTierModal, setShowTierModal] = useState(false);
@@ -67,6 +69,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       'tier_selection': 'tier_selection',
       'engagement_model_selection': 'engagement_model_selection',
       'terms_acceptance': 'preview_confirmation',
+      'preview_confirmation': 'preview_confirmation',
       'completed': 'activation_complete'
     };
     return stepMapping[step] || step;
@@ -198,6 +201,12 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         setSelectedEngagementModel(savedData.engagement_model);
         setTermsAccepted(savedData.terms_accepted || false);
         
+        // Also set selectedTierDetails if tier is present
+        if (savedData.pricing_tier) {
+          // We will load tier details after master data is loaded
+          // So just keep tier name here; details will be set after loadMasterData
+        }
+        
         console.log('🔄 State restored from saved data:', {
           step: mappedStep,
           membership: savedData.membership_status,
@@ -255,6 +264,21 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
         setAvailableTiers(tierConfigs || []);
         console.log('✅ Loaded tiers:', tierConfigs?.length);
+
+        // If selectedTier is set, find and set selectedTierDetails
+        if (selectedTier) {
+          const tierDetails = tierConfigs?.find(tier => tier.master_pricing_tiers?.name === selectedTier);
+          if (tierDetails) {
+            setSelectedTierDetails({
+              ...tierDetails,
+              pricing_tier_name: tierDetails.master_pricing_tiers?.name || 'Unknown',
+              currency_symbol: tierDetails.master_currencies?.symbol || '$',
+              currency_code: tierDetails.master_currencies?.code || 'USD',
+              analytics_access_name: tierDetails.master_analytics_access_types?.name || 'Standard Analytics',
+              support_service_level: tierDetails.master_support_types?.service_level || 'Standard'
+            });
+          }
+        }
       }
 
     } catch (error) {
@@ -357,6 +381,20 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     try {
       console.log('🎯 Tier selection:', tierName);
       setSelectedTier(tierName);
+      
+      // Find and store selected tier details for preview
+      const tierDetails = availableTiers.find(tier => tier.master_pricing_tiers?.name === tierName);
+      if (tierDetails) {
+        setSelectedTierDetails({
+          ...tierDetails,
+          pricing_tier_name: tierDetails.master_pricing_tiers?.name || 'Unknown',
+          currency_symbol: tierDetails.master_currencies?.symbol || '$',
+          currency_code: tierDetails.master_currencies?.code || 'USD',
+          analytics_access_name: tierDetails.master_analytics_access_types?.name || 'Standard Analytics',
+          support_service_level: tierDetails.master_support_types?.service_level || 'Standard'
+        });
+      }
+      
       const nextStep = 'engagement_model_selection';
       setCurrentStep(nextStep);
       
@@ -408,11 +446,34 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const handleTermsAcceptance = async () => {
     try {
       setTermsAccepted(true);
-      const nextStep = 'completed';
+      const nextStep = 'preview_confirmation';
       setCurrentStep(nextStep);
       
       await saveCurrentState({
         terms_accepted: true,
+        workflow_step: mapWorkflowStepForDB(nextStep)
+      });
+
+      toast({
+        title: "Terms Accepted",
+        description: "Please review your complete configuration before final setup.",
+      });
+    } catch (error) {
+      console.error('❌ Error in handleTermsAcceptance:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save terms acceptance.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePreviewConfirmation = async () => {
+    try {
+      const nextStep = 'completed';
+      setCurrentStep(nextStep);
+      
+      await saveCurrentState({
         workflow_step: mapWorkflowStepForDB(nextStep),
         workflow_completed: true
       });
@@ -422,13 +483,23 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: "Your membership and engagement model setup is complete!",
       });
     } catch (error) {
-      console.error('❌ Error in handleTermsAcceptance:', error);
+      console.error('❌ Error in handlePreviewConfirmation:', error);
       toast({
         title: "Error",
         description: "Failed to complete setup.",
         variant: "destructive"
       });
     }
+  };
+
+  const handleEditNavigation = (step: string) => {
+    console.log('📝 Navigating to edit step:', step);
+    setCurrentStep(step);
+    // Don't save state here - just navigate back to the step
+    toast({
+      title: "Edit Mode",
+      description: `You can now modify your ${step.replace('_', ' ')} selection.`,
+    });
   };
 
   const handleTierEdit = async (newTier: string) => {
@@ -715,10 +786,10 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Completing Setup...
+                  Proceeding to Review...
                 </>
               ) : (
-                'Complete Setup'
+                'Proceed to Review'
               )}
             </Button>
           </CardContent>
@@ -727,7 +798,26 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 5: Completed
+  // Step 5: Preview Confirmation (NEW STEP)
+  if (currentStep === 'preview_confirmation') {
+    return (
+      <div className="space-y-4">
+        <PreviewConfirmationCard
+          membershipStatus={membershipStatus}
+          selectedTier={selectedTier}
+          selectedEngagementModel={selectedEngagementModel}
+          membershipFees={membershipFees}
+          tierDetails={selectedTierDetails}
+          onEdit={handleEditNavigation}
+          onConfirm={handlePreviewConfirmation}
+          onBack={() => setCurrentStep('terms_acceptance')}
+          isProcessing={saving}
+        />
+      </div>
+    );
+  }
+
+  // Step 6: Completed
   if (currentStep === 'completed') {
     return (
       <>
