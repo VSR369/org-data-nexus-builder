@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from 'lucide-react';
-import ActiveMemberDetailsView from '@/components/master-data/solution-seekers/components/ActiveMemberDetailsView';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface MembershipViewModalProps {
   isOpen: boolean;
@@ -38,11 +38,14 @@ export const MembershipViewModal: React.FC<MembershipViewModalProps> = ({
         </DialogHeader>
         
         <div className="mt-4">
-          <ActiveMemberDetailsView 
-            membershipData={membershipData}
-            engagementData={engagementData}
-            isMobile={false}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Membership Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Membership details view will be rebuilt here.</p>
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>
