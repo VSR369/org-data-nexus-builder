@@ -81,7 +81,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       // Start with profile data
       let contextData = {
-        country: profile?.country || 'India',
+        country: profile?.country || '',
         organization_type: profile?.organization_type || '',
         entity_type: profile?.entity_type || '',
         original_profile: profile
@@ -130,11 +130,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       return contextData;
     } catch (error) {
       console.error('❌ Error constructing profile context:', error);
-      // Fallback to basic context
+      // Fallback to basic context - ensure no hard-coded defaults
       const fallbackContext = {
-        country: profile?.country || 'India',
-        organization_type: profile?.organization_type || 'Corporate',
-        entity_type: profile?.entity_type || 'Private Limited',
+        country: profile?.country || '',
+        organization_type: profile?.organization_type || '',
+        entity_type: profile?.entity_type || '',
         original_profile: profile
       };
       setProfileContext(fallbackContext);

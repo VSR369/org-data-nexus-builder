@@ -387,7 +387,7 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
         userId={profile?.id || ''}
         membershipStatus="active"
         profileContext={{
-          country: profile?.country || 'India',
+          country: profile?.country || '',
           organization_type: profile?.organization_type || '',
           entity_type: profile?.entity_type || '',
           original_profile: profile
@@ -404,7 +404,7 @@ export const MembershipSummaryOnlyCard: React.FC<MembershipSummaryOnlyCardProps>
         userId={profile?.id || ''}
         membershipStatus="active"
         profileContext={{
-          country: profile?.country || 'India',
+          country: profile?.country || '',
           organization_type: profile?.organization_type || '',
           entity_type: profile?.entity_type || '',
           original_profile: profile
