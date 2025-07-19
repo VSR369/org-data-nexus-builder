@@ -1,6 +1,8 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { safeRender } from '../utils/viewDetailsHelpers';
+import ActiveMemberDetailsView from './ActiveMemberDetailsView';
+
 // Simple helpers - removed pricing dependencies
 
 interface PaymentDetailsSectionProps {
@@ -33,6 +35,59 @@ const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({ membershi
   // Show data source for debugging if not production
   const showDataSource = membershipData?.dataSource || pricingData?.dataSource;
   
+  // Check if this is an active member
+  const isActiveMember = membershipData?.status === 'member_paid' || membershipData?.paymentStatus === 'paid';
+
+  // If active member, show comprehensive view
+  if (isActiveMember && membershipData) {
+    const comprehensiveMemberData = {
+      status: membershipData.status,
+      type: membershipData.selectedPlan || 'Premium',
+      createdAt: membershipData.paidAt || new Date().toISOString(),
+      pricingTier: pricingData?.pricingTier,
+      paymentAmount: membershipData.paymentAmount,
+      paymentCurrency: membershipData.paymentCurrency,
+      paymentStatus: membershipData.paymentStatus,
+      paymentMethod: membershipData.paymentMethod,
+      receiptNumber: membershipData.receiptNumber,
+      lastPaymentDate: membershipData.paidAt,
+      selectedFrequency: pricingData?.selectedFrequency,
+      totalPaymentsMade: membershipData.paymentAmount || 0,
+      discountPercentage: pricingData?.discountPercentage,
+      finalCalculatedPrice: pricingData?.finalCalculatedPrice,
+      frequencyPayments: pricingData?.frequencyPayments || [],
+      frequencyChangeHistory: pricingData?.frequencyChangeHistory || [],
+    };
+
+    const engagementData = pricingData?.engagementModel ? {
+      model: pricingData.engagementModel,
+      features: pricingData.features || [],
+      supportLevel: pricingData.supportLevel || 'Standard',
+      analyticsAccess: pricingData.analyticsAccess || false,
+    } : undefined;
+
+    return (
+      <div className={`${isMobile ? "space-y-3" : "space-y-4"}`}>
+        {/* Data Source Indicator (for debugging) */}
+        {showDataSource && showDataSource !== 'organization-specific' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs">
+            <span className="font-medium text-yellow-700">Data Source:</span> {showDataSource}
+            {showDataSource === 'no-data' && (
+              <span className="text-yellow-600 ml-2">No organization-specific data found</span>
+            )}
+          </div>
+        )}
+
+        <ActiveMemberDetailsView 
+          membershipData={comprehensiveMemberData}
+          engagementData={engagementData}
+          isMobile={isMobile}
+        />
+      </div>
+    );
+  }
+
+  // For non-active members, show existing simplified view
   return (
     <div className={`${isMobile ? "space-y-3" : "space-y-4"}`}>
       {/* Data Source Indicator (for debugging) */}
