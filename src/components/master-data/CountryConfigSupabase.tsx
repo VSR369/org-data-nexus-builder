@@ -1,41 +1,42 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit2, Check, X, RefreshCw, Plus, Globe } from 'lucide-react';
+import { Trash2, Edit2, Check, X, RefreshCw, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface Country {
-  id?: string;
+  id: string;
   name: string;
   code?: string;
-  region?: string;
-  created_at?: string;
-  updated_at?: string;
-  is_user_created?: boolean;
 }
 
 const CountryConfigSupabase: React.FC = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newCountry, setNewCountry] = useState({ name: '', code: '', region: '' });
+  const [newCountry, setNewCountry] = useState({ name: '', code: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState({ name: '', code: '', region: '' });
+  const [editingValue, setEditingValue] = useState({ name: '', code: '' });
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
 
-  const loadCountries = async () => {
+  const fetchCountries = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching countries from Supabase...');
+      
       const { data, error } = await supabase
         .from('master_countries')
         .select('*')
         .order('name');
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('❌ Error fetching countries:', error);
+        throw error;
+      }
+
       console.log('✅ CRUD TEST - Countries loaded from Supabase:', data);
       setCountries(data || []);
     } catch (error) {
@@ -50,33 +51,12 @@ const CountryConfigSupabase: React.FC = () => {
     }
   };
 
-  React.useEffect(() => {
-    loadCountries();
+  useEffect(() => {
+    fetchCountries();
   }, []);
 
   const handleAddCountry = async () => {
-    if (!newCountry.name.trim() || !newCountry.code.trim()) {
-      toast({
-        title: "Error",
-        description: "Country name and code are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check for duplicate country codes
-    const duplicateCode = countries.find(country => 
-      country.code?.toUpperCase() === newCountry.code.trim().toUpperCase()
-    );
-
-    if (duplicateCode) {
-      toast({
-        title: "Error",
-        description: "A country with this code already exists",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!newCountry.name.trim()) return;
 
     try {
       setLoading(true);
@@ -84,17 +64,17 @@ const CountryConfigSupabase: React.FC = () => {
         .from('master_countries')
         .insert([{ 
           name: newCountry.name.trim(),
-          code: newCountry.code.trim().toUpperCase(),
-          is_user_created: true
+          code: newCountry.code.trim() || null
         }])
         .select()
         .single();
-      
+
       if (error) throw error;
-      console.log('✅ CRUD TEST - Country created in Supabase:', data);
+
       setCountries(prev => [...prev, data]);
-      setNewCountry({ name: '', code: '', region: '' });
+      setNewCountry({ name: '', code: '' });
       setIsAdding(false);
+      
       toast({
         title: "Success",
         description: `${newCountry.name} added successfully`,
@@ -111,39 +91,13 @@ const CountryConfigSupabase: React.FC = () => {
     }
   };
 
-  const handleEditCountry = (id: string, country: Country) => {
-    setEditingId(id);
-    setEditingValue({ 
-      name: country.name,
-      code: country.code || '',
-      region: country.region || ''
-    });
+  const handleEdit = (country: Country) => {
+    setEditingId(country.id);
+    setEditingValue({ name: country.name, code: country.code || '' });
   };
 
   const handleSaveEdit = async () => {
-    if (!editingId || !editingValue.name.trim() || !editingValue.code.trim()) {
-      toast({
-        title: "Error",
-        description: "Country name and code are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check for duplicate country codes (excluding current country)
-    const duplicateCode = countries.find(country => 
-      country.code?.toUpperCase() === editingValue.code.trim().toUpperCase() &&
-      country.id !== editingId
-    );
-
-    if (duplicateCode) {
-      toast({
-        title: "Error",
-        description: "A country with this code already exists",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!editingId || !editingValue.name.trim()) return;
 
     try {
       setLoading(true);
@@ -151,17 +105,20 @@ const CountryConfigSupabase: React.FC = () => {
         .from('master_countries')
         .update({ 
           name: editingValue.name.trim(),
-          code: editingValue.code.trim().toUpperCase()
+          code: editingValue.code.trim() || null
         })
         .eq('id', editingId)
         .select()
         .single();
-      
+
       if (error) throw error;
-      console.log('✅ CRUD TEST - Country updated in Supabase:', data);
-      setCountries(prev => prev.map(country => country.id === editingId ? data : country));
+
+      setCountries(prev => prev.map(country => 
+        country.id === editingId ? data : country
+      ));
       setEditingId(null);
-      setEditingValue({ name: '', code: '', region: '' });
+      setEditingValue({ name: '', code: '' });
+      
       toast({
         title: "Success",
         description: "Country updated successfully",
@@ -178,17 +135,20 @@ const CountryConfigSupabase: React.FC = () => {
     }
   };
 
-  const handleDeleteCountry = async (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this country?')) return;
+
     try {
       setLoading(true);
       const { error } = await supabase
         .from('master_countries')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
-      console.log('✅ CRUD TEST - Country deleted from Supabase');
+
       setCountries(prev => prev.filter(country => country.id !== id));
+      
       toast({
         title: "Success",
         description: "Country deleted successfully",
@@ -205,81 +165,44 @@ const CountryConfigSupabase: React.FC = () => {
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditingValue({ name: '', code: '', region: '' });
-  };
-
-  const handleCancelAdd = () => {
-    setIsAdding(false);
-    setNewCountry({ name: '', code: '', region: '' });
-  };
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5" />
-              Countries Configuration
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button onClick={loadCountries} variant="outline" size="sm" disabled={loading}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button onClick={() => setIsAdding(true)} disabled={isAdding || loading}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Country
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Countries Configuration (Supabase)</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center gap-2 mb-4">
+            <Button onClick={fetchCountries} variant="outline" size="sm" disabled={loading}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsAdding(true)} disabled={isAdding || loading}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Country
+            </Button>
+          </div>
+
           {isAdding && (
-            <div className="space-y-3 mb-4 p-3 border rounded-lg bg-muted">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <Label htmlFor="new-name">Country Name *</Label>
-                  <Input
-                    id="new-name"
-                    value={newCountry.name}
-                    onChange={(e) => setNewCountry(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., United States"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-code">Country Code *</Label>
-                  <Input
-                    id="new-code"
-                    value={newCountry.code}
-                    onChange={(e) => setNewCountry(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                    placeholder="e.g., US"
-                    maxLength={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-region">Region</Label>
-                  <Input
-                    id="new-region"
-                    value={newCountry.region}
-                    onChange={(e) => setNewCountry(prev => ({ ...prev, region: e.target.value }))}
-                    placeholder="e.g., North America"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleAddCountry} size="sm" disabled={loading}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Add Country
-                </Button>
-                <Button onClick={handleCancelAdd} size="sm" variant="outline">
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 mb-4 p-3 border rounded-lg bg-muted">
+              <Input
+                value={newCountry.name}
+                onChange={(e) => setNewCountry({ ...newCountry, name: e.target.value })}
+                placeholder="Country name"
+                className="flex-1"
+              />
+              <Input
+                value={newCountry.code}
+                onChange={(e) => setNewCountry({ ...newCountry, code: e.target.value })}
+                placeholder="Code (e.g., US)"
+                className="w-32"
+              />
+              <Button onClick={handleAddCountry} size="sm" disabled={loading}>
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button onClick={() => setIsAdding(false)} size="sm" variant="outline">
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           )}
 
@@ -292,51 +215,38 @@ const CountryConfigSupabase: React.FC = () => {
           ) : (
             <div className="space-y-2">
               {countries.map((country) => (
-                <div key={country.id} className="p-3 border rounded-lg">
+                <div key={country.id} className="flex items-center justify-between p-3 border rounded-lg">
                   {editingId === country.id ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <Input
-                          value={editingValue.name}
-                          onChange={(e) => setEditingValue(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Country name"
-                          autoFocus
-                        />
-                        <Input
-                          value={editingValue.code}
-                          onChange={(e) => setEditingValue(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                          placeholder="Country code"
-                          maxLength={3}
-                        />
-                        <Input
-                          value={editingValue.region}
-                          onChange={(e) => setEditingValue(prev => ({ ...prev, region: e.target.value }))}
-                          placeholder="Region"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button onClick={handleSaveEdit} size="sm" variant="outline" disabled={loading}>
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button onClick={handleCancelEdit} size="sm" variant="outline">
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        value={editingValue.name}
+                        onChange={(e) => setEditingValue({ ...editingValue, name: e.target.value })}
+                        className="flex-1"
+                      />
+                      <Input
+                        value={editingValue.code}
+                        onChange={(e) => setEditingValue({ ...editingValue, code: e.target.value })}
+                        className="w-32"
+                        placeholder="Code"
+                      />
+                      <Button onClick={handleSaveEdit} size="sm" variant="outline" disabled={loading}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button onClick={() => setEditingId(null)} size="sm" variant="outline">
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">{country.code}</Badge>
-                        <div>
-                          <h4 className="font-medium">{country.name}</h4>
-                          {country.region && (
-                            <p className="text-sm text-muted-foreground">Region: {country.region}</p>
-                          )}
-                        </div>
+                    <>
+                      <div className="flex items-center gap-4">
+                        <span className="font-medium">{country.name}</span>
+                        {country.code && (
+                          <span className="text-sm text-muted-foreground font-mono">({country.code})</span>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <Button 
-                          onClick={() => handleEditCountry(country.id!, country)} 
+                          onClick={() => handleEdit(country)} 
                           size="sm" 
                           variant="outline"
                           disabled={loading}
@@ -344,7 +254,7 @@ const CountryConfigSupabase: React.FC = () => {
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button 
-                          onClick={() => handleDeleteCountry(country.id!)} 
+                          onClick={() => handleDelete(country.id)} 
                           size="sm" 
                           variant="outline"
                           disabled={loading}
@@ -352,7 +262,7 @@ const CountryConfigSupabase: React.FC = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               ))}

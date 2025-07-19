@@ -1,24 +1,13 @@
 
 import React from 'react';
 
-// Import your sophisticated ConfigSupabase components
+// Import your original ConfigSupabase components
 import OrganizationTypeConfigSupabase from './master-data/OrganizationTypeConfigSupabase';
 import EntityTypeConfigSupabase from './master-data/EntityTypeConfigSupabase';
 import IndustrySegmentsConfigSupabase from './master-data/IndustrySegmentsConfigSupabase';
 import RewardTypeConfigSupabase from './master-data/RewardTypeConfigSupabase';
 import CountryConfigSupabase from './master-data/CountryConfigSupabase';
 import CurrencyConfigSupabase from './master-data/CurrencyConfigSupabase';
-
-// Import specialized subdirectory components
-import { FeeComponentsManager } from './master-data/fee-components/FeeComponentsManager';
-import { ChallengeComplexityManager } from './master-data/challenge-complexity/ChallengeComplexityManager';
-import { ChallengeOverageFeesManager } from './master-data/challenge-overage-fees/ChallengeOverageFeesManager';
-import { AdvancePaymentTypesManager } from './master-data/advance-payment-types/AdvancePaymentTypesManager';
-import { AnalyticsAccessTypesManager } from './master-data/analytics-access-types/AnalyticsAccessTypesManager';
-import { OnboardingTypesManager } from './master-data/onboarding-types/OnboardingTypesManager';
-import { SystemFeatureAccessManager } from './master-data/system-feature-access/SystemFeatureAccessManager';
-
-// Import other advanced components (the ones that actually exist and work)
 import DomainGroupsConfigSupabase from './master-data/DomainGroupsConfigSupabase';
 import DepartmentsConfigSupabase from './master-data/DepartmentsConfigSupabase';
 import CategoriesConfigSupabase from './master-data/CategoriesConfigSupabase';
@@ -46,13 +35,18 @@ import OrganizationCategoriesConfigSupabase from './master-data/OrganizationCate
 import PricingConfigurationsConfigSupabase from './master-data/PricingConfigurationsConfigSupabase';
 import SolutionSeekersConfigSupabase from './master-data/SolutionSeekersConfigSupabase';
 
+// Import the modern manager components for more complex functionality
+import DepartmentsManager from './master-data/DepartmentsManager';
+import CompetencyCapabilitiesManager from './master-data/CompetencyCapabilitiesManager';
+import CountriesManager from './master-data/CountriesManager';
+import CurrenciesManager from './master-data/CurrenciesManager';
+
 interface MasterDataContentProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
 }
 
 const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) => {
-  // Remove the junk tab header and restore your original clean interface
   const renderActiveComponent = () => {
     switch (activeSection) {
       case 'solution-seekers':
@@ -64,9 +58,9 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'sub-categories':
         return <SubCategoriesConfigSupabase />;
       case 'countries':
-        return <CountryConfigSupabase />;
+        return <CountriesManager />;
       case 'currencies':
-        return <CurrencyConfigSupabase />;
+        return <CurrenciesManager />;
       case 'organization-types':
         return <OrganizationTypeConfigSupabase />;
       case 'entity-types':
@@ -74,7 +68,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'industry-segments':
         return <IndustrySegmentsConfigSupabase />;
       case 'departments':
-        return <DepartmentsConfigSupabase />;
+        return <DepartmentsManager />;
       case 'sub-departments':
         return <SubDepartmentsConfigSupabase />;
       case 'team-units':
@@ -89,8 +83,6 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <EngagementModelsConfigSupabase />;
       case 'engagement-model-subtypes':
         return <EngagementModelSubtypesConfigSupabase />;
-      case 'fee-components':
-        return <FeeComponentsManager />;
       case 'pricing-parameters':
         return <PricingParametersConfigSupabase />;
       case 'platform-fee-formulas':
@@ -103,28 +95,16 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <TierEngagementModelAccessConfigSupabase />;
       case 'seeker-membership-fees':
         return <SeekerMembershipFeesConfigSupabase />;
-      case 'challenge-complexity':
-        return <ChallengeComplexityManager />;
-      case 'challenge-overage-fees':
-        return <ChallengeOverageFeesManager />;
-      case 'advance-payment-types':
-        return <AdvancePaymentTypesManager />;
-      case 'analytics-access-types':
-        return <AnalyticsAccessTypesManager />;
       case 'support-types':
         return <SupportTypesConfigSupabase />;
-      case 'onboarding-types':
-        return <OnboardingTypesManager />;
       case 'workflow-templates':
         return <WorkflowTemplatesConfigSupabase />;
-      case 'system-feature-access':
-        return <SystemFeatureAccessManager />;
       case 'system-configurations':
         return <SystemConfigurationsConfigSupabase />;
       case 'capability-levels':
         return <CapabilityLevelsConfigSupabase />;
       case 'competency-capabilities':
-        return <CompetencyCapabilityConfigSupabase />;
+        return <CompetencyCapabilitiesManager />;
       case 'communication-types':
         return <CommunicationTypesConfigSupabase />;
       case 'reward-types':
