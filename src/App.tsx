@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import MasterDataContent from './components/MasterDataContent';
+import OrganizationDashboard from './pages/OrganizationDashboard';
 
 const queryClient = new QueryClient();
 
@@ -15,7 +16,9 @@ function App() {
       <Router>
         <div className="min-h-screen bg-background">
           <Routes>
-            <Route path="/*" element={<MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />} />
+            <Route path="/" element={<OrganizationDashboard />} />
+            <Route path="/master-data/:section" element={<MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />} />
+            <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
           </Routes>
           <Toaster />
           <SonnerToaster />
