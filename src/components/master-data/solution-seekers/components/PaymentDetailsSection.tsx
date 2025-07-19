@@ -17,7 +17,10 @@ interface PaymentDetailsSectionProps {
 const isMembershipActive = (membershipData: any): boolean => {
   return (
     membershipData?.status === 'member_paid' || 
-    (membershipData?.paymentStatus === 'paid' && membershipData?.status === 'Active')
+    membershipData?.status === 'Active' ||
+    membershipData?.membership_status === 'active' ||
+    (membershipData?.paymentStatus === 'paid' && membershipData?.status === 'Active') ||
+    (membershipData?.mem_payment_status === 'paid' && membershipData?.membership_status === 'active')
   );
 };
 
