@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, Upload, AlertTriangle } from 'lucide-react';
@@ -242,8 +243,8 @@ const DomainGroupsConfig: React.FC = () => {
   }, [data]);
 
   return (
-    <div className="space-y-6">
-      {/* Enhanced Header with Actions */}
+    <div className="space-y-6 p-6">
+      {/* Actions without header card */}
       <div className="flex items-center justify-between">
         <div>
           <DomainGroupsHeader 

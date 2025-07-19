@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DomainGroupsManager from './master-data/DomainGroupsManager';
+import DomainGroupsConfig from './master-data/DomainGroupsConfig';
+import DepartmentsConfig from './master-data/DepartmentsConfig';
 import CategoriesManager from './master-data/CategoriesManager';
 import SubCategoriesManager from './master-data/SubCategoriesManager';
 import CountriesManager from './master-data/CountriesManager';
@@ -9,7 +10,6 @@ import CurrenciesManager from './master-data/CurrenciesManager';
 import OrganizationTypesManager from './master-data/OrganizationTypesManager';
 import EntityTypesManager from './master-data/EntityTypesManager';
 import IndustrySegmentsManager from './master-data/IndustrySegmentsManager';
-import DepartmentsManager from './master-data/DepartmentsManager';
 import SubDepartmentsManager from './master-data/SubDepartmentsManager';
 import TeamUnitsManager from './master-data/TeamUnitsManager';
 import BillingFrequenciesManager from './master-data/BillingFrequenciesManager';
@@ -96,7 +96,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
           <SolutionSeekersManager />
         </TabsContent>
         <TabsContent value="domain-groups">
-          <DomainGroupsManager />
+          <DomainGroupsConfig />
         </TabsContent>
         <TabsContent value="categories">
           <CategoriesManager />
@@ -120,7 +120,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
           <IndustrySegmentsManager />
         </TabsContent>
         <TabsContent value="departments">
-          <DepartmentsManager />
+          <DepartmentsConfig />
         </TabsContent>
         <TabsContent value="sub-departments">
           <SubDepartmentsManager />
