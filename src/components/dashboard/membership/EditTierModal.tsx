@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Settings, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CheckCircle, Settings, X, Star, Crown, Zap, ArrowRight } from 'lucide-react';
+import { useTierConfigurations, TierConfiguration } from '@/hooks/useTierConfigurations';
 import { toast } from '@/hooks/use-toast';
 
 interface EditTierModalProps {
@@ -16,6 +16,60 @@ interface EditTierModalProps {
   onTierChange: (tier: string) => void;
 }
 
+const getTierIcon = (tierName: string) => {
+  const lowerName = tierName.toLowerCase();
+  if (lowerName.includes('basic')) return CheckCircle;
+  if (lowerName.includes('standard')) return Star;
+  if (lowerName.includes('premium')) return Crown;
+  return CheckCircle;
+};
+
+const getTierColor = (tierName: string) => {
+  const lowerName = tierName.toLowerCase();
+  if (lowerName.includes('basic')) return 'text-green-600';
+  if (lowerName.includes('standard')) return 'text-blue-600';
+  if (lowerName.includes('premium')) return 'text-purple-600';
+  return 'text-green-600';
+};
+
+const getTierFeatures = (config: TierConfiguration) => {
+  const features = [];
+  
+  if (config.monthly_challenge_limit) {
+    features.push(`Up to ${config.monthly_challenge_limit} challenges per month`);
+  } else {
+    features.push('Unlimited challenges per month');
+  }
+  
+  features.push(`${config.solutions_per_challenge} solution${config.solutions_per_challenge > 1 ? 's' : ''} per challenge`);
+  
+  if (config.analytics_access_name) {
+    features.push(`${config.analytics_access_name} analytics access`);
+  }
+  
+  if (config.support_type_name) {
+    features.push(`${config.support_type_name} support`);
+  }
+  
+  if (config.onboarding_type_name) {
+    features.push(`${config.onboarding_type_name} onboarding`);
+  }
+  
+  if (config.allows_overage) {
+    features.push('Challenge overage allowed');
+  }
+  
+  if (config.workflow_template_name) {
+    features.push(`${config.workflow_template_name} workflow templates`);
+  }
+  
+  return features;
+};
+
+const formatCurrency = (amount: number, symbol: string, code: string) => {
+  return `${symbol} ${amount.toFixed(2)} ${code}`;
+};
+
 export const EditTierModal: React.FC<EditTierModalProps> = ({
   isOpen,
   onClose,
@@ -24,67 +78,21 @@ export const EditTierModal: React.FC<EditTierModalProps> = ({
   onTierChange
 }) => {
   const [selectedTier, setSelectedTier] = useState<string | null>(currentTier);
-  const [availableTiers, setAvailableTiers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { tierConfigurations, loading } = useTierConfigurations(countryName);
 
   useEffect(() => {
     if (isOpen) {
-      loadAvailableTiers();
       setSelectedTier(currentTier);
     }
   }, [isOpen, currentTier]);
 
-  const loadAvailableTiers = async () => {
-    try {
-      setLoading(true);
-      
-      // Get country ID
-      const { data: countryData } = await supabase
-        .from('master_countries')
-        .select('id')
-        .eq('name', countryName)
-        .single();
+  // Sort tiers by level order to ensure proper display order
+  const sortedTiers = [...tierConfigurations].sort((a, b) => a.level_order - b.level_order);
 
-      if (!countryData) return;
-
-      // Get tier configurations
-      const { data: tierConfigs } = await supabase
-        .from('master_tier_configurations')
-        .select(`
-          *,
-          master_pricing_tiers (
-            name,
-            level_order,
-            description
-          ),
-          master_analytics_access_types (
-            name
-          ),
-          master_support_types (
-            name,
-            response_time
-          ),
-          master_currencies (
-            code,
-            symbol
-          )
-        `)
-        .eq('country_id', countryData.id)
-        .eq('is_active', true)
-        .order('master_pricing_tiers(level_order)');
-
-      setAvailableTiers(tierConfigs || []);
-    } catch (error) {
-      console.error('Error loading tiers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load available tiers.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Find recommended tier (usually the middle one or Standard)
+  const recommendedTier = sortedTiers.find(tier => 
+    tier.pricing_tier_name.toLowerCase().includes('standard')
+  ) || sortedTiers[Math.floor(sortedTiers.length / 2)];
 
   const handleConfirm = () => {
     if (selectedTier && selectedTier !== currentTier) {
@@ -93,18 +101,6 @@ export const EditTierModal: React.FC<EditTierModalProps> = ({
     } else {
       onClose();
     }
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    // Handle null, undefined, or empty currency codes
-    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
-    
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: validCurrency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   return (
@@ -121,80 +117,113 @@ export const EditTierModal: React.FC<EditTierModalProps> = ({
         </DialogHeader>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+              <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
             ))}
+          </div>
+        ) : tierConfigurations.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No tier configurations available for {countryName}.</p>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableTiers.map((tierConfig) => (
-                <Card 
-                  key={tierConfig.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedTier === tierConfig.master_pricing_tiers?.name
-                      ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50'
-                      : 'hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedTier(tierConfig.master_pricing_tiers?.name)}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{tierConfig.master_pricing_tiers?.name}</span>
-                      {selectedTier === tierConfig.master_pricing_tiers?.name && (
-                        <CheckCircle className="h-5 w-5 text-blue-600" />
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      {tierConfig.master_pricing_tiers?.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Monthly Challenges:</span>
-                        <span className="font-medium">
-                          {tierConfig.monthly_challenge_limit || 'Unlimited'}
-                        </span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {sortedTiers.map((config) => {
+                const Icon = getTierIcon(config.pricing_tier_name);
+                const isSelected = selectedTier === config.pricing_tier_name;
+                const isRecommended = recommendedTier?.id === config.id;
+                const features = getTierFeatures(config);
+                
+                // Calculate estimated monthly cost
+                const estimatedMonthlyCost = config.monthly_challenge_limit 
+                  ? config.fixed_charge_per_challenge * config.monthly_challenge_limit
+                  : config.fixed_charge_per_challenge * 10; // Estimate 10 challenges for unlimited
+                
+                return (
+                  <div
+                    key={config.id}
+                    className={`relative rounded-lg border-2 p-6 cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 shadow-lg'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    } ${isRecommended ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}
+                    onClick={() => setSelectedTier(config.pricing_tier_name)}
+                  >
+                    {isRecommended && (
+                      <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
+                        Recommended
+                      </Badge>
+                    )}
+                    
+                    <div className="text-center">
+                      <Icon className={`h-8 w-8 mx-auto mb-3 ${getTierColor(config.pricing_tier_name)}`} />
+                      <h3 className="text-lg font-semibold mb-2">{config.pricing_tier_name}</h3>
+                      
+                      <div className="mb-4">
+                        <div className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(config.fixed_charge_per_challenge, config.currency_symbol, config.currency_code)}
+                          <span className="text-sm font-normal text-gray-500">/challenge</span>
+                        </div>
+                        {config.monthly_challenge_limit && (
+                          <div className="text-sm text-gray-500">
+                            Est. {formatCurrency(estimatedMonthlyCost, config.currency_symbol, config.currency_code)}/month
+                            <br />
+                            (if you use all {config.monthly_challenge_limit} challenges)
+                          </div>
+                        )}
+                        {!config.monthly_challenge_limit && (
+                          <div className="text-sm text-gray-500">
+                            Unlimited challenges
+                          </div>
+                        )}
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Fixed Charge:</span>
-                        <span className="font-medium">
-                          {formatCurrency(tierConfig.fixed_charge_per_challenge || 0, tierConfig.master_currencies?.code || 'USD')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Solutions per Challenge:</span>
-                        <span className="font-medium">
-                          {tierConfig.solutions_per_challenge || 1}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Overage Allowed:</span>
-                        <Badge variant={tierConfig.allows_overage ? "default" : "secondary"}>
-                          {tierConfig.allows_overage ? 'Yes' : 'No'}
-                        </Badge>
-                      </div>
+                      
+                      <ul className="text-sm space-y-2 mb-6">
+                        {features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-left">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      
+                      <Button
+                        variant={isSelected ? "default" : "outline"}
+                        className="w-full"
+                        onClick={() => setSelectedTier(config.pricing_tier_name)}
+                      >
+                        {isSelected ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Selected
+                          </>
+                        ) : (
+                          <>
+                            Select {config.pricing_tier_name}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    
-                    {tierConfig.master_analytics_access_types && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-gray-600">
-                          Analytics: {tierConfig.master_analytics_access_types.name}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {tierConfig.master_support_types && (
-                      <div className="text-sm text-gray-600">
-                        Support: {tierConfig.master_support_types.name} ({tierConfig.master_support_types.response_time})
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                );
+              })}
             </div>
+            
+            {selectedTier && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">
+                    {sortedTiers.find(t => t.pricing_tier_name === selectedTier)?.pricing_tier_name} selected
+                  </span>
+                </div>
+                <p className="text-sm text-green-700 mt-1">
+                  You can change your tier at any time from your account settings.
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button variant="outline" onClick={onClose}>
