@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle, User, Mail, Phone, Building2, Shield } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { OrganizationDataService, type SolutionSeekerData, type OrganizationSummary } from '@/services/OrganizationDataService';
+import { OrganizationDataService } from '@/services/OrganizationDataService';
+import { type SolutionSeekerData, type OrganizationSummary } from './types';
 
 interface AdminCreationDialogProps {
   isOpen: boolean;
@@ -45,6 +47,8 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
   const loadOrganizationSummary = async () => {
     try {
       setLoadingData(true);
+      console.log('📋 Loading organization summary for:', seeker.organization_id);
+      
       const summary = await OrganizationDataService.getSeekerForAdminCreation(seeker.organization_id);
       setOrgSummary(summary);
       
@@ -55,11 +59,13 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         admin_email: seeker.email || '',
         contact_number: seeker.phone_number || ''
       }));
+      
+      console.log('✅ Organization summary loaded successfully');
     } catch (error) {
-      console.error('Error loading organization summary:', error);
+      console.error('❌ Error loading organization summary:', error);
       toast({
         title: "Error",
-        description: "Failed to load organization details",
+        description: "Failed to load organization details. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -125,11 +131,12 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
 
     try {
       setLoading(true);
+      console.log('🔧 Starting admin creation process...');
       
       // Hash the password (in a real app, this would be done server-side)
       const hashedPassword = btoa(formData.password); // Simple base64 encoding for demo
       
-      await OrganizationDataService.createOrganizationAdmin({
+      const adminId = await OrganizationDataService.createOrganizationAdmin({
         organization_id: seeker.organization_id,
         admin_name: formData.admin_name,
         admin_email: formData.admin_email,
@@ -137,6 +144,8 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         admin_password_hash: hashedPassword,
         organization_name: seeker.organization_name
       });
+
+      console.log('✅ Administrator created successfully with ID:', adminId);
 
       toast({
         title: "✅ Success",
@@ -146,10 +155,10 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
       onAdminCreated();
       onClose();
     } catch (error) {
-      console.error('Error creating administrator:', error);
+      console.error('❌ Error creating administrator:', error);
       toast({
         title: "Error",
-        description: "Failed to create administrator account",
+        description: error instanceof Error ? error.message : "Failed to create administrator account",
         variant: "destructive"
       });
     } finally {

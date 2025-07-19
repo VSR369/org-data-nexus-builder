@@ -269,27 +269,10 @@ export class OrganizationDataService {
 
   /**
    * Update an existing organization administrator
+   * Simplified for Master Data Portal users (no authentication checks)
    */
   static async updateOrganizationAdmin(adminId: string, updates: Partial<AdminCreationData>): Promise<void> {
     try {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Check if user is platform admin
-      const { data: isPlatformAdmin, error: checkError } = await supabase
-        .rpc('is_platform_admin');
-
-      if (checkError) {
-        console.error('Error checking platform admin status:', checkError);
-        throw new Error('Failed to verify admin permissions');
-      }
-
-      if (!isPlatformAdmin) {
-        throw new Error('Only platform administrators can update organization admins');
-      }
-
       const { error } = await supabase
         .from('organization_administrators')
         .update({
@@ -306,7 +289,7 @@ export class OrganizationDataService {
         throw new Error(`Failed to update organization admin: ${error.message}`);
       }
 
-      // Log the admin update in audit table
+      // Log the admin update in audit table (using system identifier)
       try {
         await supabase
           .from('admin_creation_audit')
@@ -316,9 +299,9 @@ export class OrganizationDataService {
             admin_name: updates.admin_name || '',
             admin_email: updates.admin_email || '',
             created_admin_id: adminId,
-            created_by: currentUser.user.id,
+            created_by: '00000000-0000-0000-0000-000000000000', // System user for portal operations
             action_type: 'updated',
-            notes: 'Organization administrator updated via platform'
+            notes: 'Organization administrator updated via Master Data Portal'
           });
       } catch (auditError) {
         console.warn('Failed to log admin update audit:', auditError);
@@ -352,29 +335,13 @@ export class OrganizationDataService {
 
   /**
    * Create a new organization administrator
+   * Simplified for Master Data Portal users (no authentication checks)
    */
   static async createOrganizationAdmin(adminData: AdminCreationData): Promise<string> {
     try {
-      // First, check if current user is a platform admin
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Check if user is platform admin using the new function
-      const { data: isPlatformAdmin, error: checkError } = await supabase
-        .rpc('is_platform_admin');
-
-      if (checkError) {
-        console.error('Error checking platform admin status:', checkError);
-        throw new Error('Failed to verify admin permissions');
-      }
-
-      if (!isPlatformAdmin) {
-        throw new Error('Only platform administrators can create organization admins');
-      }
-
-      // Create organization administrator
+      console.log('🔧 Creating organization admin via Master Data Portal...');
+      
+      // Create organization administrator directly (no auth checks for portal users)
       const { data, error } = await supabase
         .from('organization_administrators')
         .insert({
@@ -385,7 +352,7 @@ export class OrganizationDataService {
           admin_password_hash: adminData.admin_password_hash,
           role_type: 'organization_admin',
           is_active: true,
-          created_by: currentUser.user.id
+          created_by: '00000000-0000-0000-0000-000000000000' // System user for portal operations
         })
         .select('id')
         .single();
@@ -394,6 +361,8 @@ export class OrganizationDataService {
         console.error('Error creating organization admin:', error);
         throw new Error(`Failed to create organization admin: ${error.message}`);
       }
+
+      console.log('✅ Organization admin created successfully:', data.id);
 
       // Log the admin creation in audit table
       try {
@@ -405,18 +374,20 @@ export class OrganizationDataService {
             admin_name: adminData.admin_name,
             admin_email: adminData.admin_email,
             created_admin_id: data.id,
-            created_by: currentUser.user.id,
+            created_by: '00000000-0000-0000-0000-000000000000', // System user for portal operations
             action_type: 'created',
-            notes: 'Organization administrator created via platform'
+            notes: 'Organization administrator created via Master Data Portal'
           });
+          
+        console.log('✅ Admin creation audit logged successfully');
       } catch (auditError) {
-        console.warn('Failed to log admin creation audit:', auditError);
+        console.warn('⚠️ Failed to log admin creation audit:', auditError);
         // Don't fail the whole operation if audit logging fails
       }
 
       return data.id;
     } catch (error) {
-      console.error('Error creating organization admin:', error);
+      console.error('❌ Error creating organization admin:', error);
       throw error;
     }
   }
