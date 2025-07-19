@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -77,71 +76,21 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = () => {
-    if (!formData.admin_name.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Administrator name is required",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formData.admin_email.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Administrator email is required",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formData.password.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Password is required",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.password !== formData.confirm_password) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.password.length < 8) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 8 characters long",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
+  // NO VALIDATION - Just save whatever is provided
   const handleCreateAdmin = async () => {
-    if (!validateForm()) return;
-
     try {
       setLoading(true);
-      console.log('🔧 Starting admin creation process...');
+      console.log('🔧 Starting admin creation process (no validation)...');
       
-      // Hash the password (in a real app, this would be done server-side)
-      const hashedPassword = btoa(formData.password); // Simple base64 encoding for demo
+      // Minimal password processing - just store as-is for testing
+      const passwordToStore = formData.password || 'defaultpass123';
       
       const adminId = await OrganizationDataService.createOrganizationAdmin({
         organization_id: seeker.organization_id,
-        admin_name: formData.admin_name,
-        admin_email: formData.admin_email,
+        admin_name: formData.admin_name || 'Test Admin',
+        admin_email: formData.admin_email || 'test@example.com',
         contact_number: formData.contact_number || undefined,
-        admin_password_hash: hashedPassword,
+        admin_password_hash: passwordToStore, // Store plain text for testing
         organization_name: seeker.organization_name
       });
 
@@ -149,7 +98,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
 
       toast({
         title: "✅ Success",
-        description: `Administrator account created for ${formData.admin_name}`,
+        description: `Administrator account created for ${formData.admin_name || 'Test Admin'}`,
       });
 
       onAdminCreated();
@@ -185,7 +134,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Create Organization Administrator
+            Create Organization Administrator (No Validation Mode)
           </DialogTitle>
         </DialogHeader>
 
@@ -212,15 +161,26 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
             </div>
           </div>
 
+          {/* No Validation Notice */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <span className="font-semibold text-yellow-800">No Validation Mode</span>
+            </div>
+            <p className="text-sm text-yellow-700">
+              All validation checks are disabled. Any data will be saved directly to test functionality.
+            </p>
+          </div>
+
           {/* Existing Admin Check */}
-          {orgSummary?.existing_admin ? (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          {orgSummary?.existing_admin && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <span className="font-semibold text-destructive">Administrator Already Exists</span>
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <span className="font-semibold text-blue-800">Administrator Already Exists</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                This organization already has an active administrator account.
+              <p className="text-sm text-blue-700 mb-3">
+                This organization already has an active administrator account. Creating another for testing.
               </p>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -233,105 +193,88 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="font-semibold text-green-800">Ready to Create Administrator</span>
+          )}
+
+          {/* Admin Creation Form - NO VALIDATION */}
+          <Separator />
+          
+          <div className="space-y-4">
+            <h3 className="font-semibold">Administrator Account Details (Optional)</h3>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="admin_name">
+                  <User className="h-4 w-4 inline mr-1" />
+                  Administrator Name (Optional)
+                </Label>
+                <Input
+                  id="admin_name"
+                  value={formData.admin_name}
+                  onChange={(e) => handleInputChange('admin_name', e.target.value)}
+                  placeholder="Enter administrator name or leave empty"
+                />
               </div>
-              <p className="text-sm text-green-700">
-                No existing administrator found. You can proceed to create a new administrator account.
-              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin_email">
+                  <Mail className="h-4 w-4 inline mr-1" />
+                  Email Address (Optional)
+                </Label>
+                <Input
+                  id="admin_email"
+                  value={formData.admin_email}
+                  onChange={(e) => handleInputChange('admin_email', e.target.value)}
+                  placeholder="Enter email address or leave empty"
+                />
+              </div>
             </div>
-          )}
 
-          {/* Admin Creation Form */}
-          {orgSummary?.can_create_admin && (
-            <>
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="font-semibold">Administrator Account Details</h3>
-                
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin_name">
-                      <User className="h-4 w-4 inline mr-1" />
-                      Administrator Name
-                    </Label>
-                    <Input
-                      id="admin_name"
-                      value={formData.admin_name}
-                      onChange={(e) => handleInputChange('admin_name', e.target.value)}
-                      placeholder="Enter administrator name"
-                    />
-                  </div>
+            <div className="space-y-2">
+              <Label htmlFor="contact_number">
+                <Phone className="h-4 w-4 inline mr-1" />
+                Contact Number (Optional)
+              </Label>
+              <Input
+                id="contact_number"
+                value={formData.contact_number}
+                onChange={(e) => handleInputChange('contact_number', e.target.value)}
+                placeholder="Enter contact number or leave empty"
+              />
+            </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="admin_email">
-                      <Mail className="h-4 w-4 inline mr-1" />
-                      Email Address
-                    </Label>
-                    <Input
-                      id="admin_email"
-                      type="email"
-                      value={formData.admin_email}
-                      onChange={(e) => handleInputChange('admin_email', e.target.value)}
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_number">
-                    <Phone className="h-4 w-4 inline mr-1" />
-                    Contact Number (Optional)
-                  </Label>
-                  <Input
-                    id="contact_number"
-                    value={formData.contact_number}
-                    onChange={(e) => handleInputChange('contact_number', e.target.value)}
-                    placeholder="Enter contact number"
-                  />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      placeholder="Enter password"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm_password">Confirm Password</Label>
-                    <Input
-                      id="confirm_password"
-                      type="password"
-                      value={formData.confirm_password}
-                      onChange={(e) => handleInputChange('confirm_password', e.target.value)}
-                      placeholder="Confirm password"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    placeholder="Additional notes about this administrator"
-                    rows={3}
-                  />
-                </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password (Optional)</Label>
+                <Input
+                  id="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  placeholder="Enter password or leave empty"
+                />
               </div>
-            </>
-          )}
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm_password">Confirm Password (Optional)</Label>
+                <Input
+                  id="confirm_password"
+                  value={formData.confirm_password}
+                  onChange={(e) => handleInputChange('confirm_password', e.target.value)}
+                  placeholder="Confirm password or leave empty"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Additional notes about this administrator"
+                rows={3}
+              />
+            </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4">
@@ -339,21 +282,20 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
               Cancel
             </Button>
             
-            {orgSummary?.can_create_admin && (
-              <Button 
-                onClick={handleCreateAdmin} 
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
-                  </>
-                ) : (
-                  'Create Administrator'
-                )}
-              </Button>
-            )}
+            <Button 
+              onClick={handleCreateAdmin} 
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Administrator (No Validation)'
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>
