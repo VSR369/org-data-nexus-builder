@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { GlobalEngagementModelService } from '@/services/globalEngagementModelService';
 import { MembershipDataService } from '@/services/MembershipDataService';
+import { DataSynchronizationService } from '@/services/DataSynchronizationService';
 
 interface EngagementModelEditModalProps {
   isOpen: boolean;
@@ -38,10 +39,11 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   const [complexityPricing, setComplexityPricing] = useState<any>({});
   const [validationResult, setValidationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [profileContext, setProfileContext] = useState<any>(null);
 
   useEffect(() => {
     if (isOpen) {
-      loadAvailableModels();
+      initializeModal();
       setSelectedModel(currentModel);
     }
   }, [isOpen, currentModel, selectedTier]);
@@ -51,6 +53,19 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       validateModelSwitch();
     }
   }, [selectedModel, currentModel]);
+
+  const initializeModal = async () => {
+    try {
+      // Get normalized profile context
+      const normalizedContext = await DataSynchronizationService.getNormalizedProfileContext(profile);
+      setProfileContext(normalizedContext);
+      console.log('🔄 Modal initialized with profile context:', normalizedContext);
+      
+      await loadAvailableModels();
+    } catch (error) {
+      console.error('❌ Error initializing modal:', error);
+    }
+  };
 
   const loadAvailableModels = async () => {
     try {
@@ -78,6 +93,8 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
         console.log('❌ No tier found with name:', selectedTier);
         return;
       }
+
+      console.log('✅ Found tier:', tierData);
 
       // Get available models for this tier
       const { data: tierModelAccess, error: accessError } = await supabase
@@ -117,11 +134,16 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
   const loadModelDetails = async (models: any[]) => {
     try {
+      if (!profileContext) {
+        console.error('❌ No profile context available for model details');
+        return;
+      }
+
       const detailsPromises = models.map(async (modelAccess) => {
         const modelName = modelAccess.engagement_model?.name;
         if (!modelName) return null;
         
-        const details = await MembershipDataService.getEngagementModelDetails(modelName, profile?.country);
+        const details = await MembershipDataService.getEngagementModelDetails(modelName, profileContext.country);
         return {
           ...modelAccess,
           detailed_info: details
@@ -130,6 +152,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
       const detailedModels = await Promise.all(detailsPromises);
       setModelDetails(detailedModels.filter(Boolean));
+      console.log('✅ Loaded model details with profile context');
     } catch (error) {
       console.error('❌ Error loading model details:', error);
     }
@@ -137,24 +160,28 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
   const loadModelPricingWithComplexity = async () => {
     try {
-      if (!profile) return;
+      if (!profileContext) {
+        console.error('❌ No profile context for pricing');
+        return;
+      }
 
-      // Load standard pricing
+      // Load standard pricing using normalized profile context
       const { data: pricingData, error } = await supabase
         .rpc('get_pricing_configuration', {
-          p_country_name: profile.country,
-          p_organization_type: profile.organization_type,
-          p_entity_type: profile.entity_type,
+          p_country_name: profileContext.country,
+          p_organization_type: profileContext.organization_type,
+          p_entity_type: profileContext.entity_type,
           p_engagement_model: selectedModel || currentModel || 'Market Place',
           p_membership_status: membershipStatus === 'active' ? 'Active' : 'Not Active'
         });
 
       if (error) {
-        console.error('Error loading pricing:', error);
+        console.error('❌ Error loading pricing:', error);
         return;
       }
 
       setModelPricing(pricingData || []);
+      console.log('✅ Loaded pricing with normalized context');
 
       // Load complexity pricing for marketplace models
       const complexityData = {};
@@ -162,9 +189,9 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       
       for (const model of marketplaceModels) {
         const complexityPricingData = await MembershipDataService.getMarketplacePricingWithComplexity(
-          profile.country,
-          profile.organization_type,
-          profile.entity_type,
+          profileContext.country,
+          profileContext.organization_type,
+          profileContext.entity_type,
           model,
           membershipStatus === 'active' ? 'Active' : 'Not Active'
         );
@@ -173,7 +200,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       
       setComplexityPricing(complexityData);
     } catch (error) {
-      console.error('Error loading model pricing:', error);
+      console.error('❌ Error loading model pricing:', error);
     }
   };
 
@@ -203,8 +230,9 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       );
 
       setValidationResult(validation);
+      console.log('✅ Model switch validation completed:', validation);
     } catch (error) {
-      console.error('Error validating model switch:', error);
+      console.error('❌ Error validating model switch:', error);
     }
   };
 
@@ -223,6 +251,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       return;
     }
 
+    console.log('🔄 Confirming model change:', currentModel, '->', selectedModel);
     onModelChange(selectedModel);
     onClose();
   };
@@ -248,6 +277,15 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   const isMarketplaceModel = (modelName: string) => {
     const marketplaceModels = ['Market Place', 'Market Place & Aggregator', 'Aggregator'];
     return marketplaceModels.includes(modelName);
+  };
+
+  // Case-insensitive model comparison
+  const isModelSelected = (modelName: string) => {
+    return DataSynchronizationService.normalizeName(modelName) === DataSynchronizationService.normalizeName(selectedModel || '');
+  };
+
+  const isModelCurrent = (modelName: string) => {
+    return DataSynchronizationService.normalizeName(modelName) === DataSynchronizationService.normalizeName(currentModel || '');
   };
 
   const renderComplexityPricing = (modelName: string) => {
@@ -381,8 +419,8 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                   const modelAccess = modelDetail;
                   const modelName = modelAccess.engagement_model?.name;
                   const details = modelDetail.detailed_info;
-                  const isSelected = selectedModel === modelName;
-                  const isCurrent = currentModel === modelName;
+                  const isSelected = isModelSelected(modelName);
+                  const isCurrent = isModelCurrent(modelName);
                   
                   return (
                     <Card 
@@ -552,7 +590,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                 onClick={handleConfirm}
                 disabled={
                   !selectedModel || 
-                  selectedModel === currentModel || 
+                  isModelCurrent(selectedModel) || 
                   (validationResult && !validationResult.allowed)
                 }
               >

@@ -4,9 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Settings, X, Zap, Users, Clock, Headphones, BarChart3 } from 'lucide-react';
-import { MembershipDataService } from '@/services/MembershipDataService';
+import { CheckCircle, Settings, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { DataSynchronizationService } from '@/services/DataSynchronizationService';
 
 interface TierEditModalProps {
   isOpen: boolean;
@@ -24,30 +25,66 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
   onTierChange
 }) => {
   const [selectedTier, setSelectedTier] = useState<string | null>(currentTier);
-  const [tierConfigurations, setTierConfigurations] = useState<any[]>([]);
+  const [availableTiers, setAvailableTiers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      loadTierConfigurations();
+      loadAvailableTiers();
       setSelectedTier(currentTier);
     }
-  }, [isOpen, currentTier, countryName]);
+  }, [isOpen, currentTier]);
 
-  const loadTierConfigurations = async () => {
+  const loadAvailableTiers = async () => {
     try {
       setLoading(true);
-      console.log('🏷️ Loading tier configurations for country:', countryName);
+      console.log('🏷️ Loading available tiers for country:', countryName);
       
-      const tierConfigs = await MembershipDataService.getTierConfigurationsByCountry(countryName);
-      console.log('✅ Loaded tier configurations:', tierConfigs);
-      
-      setTierConfigurations(tierConfigs);
+      // Get country ID using case-insensitive matching
+      const { data: countryData } = await supabase
+        .from('master_countries')
+        .select('id')
+        .ilike('name', countryName)
+        .single();
+
+      if (!countryData) {
+        console.error('❌ Country not found:', countryName);
+        return;
+      }
+
+      // Get tier configurations with case-insensitive ordering
+      const { data: tierConfigs } = await supabase
+        .from('master_tier_configurations')
+        .select(`
+          *,
+          master_pricing_tiers (
+            name,
+            level_order,
+            description
+          ),
+          master_analytics_access_types (
+            name
+          ),
+          master_support_types (
+            name,
+            response_time
+          ),
+          master_currencies (
+            code,
+            symbol
+          )
+        `)
+        .eq('country_id', countryData.id)
+        .eq('is_active', true)
+        .order('master_pricing_tiers(level_order)');
+
+      console.log('✅ Loaded tier configurations:', tierConfigs?.length || 0);
+      setAvailableTiers(tierConfigs || []);
     } catch (error) {
-      console.error('❌ Error loading tier configurations:', error);
+      console.error('❌ Error loading tiers:', error);
       toast({
         title: "Error",
-        description: "Failed to load tier configurations.",
+        description: "Failed to load available tiers.",
         variant: "destructive"
       });
     } finally {
@@ -57,6 +94,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
 
   const handleConfirm = () => {
     if (selectedTier && selectedTier !== currentTier) {
+      console.log('🔄 Confirming tier change:', currentTier, '->', selectedTier);
       onTierChange(selectedTier);
       onClose();
     } else {
@@ -64,20 +102,30 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
     }
   };
 
-  const getTierIcon = (tierName: string) => {
-    const name = tierName?.toLowerCase() || '';
-    if (name.includes('premium') || name.includes('enterprise')) return <Zap className="h-5 w-5 text-purple-600" />;
-    if (name.includes('standard') || name.includes('professional')) return <Users className="h-5 w-5 text-blue-600" />;
-    return <Settings className="h-5 w-5 text-green-600" />;
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    // Handle null, undefined, or empty currency codes
+    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
+    
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: validCurrency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
-  const normalizeForComparison = (name: string) => {
-    return name?.toLowerCase().trim() || '';
+  // Case-insensitive tier comparison
+  const isTierSelected = (tierName: string) => {
+    return DataSynchronizationService.normalizeName(tierName) === DataSynchronizationService.normalizeName(selectedTier || '');
+  };
+
+  const isTierCurrent = (tierName: string) => {
+    return DataSynchronizationService.normalizeName(tierName) === DataSynchronizationService.normalizeName(currentTier || '');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-blue-600" />
@@ -91,16 +139,16 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
+              <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tierConfigurations.map((tierConfig) => {
+              {availableTiers.map((tierConfig) => {
                 const tierName = tierConfig.master_pricing_tiers?.name;
-                const isSelected = normalizeForComparison(selectedTier) === normalizeForComparison(tierName);
-                const isCurrent = normalizeForComparison(currentTier) === normalizeForComparison(tierName);
+                const isSelected = isTierSelected(tierName);
+                const isCurrent = isTierCurrent(tierName);
                 
                 return (
                   <Card 
@@ -112,12 +160,9 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                     }`}
                     onClick={() => setSelectedTier(tierName)}
                   >
-                    <CardHeader className="pb-3">
+                    <CardHeader>
                       <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getTierIcon(tierName)}
-                          <span>{tierName}</span>
-                        </div>
+                        <span>{tierName}</span>
                         <div className="flex items-center gap-2">
                           {isCurrent && (
                             <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
@@ -129,102 +174,49 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                           )}
                         </div>
                       </CardTitle>
-                      <CardDescription className="text-sm">
-                        {tierConfig.master_pricing_tiers?.description || `Level ${tierConfig.master_pricing_tiers?.level_order} tier`}
+                      <CardDescription>
+                        {tierConfig.master_pricing_tiers?.description}
                       </CardDescription>
                     </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      {/* Challenge Limits */}
-                      <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <Zap className="h-4 w-4 text-orange-600" />
-                          Challenge Limits
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-gray-600">Monthly:</span>
-                            <div className="font-medium">
-                              {tierConfig.monthly_challenge_limit || 'Unlimited'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">Solutions:</span>
-                            <div className="font-medium">
-                              {tierConfig.solutions_per_challenge || 1} per challenge
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Pricing */}
-                      <div className="bg-green-50 p-3 rounded-lg space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-green-800">
-                          <span>💰</span>
-                          Pricing
-                        </div>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Fixed Charge:</span>
-                            <span className="font-medium">
-                              {MembershipDataService.formatCurrency(
-                                tierConfig.fixed_charge_per_challenge || 0, 
-                                tierConfig.master_currencies?.code || 'USD',
-                                tierConfig.master_currencies?.symbol
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Overage:</span>
-                            <Badge variant={tierConfig.allows_overage ? "default" : "secondary"} className="text-xs">
-                              {tierConfig.allows_overage ? 'Allowed' : 'Not Allowed'}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Support & Analytics */}
+                    <CardContent className="space-y-3">
                       <div className="space-y-2">
-                        {tierConfig.master_support_types && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Headphones className="h-3 w-3 text-blue-600" />
-                            <span className="text-gray-600">Support:</span>
-                            <Badge variant="outline" className="text-xs">
-                              {tierConfig.master_support_types.name}
-                            </Badge>
-                          </div>
-                        )}
-                        
-                        {tierConfig.master_analytics_access_types && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <BarChart3 className="h-3 w-3 text-purple-600" />
-                            <span className="text-gray-600">Analytics:</span>
-                            <Badge variant="outline" className="text-xs">
-                              {tierConfig.master_analytics_access_types.name}
-                            </Badge>
-                          </div>
-                        )}
-                        
-                        {tierConfig.master_support_types?.response_time && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Clock className="h-3 w-3 text-orange-600" />
-                            <span className="text-gray-600">Response:</span>
-                            <span className="font-medium">
-                              {tierConfig.master_support_types.response_time}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex justify-between text-sm">
+                          <span>Monthly Challenges:</span>
+                          <span className="font-medium">
+                            {tierConfig.monthly_challenge_limit || 'Unlimited'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Fixed Charge:</span>
+                          <span className="font-medium">
+                            {formatCurrency(tierConfig.fixed_charge_per_challenge || 0, tierConfig.master_currencies?.code || 'USD')}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Solutions per Challenge:</span>
+                          <span className="font-medium">
+                            {tierConfig.solutions_per_challenge || 1}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Overage Allowed:</span>
+                          <Badge variant={tierConfig.allows_overage ? "default" : "secondary"}>
+                            {tierConfig.allows_overage ? 'Yes' : 'No'}
+                          </Badge>
+                        </div>
                       </div>
-
-                      {/* Workflow Templates */}
-                      {tierConfig.master_workflow_templates && (
-                        <div className="bg-purple-50 p-2 rounded text-xs">
-                          <div className="font-medium text-purple-800">
-                            {tierConfig.master_workflow_templates.name}
-                          </div>
-                          <div className="text-purple-600">
-                            {tierConfig.master_workflow_templates.template_count} templates
-                          </div>
+                      
+                      {tierConfig.master_analytics_access_types && (
+                        <div className="pt-2 border-t">
+                          <p className="text-sm text-gray-600">
+                            Analytics: {tierConfig.master_analytics_access_types.name}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {tierConfig.master_support_types && (
+                        <div className="text-sm text-gray-600">
+                          Support: {tierConfig.master_support_types.name} ({tierConfig.master_support_types.response_time})
                         </div>
                       )}
                     </CardContent>
@@ -233,19 +225,6 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
               })}
             </div>
 
-            {tierConfigurations.length === 0 && (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Tiers Available</h3>
-                <p className="text-gray-600">
-                  No pricing tiers are configured for {countryName}.
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Please contact support to configure pricing tiers for your location.
-                </p>
-              </div>
-            )}
-
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button variant="outline" onClick={onClose}>
                 <X className="h-4 w-4 mr-2" />
@@ -253,7 +232,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
               </Button>
               <Button 
                 onClick={handleConfirm}
-                disabled={!selectedTier || selectedTier === currentTier}
+                disabled={!selectedTier || isTierCurrent(selectedTier)}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Confirm Change

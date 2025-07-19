@@ -16,6 +16,7 @@ import { MembershipDetailsModal } from './MembershipDetailsModal';
 import { PreviewConfirmationCard } from './PreviewConfirmationCard';
 import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
+import { DataSynchronizationService } from '@/services/DataSynchronizationService';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -44,6 +45,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   const [engagementModelDetails, setEngagementModelDetails] = useState<any>(null);
   const [activationRecord, setActivationRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [profileContext, setProfileContext] = useState<any>(null);
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
 
   // Enhanced edit modal states
   const [showTierEditModal, setShowTierEditModal] = useState(false);
@@ -55,94 +58,78 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   }, [profile]);
 
-  const validateRequiredFields = (additionalData: any = {}) => {
-    console.log('🔍 Validating required fields with data:', additionalData);
-    
-    const finalUserId = userId;
-    const finalMembershipStatus = additionalData.membership_status || membershipStatus || 'inactive';
-    
-    if (!finalUserId) {
-      throw new Error('User ID is required but not provided');
-    }
-
-    if (!finalMembershipStatus) {
-      throw new Error('Membership status is required but not provided');
-    }
-
-    console.log('✅ Validation passed:', {
-      userId: finalUserId,
-      membershipStatus: finalMembershipStatus
-    });
-
-    return {
-      finalUserId,
-      finalMembershipStatus
-    };
-  };
-
   const loadWorkflowData = async () => {
     try {
       setLoading(true);
       console.log('📊 Loading workflow data for user:', userId);
       
-      // Check existing workflow status
-      const { data: existingActivation } = await supabase
-        .from('engagement_activations')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // Get normalized profile context first
+      const normalizedContext = await DataSynchronizationService.getNormalizedProfileContext(profile);
+      setProfileContext(normalizedContext);
+      console.log('🔄 Normalized profile context:', normalizedContext);
 
-      console.log('📋 Existing activation data:', existingActivation);
-      setActivationRecord(existingActivation);
-
-      if (existingActivation) {
-        const dbStep = (existingActivation.workflow_step as WorkflowStep) || 'membership_decision';
-        const dbMembershipStatus = existingActivation.membership_status;
-        const dbPaymentStatus = existingActivation.payment_simulation_status;
+      // Synchronize saved selections with current profile context
+      const syncResult = await DataSynchronizationService.synchronizeSelections(userId, normalizedContext);
+      
+      if (syncResult) {
+        const { savedSelections, validation } = syncResult;
+        setActivationRecord(savedSelections);
         
-        console.log('🔄 Setting workflow state from database:', {
-          step: dbStep,
-          membershipStatus: dbMembershipStatus,
-          paymentStatus: dbPaymentStatus,
-          tier: existingActivation.pricing_tier,
-          engagementModel: existingActivation.engagement_model
-        });
-        
-        setCurrentStep(dbStep);
-        setMembershipStatus(dbMembershipStatus === 'active' ? 'active' : 'inactive');
-        setPaymentStatus((dbPaymentStatus as PaymentStatus) || 'pending');
-        setSelectedTier(existingActivation.pricing_tier);
-        setSelectedEngagementModel(existingActivation.engagement_model);
-        
-        // Show tier selection if a tier has been selected or if on tier_selection step
-        setShowTierSelection(!!existingActivation.pricing_tier || dbStep === 'tier_selection');
-
-        // Load tier configuration if tier is selected
-        if (existingActivation.pricing_tier) {
-          await loadTierConfiguration(existingActivation.pricing_tier);
+        if (!validation.isValid) {
+          setValidationIssues(validation.issues);
+          console.warn('⚠️ Validation issues found:', validation.issues);
         }
 
-        // Load engagement model details if model is selected
-        if (existingActivation.engagement_model) {
-          await loadEngagementModelDetails(existingActivation.engagement_model);
-        }
+        // Set workflow state from synchronized data
+        if (savedSelections) {
+          const dbStep = (savedSelections.workflow_step as WorkflowStep) || 'membership_decision';
+          const dbMembershipStatus = savedSelections.membership_status;
+          const dbPaymentStatus = savedSelections.payment_simulation_status;
+          
+          console.log('🔄 Setting workflow state from synchronized data:', {
+            step: dbStep,
+            membershipStatus: dbMembershipStatus,
+            paymentStatus: dbPaymentStatus,
+            tier: savedSelections.pricing_tier,
+            engagementModel: savedSelections.engagement_model
+          });
+          
+          setCurrentStep(dbStep);
+          setMembershipStatus(dbMembershipStatus === 'active' ? 'active' : 'inactive');
+          setPaymentStatus((dbPaymentStatus as PaymentStatus) || 'pending');
+          setSelectedTier(savedSelections.pricing_tier);
+          setSelectedEngagementModel(savedSelections.engagement_model);
+          
+          // Show tier selection if appropriate
+          setShowTierSelection(!!savedSelections.pricing_tier || dbStep === 'tier_selection');
 
-        // Load engagement model pricing if both tier and model are selected
-        if (existingActivation.pricing_tier && existingActivation.engagement_model) {
-          await loadEngagementModelPricing(existingActivation.pricing_tier, existingActivation.engagement_model);
+          // Load related data if selections exist
+          if (savedSelections.pricing_tier) {
+            await loadTierConfiguration(savedSelections.pricing_tier);
+          }
+
+          if (savedSelections.engagement_model) {
+            await loadEngagementModelDetails(savedSelections.engagement_model);
+          }
+
+          if (savedSelections.pricing_tier && savedSelections.engagement_model) {
+            await loadEngagementModelPricing(savedSelections.pricing_tier, savedSelections.engagement_model);
+          }
         }
       }
 
-      // Load membership fees
-      const { data: membershipFeesData } = await supabase
-        .from('master_seeker_membership_fees')
-        .select('*')
-        .eq('country', profile.country)
-        .eq('organization_type', profile.organization_type)
-        .eq('entity_type', profile.entity_type);
+      // Load membership fees using normalized context
+      if (normalizedContext) {
+        const { data: membershipFeesData } = await supabase
+          .from('master_seeker_membership_fees')
+          .select('*')
+          .eq('country', normalizedContext.country)
+          .eq('organization_type', normalizedContext.organization_type)
+          .eq('entity_type', normalizedContext.entity_type);
 
-      setMembershipFees(membershipFeesData || []);
-      console.log('💰 Loaded membership fees:', membershipFeesData?.length || 0);
+        setMembershipFees(membershipFeesData || []);
+        console.log('💰 Loaded membership fees with normalized context:', membershipFeesData?.length || 0);
+      }
       
     } catch (error) {
       console.error('❌ Error loading workflow data:', error);
@@ -160,23 +147,28 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     try {
       console.log('🏷️ Loading tier configuration for:', tierName);
       
+      if (!profileContext) {
+        console.error('❌ No profile context available');
+        return;
+      }
+
       // Get country ID first
       const { data: countryData } = await supabase
         .from('master_countries')
         .select('id')
-        .eq('name', profile.country)
+        .eq('name', profileContext.country)
         .single();
 
       if (!countryData) {
-        console.error('❌ Country not found:', profile.country);
+        console.error('❌ Country not found:', profileContext.country);
         return;
       }
 
-      // Get pricing tier ID
+      // Get pricing tier ID using case-insensitive matching
       const { data: tierData } = await supabase
         .from('master_pricing_tiers')
         .select('id')
-        .eq('name', tierName)
+        .ilike('name', tierName)
         .single();
 
       if (!tierData) {
@@ -242,7 +234,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       const { data: modelDetails } = await supabase
         .from('master_engagement_models')
         .select('*')
-        .eq('name', modelName)
+        .ilike('name', modelName)
         .single();
 
       if (modelDetails) {
@@ -258,12 +250,17 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     try {
       console.log('💰 Loading engagement model pricing for:', { tier, model });
       
-      // Use the pricing configuration function to get real pricing data
+      if (!profileContext) {
+        console.error('❌ No profile context for pricing');
+        return;
+      }
+      
+      // Use the pricing configuration function with normalized context
       const { data: pricingData, error } = await supabase
         .rpc('get_pricing_configuration', {
-          p_country_name: profile.country,
-          p_organization_type: profile.organization_type,
-          p_entity_type: profile.entity_type,
+          p_country_name: profileContext.country,
+          p_organization_type: profileContext.organization_type,
+          p_entity_type: profileContext.entity_type,
           p_engagement_model: model,
           p_membership_status: membershipStatus === 'active' ? 'Active' : 'Not Active'
         });
@@ -280,6 +277,31 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
+  const validateRequiredFields = (additionalData: any = {}) => {
+    console.log('🔍 Validating required fields with data:', additionalData);
+    
+    const finalUserId = userId;
+    const finalMembershipStatus = additionalData.membership_status || membershipStatus || 'inactive';
+    
+    if (!finalUserId) {
+      throw new Error('User ID is required but not provided');
+    }
+
+    if (!finalMembershipStatus) {
+      throw new Error('Membership status is required but not provided');
+    }
+
+    console.log('✅ Validation passed:', {
+      userId: finalUserId,
+      membershipStatus: finalMembershipStatus
+    });
+
+    return {
+      finalUserId,
+      finalMembershipStatus
+    };
+  };
+
   const updateWorkflowStep = async (step: WorkflowStep, additionalData: any = {}) => {
     try {
       console.log('🔄 Updating workflow step to:', step, 'with data:', additionalData);
@@ -291,12 +313,13 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       if (!finalUserId) {
         throw new Error('User ID is required for database operations');
       }
-      
+
+      // Include normalized profile context in the update
       const updateData = {
         user_id: finalUserId,
         workflow_step: step,
-        country: profile?.country || 'Unknown',
-        organization_type: profile?.organization_type || 'Unknown',
+        country: profileContext?.country || 'Unknown',
+        organization_type: profileContext?.organization_type || 'Unknown',
         membership_status: finalMembershipStatus,
         ...additionalData,
         updated_at: new Date().toISOString()
@@ -345,15 +368,15 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  // New handlers for edit functionality using enhanced modals
+  // Enhanced handlers that use synchronized data
   const handleTierChange = async (newTier: string) => {
     try {
       setIsProcessing(true);
       console.log('🏷️ Handling tier change from', selectedTier, 'to', newTier);
 
-      // Update tier in database
+      // Update tier in database with normalized name
       await updateWorkflowStep(currentStep, {
-        pricing_tier: newTier.toLowerCase(),
+        pricing_tier: newTier,
         tier_selected_at: new Date().toISOString()
       });
 
@@ -367,9 +390,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       if (selectedEngagementModel) {
         await loadEngagementModelPricing(newTier, selectedEngagementModel);
       }
-
-      // Reload workflow data to ensure consistency
-      await loadWorkflowData();
 
       toast({
         title: "Tier Updated",
@@ -408,9 +428,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       if (selectedTier) {
         await loadEngagementModelPricing(selectedTier, newModel);
       }
-
-      // Reload workflow data to ensure consistency
-      await loadWorkflowData();
 
       toast({
         title: "Engagement Model Updated",
@@ -522,7 +539,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       setSelectedTier(tier);
       await loadTierConfiguration(tier);
       await updateWorkflowStep('engagement_model', { 
-        pricing_tier: tier.toLowerCase(),
+        pricing_tier: tier,
         tier_selected_at: new Date().toISOString()
       });
     } catch (error) {
@@ -581,6 +598,38 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       setIsProcessing(false);
     }
   };
+
+  // Show validation issues if any
+  if (validationIssues.length > 0) {
+    return (
+      <div className="w-full space-y-4">
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-800">
+              <AlertCircle className="h-5 w-5" />
+              Data Synchronization Issues
+            </CardTitle>
+            <CardDescription className="text-amber-700">
+              Your saved selections have some issues that need to be resolved.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc list-inside space-y-1 mb-4">
+              {validationIssues.map((issue, index) => (
+                <li key={index} className="text-amber-800">{issue}</li>
+              ))}
+            </ul>
+            <Button 
+              onClick={() => window.location.reload()}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              Reset and Start Fresh
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // If workflow is complete, show summary with enhanced edit functionality
   if (currentStep === 'activation_complete') {
@@ -651,18 +700,18 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             selectedEngagementModel={selectedEngagementModel}
             onReviewAndFinalize={handleReviewAndFinalize}
             onChangeSelections={handleChangeSelections}
-            profile={profile}
+            profile={profileContext?.original_profile || profile}
             onTierChange={handleTierChange}
             onEngagementModelChange={handleEngagementModelChange}
           />
         </div>
 
-        {/* Enhanced Edit Modals */}
+        {/* Enhanced Edit Modals - Pass normalized profile context */}
         <TierEditModal
           isOpen={showTierEditModal}
           onClose={() => setShowTierEditModal(false)}
           currentTier={selectedTier}
-          countryName={profile?.country || 'India'}
+          countryName={profileContext?.country || 'India'}
           onTierChange={handleTierChange}
         />
 
@@ -673,7 +722,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           selectedTier={selectedTier}
           userId={userId}
           membershipStatus={membershipStatus || 'inactive'}
-          profile={profile}
+          profile={profileContext?.original_profile || profile}
           onModelChange={handleEngagementModelChange}
         />
       </div>
@@ -759,7 +808,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             <SimpleTierSelectionCard
               selectedTier={selectedTier}
               onTierSelect={handleTierSelection}
-              countryName={profile?.country}
+              countryName={profileContext?.country}
             />
           </div>
         );
@@ -804,7 +853,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             selectedEngagementModel={selectedEngagementModel}
             onReviewAndFinalize={handleReviewAndFinalize}
             onChangeSelections={handleChangeSelections}
-            profile={profile}
+            profile={profileContext?.original_profile || profile}
             onTierChange={handleTierChange}
             onEngagementModelChange={handleEngagementModelChange}
           />
@@ -830,7 +879,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           <SimpleTierSelectionCard
             selectedTier={selectedTier}
             onTierSelect={handleTierSelection}
-            countryName={profile?.country}
+            countryName={profileContext?.country}
           />
         </div>
       )}
@@ -842,7 +891,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
             selectedTier={selectedTier}
             selectedModel={selectedEngagementModel}
             onModelSelect={handleEngagementModelSelection}
-            profile={profile}
+            profile={profileContext?.original_profile || profile}
             membershipStatus={membershipStatus || 'inactive'}
           />
         </div>
@@ -856,7 +905,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         selectedTier={selectedTier}
         selectedEngagementModel={selectedEngagementModel}
         membershipFees={membershipFees}
-        profile={profile}
+        profile={profileContext?.original_profile || profile}
       />
     </div>
   );
