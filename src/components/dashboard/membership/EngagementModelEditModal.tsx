@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, X, AlertTriangle, Users, Briefcase, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CheckCircle, Zap, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useEngagementModelPricing } from '@/hooks/useEngagementModelPricing';
+import { ConsolidatedMarketplaceCard } from './ConsolidatedMarketplaceCard';
+import { EngagementModelCard } from './EngagementModelCard';
 
 interface EngagementModelEditModalProps {
   isOpen: boolean;
@@ -30,108 +31,26 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   onModelChange
 }) => {
   const [selectedModel, setSelectedModel] = useState<string | null>(currentModel);
-  const [availableModels, setAvailableModels] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  
+  // Use the same hook as sign-up process for consistency
+  const { engagementModels, loading, error } = useEngagementModelPricing(
+    selectedTier, 
+    profileContext, 
+    membershipStatus === 'Active' ? 'active' : 'inactive'
+  );
 
   useEffect(() => {
     if (isOpen && profileContext) {
-      console.log('⚡ EngagementModelEditModal opened with:', { currentModel, selectedTier, profileContext });
-      loadAvailableModels();
+      console.log('⚡ EngagementModelEditModal opened with:', { 
+        currentModel, 
+        selectedTier, 
+        profileContext, 
+        membershipStatus,
+        availableModels: engagementModels?.length 
+      });
       setSelectedModel(currentModel);
     }
-  }, [isOpen, currentModel, selectedTier, profileContext]);
-
-  const loadAvailableModels = async () => {
-    try {
-      setLoading(true);
-      console.log('🔄 Loading engagement models for tier:', selectedTier);
-      
-      if (!selectedTier) {
-        console.log('📝 No tier selected, loading all available models');
-        
-        // Load all available models when no tier is specified
-        const { data: allModels, error } = await supabase
-          .from('master_engagement_models')
-          .select('*')
-          .order('name');
-        
-        if (error) {
-          console.error('❌ Error loading all models:', error);
-          throw error;
-        }
-
-        console.log('✅ Loaded all models:', allModels?.length);
-        setAvailableModels(allModels || []);
-        return;
-      }
-
-      // Get tier ID with case-insensitive matching
-      const { data: tierData, error: tierError } = await supabase
-        .from('master_pricing_tiers')
-        .select('id')
-        .ilike('name', selectedTier)
-        .single();
-
-      if (tierError || !tierData) {
-        console.error('❌ Tier not found:', selectedTier, tierError);
-        
-        // Fallback to loading all models if tier not found
-        const { data: allModels } = await supabase
-          .from('master_engagement_models')
-          .select('*')
-          .order('name');
-        
-        setAvailableModels(allModels || []);
-        console.log('📝 Loaded fallback models:', allModels?.length);
-        return;
-      }
-
-      console.log('✅ Found tier:', tierData);
-
-      // Get available models for this tier
-      const { data: tierModelAccess, error: accessError } = await supabase
-        .from('master_tier_engagement_model_access')
-        .select(`
-          *,
-          engagement_model:master_engagement_models(*)
-        `)
-        .eq('pricing_tier_id', tierData.id)
-        .eq('is_active', true)
-        .eq('is_allowed', true);
-
-      if (accessError) {
-        console.error('❌ Error loading model access:', accessError);
-        throw accessError;
-      }
-
-      console.log('✅ Found available models for tier:', tierModelAccess?.length);
-      setAvailableModels(tierModelAccess || []);
-
-      // Validate current model selection
-      if (currentModel && tierModelAccess) {
-        const currentModelExists = tierModelAccess.some(access => 
-          access.engagement_model?.name?.toLowerCase() === currentModel.toLowerCase()
-        );
-        
-        if (!currentModelExists) {
-          console.log('⚠️ Current model not available for this tier, clearing selection');
-          setSelectedModel(null);
-        } else {
-          console.log('✅ Current model validated:', currentModel);
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ Error loading models:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load available engagement models.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, currentModel, selectedTier, profileContext, engagementModels]);
 
   const handleConfirm = () => {
     if (selectedModel && selectedModel !== currentModel) {
@@ -139,26 +58,6 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       onModelChange(selectedModel);
     }
     onClose();
-  };
-
-  const getModelIcon = (modelName: string) => {
-    const name = modelName?.toLowerCase() || '';
-    if (name.includes('aggregator')) return <Briefcase className="h-5 w-5 text-orange-600" />;
-    if (name.includes('market')) return <Users className="h-5 w-5 text-blue-600" />;
-    return <Users className="h-5 w-5 text-purple-600" />;
-  };
-
-  const getModelDescription = (model: any) => {
-    if (model.description) return model.description;
-    
-    const name = model.name?.toLowerCase() || '';
-    if (name.includes('aggregator')) {
-      return "Direct engagement with curated solution providers through our aggregation platform";
-    }
-    if (name.includes('market')) {
-      return "Open marketplace where multiple solution providers compete for your challenges";
-    }
-    return "Customized engagement model for your specific needs";
   };
 
   const isModelSelected = (modelName: string) => {
@@ -192,9 +91,42 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
     );
   }
 
+  const renderEngagementModel = (model: any) => {
+    // Handle consolidated Marketplace with same logic as sign-up
+    if (model.name === 'Market Place' && model.subtypes) {
+      return (
+        <ConsolidatedMarketplaceCard
+          key={model.id}
+          model={model}
+          isSelected={isModelSelected('Market Place')}
+          onModelSelect={(modelName) => {
+            console.log('⚡ Selecting model from consolidated card:', modelName);
+            setSelectedModel(modelName);
+          }}
+          membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
+        />
+      );
+    }
+    
+    // Handle other models with same detailed pricing as sign-up
+    return (
+      <EngagementModelCard
+        key={model.id}
+        model={model}
+        isSelected={isModelSelected(model.displayName || model.name)}
+        onModelSelect={(modelName) => {
+          console.log('⚡ Selecting model:', modelName);
+          setSelectedModel(modelName);
+        }}
+        membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
+        showCurrentBadge={isModelCurrent(model.displayName || model.name)}
+      />
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-purple-600" />
@@ -203,6 +135,11 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
           <DialogDescription>
             Select a new engagement model. Your current model is <strong>{currentModel || 'None'}</strong>.
             {selectedTier && <span> Available for tier: <strong>{selectedTier}</strong></span>}
+            {membershipStatus === 'Active' && (
+              <span className="text-green-700 ml-1 font-medium">
+                (Member pricing applied)
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -210,10 +147,16 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading available engagement models...</p>
+              <p className="text-muted-foreground">Loading engagement models with pricing...</p>
             </div>
           </div>
-        ) : availableModels.length === 0 ? (
+        ) : error ? (
+          <div className="text-center py-8 bg-red-50 rounded-lg">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-red-900 mb-2">Error Loading Models</h3>
+            <p className="text-red-600">{error}</p>
+          </div>
+        ) : engagementModels.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <Zap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Models Available</h3>
@@ -225,94 +168,24 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availableModels.map((modelData) => {
-              // Handle both direct models and tier-access models
-              const model = modelData.engagement_model || modelData;
-              const modelName = model.name;
-              const modelAccess = modelData.engagement_model ? modelData : null;
-              const isCurrent = isModelCurrent(modelName);
-              const isSelected = isModelSelected(modelName);
-              
-              return (
-                <Card 
-                  key={model.id}
-                  className={`cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
-                      : isCurrent
-                        ? 'border-green-500 bg-green-50'
-                        : 'hover:border-gray-300'
-                  }`}
-                  onClick={() => {
-                    console.log('⚡ Selecting model:', modelName);
-                    setSelectedModel(modelName);
-                  }}
-                >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {getModelIcon(modelName)}
-                        <span>{modelName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isCurrent && (
-                          <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
-                            Current
-                          </Badge>
-                        )}
-                        {isSelected && (
-                          <CheckCircle className="h-5 w-5 text-purple-600" />
-                        )}
-                      </div>
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      {getModelDescription(model)}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    {/* Model Configuration (if available from tier access) */}
-                    {modelAccess && (
-                      <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <Zap className="h-4 w-4 text-purple-600" />
-                          Model Configuration
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-gray-600">Selection:</span>
-                            <Badge variant="outline" className="ml-1 text-xs">
-                              {modelAccess.selection_scope === 'global' ? 'Global' : 'Per Challenge'}
-                            </Badge>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">Max Concurrent:</span>
-                            <div className="font-medium">{modelAccess.max_concurrent_models}</div>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-gray-600">Multiple Challenges:</span>
-                            <Badge variant={modelAccess.allows_multiple_challenges ? "default" : "secondary"} className="ml-1 text-xs">
-                              {modelAccess.allows_multiple_challenges ? 'Allowed' : 'Single Only'}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Switch Requirements */}
-                    {modelAccess?.switch_requirements && modelAccess.switch_requirements !== 'none' && (
-                      <div className="bg-amber-50 p-2 rounded text-xs">
-                        <div className="font-medium text-amber-800">Switch Requirements:</div>
-                        <div className="text-amber-700">
-                          {modelAccess.switch_requirements.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {engagementModels.map(renderEngagementModel)}
+            </div>
+            
+            {selectedModel && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">
+                    {selectedModel} engagement model selected
+                  </span>
+                </div>
+                <p className="text-sm text-green-700 mt-1">
+                  Your membership configuration will be updated with this engagement model and pricing structure.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
