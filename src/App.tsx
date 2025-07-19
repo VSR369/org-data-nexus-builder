@@ -13,6 +13,8 @@ import MasterDataPortal from "./pages/MasterDataPortal";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
 import OrganizationSignIn from "./pages/OrganizationSignIn";
 import OrganizationDashboard from "./pages/OrganizationDashboard";
+import SeekingOrgAdminLogin from "./pages/SeekingOrgAdminLogin";
+import SeekingOrgAdminDashboard from "./pages/SeekingOrgAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ function App() {
               <Route path="/organization-registration" element={<OrganizationRegistration />} />
               <Route path="/organization-signin" element={<OrganizationSignIn />} />
               <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
+              <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
+              <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
