@@ -14,7 +14,6 @@ import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
 import { MembershipViewModal } from './MembershipViewModal';
 import { MembershipEditModal } from './MembershipEditModal';
-import InactiveMemberEditView from '@/components/master-data/solution-seekers/components/InactiveMemberEditView';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -57,15 +56,14 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Helper function to map frontend membership status to database values
   const mapMembershipStatusForDB = (status: 'active' | 'inactive' | null): string => {
     if (status === 'active') return 'Active';
-    if (status === 'inactive') return 'Not Active';
-    return 'Not Active';
+    if (status === 'inactive') return 'Inactive';
+    return 'Inactive';
   };
 
   // Helper function to map frontend workflow steps to database values
   const mapWorkflowStepForDB = (step: string): string => {
     const stepMapping: Record<string, string> = {
       'membership_decision': 'membership_decision',
-      'payment': 'payment',
       'tier_selection': 'tier_selection',
       'engagement_model_selection': 'engagement_model',
       'terms_acceptance': 'preview_confirmation',
@@ -185,7 +183,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         // Map database workflow steps back to frontend steps
         const frontendStepMapping: Record<string, string> = {
           'membership_decision': 'membership_decision',
-          'payment': 'payment',
           'tier_selection': 'tier_selection',
           'engagement_model': 'engagement_model_selection',
           'preview_confirmation': 'terms_acceptance',
@@ -315,59 +312,40 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       console.log('🎯 Membership decision:', status);
       setMembershipStatus(status);
       
-      // For active membership, show payment immediately
+      // For both active and inactive, proceed directly to tier selection
+      const nextStep = 'tier_selection';
+      setCurrentStep(nextStep);
+      
+      const updateData = {
+        membership_status: mapMembershipStatusForDB(status),
+        workflow_step: mapWorkflowStepForDB(nextStep)
+      };
+
+      // If active membership, also mark as paid (simple activation)
       if (status === 'active') {
-        const nextStep = 'payment';
-        setCurrentStep(nextStep);
-        await saveCurrentState({
-          membership_status: 'Active',
-          workflow_step: mapWorkflowStepForDB(nextStep)
-        });
-      } else {
-        // For inactive, proceed to tier selection
-        const nextStep = 'tier_selection';
-        setCurrentStep(nextStep);
-        await saveCurrentState({
-          membership_status: 'Not Active',
-          workflow_step: mapWorkflowStepForDB(nextStep)
-        });
+        const annualFee = membershipFees.find(fee => fee.annual_amount)?.annual_amount || 0;
+        const currency = membershipFees.find(fee => fee.annual_currency)?.annual_currency || 'USD';
+        
+        updateData.mem_payment_status = 'paid';
+        updateData.mem_payment_amount = annualFee;
+        updateData.mem_payment_currency = currency;
+        updateData.mem_payment_date = new Date().toISOString();
+        updateData.activation_status = 'Activated';
       }
+
+      await saveCurrentState(updateData);
 
       toast({
         title: "Membership Status Updated",
-        description: `You have chosen to ${status === 'active' ? 'activate' : 'proceed without'} membership.`,
+        description: status === 'active' 
+          ? "Membership activated! You can now select your pricing tier." 
+          : "You can now select your pricing tier as a non-member.",
       });
     } catch (error) {
       console.error('❌ Error in handleMembershipDecision:', error);
       toast({
         title: "Error",
         description: "Failed to save membership decision.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handlePaymentSuccess = async () => {
-    try {
-      console.log('💳 Payment successful, proceeding to tier selection');
-      const nextStep = 'tier_selection';
-      setCurrentStep(nextStep);
-      
-      await saveCurrentState({
-        membership_status: 'Active',
-        workflow_step: mapWorkflowStepForDB(nextStep),
-        mem_payment_status: 'paid'
-      });
-
-      toast({
-        title: "Payment Successful!",
-        description: "Your membership has been activated. Please select your pricing tier.",
-      });
-    } catch (error) {
-      console.error('❌ Error in handlePaymentSuccess:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update membership status after payment.",
         variant: "destructive"
       });
     }
@@ -494,7 +472,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           <h4 className="font-medium mb-2">Current Selections:</h4>
           <div className="text-sm space-y-1">
             {membershipStatus && (
-              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Non-Active'}</Badge></div>
             )}
             {selectedTier && (
               <div>Tier: <span className="font-medium">{selectedTier}</span></div>
@@ -557,33 +535,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 2: Payment (for active members only)
-  if (currentStep === 'payment') {
-    return (
-      <div className="space-y-4">
-        {renderCurrentSelections()}
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Activate Your Membership
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <InactiveMemberEditView
-              userId={userId}
-              organizationData={profileContext}
-              onPaymentSuccess={handlePaymentSuccess}
-              isMobile={false}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Step 3: Tier Selection
+  // Step 2: Tier Selection (simplified - no payment step)
   if (currentStep === 'tier_selection') {
     // Transform available tiers to detailed tier card format
     const tierCardConfigs = availableTiers.map(tierConfig => ({
@@ -643,7 +595,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                   size="sm"
                   onClick={() => {
                     setMembershipStatus('active');
-                    setCurrentStep('payment');
+                    setCurrentStep('membership_decision');
                   }}
                   className="text-orange-700 border-orange-300 hover:bg-orange-100"
                 >
@@ -670,7 +622,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 4: Engagement Model Selection
+  // Step 3: Engagement Model Selection
   if (currentStep === 'engagement_model_selection') {
     return (
       <div className="space-y-4">
@@ -687,7 +639,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               size="sm"
               onClick={() => {
                 setMembershipStatus('active');
-                setCurrentStep('payment');
+                setCurrentStep('membership_decision');
               }}
               className="text-blue-700 border-blue-300 hover:bg-blue-100"
             >
@@ -707,7 +659,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 5: Terms Acceptance
+  // Step 4: Terms Acceptance
   if (currentStep === 'terms_acceptance') {
     return (
       <div className="space-y-4">
@@ -773,7 +725,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 6: Completed
+  // Step 5: Completed
   if (currentStep === 'completed') {
     return (
       <>
