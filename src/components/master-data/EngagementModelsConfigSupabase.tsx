@@ -29,6 +29,9 @@ interface EngagementModel {
   name: string;
   description?: string;
   is_active?: boolean;
+  is_user_created?: boolean;
+  created_by?: string;
+  version?: number;
   created_at?: string;
   updated_at?: string;
   subtypes?: EngagementModelSubtype[];
@@ -39,9 +42,15 @@ interface EngagementModelSubtype {
   id: string;
   name: string;
   description?: string;
-  required_fields?: any[];
-  optional_fields?: any[];
+  engagement_model_id: string;
+  required_fields?: any;
+  optional_fields?: any;
   is_active: boolean;
+  is_user_created?: boolean;
+  created_by?: string;
+  version?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface FeeMapping {
