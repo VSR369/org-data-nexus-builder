@@ -15,7 +15,7 @@ import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
 import { MembershipViewModal } from './MembershipViewModal';
 import { MembershipEditModal } from './MembershipEditModal';
-import { InactiveMemberEditView } from '@/components/master-data/solution-seekers/components/InactiveMemberEditView';
+import InactiveMemberEditView from '@/components/master-data/solution-seekers/components/InactiveMemberEditView';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
