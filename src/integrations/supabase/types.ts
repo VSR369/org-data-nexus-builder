@@ -2981,14 +2981,32 @@ export type Database = {
           country: string | null
           country_code: string | null
           created_at: string | null
+          current_frequency: string | null
+          discount_percentage: number | null
           email: string | null
+          engagement_locked: boolean | null
           engagement_model: string | null
+          engagement_model_details: Json | null
+          engagement_model_selected_at: string | null
+          enm_terms: boolean | null
           entity_type: string | null
+          final_calculated_price: number | null
+          frequency_change_history: Json | null
+          frequency_payments: Json | null
           has_engagement_record: boolean | null
           has_user_account: boolean | null
           id: string | null
           industry_segment: string | null
           last_activity: string | null
+          last_payment_date: string | null
+          lock_date: string | null
+          mem_payment_amount: number | null
+          mem_payment_currency: string | null
+          mem_payment_date: string | null
+          mem_payment_method: string | null
+          mem_payment_status: string | null
+          mem_receipt_number: string | null
+          mem_terms: boolean | null
           membership_status: string | null
           organization_id: string | null
           organization_name: string | null
@@ -2996,8 +3014,16 @@ export type Database = {
           overall_status: string | null
           payment_simulation_status: string | null
           phone_number: string | null
+          platform_fee_percentage: number | null
+          pricing_locked: boolean | null
           pricing_tier: string | null
+          selected_frequency: string | null
+          terms_accepted: boolean | null
+          tier_features: Json | null
+          tier_selected_at: string | null
+          total_payments_made: number | null
           updated_at: string | null
+          updated_platform_fee_percentage: number | null
           user_id: string | null
           website: string | null
           workflow_completed: boolean | null
@@ -3026,6 +3052,10 @@ export type Database = {
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_comprehensive_organization_data: {
+        Args: { org_id: string }
+        Returns: Json
       }
       get_membership_workflow_status: {
         Args: { user_id_param: string }

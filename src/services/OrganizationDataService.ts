@@ -29,11 +29,150 @@ export interface SolutionSeekerData {
   workflow_step?: string;
   workflow_completed?: boolean;
   
+  // Payment details
+  mem_payment_amount?: number;
+  mem_payment_currency?: string;
+  mem_payment_date?: string;
+  mem_receipt_number?: string;
+  mem_payment_method?: string;
+  mem_payment_status?: string;
+  selected_frequency?: string;
+  current_frequency?: string;
+  frequency_payments?: any;
+  frequency_change_history?: any;
+  total_payments_made?: number;
+  last_payment_date?: string;
+  
+  // Tier and engagement details
+  tier_features?: any;
+  engagement_model_details?: any;
+  pricing_locked?: boolean;
+  engagement_locked?: boolean;
+  platform_fee_percentage?: number;
+  updated_platform_fee_percentage?: number;
+  discount_percentage?: number;
+  final_calculated_price?: number;
+  
+  // Terms acceptance
+  mem_terms?: boolean;
+  enm_terms?: boolean;
+  terms_accepted?: boolean;
+  
+  // Workflow and timing
+  tier_selected_at?: string;
+  engagement_model_selected_at?: string;
+  lock_date?: string;
+  
   // Administrative flags
   has_user_account: boolean;
   has_engagement_record: boolean;
   overall_status: string;
   last_activity: string;
+}
+
+export interface ComprehensiveOrganizationData {
+  organization: SolutionSeekerData;
+  membership_fees: MembershipFee[];
+  tier_configuration: TierConfiguration;
+  engagement_model_details: EngagementModelDetails;
+  pricing_configurations: PricingConfiguration[];
+}
+
+export interface MembershipFee {
+  id: string;
+  country: string;
+  organization_type: string;
+  entity_type: string;
+  monthly_amount?: number;
+  monthly_currency?: string;
+  quarterly_amount?: number;
+  quarterly_currency?: string;
+  half_yearly_amount?: number;
+  half_yearly_currency?: string;
+  annual_amount?: number;
+  annual_currency?: string;
+  description?: string;
+}
+
+export interface TierConfiguration {
+  tier_info: {
+    name: string;
+    description: string;
+    level_order: number;
+  };
+  configurations: TierConfigDetail[];
+}
+
+export interface TierConfigDetail {
+  country: string;
+  currency: string;
+  monthly_challenge_limit?: number;
+  solutions_per_challenge: number;
+  allows_overage: boolean;
+  fixed_charge_per_challenge: number;
+  support_type: string;
+  support_level: string;
+  support_availability: string;
+  support_response_time: string;
+  analytics_access: string;
+  analytics_features: any[];
+  analytics_dashboard_access: boolean;
+  onboarding_type: string;
+  onboarding_service_type: string;
+  onboarding_resources: any[];
+  workflow_template: string;
+  workflow_customization_level: string;
+  workflow_template_count: number;
+}
+
+export interface EngagementModelDetails {
+  model_info: {
+    name: string;
+    description: string;
+  };
+  complexity_levels: ComplexityLevel[];
+  platform_fee_formulas: PlatformFeeFormula[];
+  subtypes: EngagementModelSubtype[];
+}
+
+export interface ComplexityLevel {
+  name: string;
+  description: string;
+  level_order: number;
+  consulting_fee_multiplier: number;
+  management_fee_multiplier: number;
+}
+
+export interface PlatformFeeFormula {
+  formula_name: string;
+  description: string;
+  formula_expression: string;
+  base_consulting_fee: number;
+  base_management_fee: number;
+  platform_usage_fee_percentage: number;
+  advance_payment_percentage: number;
+  membership_discount_percentage: number;
+  country: string;
+  currency: string;
+}
+
+export interface EngagementModelSubtype {
+  name: string;
+  description: string;
+  required_fields: any[];
+  optional_fields: any[];
+}
+
+export interface PricingConfiguration {
+  config_name: string;
+  base_value: number;
+  calculated_value: number;
+  unit_symbol: string;
+  currency_code: string;
+  membership_discount: number;
+  billing_frequency: string;
+  effective_from: string;
+  effective_to: string;
 }
 
 export interface AdminCreationData {
@@ -96,6 +235,27 @@ export class OrganizationDataService {
       return result as OrganizationSummary;
     } catch (error) {
       console.error('Error fetching organization summary:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get comprehensive organization data with all details
+   */
+  static async getComprehensiveOrganizationData(organizationId: string): Promise<ComprehensiveOrganizationData> {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_comprehensive_organization_data', { org_id: organizationId });
+
+      if (error) throw error;
+      
+      if (data && typeof data === 'object' && 'error' in data) {
+        throw new Error(data.error as string);
+      }
+
+      return data as unknown as ComprehensiveOrganizationData;
+    } catch (error) {
+      console.error('Error fetching comprehensive organization data:', error);
       throw error;
     }
   }
