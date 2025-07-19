@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, User, Mail, Phone, Building2, Shield, Edit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { OrganizationDataService, type SolutionSeekerData, type ExistingAdmin } from '@/services/OrganizationDataService';
+import { OrganizationDataService } from '@/services/OrganizationDataService';
+import { type SolutionSeekerData, type ExistingAdmin } from './types';
 
 interface AdminEditDialogProps {
   isOpen: boolean;

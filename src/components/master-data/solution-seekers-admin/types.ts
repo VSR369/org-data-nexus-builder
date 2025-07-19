@@ -46,6 +46,7 @@ export interface ExistingAdmin {
   id: string;
   admin_name: string;
   admin_email: string;
+  contact_number?: string;
   is_active: boolean;
   created_at: string;
 }
