@@ -1,27 +1,48 @@
-export const formatCurrency = (amount: number, currencyCode?: string): string => {
-  if (amount === null || amount === undefined) return '0.00';
-  
-  if (!currencyCode) {
-    return amount.toFixed(2);
+
+export const formatCurrency = (amount: number, currency: string = 'USD') => {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return '₹0';
   }
 
+  // Handle Indian Rupee specially
+  if (currency === 'INR' || currency === 'Rs' || currency === '₹') {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+
+  // Handle other currencies
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currencyCode,
+      currency: currency || 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   } catch (error) {
-    // Fallback if currency code is invalid
-    return `${amount.toFixed(2)} ${currencyCode}`;
+    // Fallback for invalid currency codes
+    return `${currency || '$'} ${amount.toLocaleString()}`;
   }
 };
 
-export const formatPercentage = (value: number): string => {
-  if (value === null || value === undefined) return '0.00%';
-  return `${value.toFixed(2)}%`;
+export const formatPercentage = (value: number) => {
+  if (typeof value !== 'number' || isNaN(value)) {
+    return '0%';
+  }
+  
+  return `${value.toFixed(1)}%`;
 };
 
-export const formatNumber = (value: number, decimals: number = 2): string => {
-  if (value === null || value === undefined) return '0';
-  return value.toFixed(decimals);
+export const formatNumber = (value: number, decimals: number = 0) => {
+  if (typeof value !== 'number' || isNaN(value)) {
+    return '0';
+  }
+  
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 };

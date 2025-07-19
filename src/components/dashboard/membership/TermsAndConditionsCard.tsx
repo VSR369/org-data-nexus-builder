@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { FileText, Shield } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileText, Shield, Info } from 'lucide-react';
 
 interface TermsAndConditionsCardProps {
   membershipTermsAccepted: boolean;
@@ -26,160 +26,108 @@ export const TermsAndConditionsCard: React.FC<TermsAndConditionsCardProps> = ({
   showMembershipTerms,
   showEngagementTerms
 }) => {
-  if (!showMembershipTerms && !showEngagementTerms) {
-    return null;
-  }
-
-  const getMembershipTermsContent = () => {
-    return `
-MEMBERSHIP TERMS AND CONDITIONS
-
-1. MEMBERSHIP BENEFITS
-   - Access to platform features and services
-   - Priority customer support
-   - Exclusive discounts on platform fees
-   - Advanced analytics and reporting tools
-
-2. PAYMENT TERMS
-   - Annual membership fees are due upon activation
-   - Fees are non-refundable once processed
-   - Automatic renewal unless cancelled 30 days prior
-
-3. MEMBER RESPONSIBILITIES
-   - Maintain accurate profile information
-   - Comply with platform usage policies
-   - Use services in accordance with terms
-
-4. TERMINATION
-   - Either party may terminate with 30 days notice
-   - No refund for unused portion of membership period
-   - Access continues until membership period expires
-
-By accepting these terms, you agree to the membership conditions outlined above.
-    `;
-  };
-
-  const getEngagementModelTermsContent = (model: string) => {
-    const baseTerms = `
-ENGAGEMENT MODEL TERMS AND CONDITIONS
-
-Selected Model: ${model}
-
-1. SERVICE SCOPE
-   - Access to platform features specific to ${model}
-   - Support for integration and implementation
-   - Performance monitoring and reporting
-
-2. PAYMENT STRUCTURE
-`;
-
-    switch (model) {
-      case 'Market Place':
-      case 'Aggregator':
-        return baseTerms + `
-   - Platform fees charged as percentage of solution fees
-   - Fees deducted automatically from transactions
-   - Monthly billing cycle for percentage-based fees
-
-3. MARKETPLACE SPECIFIC TERMS
-   - Compliance with marketplace policies
-   - Quality standards for solutions
-   - Customer dispute resolution procedures
-        `;
-      
-      default:
-        return baseTerms + `
-   - Terms vary based on selected engagement model
-   - Payment structure as displayed in pricing
-   - Service delivery as per model specifications
-        `;
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5 text-primary" />
-          Terms and Conditions
+          Terms & Conditions
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Please review and accept the applicable terms
-        </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Membership Terms */}
-        {showMembershipTerms && selectedMembershipStatus === 'active' && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              <h4 className="font-medium">Membership Terms & Conditions</h4>
+        {/* Configuration Summary */}
+        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+          <h4 className="font-medium mb-3 flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            Your Configuration Summary
+          </h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-center">
+              <span>Membership Status:</span>
+              <Badge variant={selectedMembershipStatus === 'active' ? "default" : "outline"}>
+                {selectedMembershipStatus === 'active' ? 'Active Member' : 'Non-Member'}
+              </Badge>
             </div>
-            
-            <ScrollArea className="h-48 w-full border rounded-md p-4">
-              <pre className="text-xs whitespace-pre-wrap font-mono">
-                {getMembershipTermsContent()}
-              </pre>
-            </ScrollArea>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="membership-terms"
-                checked={membershipTermsAccepted}
-                onCheckedChange={onMembershipTermsChange}
-              />
-              <label 
-                htmlFor="membership-terms" 
-                className="text-sm font-medium leading-relaxed cursor-pointer"
-              >
-                I accept the Membership Terms and Conditions
-                <span className="text-destructive ml-1">*</span>
-              </label>
-            </div>
+            {selectedEngagementModel && (
+              <div className="flex justify-between items-center">
+                <span>Engagement Model:</span>
+                <Badge variant="secondary">{selectedEngagementModel}</Badge>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Separator */}
-        {showMembershipTerms && showEngagementTerms && selectedMembershipStatus === 'active' && (
-          <Separator />
-        )}
-
-        {/* Engagement Model Terms */}
-        {showEngagementTerms && selectedEngagementModel && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              <h4 className="font-medium">Engagement Model Terms & Conditions</h4>
+        {/* Terms Acceptance */}
+        <div className="space-y-4">
+          {showMembershipTerms && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="membership-terms"
+                  checked={membershipTermsAccepted}
+                  onCheckedChange={onMembershipTermsChange}
+                />
+                <div className="flex-1">
+                  <label htmlFor="membership-terms" className="text-sm font-medium cursor-pointer">
+                    I accept the Membership Terms & Conditions
+                  </label>
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-3 w-3" />
+                      <span className="font-medium">Membership Agreement Highlights:</span>
+                    </div>
+                    <ul className="space-y-1 ml-5 list-disc">
+                      <li>Annual membership fee is non-refundable after 30 days</li>
+                      <li>Access to exclusive member pricing and benefits</li>
+                      <li>Priority customer support and early feature access</li>
+                      <li>Automatic renewal unless cancelled 30 days before expiry</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            <ScrollArea className="h-48 w-full border rounded-md p-4">
-              <pre className="text-xs whitespace-pre-wrap font-mono">
-                {getEngagementModelTermsContent(selectedEngagementModel)}
-              </pre>
-            </ScrollArea>
+          )}
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="engagement-terms"
-                checked={engagementTermsAccepted}
-                onCheckedChange={onEngagementTermsChange}
-              />
-              <label 
-                htmlFor="engagement-terms" 
-                className="text-sm font-medium leading-relaxed cursor-pointer"
-              >
-                I accept the Engagement Model Terms and Conditions
-                <span className="text-destructive ml-1">*</span>
-              </label>
+          {showEngagementTerms && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="engagement-terms"
+                  checked={engagementTermsAccepted}
+                  onCheckedChange={onEngagementTermsChange}
+                />
+                <div className="flex-1">
+                  <label htmlFor="engagement-terms" className="text-sm font-medium cursor-pointer">
+                    I accept the {selectedEngagementModel} Engagement Model Terms
+                  </label>
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-3 w-3" />
+                      <span className="font-medium">Engagement Model Terms:</span>
+                    </div>
+                    <ul className="space-y-1 ml-5 list-disc">
+                      <li>Platform fees apply as per selected model pricing</li>
+                      <li>Payment terms: Advance payment required for challenge activation</li>
+                      <li>Intellectual property rights as per platform policy</li>
+                      <li>Service level agreements based on selected tier</li>
+                      {selectedEngagementModel === 'Marketplace' && (
+                        <li>Additional marketplace-specific terms and solution provider agreements</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Required Fields Notice */}
-        <div className="p-3 bg-muted/30 rounded-lg">
-          <p className="text-xs text-muted-foreground">
-            <span className="text-destructive">*</span> Required fields must be accepted before proceeding
-          </p>
+        {/* Progress Indicator */}
+        <div className="text-center text-sm text-muted-foreground">
+          {(showMembershipTerms && !membershipTermsAccepted) || (showEngagementTerms && !engagementTermsAccepted) ? (
+            <p>Please accept the required terms to proceed with activation</p>
+          ) : (
+            <p className="text-green-600 font-medium">✓ All required terms accepted</p>
+          )}
         </div>
       </CardContent>
     </Card>

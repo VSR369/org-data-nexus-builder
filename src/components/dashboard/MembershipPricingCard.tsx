@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { EnhancedMembershipFlowCard } from './membership/EnhancedMembershipFlowCard';
+import { MembershipFlowCard } from './membership/MembershipFlowCard';
 
 interface MembershipPricingCardProps {
   profile: any;
@@ -10,8 +11,15 @@ export const MembershipPricingCard: React.FC<MembershipPricingCardProps> = ({ pr
   const userId = profile?.id;
 
   if (!userId) {
-    return <div>User ID not found</div>;
+    return (
+      <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
+        <div className="text-center">
+          <div className="text-gray-500 mb-2">⚠️ User ID not found</div>
+          <p className="text-sm text-gray-600">Please ensure you are properly logged in</p>
+        </div>
+      </div>
+    );
   }
 
-  return <EnhancedMembershipFlowCard profile={profile} userId={userId} />;
+  return <MembershipFlowCard profile={profile} userId={userId} />;
 };
