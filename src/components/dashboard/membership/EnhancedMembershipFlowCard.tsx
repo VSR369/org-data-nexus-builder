@@ -7,6 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MembershipDataService } from '@/services/MembershipDataService';
 import { OrganizationDataService } from '@/services/OrganizationDataService';
+import { DetailedTierCard } from './DetailedTierCard';
+import { EnhancedEngagementModelCard } from './EnhancedEngagementModelCard';
+import { EnhancedMembershipCard } from './EnhancedMembershipCard';
 import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
 import { MembershipViewModal } from './MembershipViewModal';
@@ -436,73 +439,49 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   // Step 1: Membership Decision
   if (currentStep === 'membership_decision') {
-    const annualFee = membershipFees[0]?.annual_amount || 0;
-    const currency = membershipFees[0]?.annual_currency || 'USD';
-
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-blue-600" />
-            Choose Your Membership Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card className="cursor-pointer border-2 hover:border-green-500 transition-colors"
-                  onClick={() => handleMembershipDecision('active')}>
-              <CardHeader>
-                <CardTitle className="text-green-600">Become a Member</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(annualFee, currency)} / year
-                  </div>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      Up to 20% discount on engagement fees
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      Priority support and faster response times
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      Access to exclusive member resources
-                    </li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer border-2 hover:border-blue-500 transition-colors"
-                  onClick={() => handleMembershipDecision('inactive')}>
-              <CardHeader>
-                <CardTitle className="text-blue-600">Continue Without Membership</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="text-2xl font-bold text-blue-600">
-                    No Annual Fee
-                  </div>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Standard engagement model pricing</li>
-                    <li>• Regular support response times</li>
-                    <li>• Access to basic platform features</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+      <EnhancedMembershipCard
+        membershipStatus={membershipStatus || 'inactive'}
+        membershipFees={membershipFees[0] || null}
+        onJoinMembership={() => handleMembershipDecision('active')}
+        onManageMembership={() => handleMembershipDecision('inactive')}
+        loading={false}
+      />
     );
   }
 
   // Step 2: Tier Selection
   if (currentStep === 'tier_selection') {
+    // Transform available tiers to detailed tier card format
+    const tierCardConfigs = availableTiers.map(tierConfig => ({
+      ...tierConfig,
+      pricing_tier_name: tierConfig.master_pricing_tiers?.name || 'Unknown',
+      currency_symbol: tierConfig.master_currencies?.symbol || '$',
+      currency_code: tierConfig.master_currencies?.code || 'USD',
+      // Add default analytics access data
+      analytics_access_name: 'Standard Analytics',
+      analytics_access_description: 'Basic analytics and reporting features',
+      analytics_dashboard_access: true,
+      analytics_features_included: ['Basic Reports', 'Challenge Metrics'],
+      // Add default support data
+      support_type_name: 'Standard Support',
+      support_type_description: 'Standard customer support services',
+      support_service_level: 'Standard',
+      support_response_time: '24-48 hours',
+      support_availability: 'Business Hours',
+      // Add default onboarding data
+      onboarding_type_name: 'Standard Onboarding',
+      onboarding_type_description: 'Standard onboarding process',
+      onboarding_service_type: 'Self-Service',
+      onboarding_resources_included: ['Documentation', 'Video Tutorials'],
+      // Add default workflow data
+      workflow_template_name: 'Standard Templates',
+      workflow_template_description: 'Standard workflow templates',
+      workflow_template_type: 'Standard',
+      workflow_customization_level: 'Basic',
+      workflow_template_count: 5
+    }));
+
     return (
       <Card>
         <CardHeader>
@@ -512,41 +491,16 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableTiers.map((tierConfig) => (
-              <Card 
-                key={tierConfig.id}
-                className="cursor-pointer border-2 hover:border-purple-500 transition-colors"
-                onClick={() => handleTierSelection(tierConfig.master_pricing_tiers?.name)}
-              >
-                <CardHeader>
-                  <CardTitle>{tierConfig.master_pricing_tiers?.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Monthly Challenges:</span>
-                        <span className="font-medium">
-                          {tierConfig.monthly_challenge_limit || 'Unlimited'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Fixed Charge:</span>
-                        <span className="font-medium">
-                          {formatCurrency(tierConfig.fixed_charge_per_challenge || 0, tierConfig.master_currencies?.code)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Solutions per Challenge:</span>
-                        <span className="font-medium">
-                          {tierConfig.solutions_per_challenge || 1}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tierCardConfigs.map((config, index) => (
+              <DetailedTierCard
+                key={config.id}
+                config={config}
+                isSelected={selectedTier === config.pricing_tier_name}
+                isCurrent={false}
+                isRecommended={index === 1} // Recommend the second tier (usually Standard)
+                onSelect={() => handleTierSelection(config.pricing_tier_name)}
+              />
             ))}
           </div>
         </CardContent>
@@ -557,34 +511,14 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Step 3: Engagement Model Selection
   if (currentStep === 'engagement_model_selection') {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-orange-600" />
-            Select Your Engagement Model
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            {availableModels.map((model) => (
-              <Card 
-                key={model.id}
-                className="cursor-pointer border-2 hover:border-orange-500 transition-colors"
-                onClick={() => handleEngagementModelSelection(model.name)}
-              >
-                <CardHeader>
-                  <CardTitle>{model.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {model.description || 'Engagement model for your innovation challenges'}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <EnhancedEngagementModelCard
+        selectedModel={selectedEngagementModel}
+        onModelSelect={(modelName, modelDetails) => {
+          handleEngagementModelSelection(modelName);
+        }}
+        selectedTier={selectedTier}
+        countryName={profileContext?.country}
+      />
     );
   }
 
