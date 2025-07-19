@@ -1,47 +1,26 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import '@/utils/localStorage/LocalStorageCleaner';
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useSupabaseAuth";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import ContributorAuth from "./pages/ContributorAuth";
-import MasterDataPortal from "./pages/MasterDataPortal";
-import OrganizationRegistration from "./pages/OrganizationRegistration";
-import OrganizationSignIn from "./pages/OrganizationSignIn";
-import OrganizationDashboard from "./pages/OrganizationDashboard";
-import SeekingOrgAdminLogin from "./pages/SeekingOrgAdminLogin";
-import SeekingOrgAdminDashboard from "./pages/SeekingOrgAdminDashboard";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import MasterDataContent from './components/MasterDataContent';
 
 const queryClient = new QueryClient();
 
 function App() {
-  console.log('🚀 App component is rendering...');
-  
+  const [activeSection, setActiveSection] = useState('countries');
+
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
+      <Router>
+        <div className="min-h-screen bg-background">
+          <Routes>
+            <Route path="/*" element={<MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />} />
+          </Routes>
           <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/contributor-auth" element={<ContributorAuth />} />
-              <Route path="/master-data-portal" element={<MasterDataPortal />} />
-              <Route path="/organization-registration" element={<OrganizationRegistration />} />
-              <Route path="/organization-signin" element={<OrganizationSignIn />} />
-              <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
-              <Route path="/seeking-org-admin-login" element={<SeekingOrgAdminLogin />} />
-              <Route path="/seeking-org-admin-dashboard" element={<SeekingOrgAdminDashboard />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+          <SonnerToaster />
+        </div>
+      </Router>
     </QueryClientProvider>
   );
 }

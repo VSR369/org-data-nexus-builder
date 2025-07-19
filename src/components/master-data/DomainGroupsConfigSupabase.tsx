@@ -25,7 +25,7 @@ const DomainGroupsConfigSupabase: React.FC = () => {
         .from('master_domain_groups')
         .select(`
           *,
-          industry_segment:master_industry_segments(name)
+          master_industry_segments!industry_segment_id(name)
         `)
         .order('name');
       if (error) throw error;
@@ -240,8 +240,8 @@ const DomainGroupsConfigSupabase: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="font-medium">{domain.name}</h4>
-                        {domain.industry_segment?.name && (
-                          <p className="text-sm text-blue-600 mt-1">Industry: {domain.industry_segment.name}</p>
+                        {domain.master_industry_segments?.name && (
+                          <p className="text-sm text-blue-600 mt-1">Industry: {domain.master_industry_segments.name}</p>
                         )}
                         {domain.description && (
                           <p className="text-sm text-muted-foreground mt-1">{domain.description}</p>

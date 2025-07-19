@@ -20,6 +20,9 @@ import UnitsOfMeasureConfigSupabase from './master-data/UnitsOfMeasureConfigSupa
 import EngagementModelsConfigSupabase from './master-data/EngagementModelsConfigSupabase';
 import CommunicationTypesConfigSupabase from './master-data/CommunicationTypesConfigSupabase';
 import SolutionSeekersConfigSupabase from './master-data/SolutionSeekersConfigSupabase';
+import TierConfigurationsConfigSupabase from './master-data/TierConfigurationsConfigSupabase';
+import PlatformFeeFormulasConfigSupabase from './master-data/PlatformFeeFormulasConfigSupabase';
+import PricingTiersConfigSupabase from './master-data/PricingTiersConfigSupabase';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -63,6 +66,12 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <EngagementModelsConfigSupabase />;
       case 'communication-types':
         return <CommunicationTypesConfigSupabase />;
+      case 'tier-configurations':
+        return <TierConfigurationsConfigSupabase />;
+      case 'platform-fee-formulas':
+        return <PlatformFeeFormulasConfigSupabase />;
+      case 'pricing-tiers':
+        return <PricingTiersConfigSupabase />;
       case 'reward-types':
         return <RewardTypeConfigSupabase />;
       default:
