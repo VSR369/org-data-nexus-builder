@@ -38,6 +38,7 @@ import CommunicationTypesManager from './master-data/CommunicationTypesManager';
 import RewardTypesManager from './master-data/RewardTypesManager';
 import OrganizationCategoriesManager from './master-data/OrganizationCategoriesManager';
 import PricingConfigurationsManager from './master-data/PricingConfigurationsManager';
+import SolutionSeekersManager from './master-data/SolutionSeekersManager';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -49,6 +50,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
     <div className="container mx-auto p-4 space-y-6">
       <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1 h-auto p-1">
+          <TabsTrigger value="solution-seekers" className="text-xs p-2">Solution Seekers</TabsTrigger>
           <TabsTrigger value="domain-groups" className="text-xs p-2">Domain Groups</TabsTrigger>
           <TabsTrigger value="categories" className="text-xs p-2">Categories</TabsTrigger>
           <TabsTrigger value="sub-categories" className="text-xs p-2">Sub-Categories</TabsTrigger>
@@ -89,8 +91,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
           <TabsTrigger value="pricing-configurations" className="text-xs p-2">Price Configs</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="domain-groups">
-          <DomainGroupsManager />
+        <TabsContent value="solution-seekers">
+          <SolutionSeekersManager />
         </TabsContent>
         <TabsContent value="categories">
           <CategoriesManager />

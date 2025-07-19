@@ -176,7 +176,12 @@ export const systemMenuItems = [
 ];
 
 export const validationMenuItems = [
-  // Solution Seekers Validation has been removed - dashboard was deleted
+  {
+    id: 'solution-seekers',
+    title: 'Solution Seekers Management',
+    icon: CheckCircle,
+    description: 'Comprehensive management of solution-seeking organizations and administrator creation'
+  }
 ];
 
 export const pricingConfigurationMenuItems = [

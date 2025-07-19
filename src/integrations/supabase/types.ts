@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_creation_audit: {
+        Row: {
+          action_type: string
+          admin_email: string
+          admin_name: string
+          created_admin_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          notes: string | null
+          organization_id: string
+          organization_name: string
+        }
+        Insert: {
+          action_type: string
+          admin_email: string
+          admin_name: string
+          created_admin_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          organization_name: string
+        }
+        Update: {
+          action_type?: string
+          admin_email?: string
+          admin_name?: string
+          created_admin_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          organization_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_creation_audit_created_admin_id_fkey"
+            columns: ["created_admin_id"]
+            isOneToOne: false
+            referencedRelation: "organization_administrators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engagement_activations: {
         Row: {
           activation_status: string | null
@@ -688,6 +735,13 @@ export type Database = {
             referencedColumns: ["country_name"]
           },
           {
+            foreignKeyName: "fk_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "solution_seekers_comprehensive_view"
+            referencedColumns: ["country"]
+          },
+          {
             foreignKeyName: "fk_master_currencies_country"
             columns: ["country"]
             isOneToOne: false
@@ -714,6 +768,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pricing_parameters_management_consulting"
             referencedColumns: ["country_name"]
+          },
+          {
+            foreignKeyName: "fk_master_currencies_country"
+            columns: ["country"]
+            isOneToOne: false
+            referencedRelation: "solution_seekers_comprehensive_view"
+            referencedColumns: ["country"]
           },
         ]
       }
@@ -2170,6 +2231,82 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_administrators: {
+        Row: {
+          account_locked_until: string | null
+          admin_email: string
+          admin_name: string
+          admin_password_hash: string | null
+          contact_number: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          last_login_at: string | null
+          login_attempts: number | null
+          organization_id: string
+          role_type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_locked_until?: string | null
+          admin_email: string
+          admin_name: string
+          admin_password_hash?: string | null
+          contact_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          login_attempts?: number | null
+          organization_id: string
+          role_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_locked_until?: string | null
+          admin_email?: string
+          admin_name?: string
+          admin_password_hash?: string | null
+          contact_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          login_attempts?: number | null
+          organization_id?: string
+          role_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_administrators_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_context"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "organization_administrators_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "organization_administrators_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "solution_seekers_comprehensive_view"
+            referencedColumns: ["organization_id"]
+          },
+        ]
+      }
       organization_documents: {
         Row: {
           document_type: string
@@ -2214,6 +2351,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "solution_seekers_comprehensive_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2829,6 +2973,38 @@ export type Database = {
           },
         ]
       }
+      solution_seekers_comprehensive_view: {
+        Row: {
+          activation_status: string | null
+          address: string | null
+          contact_person_name: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string | null
+          email: string | null
+          engagement_model: string | null
+          entity_type: string | null
+          has_engagement_record: boolean | null
+          has_user_account: boolean | null
+          id: string | null
+          industry_segment: string | null
+          last_activity: string | null
+          membership_status: string | null
+          organization_id: string | null
+          organization_name: string | null
+          organization_type: string | null
+          overall_status: string | null
+          payment_simulation_status: string | null
+          phone_number: string | null
+          pricing_tier: string | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+          workflow_completed: boolean | null
+          workflow_step: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       bulk_update_pricing_discount: {
@@ -2853,6 +3029,10 @@ export type Database = {
       }
       get_membership_workflow_status: {
         Args: { user_id_param: string }
+        Returns: Json
+      }
+      get_organization_admin_summary: {
+        Args: { org_id: string }
         Returns: Json
       }
       get_pricing_configuration: {
