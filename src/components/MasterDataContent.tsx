@@ -1,15 +1,17 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Import your original sophisticated components
 import DomainGroupsConfig from './master-data/DomainGroupsConfig';
 import DepartmentsConfig from './master-data/DepartmentsConfig';
 import CategoriesManager from './master-data/CategoriesManager';
 import SubCategoriesManager from './master-data/SubCategoriesManager';
 import CountriesManager from './master-data/CountriesManager';
 import CurrenciesManager from './master-data/CurrenciesManager';
-import OrganizationTypesManager from './master-data/OrganizationTypesManager';
-import EntityTypesManager from './master-data/EntityTypesManager';
-import IndustrySegmentsManager from './master-data/IndustrySegmentsManager';
+import OrganizationTypeConfigSupabase from './master-data/OrganizationTypeConfigSupabase';
+import EntityTypeConfigSupabase from './master-data/EntityTypeConfigSupabase';
+import IndustrySegmentsConfigSupabase from './master-data/IndustrySegmentsConfigSupabase';
 import SubDepartmentsManager from './master-data/SubDepartmentsManager';
 import TeamUnitsManager from './master-data/TeamUnitsManager';
 import BillingFrequenciesManager from './master-data/BillingFrequenciesManager';
@@ -17,7 +19,7 @@ import MembershipStatusesManager from './master-data/MembershipStatusesManager';
 import UnitsOfMeasureManager from './master-data/UnitsOfMeasureManager';
 import EngagementModelsManager from './master-data/EngagementModelsManager';
 import EngagementModelSubtypesManager from './master-data/EngagementModelSubtypesManager';
-import FeeComponentsManager from './master-data/FeeComponentsManager';
+import { FeeComponentsManager } from './master-data/fee-components/FeeComponentsManager';
 import PricingParametersManager from './master-data/PricingParametersManager';
 import PlatformFeeFormulasManager from './master-data/PlatformFeeFormulasManager';
 import PricingTiersManager from './master-data/PricingTiersManager';
@@ -29,14 +31,14 @@ import { ChallengeOverageFeesManager } from './master-data/challenge-overage-fee
 import { AdvancePaymentTypesManager } from './master-data/advance-payment-types/AdvancePaymentTypesManager';
 import { AnalyticsAccessTypesManager } from './master-data/analytics-access-types/AnalyticsAccessTypesManager';
 import SupportTypesManager from './master-data/SupportTypesManager';
-import OnboardingTypesManager from './master-data/OnboardingTypesManager';
+import { OnboardingTypesManager } from './master-data/onboarding-types/OnboardingTypesManager';
 import WorkflowTemplatesManager from './master-data/WorkflowTemplatesManager';
 import { SystemFeatureAccessManager } from './master-data/system-feature-access/SystemFeatureAccessManager';
 import SystemConfigurationsManager from './master-data/SystemConfigurationsManager';
 import CapabilityLevelsManager from './master-data/CapabilityLevelsManager';
 import CompetencyCapabilitiesManager from './master-data/CompetencyCapabilitiesManager';
 import CommunicationTypesManager from './master-data/CommunicationTypesManager';
-import RewardTypesManager from './master-data/RewardTypesManager';
+import RewardTypeConfigSupabase from './master-data/RewardTypeConfigSupabase';
 import OrganizationCategoriesManager from './master-data/OrganizationCategoriesManager';
 import PricingConfigurationsManager from './master-data/PricingConfigurationsManager';
 import SolutionSeekersManager from './master-data/SolutionSeekersManager';
@@ -111,13 +113,13 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
           <CurrenciesManager />
         </TabsContent>
         <TabsContent value="organization-types">
-          <OrganizationTypesManager />
+          <OrganizationTypeConfigSupabase />
         </TabsContent>
         <TabsContent value="entity-types">
-          <EntityTypesManager />
+          <EntityTypeConfigSupabase />
         </TabsContent>
         <TabsContent value="industry-segments">
-          <IndustrySegmentsManager />
+          <IndustrySegmentsConfigSupabase />
         </TabsContent>
         <TabsContent value="departments">
           <DepartmentsConfig />
@@ -201,7 +203,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, se
           <CommunicationTypesManager />
         </TabsContent>
         <TabsContent value="reward-types">
-          <RewardTypesManager />
+          <RewardTypeConfigSupabase />
         </TabsContent>
         <TabsContent value="organization-categories">
           <OrganizationCategoriesManager />
