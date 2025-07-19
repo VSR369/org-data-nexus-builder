@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,7 +95,7 @@ const SimpleMembershipUpgrade: React.FC<SimpleMembershipUpgradeProps> = ({
           workflow_step: 'activation_complete',
           workflow_completed: true,
           activation_status: 'Activated',
-          payment_simulation_status: 'completed',
+          payment_simulation_status: 'success',
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
