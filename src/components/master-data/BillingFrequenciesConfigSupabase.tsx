@@ -1,500 +1,256 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { 
-  Plus, Edit, Trash2, Save, X, RotateCcw, Search, 
-  Calendar, AlertTriangle
-} from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Trash2, Edit2, Check, X, RefreshCw, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
-interface BillingFrequency {
-  id: string;
-  name: string;
-  description?: string;
-  months?: number;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-const defaultBillingFrequencies = [
-  { name: 'Monthly', description: 'Monthly billing cycle', months: 1, is_active: true },
-  { name: 'Quarterly', description: 'Quarterly billing cycle', months: 3, is_active: true },
-  { name: 'Semi-Annual', description: 'Semi-annual billing cycle', months: 6, is_active: true },
-  { name: 'Annual', description: 'Annual billing cycle', months: 12, is_active: true }
-];
-
-const BillingFrequenciesConfigSupabase = () => {
-  const { toast } = useToast();
-  const [frequencies, setFrequencies] = useState<BillingFrequency[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // Form states
-  const [newFrequency, setNewFrequency] = useState({ 
-    name: '', 
-    description: '', 
-    months: 1,
-    is_active: true 
-  });
-  const [editingItem, setEditingItem] = useState<BillingFrequency | null>(null);
-  const [deleteDialog, setDeleteDialog] = useState<{open: boolean, item: BillingFrequency} | null>(null);
+const BillingFrequenciesConfigSupabase: React.FC = () => {
+  const [newFreq, setNewFreq] = useState({ name: '', description: '', months: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState({ name: '', description: '', months: '' });
   const [isAdding, setIsAdding] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchFrequencies();
-  }, []);
-
-  const fetchFrequencies = async () => {
-    try {
-      setLoading(true);
+  const { data: frequencies = [], isLoading, refetch } = useQuery({
+    queryKey: ['billing-frequencies'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('master_billing_frequencies')
         .select('*')
-        .order('months');
-
+        .order('months', { ascending: true });
       if (error) throw error;
-
-      setFrequencies(data || []);
-      console.log('✅ Billing Frequencies loaded:', data);
-    } catch (error) {
-      console.error('Error fetching billing frequencies:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load billing frequencies.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      return data || [];
     }
-  };
+  });
 
-  const handleAddFrequency = async () => {
-    if (newFrequency.name.trim()) {
-      try {
-        const duplicate = frequencies.find(f => 
-          f.name.toLowerCase() === newFrequency.name.trim().toLowerCase()
-        );
-        
-        if (duplicate) {
-          toast({
-            title: "Duplicate Entry",
-            description: "A billing frequency with this name already exists.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const { error } = await supabase
-          .from('master_billing_frequencies')
-          .insert([{
-            name: newFrequency.name.trim(),
-            description: newFrequency.description.trim() || null,
-            months: newFrequency.months,
-            is_active: newFrequency.is_active
-          }]);
-
-        if (error) throw error;
-
-        setNewFrequency({ name: '', description: '', months: 1, is_active: true });
-        setIsAdding(false);
-        fetchFrequencies();
-        toast({
-          title: "Success",
-          description: "Billing frequency added successfully",
-        });
-      } catch (error) {
-        console.error('Error adding billing frequency:', error);
-        toast({
-          title: "Error",
-          description: "Failed to add billing frequency.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleResetToDefault = async () => {
-    try {
-      // Clear existing frequencies
-      await supabase.from('master_billing_frequencies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      // Insert default frequencies
-      const { error } = await supabase
+  const addMutation = useMutation({
+    mutationFn: async (freq: { name: string; description: string; months: string }) => {
+      const { data, error } = await supabase
         .from('master_billing_frequencies')
-        .insert(defaultBillingFrequencies);
-
+        .insert([{ 
+          name: freq.name.trim(), 
+          description: freq.description.trim() || null,
+          months: freq.months ? parseInt(freq.months) : null
+        }])
+        .select()
+        .single();
       if (error) throw error;
-
-      fetchFrequencies();
-      toast({
-        title: "Success",
-        description: "Billing frequencies reset to default values",
-      });
-    } catch (error) {
-      console.error('Error resetting billing frequencies:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reset billing frequencies.",
-        variant: "destructive",
-      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-frequencies'] });
+      setNewFreq({ name: '', description: '', months: '' });
+      setIsAdding(false);
+      toast({ title: "Success", description: "Billing frequency added successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: "Failed to add billing frequency", variant: "destructive" });
     }
-  };
+  });
 
-  const handleEdit = (item: BillingFrequency) => {
-    setEditingItem({ ...item });
-    setShowEditDialog(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingItem) return;
-
-    try {
-      const { error } = await supabase
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, freq }: { id: string; freq: { name: string; description: string; months: string } }) => {
+      const { data, error } = await supabase
         .from('master_billing_frequencies')
-        .update({
-          name: editingItem.name.trim(),
-          description: editingItem.description?.trim() || null,
-          months: editingItem.months,
-          is_active: editingItem.is_active
+        .update({ 
+          name: freq.name.trim(), 
+          description: freq.description.trim() || null,
+          months: freq.months ? parseInt(freq.months) : null
         })
-        .eq('id', editingItem.id);
-
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
-
-      setEditingItem(null);
-      setShowEditDialog(false);
-      fetchFrequencies();
-      toast({
-        title: "Success",
-        description: "Billing frequency updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating billing frequency:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update billing frequency.",
-        variant: "destructive",
-      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-frequencies'] });
+      setEditingId(null);
+      setEditingValue({ name: '', description: '', months: '' });
+      toast({ title: "Success", description: "Billing frequency updated successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: "Failed to update billing frequency", variant: "destructive" });
     }
-  };
+  });
 
-  const handleDelete = async (item: BillingFrequency) => {
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('master_billing_frequencies')
         .delete()
-        .eq('id', item.id);
-
+        .eq('id', id);
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-frequencies'] });
+      toast({ title: "Success", description: "Billing frequency deleted successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: "Failed to delete billing frequency", variant: "destructive" });
+    }
+  });
 
-      setDeleteDialog(null);
-      fetchFrequencies();
-      toast({
-        title: "Deleted",
-        description: "Billing frequency deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting billing frequency:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete billing frequency.",
-        variant: "destructive",
-      });
+  const handleAdd = () => {
+    if (newFreq.name.trim()) {
+      addMutation.mutate(newFreq);
     }
   };
 
-  const handleToggleStatus = async (item: BillingFrequency) => {
-    try {
-      const { error } = await supabase
-        .from('master_billing_frequencies')
-        .update({ is_active: !item.is_active })
-        .eq('id', item.id);
+  const handleEdit = (id: string, name: string, description: string, months: number) => {
+    setEditingId(id);
+    setEditingValue({ name, description: description || '', months: months?.toString() || '' });
+  };
 
-      if (error) throw error;
-
-      fetchFrequencies();
-      toast({
-        title: "Status Updated",
-        description: `Billing frequency ${!item.is_active ? 'activated' : 'deactivated'}`,
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update status.",
-        variant: "destructive",
-      });
+  const handleSaveEdit = () => {
+    if (editingId && editingValue.name.trim()) {
+      updateMutation.mutate({ id: editingId, freq: editingValue });
     }
   };
 
-  // Filter frequencies based on search term
-  const filteredFrequencies = frequencies.filter(freq => 
-    freq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (freq.description && freq.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading billing frequencies...</div>;
-  }
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this billing frequency?')) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-6 h-6" />
-                Billing Frequencies Manager
-              </CardTitle>
-              <CardDescription>
-                Manage billing frequency options for subscription services
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={fetchFrequencies}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Refresh
-              </Button>
-              <Button
-                onClick={handleResetToDefault}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Reset to Default
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search billing frequencies..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Overview */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Billing Frequencies Overview
-          </CardTitle>
+          <CardTitle>Billing Frequencies Configuration</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="text-2xl font-bold">{frequencies.length}</div>
-              <div className="text-sm text-muted-foreground">Total Frequencies</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {frequencies.filter(f => f.is_active).length}
-              </div>
-              <div className="text-sm text-muted-foreground">Active Frequencies</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                {frequencies.filter(f => !f.is_active).length}
-              </div>
-              <div className="text-sm text-muted-foreground">Inactive Frequencies</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Add New Frequency */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Billing Frequencies</CardTitle>
-            <Button 
-              onClick={() => setIsAdding(true)} 
-              disabled={isAdding}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Frequency
+          <div className="flex items-center gap-2 mb-4">
+            <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsAdding(true)} disabled={isAdding || isLoading}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Billing Frequency
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+
           {isAdding && (
-            <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
-              <div className="flex-1 space-y-2">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <div>
-                    <Label htmlFor="new-frequency-name">Frequency Name</Label>
-                    <Input
-                      id="new-frequency-name"
-                      value={newFrequency.name}
-                      onChange={(e) => setNewFrequency({...newFrequency, name: e.target.value})}
-                      placeholder="Enter frequency name"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-frequency-months">Months</Label>
-                    <Input
-                      id="new-frequency-months"
-                      type="number"
-                      value={newFrequency.months}
-                      onChange={(e) => setNewFrequency({...newFrequency, months: parseInt(e.target.value) || 1})}
-                      placeholder="1"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2 mt-6">
-                    <Switch
-                      id="new-frequency-active"
-                      checked={newFrequency.is_active}
-                      onCheckedChange={(checked) => setNewFrequency({...newFrequency, is_active: checked})}
-                    />
-                    <Label htmlFor="new-frequency-active">Active</Label>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="new-frequency-description">Description</Label>
-                  <Input
-                    id="new-frequency-description"
-                    value={newFrequency.description}
-                    onChange={(e) => setNewFrequency({...newFrequency, description: e.target.value})}
-                    placeholder="Enter description"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2 items-end">
-                <Button onClick={handleAddFrequency} size="sm" className="flex items-center gap-1">
-                  <Save className="w-3 h-3" />
-                  Save
+            <div className="space-y-3 mb-4 p-3 border rounded-lg bg-muted">
+              <Input
+                value={newFreq.name}
+                onChange={(e) => setNewFreq(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter frequency name (e.g., Monthly, Quarterly)"
+                autoFocus
+              />
+              <Input
+                type="number"
+                value={newFreq.months}
+                onChange={(e) => setNewFreq(prev => ({ ...prev, months: e.target.value }))}
+                placeholder="Number of months (e.g., 1 for monthly, 3 for quarterly)"
+              />
+              <Textarea
+                value={newFreq.description}
+                onChange={(e) => setNewFreq(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter description (optional)"
+                rows={2}
+              />
+              <div className="flex items-center gap-2">
+                <Button onClick={handleAdd} size="sm" disabled={addMutation.isPending}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Add
                 </Button>
-                <Button onClick={() => setIsAdding(false)} variant="outline" size="sm" className="flex items-center gap-1">
-                  <X className="w-3 h-3" />
+                <Button onClick={() => { setIsAdding(false); setNewFreq({ name: '', description: '', months: '' }); }} size="sm" variant="outline">
+                  <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Frequencies List */}
-          <div className="space-y-4">
-            {filteredFrequencies.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No billing frequencies found. Add some frequencies to get started.</p>
-              </div>
-            ) : (
-              filteredFrequencies.map((frequency) => (
-                <div key={frequency.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div>
+          {isLoading ? (
+            <p className="text-muted-foreground text-center py-8">Loading...</p>
+          ) : frequencies.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No billing frequencies configured. Add some frequencies to get started.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {frequencies.map((freq) => (
+                <div key={freq.id} className="p-4 border rounded-lg">
+                  {editingId === freq.id ? (
+                    <div className="space-y-3">
+                      <Input
+                        value={editingValue.name}
+                        onChange={(e) => setEditingValue(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Frequency name"
+                        autoFocus
+                      />
+                      <Input
+                        type="number"
+                        value={editingValue.months}
+                        onChange={(e) => setEditingValue(prev => ({ ...prev, months: e.target.value }))}
+                        placeholder="Number of months"
+                      />
+                      <Textarea
+                        value={editingValue.description}
+                        onChange={(e) => setEditingValue(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Description (optional)"
+                        rows={2}
+                      />
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{frequency.name}</span>
-                        <Badge variant={frequency.is_active ? "default" : "secondary"}>
-                          {frequency.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        {frequency.months && (
-                          <Badge variant="outline">
-                            {frequency.months} month{frequency.months !== 1 ? 's' : ''}
-                          </Badge>
+                        <Button onClick={handleSaveEdit} size="sm" disabled={updateMutation.isPending}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button onClick={() => { setEditingId(null); setEditingValue({ name: '', description: '', months: '' }); }} size="sm" variant="outline">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">{freq.name}</h4>
+                          {freq.months && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                              {freq.months} months
+                            </span>
+                          )}
+                        </div>
+                        {freq.description && (
+                          <p className="text-sm text-muted-foreground">{freq.description}</p>
                         )}
                       </div>
-                      {frequency.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{frequency.description}</p>
-                      )}
+                      <div className="flex gap-2 ml-4">
+                        <Button 
+                          onClick={() => handleEdit(freq.id, freq.name, freq.description || '', freq.months)} 
+                          size="sm" 
+                          variant="outline"
+                          disabled={isLoading}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          onClick={() => handleDelete(freq.id)} 
+                          size="sm" 
+                          variant="outline"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleToggleStatus(frequency)}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Switch checked={frequency.is_active} className="w-3 h-3" />
-                      {frequency.is_active ? 'Deactivate' : 'Activate'}
-                    </Button>
-                    <Button
-                      onClick={() => handleEdit(frequency)}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Edit className="w-3 h-3" />
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => setDeleteDialog({ open: true, item: frequency })}
-                      variant="destructive"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Delete
-                    </Button>
-                  </div>
+                  )}
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog?.open} onOpenChange={() => setDeleteDialog(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the billing frequency "{deleteDialog?.item?.name}". 
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteDialog && handleDelete(deleteDialog.item)}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-// Import your original ConfigSupabase components
+// Import ONLY ConfigSupabase components - Original Architecture Restored
 import OrganizationTypeConfigSupabase from './master-data/OrganizationTypeConfigSupabase';
 import EntityTypeConfigSupabase from './master-data/EntityTypeConfigSupabase';
 import IndustrySegmentsConfigSupabase from './master-data/IndustrySegmentsConfigSupabase';
@@ -18,28 +18,8 @@ import BillingFrequenciesConfigSupabase from './master-data/BillingFrequenciesCo
 import MembershipStatusesConfigSupabase from './master-data/MembershipStatusesConfigSupabase';
 import UnitsOfMeasureConfigSupabase from './master-data/UnitsOfMeasureConfigSupabase';
 import EngagementModelsConfigSupabase from './master-data/EngagementModelsConfigSupabase';
-import EngagementModelSubtypesConfigSupabase from './master-data/EngagementModelSubtypesConfigSupabase';
-import PricingParametersConfigSupabase from './master-data/PricingParametersConfigSupabase';
-import PlatformFeeFormulasConfigSupabase from './master-data/PlatformFeeFormulasConfigSupabase';
-import PricingTiersConfigSupabase from './master-data/PricingTiersConfigSupabase';
-import TierConfigurationsConfigSupabase from './master-data/TierConfigurationsConfigSupabase';
-import TierEngagementModelAccessConfigSupabase from './master-data/TierEngagementModelAccessConfigSupabase';
-import SeekerMembershipFeesConfigSupabase from './master-data/SeekerMembershipFeesConfigSupabase';
-import SupportTypesConfigSupabase from './master-data/SupportTypesConfigSupabase';
-import WorkflowTemplatesConfigSupabase from './master-data/WorkflowTemplatesConfigSupabase';
-import SystemConfigurationsConfigSupabase from './master-data/SystemConfigurationsConfigSupabase';
-import CapabilityLevelsConfigSupabase from './master-data/CapabilityLevelsConfigSupabase';
-import CompetencyCapabilityConfigSupabase from './master-data/CompetencyCapabilityConfigSupabase';
 import CommunicationTypesConfigSupabase from './master-data/CommunicationTypesConfigSupabase';
-import OrganizationCategoriesConfigSupabase from './master-data/OrganizationCategoriesConfigSupabase';
-import PricingConfigurationsConfigSupabase from './master-data/PricingConfigurationsConfigSupabase';
 import SolutionSeekersConfigSupabase from './master-data/SolutionSeekersConfigSupabase';
-
-// Import the modern manager components for more complex functionality
-import DepartmentsManager from './master-data/DepartmentsManager';
-import CompetencyCapabilitiesManager from './master-data/CompetencyCapabilitiesManager';
-import CountriesManager from './master-data/CountriesManager';
-import CurrenciesManager from './master-data/CurrenciesManager';
 
 interface MasterDataContentProps {
   activeSection: string;
@@ -58,9 +38,9 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'sub-categories':
         return <SubCategoriesConfigSupabase />;
       case 'countries':
-        return <CountriesManager />;
+        return <CountryConfigSupabase />;
       case 'currencies':
-        return <CurrenciesManager />;
+        return <CurrencyConfigSupabase />;
       case 'organization-types':
         return <OrganizationTypeConfigSupabase />;
       case 'entity-types':
@@ -68,7 +48,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
       case 'industry-segments':
         return <IndustrySegmentsConfigSupabase />;
       case 'departments':
-        return <DepartmentsManager />;
+        return <DepartmentsConfigSupabase />;
       case 'sub-departments':
         return <SubDepartmentsConfigSupabase />;
       case 'team-units':
@@ -81,38 +61,10 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <UnitsOfMeasureConfigSupabase />;
       case 'engagement-models':
         return <EngagementModelsConfigSupabase />;
-      case 'engagement-model-subtypes':
-        return <EngagementModelSubtypesConfigSupabase />;
-      case 'pricing-parameters':
-        return <PricingParametersConfigSupabase />;
-      case 'platform-fee-formulas':
-        return <PlatformFeeFormulasConfigSupabase />;
-      case 'pricing-tiers':
-        return <PricingTiersConfigSupabase />;
-      case 'tier-configurations':
-        return <TierConfigurationsConfigSupabase />;
-      case 'tier-engagement-model-access':
-        return <TierEngagementModelAccessConfigSupabase />;
-      case 'seeker-membership-fees':
-        return <SeekerMembershipFeesConfigSupabase />;
-      case 'support-types':
-        return <SupportTypesConfigSupabase />;
-      case 'workflow-templates':
-        return <WorkflowTemplatesConfigSupabase />;
-      case 'system-configurations':
-        return <SystemConfigurationsConfigSupabase />;
-      case 'capability-levels':
-        return <CapabilityLevelsConfigSupabase />;
-      case 'competency-capabilities':
-        return <CompetencyCapabilitiesManager />;
       case 'communication-types':
         return <CommunicationTypesConfigSupabase />;
       case 'reward-types':
         return <RewardTypeConfigSupabase />;
-      case 'organization-categories':
-        return <OrganizationCategoriesConfigSupabase />;
-      case 'pricing-configurations':
-        return <PricingConfigurationsConfigSupabase />;
       default:
         return <DomainGroupsConfigSupabase />;
     }
