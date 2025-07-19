@@ -3,9 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, DollarSign, Settings, AlertCircle, ArrowRight, Tag, Users } from 'lucide-react';
+import { CheckCircle, DollarSign, Settings, AlertCircle, ArrowRight, Tag, Users, Briefcase, Zap } from 'lucide-react';
 import { useEngagementModelPricing } from '@/hooks/useEngagementModelPricing';
-import { ConsolidatedMarketplaceCard } from './ConsolidatedMarketplaceCard';
+import { formatCurrency } from '@/utils/formatting';
 
 interface EngagementModelSelectionCardProps {
   selectedTier: string | null;
@@ -69,27 +69,30 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
     );
   }
 
-  const renderStandardEngagementModel = (model: any) => {
+  const renderMarketplaceCard = (model: any) => {
     const isSelected = selectedModel === model.displayName;
     
     return (
       <div
         key={model.id}
-        className={`relative rounded-lg border-2 p-6 cursor-pointer transition-all duration-200 ${
+        className={`relative rounded-lg border-2 cursor-pointer transition-all duration-200 ${
           isSelected
             ? 'border-primary bg-primary/5 shadow-lg'
             : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
         }`}
         onClick={() => onModelSelect(model.displayName)}
       >
-        <div className="space-y-4">
-          {/* Model Header */}
+        <div className="p-6 space-y-6">
+          {/* Header */}
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">{model.displayName}</h3>
-            {model.description && (
-              <p className="text-sm text-muted-foreground mb-3">{model.description}</p>
-            )}
-            {membershipStatus === 'active' && model.formula && (
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Users className="h-6 w-6 text-blue-600" />
+              <h3 className="text-xl font-bold">{model.displayName}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Complete marketplace access with flexible engagement options
+            </p>
+            {membershipStatus === 'active' && (
               <Badge className="bg-green-100 text-green-800">
                 <Tag className="h-3 w-3 mr-1" />
                 Member Pricing Applied
@@ -97,95 +100,247 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
             )}
           </div>
 
-          {/* Pricing Information */}
-          {model.formula && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <DollarSign className="h-4 w-4" />
-                Pricing Structure
+          {/* Platform Fee Highlight */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+              <span className="text-lg font-bold text-blue-900">
+                {model.formula?.platform_usage_fee_percentage || 15}% Platform Fee
+              </span>
+            </div>
+            <p className="text-sm text-blue-700">Applied to all challenge values</p>
+          </div>
+
+          {/* Subtypes */}
+          <div className="space-y-4">
+            {/* General Marketplace */}
+            {model.subtypes?.general && (
+              <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-gray-800">Marketplace General</span>
+                  {membershipStatus === 'active' && model.subtypes.general.formula.membership_discount_percentage > 0 && (
+                    <Badge className="bg-green-100 text-green-800 ml-auto">
+                      <Tag className="h-3 w-3 mr-1" />
+                      {model.subtypes.general.formula.membership_discount_percentage}% Member Discount
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Platform Fee */}
+                <div className="bg-white rounded p-3 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Platform Usage Fee</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {model.subtypes.general.formula.platform_usage_fee_percentage}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Complexity Pricing */}
+                <div className="grid grid-cols-2 gap-2">
+                  {model.subtypes.general.complexityPricing.map((complexity: any) => (
+                    <div key={complexity.complexity} className="bg-white rounded p-3 border border-gray-200">
+                      <div className="font-medium text-sm text-gray-700 mb-1">
+                        {complexity.complexity}
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-xs text-gray-500">Management:</span>
+                        <span className="font-semibold text-gray-900 ml-1">
+                          {formatCurrency(complexity.management_fee, model.currency)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              
-              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                {/* Platform Usage Fee */}
-                {model.formula.platform_usage_fee_percentage > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Platform Usage Fee:</span>
-                    <span className="font-medium">
-                      {model.formula.platform_usage_fee_percentage}%
+            )}
+
+            {/* Program Managed */}
+            {model.subtypes?.programManaged && (
+              <div className="bg-green-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold text-gray-800">Marketplace Program Managed</span>
+                  {membershipStatus === 'active' && model.subtypes.programManaged.formula.membership_discount_percentage > 0 && (
+                    <Badge className="bg-green-100 text-green-800 ml-auto">
+                      <Tag className="h-3 w-3 mr-1" />
+                      {model.subtypes.programManaged.formula.membership_discount_percentage}% Member Discount
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Platform Fee */}
+                <div className="bg-white rounded p-3 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Platform Usage Fee</span>
+                    <span className="text-lg font-bold text-green-600">
+                      {model.subtypes.programManaged.formula.platform_usage_fee_percentage}%
                     </span>
                   </div>
-                )}
-                
-                {/* Management Fee */}
-                {model.formula.base_management_fee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Base Management Fee:</span>
-                    <span className="font-medium">
-                      {model.currency} {model.formula.base_management_fee}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Consulting Fee */}
-                {model.formula.base_consulting_fee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Base Consulting Fee:</span>
-                    <span className="font-medium">
-                      {model.currency} {model.formula.base_consulting_fee}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Advance Payment */}
-                {model.formula.advance_payment_percentage > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Advance Payment:</span>
-                    <span className="font-medium">{model.formula.advance_payment_percentage}% of total</span>
-                  </div>
-                )}
+                </div>
+
+                {/* Complexity Pricing */}
+                <div className="grid grid-cols-2 gap-2">
+                  {model.subtypes.programManaged.complexityPricing.map((complexity: any) => (
+                    <div key={complexity.complexity} className="bg-white rounded p-3 border border-gray-200">
+                      <div className="font-medium text-sm text-gray-700 mb-1">
+                        {complexity.complexity}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="text-xs text-gray-500">Management:</span>
+                          <span className="font-semibold text-gray-900 ml-1">
+                            {formatCurrency(complexity.management_fee, model.currency)}
+                          </span>
+                        </div>
+                        {complexity.consulting_fee > 0 && (
+                          <div className="text-sm">
+                            <span className="text-xs text-gray-500">Consulting:</span>
+                            <span className="font-semibold text-gray-900 ml-1">
+                              {formatCurrency(complexity.consulting_fee, model.currency)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Selection Button */}
+          <Button
+            variant={isSelected ? "default" : "outline"}
+            className="w-full"
+            onClick={() => onModelSelect(model.displayName)}
+          >
+            {isSelected ? (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Selected: Marketplace
+              </>
+            ) : (
+              <>
+                Select Marketplace
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
+          </Button>
+
+          {/* Info Note */}
+          <div className="text-center text-xs text-gray-500">
+            Choose between General and Program Managed when creating challenges
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAggregatorCard = (model: any) => {
+    const isSelected = selectedModel === model.displayName;
+    
+    return (
+      <div
+        key={model.id}
+        className={`relative rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+          isSelected
+            ? 'border-primary bg-primary/5 shadow-lg'
+            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+        }`}
+        onClick={() => onModelSelect(model.displayName)}
+      >
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Briefcase className="h-6 w-6 text-orange-600" />
+              <h3 className="text-xl font-bold">{model.displayName}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Curated solution providers with managed relationships and standardized processes
+            </p>
+            {membershipStatus === 'active' && model.formula?.membership_discount_percentage === 0 && (
+              <Badge variant="outline" className="bg-gray-100 text-gray-700">
+                0% Member Discount
+              </Badge>
+            )}
+          </div>
+
+          {/* Platform Fee */}
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <DollarSign className="h-5 w-5 text-orange-600" />
+              <span className="text-lg font-bold text-orange-900">
+                {model.formula?.platform_usage_fee_percentage || 15}% Platform Fee
+              </span>
+            </div>
+            <p className="text-sm text-orange-700">Applied to all challenge values</p>
+          </div>
+
+          {/* Complexity Pricing */}
+          {model.complexityPricing && model.complexityPricing.length > 0 && (
+            <div className="bg-orange-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Settings className="h-4 w-4 text-orange-600" />
+                <span className="font-semibold text-gray-800">Complexity Pricing</span>
               </div>
 
-              {/* Challenge Complexity Breakdown */}
-              {model.complexityPricing && model.complexityPricing.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Users className="h-4 w-4" />
-                    Complexity-Based Pricing
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      {model.complexityPricing.map((complexity: any) => (
-                        <div key={complexity.complexity} className="text-xs">
-                          <div className="font-medium">{complexity.complexity}</div>
-                          <div className="text-blue-700">
-                            Mgmt: {model.currency} {complexity.management_fee.toLocaleString()}
-                            {complexity.consulting_fee > 0 && (
-                              <span className="ml-1">
-                                | Consulting: {model.currency} {complexity.consulting_fee.toLocaleString()}
-                              </span>
-                            )}
-                          </div>
+              <div className="grid grid-cols-2 gap-2">
+                {model.complexityPricing.map((complexity: any) => (
+                  <div key={complexity.complexity} className="bg-white rounded p-3 border border-gray-200">
+                    <div className="font-medium text-sm text-gray-700 mb-1">
+                      {complexity.complexity}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm">
+                        <span className="text-xs text-gray-500">Management:</span>
+                        <span className="font-semibold text-gray-900 ml-1">
+                          {formatCurrency(complexity.management_fee, model.currency)}
+                        </span>
+                      </div>
+                      {complexity.consulting_fee > 0 && (
+                        <div className="text-sm">
+                          <span className="text-xs text-gray-500">Consulting:</span>
+                          <span className="font-semibold text-gray-900 ml-1">
+                            {formatCurrency(complexity.consulting_fee, model.currency)}
+                          </span>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            </div>
+          )}
 
-              {/* Formula Expression */}
-              {model.formula.formula_expression && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Settings className="h-4 w-4" />
-                    Formula
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <code className="text-xs text-blue-800 break-all">
-                      {model.formula.formula_expression}
-                    </code>
-                  </div>
+          {/* Additional Services */}
+          {model.additionalServices && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="h-4 w-4 text-gray-600" />
+                <span className="font-semibold text-gray-800">Additional Services</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white rounded p-2 border border-gray-200">
+                  <div className="text-xs text-gray-500">Analytics</div>
+                  <div className="text-sm font-medium">{model.additionalServices.analytics}</div>
                 </div>
-              )}
+                <div className="bg-white rounded p-2 border border-gray-200">
+                  <div className="text-xs text-gray-500">Support</div>
+                  <div className="text-sm font-medium">{model.additionalServices.support}</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-gray-200">
+                  <div className="text-xs text-gray-500">Onboarding</div>
+                  <div className="text-sm font-medium">{model.additionalServices.onboarding}</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-gray-200">
+                  <div className="text-xs text-gray-500">Workflow</div>
+                  <div className="text-sm font-medium">{model.additionalServices.workflow}</div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -198,11 +353,11 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
             {isSelected ? (
               <>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                Selected
+                Selected: Aggregator
               </>
             ) : (
               <>
-                Select {model.displayName}
+                Select Aggregator
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -231,23 +386,17 @@ export const EngagementModelSelectionCard: React.FC<EngagementModelSelectionCard
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {engagementModels.map((model) => {
-            // Special handling for consolidated Marketplace
-            if (model.name === 'Market Place' && model.subtypes) {
-              return (
-                <ConsolidatedMarketplaceCard
-                  key={model.id}
-                  model={model}
-                  isSelected={selectedModel?.includes('Market Place')}
-                  onModelSelect={onModelSelect}
-                  membershipStatus={membershipStatus}
-                />
-              );
+            if (model.name === 'Market Place') {
+              return renderMarketplaceCard(model);
             }
             
-            // Standard rendering for other models (including Aggregator)
-            return renderStandardEngagementModel(model);
+            if (model.name === 'Aggregator') {
+              return renderAggregatorCard(model);
+            }
+            
+            return null;
           })}
         </div>
         

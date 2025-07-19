@@ -3,16 +3,57 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Briefcase } from 'lucide-react';
 
+interface ComplexityPricing {
+  complexity: string;
+  level_order: number;
+  management_fee_multiplier: number;
+  consulting_fee_multiplier: number;
+  management_fee: number;
+  consulting_fee: number;
+}
+
+interface SubtypeData {
+  formula: {
+    id: string;
+    formula_name: string;
+    formula_expression: string;
+    platform_usage_fee_percentage: number;
+    base_management_fee: number;
+    base_consulting_fee: number;
+    advance_payment_percentage: number;
+    membership_discount_percentage: number;
+  };
+  complexityPricing: ComplexityPricing[];
+}
+
 interface EngagementModel {
   id: string;
   name: string;
   displayName: string;
   description: string;
   icon: React.ReactNode;
-  formula?: any;
-  complexityPricing?: any[];
-  currency?: string;
-  subtypes?: any;
+  formula?: {
+    id: string;
+    formula_name: string;
+    formula_expression: string;
+    platform_usage_fee_percentage: number;
+    base_management_fee: number;
+    base_consulting_fee: number;
+    advance_payment_percentage: number;
+    membership_discount_percentage: number;
+  };
+  complexityPricing?: ComplexityPricing[];
+  currency: string;
+  subtypes?: {
+    general?: SubtypeData;
+    programManaged?: SubtypeData;
+  };
+  additionalServices?: {
+    analytics: string;
+    support: string;
+    onboarding: string;
+    workflow: string;
+  };
 }
 
 export const useEngagementModelPricing = (
@@ -29,119 +70,228 @@ export const useEngagementModelPricing = (
       try {
         setLoading(true);
         setError(null);
+        
+        console.log('🔄 Loading engagement models with pricing details');
+        console.log('📊 Membership status:', membershipStatus);
 
-        // Get country ID
+        // Get country ID for filtering formulas
         const { data: countryData } = await supabase
           .from('master_countries')
-          .select('id')
+          .select('id, name')
           .eq('name', profile?.country || 'India')
           .single();
 
         if (!countryData) {
-          setError('Country not found');
-          return;
+          throw new Error('Country not found');
         }
 
-        // Load engagement models with their formulas
-        const { data: models } = await supabase
+        // Load engagement models
+        const { data: models, error: modelsError } = await supabase
           .from('master_engagement_models')
           .select('*')
+          .eq('is_user_created', false)
           .order('name');
 
-        if (!models) {
-          setError('No engagement models found');
-          return;
-        }
+        if (modelsError) throw modelsError;
 
-        // Load platform fee formulas for each model
+        // Load complexity levels
+        const { data: complexityData, error: complexityError } = await supabase
+          .from('master_challenge_complexity')
+          .select('*')
+          .eq('is_active', true)
+          .order('level_order');
+
+        if (complexityError) throw complexityError;
+
+        // Load all platform fee formulas for the country
+        const { data: formulas, error: formulasError } = await supabase
+          .from('master_platform_fee_formulas')
+          .select(`
+            *,
+            master_engagement_model_subtypes(
+              id, name, description
+            )
+          `)
+          .eq('country_id', countryData.id)
+          .eq('is_active', true);
+
+        if (formulasError) throw formulasError;
+
+        console.log('📋 Loaded formulas:', formulas?.length || 0);
+        console.log('🎯 Complexity levels:', complexityData?.length || 0);
+
+        // Get currency for the country
+        const { data: currencyData } = await supabase
+          .from('master_currencies')
+          .select('code, symbol')
+          .eq('country', profile?.country || 'India')
+          .single();
+
+        const currency = currencyData?.code || 'INR';
+
         const enhancedModels: EngagementModel[] = [];
 
-        for (const model of models) {
-          // Get formula for this model and country
-          const { data: formulaData } = await supabase
-            .from('master_platform_fee_formulas')
-            .select(`
-              *,
-              master_currencies(code, symbol)
-            `)
-            .eq('engagement_model_id', model.id)
-            .eq('country_id', countryData.id)
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        if (models) {
+          for (const model of models) {
+            console.log(`🔧 Processing model: ${model.name}`);
 
-          // Get complexity pricing
-          const { data: complexityData } = await supabase
-            .from('master_challenge_complexity')
-            .select('*')
-            .eq('is_active', true)
-            .order('level_order');
+            if (model.name === 'Market Place') {
+              // Handle Marketplace with subtypes
+              const generalFormula = formulas?.find(f => 
+                f.engagement_model_id === model.id && 
+                f.master_engagement_model_subtypes?.name === 'General'
+              );
+              
+              const programManagedFormula = formulas?.find(f => 
+                f.engagement_model_id === model.id && 
+                f.master_engagement_model_subtypes?.name === 'Program Managed'
+              );
 
-          let complexityPricing = [];
-          if (formulaData && complexityData) {
-            complexityPricing = complexityData.map(complexity => ({
-              complexity: complexity.name,
-              management_fee: (formulaData.base_management_fee || 0) * complexity.management_fee_multiplier,
-              consulting_fee: (formulaData.base_consulting_fee || 0) * complexity.consulting_fee_multiplier
-            }));
-          }
+              console.log('🏪 Marketplace formulas:', {
+                general: !!generalFormula,
+                programManaged: !!programManagedFormula
+              });
 
-          // Handle special case for Marketplace with subtypes
-          let subtypes = null;
-          if (model.name === 'Market Place') {
-            // Get subtypes for marketplace
-            const { data: subtypeData } = await supabase
-              .from('master_engagement_model_subtypes')
-              .select('*')
-              .eq('engagement_model_id', model.id)
-              .eq('is_active', true);
-
-            if (subtypeData && subtypeData.length > 0) {
-              subtypes = {};
-              for (const subtype of subtypeData) {
-                // Get formula for this subtype
-                const { data: subtypeFormula } = await supabase
-                  .from('master_platform_fee_formulas')
-                  .select('*')
-                  .eq('engagement_model_subtype_id', subtype.id)
-                  .eq('country_id', countryData.id)
-                  .eq('is_active', true)
-                  .maybeSingle();
-
-                if (subtypeFormula) {
-                  const subtypeComplexityPricing = complexityData?.map(complexity => ({
+              const calculateComplexityPricing = (formula: any, includeConsulting: boolean = false): ComplexityPricing[] => {
+                if (!formula || !complexityData) return [];
+                
+                return complexityData.map(complexity => {
+                  const managementFee = formula.base_management_fee * complexity.management_fee_multiplier;
+                  const consultingFee = includeConsulting ? formula.base_consulting_fee * complexity.consulting_fee_multiplier : 0;
+                  
+                  return {
                     complexity: complexity.name,
-                    management_fee: (subtypeFormula.base_management_fee || 0) * complexity.management_fee_multiplier,
-                    consulting_fee: (subtypeFormula.base_consulting_fee || 0) * complexity.consulting_fee_multiplier
-                  })) || [];
-
-                  subtypes[subtype.name.toLowerCase().replace(' ', '')] = {
-                    formula: subtypeFormula,
-                    complexityPricing: subtypeComplexityPricing
+                    level_order: complexity.level_order,
+                    management_fee_multiplier: complexity.management_fee_multiplier,
+                    consulting_fee_multiplier: complexity.consulting_fee_multiplier,
+                    management_fee: managementFee,
+                    consulting_fee: consultingFee
                   };
-                }
+                });
+              };
+
+              if (generalFormula || programManagedFormula) {
+                const primaryFormula = generalFormula || programManagedFormula;
+                
+                enhancedModels.push({
+                  id: model.id,
+                  name: 'Market Place',
+                  displayName: 'Market Place',
+                  description: 'Complete marketplace access with flexible engagement options',
+                  icon: <Users className="w-5 h-5" />,
+                  formula: primaryFormula ? {
+                    id: primaryFormula.id,
+                    formula_name: primaryFormula.formula_name,
+                    formula_expression: primaryFormula.formula_expression,
+                    platform_usage_fee_percentage: primaryFormula.platform_usage_fee_percentage,
+                    base_management_fee: primaryFormula.base_management_fee,
+                    base_consulting_fee: primaryFormula.base_consulting_fee,
+                    advance_payment_percentage: primaryFormula.advance_payment_percentage,
+                    membership_discount_percentage: membershipStatus === 'active' ? primaryFormula.membership_discount_percentage : 0,
+                  } : undefined,
+                  currency,
+                  subtypes: {
+                    general: generalFormula ? {
+                      formula: {
+                        id: generalFormula.id,
+                        formula_name: generalFormula.formula_name,
+                        formula_expression: generalFormula.formula_expression,
+                        platform_usage_fee_percentage: generalFormula.platform_usage_fee_percentage,
+                        base_management_fee: generalFormula.base_management_fee,
+                        base_consulting_fee: generalFormula.base_consulting_fee,
+                        advance_payment_percentage: generalFormula.advance_payment_percentage,
+                        membership_discount_percentage: membershipStatus === 'active' ? generalFormula.membership_discount_percentage : 0,
+                      },
+                      complexityPricing: calculateComplexityPricing(generalFormula, false)
+                    } : undefined,
+                    programManaged: programManagedFormula ? {
+                      formula: {
+                        id: programManagedFormula.id,
+                        formula_name: programManagedFormula.formula_name,
+                        formula_expression: programManagedFormula.formula_expression,
+                        platform_usage_fee_percentage: programManagedFormula.platform_usage_fee_percentage,
+                        base_management_fee: programManagedFormula.base_management_fee,
+                        base_consulting_fee: programManagedFormula.base_consulting_fee,
+                        advance_payment_percentage: programManagedFormula.advance_payment_percentage,
+                        membership_discount_percentage: membershipStatus === 'active' ? programManagedFormula.membership_discount_percentage : 0,
+                      },
+                      complexityPricing: calculateComplexityPricing(programManagedFormula, true)
+                    } : undefined
+                  }
+                });
               }
+            } else {
+              // Handle Aggregator and other models
+              const formula = formulas?.find(f => 
+                f.engagement_model_id === model.id && 
+                !f.engagement_model_subtype_id
+              );
+
+              console.log(`🔧 ${model.name} formula:`, !!formula);
+
+              const calculateComplexityPricing = (formula: any): ComplexityPricing[] => {
+                if (!formula || !complexityData) return [];
+                
+                return complexityData.map(complexity => {
+                  const managementFee = formula.base_management_fee * complexity.management_fee_multiplier;
+                  const consultingFee = formula.base_consulting_fee * complexity.consulting_fee_multiplier;
+                  
+                  return {
+                    complexity: complexity.name,
+                    level_order: complexity.level_order,
+                    management_fee_multiplier: complexity.management_fee_multiplier,
+                    consulting_fee_multiplier: complexity.consulting_fee_multiplier,
+                    management_fee: managementFee,
+                    consulting_fee: consultingFee
+                  };
+                });
+              };
+
+              // Add additional services for Aggregator
+              const additionalServices = model.name === 'Aggregator' ? {
+                analytics: 'No Analytics',
+                support: 'Basic Support',
+                onboarding: 'Self Service',
+                workflow: 'Fixed Template'
+              } : undefined;
+
+              enhancedModels.push({
+                id: model.id,
+                name: model.name,
+                displayName: model.name,
+                description: model.description || `${model.name} engagement model for innovation challenges`,
+                icon: getEngagementModelIcon(model.name),
+                formula: formula ? {
+                  id: formula.id,
+                  formula_name: formula.formula_name,
+                  formula_expression: formula.formula_expression,
+                  platform_usage_fee_percentage: formula.platform_usage_fee_percentage,
+                  base_management_fee: formula.base_management_fee,
+                  base_consulting_fee: formula.base_consulting_fee,
+                  advance_payment_percentage: formula.advance_payment_percentage,
+                  membership_discount_percentage: membershipStatus === 'active' ? formula.membership_discount_percentage : 0,
+                } : undefined,
+                complexityPricing: calculateComplexityPricing(formula),
+                currency,
+                additionalServices
+              });
             }
           }
-
-          enhancedModels.push({
-            id: model.id,
-            name: model.name,
-            displayName: model.name,
-            description: model.description || `${model.name} engagement model for innovation challenges`,
-            icon: getEngagementModelIcon(model.name),
-            formula: formulaData,
-            complexityPricing,
-            currency: formulaData?.master_currencies?.code || 'USD',
-            subtypes
-          });
         }
+
+        console.log('✅ Enhanced models:', enhancedModels.length);
+        console.log('📊 Models with pricing:', enhancedModels.map(m => ({
+          name: m.name,
+          hasFormula: !!m.formula,
+          hasSubtypes: !!m.subtypes,
+          complexityCount: m.complexityPricing?.length || 0,
+          subtypeData: m.subtypes ? Object.keys(m.subtypes) : []
+        })));
 
         setEngagementModels(enhancedModels);
       } catch (err) {
-        console.error('Error loading engagement model pricing:', err);
-        setError('Failed to load engagement model pricing data');
+        console.error('❌ Error loading engagement model pricing:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load engagement model pricing data');
       } finally {
         setLoading(false);
       }
