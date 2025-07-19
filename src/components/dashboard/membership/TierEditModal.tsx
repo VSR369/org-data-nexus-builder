@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Crown, X, AlertTriangle, DollarSign, TrendingUp, Loader2 } from 'lucide-react';
+import { CheckCircle, Crown, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { DetailedTierCard } from './DetailedTierCard';
 
 interface TierEditModalProps {
   isOpen: boolean;
@@ -181,17 +180,6 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
     onClose();
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
-    
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: validCurrency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
   const isCurrentTier = (tierName: string) => {
     return tierName?.toLowerCase() === currentTier?.toLowerCase();
   };
@@ -225,7 +213,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-purple-600" />
@@ -260,86 +248,19 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tierConfigurations.map((tierConfig) => {
               const tierName = tierConfig.master_pricing_tiers?.name;
-              const isCurrent = isCurrentTier(tierName);
-              const isSelected = isSelectedTier(tierName);
-
+              
               return (
-                <Card
+                <DetailedTierCard
                   key={tierConfig.id}
-                  className={`cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
-                      : isCurrent 
-                        ? 'border-green-500 bg-green-50'
-                        : 'hover:border-gray-300'
-                  }`}
-                  onClick={() => {
-                    console.log('🎯 Selecting tier:', tierName);
-                    setSelectedTier(tierName);
-                  }}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{tierName}</span>
-                      <div className="flex items-center gap-2">
-                        {isCurrent && (
-                          <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
-                            Current
-                          </Badge>
-                        )}
-                        {isSelected && (
-                          <CheckCircle className="h-5 w-5 text-purple-600" />
-                        )}
-                      </div>
-                    </CardTitle>
-                    <CardDescription>
-                      {tierConfig.master_pricing_tiers?.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Monthly Challenges:</span>
-                        <span className="font-medium">
-                          {tierConfig.monthly_challenge_limit || 'Unlimited'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Fixed Charge:</span>
-                        <span className="font-medium">
-                          {formatCurrency(
-                            tierConfig.fixed_charge_per_challenge || 0, 
-                            tierConfig.master_currencies?.code
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Solutions per Challenge:</span>
-                        <span className="font-medium">
-                          {tierConfig.solutions_per_challenge || 1}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Overage Allowed:</span>
-                        <Badge variant={tierConfig.allows_overage ? "default" : "secondary"}>
-                          {tierConfig.allows_overage ? 'Yes' : 'No'}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    {membershipStatus === 'Active' && (
-                      <div className="pt-2 border-t">
-                        <div className="bg-green-100 p-2 rounded text-green-800 text-xs flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          Member discount applies to this tier
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  tierConfiguration={tierConfig}
+                  isSelected={isSelectedTier(tierName)}
+                  isCurrent={isCurrentTier(tierName)}
+                  onTierSelect={setSelectedTier}
+                  membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
+                />
               );
             })}
           </div>
@@ -355,7 +276,7 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
             disabled={!selectedTier || isCurrentTier(selectedTier)}
           >
             <CheckCircle className="h-4 w-4 mr-2" />
-            Confirm Change
+            {isCurrentTier(selectedTier) ? 'No Change Needed' : 'Confirm Change'}
           </Button>
         </div>
       </DialogContent>

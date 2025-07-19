@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Users, Target, Shield, TrendingUp, CheckCircle, Info } from 'lucide-react';
+import { Zap, Users, Target, Shield, TrendingUp, CheckCircle, Info, Star } from 'lucide-react';
 import { useEngagementModelPricing } from '@/hooks/useEngagementModelPricing';
 import { formatCurrency } from '@/utils/formatting';
 
@@ -13,6 +13,8 @@ interface DetailedEngagementModelCardProps {
   onModelSelect: (modelName: string) => void;
   profile: any;
   membershipStatus: 'active' | 'inactive' | null;
+  showCurrentBadge?: boolean;
+  currentModel?: string | null;
 }
 
 export const DetailedEngagementModelCard: React.FC<DetailedEngagementModelCardProps> = ({
@@ -20,7 +22,9 @@ export const DetailedEngagementModelCard: React.FC<DetailedEngagementModelCardPr
   selectedModel,
   onModelSelect,
   profile,
-  membershipStatus
+  membershipStatus,
+  showCurrentBadge = false,
+  currentModel = null
 }) => {
   const { engagementModels, loading, error } = useEngagementModelPricing(
     selectedTier,
@@ -51,22 +55,34 @@ export const DetailedEngagementModelCard: React.FC<DetailedEngagementModelCardPr
     );
   };
 
+  const isCurrentModel = (modelName: string) => {
+    return currentModel?.toLowerCase() === modelName?.toLowerCase();
+  };
+
+  const isSelectedModel = (modelName: string) => {
+    return selectedModel?.toLowerCase() === modelName?.toLowerCase();
+  };
+
   const renderMarketplaceCard = (model: any) => {
     const generalSubtype = model.subtypes?.general;
     const programManagedSubtype = model.subtypes?.programManaged;
     const isMember = membershipStatus === 'active';
+    const isSelected = isSelectedModel(model.name);
+    const isCurrent = isCurrentModel(model.name);
 
     return (
       <Card 
         key={model.id}
         className={`relative cursor-pointer transition-all border-2 ${
-          selectedModel === model.name 
+          isSelected
             ? 'border-primary bg-primary/5 shadow-lg' 
-            : 'border-border hover:border-primary/50 hover:shadow-md'
+            : isCurrent
+              ? 'border-green-500 bg-green-50'
+              : 'border-border hover:border-primary/50 hover:shadow-md'
         }`}
         onClick={() => onModelSelect(model.name)}
       >
-        {selectedModel === model.name && (
+        {isSelected && (
           <div className="absolute -top-2 -right-2">
             <CheckCircle className="h-6 w-6 text-primary bg-white rounded-full" />
           </div>
@@ -76,6 +92,14 @@ export const DetailedEngagementModelCard: React.FC<DetailedEngagementModelCardPr
           <CardTitle className="flex items-center gap-2 text-lg">
             <Zap className="h-5 w-5 text-orange-600" />
             {model.displayName}
+            <div className="flex items-center gap-2 ml-auto">
+              {isCurrent && showCurrentBadge && (
+                <Badge variant="secondary" className="text-xs">
+                  <Star className="h-3 w-3 mr-1" />
+                  Current
+                </Badge>
+              )}
+            </div>
           </CardTitle>
           <p className="text-sm text-muted-foreground">{model.description}</p>
         </CardHeader>
@@ -170,18 +194,22 @@ export const DetailedEngagementModelCard: React.FC<DetailedEngagementModelCardPr
 
   const renderAggregatorCard = (model: any) => {
     const isMember = membershipStatus === 'active';
+    const isSelected = isSelectedModel(model.name);
+    const isCurrent = isCurrentModel(model.name);
 
     return (
       <Card 
         key={model.id}
         className={`relative cursor-pointer transition-all border-2 ${
-          selectedModel === model.name 
+          isSelected
             ? 'border-primary bg-primary/5 shadow-lg' 
-            : 'border-border hover:border-primary/50 hover:shadow-md'
+            : isCurrent
+              ? 'border-green-500 bg-green-50'
+              : 'border-border hover:border-primary/50 hover:shadow-md'
         }`}
         onClick={() => onModelSelect(model.name)}
       >
-        {selectedModel === model.name && (
+        {isSelected && (
           <div className="absolute -top-2 -right-2">
             <CheckCircle className="h-6 w-6 text-primary bg-white rounded-full" />
           </div>
@@ -191,6 +219,14 @@ export const DetailedEngagementModelCard: React.FC<DetailedEngagementModelCardPr
           <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5 text-blue-600" />
             {model.displayName}
+            <div className="flex items-center gap-2 ml-auto">
+              {isCurrent && showCurrentBadge && (
+                <Badge variant="secondary" className="text-xs">
+                  <Star className="h-3 w-3 mr-1" />
+                  Current
+                </Badge>
+              )}
+            </div>
           </CardTitle>
           <p className="text-sm text-muted-foreground">{model.description}</p>
         </CardHeader>

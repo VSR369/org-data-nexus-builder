@@ -1,248 +1,184 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, Crown, ArrowRight, ChevronDown, ChevronUp, 
-         BarChart3, HeadphonesIcon, Rocket, Workflow, DollarSign } from 'lucide-react';
-import { TierConfiguration } from '@/hooks/useTierConfigurations';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Crown, TrendingUp, Star } from 'lucide-react';
 
 interface DetailedTierCardProps {
-  config: TierConfiguration;
+  tierConfiguration: any;
   isSelected: boolean;
   isCurrent: boolean;
-  isRecommended: boolean;
-  onSelect: () => void;
+  onTierSelect: (tierName: string) => void;
+  membershipStatus: 'active' | 'inactive';
 }
 
-const getTierIcon = (tierName: string) => {
-  const lowerName = tierName.toLowerCase();
-  if (lowerName.includes('basic')) return CheckCircle;
-  if (lowerName.includes('standard')) return Star;
-  if (lowerName.includes('premium')) return Crown;
-  return CheckCircle;
-};
-
-const getTierColor = (tierName: string) => {
-  const lowerName = tierName.toLowerCase();
-  if (lowerName.includes('basic')) return 'text-green-600';
-  if (lowerName.includes('standard')) return 'text-blue-600';
-  if (lowerName.includes('premium')) return 'text-purple-600';
-  return 'text-green-600';
-};
-
-const formatCurrency = (amount: number, symbol: string, code: string) => {
-  return `${symbol} ${amount.toFixed(2)} ${code}`;
-};
-
 export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
-  config,
+  tierConfiguration,
   isSelected,
   isCurrent,
-  isRecommended,
-  onSelect
+  onTierSelect,
+  membershipStatus
 }) => {
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const tierName = tierConfiguration.master_pricing_tiers?.name;
+  const isMember = membershipStatus === 'active';
 
-  const Icon = getTierIcon(config.pricing_tier_name);
-  
-  // Calculate estimated monthly cost
-  const estimatedMonthlyCost = config.monthly_challenge_limit 
-    ? config.fixed_charge_per_challenge * config.monthly_challenge_limit
-    : config.fixed_charge_per_challenge * 10;
-
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section);
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
+    
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: validCurrency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
   };
 
-  const renderExpandableSection = (
-    title: string,
-    icon: React.ComponentType<any>,
-    name: string,
-    description?: string,
-    details?: Record<string, any>
-  ) => {
-    const isExpanded = expandedSection === title.toLowerCase();
-    const SectionIcon = icon;
-
-    return (
-      <div className="border rounded-lg p-3">
-        <div 
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => toggleSection(title.toLowerCase())}
-        >
-          <div className="flex items-center gap-2">
-            <SectionIcon className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-sm">{title}</span>
-            <Badge variant="outline" className="text-xs">
-              {name}
-            </Badge>
-          </div>
-          {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
-          )}
-        </div>
-        
-        {isExpanded && (
-          <div className="mt-3 pt-3 border-t space-y-2">
-            {description && (
-              <p className="text-sm text-gray-600">{description}</p>
-            )}
-            {details && Object.entries(details).map(([key, value]) => {
-              if (!value) return null;
-              return (
-                <div key={key} className="flex justify-between text-sm">
-                  <span className="text-gray-500 capitalize">
-                    {key.replace(/_/g, ' ')}:
-                  </span>
-                  <span className="font-medium">
-                    {Array.isArray(value) ? value.join(', ') : value.toString()}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
+  const handleCardClick = () => {
+    if (tierName) {
+      onTierSelect(tierName);
+    }
   };
 
   return (
-    <div
-      className={`relative rounded-lg border-2 p-6 cursor-pointer transition-all duration-200 ${
+    <Card
+      className={`cursor-pointer transition-all border-2 ${
         isSelected
-          ? 'border-primary bg-primary/5 shadow-lg'
+          ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
           : isCurrent 
             ? 'border-green-500 bg-green-50'
-            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-      } ${isRecommended ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}
-      onClick={onSelect}
+            : 'hover:border-gray-300'
+      }`}
+      onClick={handleCardClick}
     >
-      {isRecommended && (
-        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
-          Recommended
-        </Badge>
-      )}
-      
-      {isCurrent && (
-        <Badge className="absolute -top-2 right-4 bg-green-600">
-          Current Plan
-        </Badge>
-      )}
-      
-      <div className="text-center mb-6">
-        <Icon className={`h-8 w-8 mx-auto mb-3 ${getTierColor(config.pricing_tier_name)}`} />
-        <h3 className="text-lg font-semibold mb-2">{config.pricing_tier_name}</h3>
-        
-        <div className="mb-4">
-          <div className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">
-            <DollarSign className="h-5 w-5" />
-            {formatCurrency(config.fixed_charge_per_challenge, config.currency_symbol, config.currency_code)}
-            <span className="text-sm font-normal text-gray-500">/challenge</span>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-purple-600" />
+            <span>{tierName}</span>
           </div>
-          {config.monthly_challenge_limit && (
-            <div className="text-sm text-gray-500 mt-1">
-              Est. {formatCurrency(estimatedMonthlyCost, config.currency_symbol, config.currency_code)}/month
-              <br />
-              (if you use all {config.monthly_challenge_limit} challenges)
-            </div>
-          )}
-          {!config.monthly_challenge_limit && (
-            <div className="text-sm text-gray-500 mt-1">
-              Unlimited challenges
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Challenge Limits Summary */}
-      <div className="space-y-2 mb-4 p-3 bg-gray-50 rounded-lg">
-        <div className="flex justify-between text-sm">
-          <span>Monthly Challenges:</span>
-          <span className="font-medium">
-            {config.monthly_challenge_limit || 'Unlimited'}
-          </span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span>Solutions per Challenge:</span>
-          <span className="font-medium">{config.solutions_per_challenge}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span>Overage Allowed:</span>
-          <Badge variant={config.allows_overage ? "default" : "secondary"} className="text-xs">
-            {config.allows_overage ? 'Yes' : 'No'}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Detailed Feature Sections */}
-      <div className="space-y-3 mb-6">
-        {renderExpandableSection(
-          "Analytics Access",
-          BarChart3,
-          config.analytics_access_name,
-          config.analytics_access_description,
-          {
-            dashboard_access: config.analytics_dashboard_access ? 'Full Access' : 'Limited Access',
-            features_included: config.analytics_features_included?.length ? config.analytics_features_included : ['Basic Analytics']
-          }
-        )}
-
-        {renderExpandableSection(
-          "Support Type",
-          HeadphonesIcon,
-          config.support_type_name,
-          config.support_type_description,
-          {
-            service_level: config.support_service_level,
-            response_time: config.support_response_time,
-            availability: config.support_availability
-          }
-        )}
-
-        {renderExpandableSection(
-          "Onboarding",
-          Rocket,
-          config.onboarding_type_name,
-          config.onboarding_type_description,
-          {
-            service_type: config.onboarding_service_type,
-            resources_included: config.onboarding_resources_included?.length ? config.onboarding_resources_included : ['Basic Resources']
-          }
-        )}
-
-        {renderExpandableSection(
-          "Workflow Templates",
-          Workflow,
-          config.workflow_template_name,
-          config.workflow_template_description,
-          {
-            template_type: config.workflow_template_type,
-            customization_level: config.workflow_customization_level,
-            template_count: config.workflow_template_count
-          }
-        )}
-      </div>
+          <div className="flex items-center gap-2">
+            {isCurrent && (
+              <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
+                <Star className="h-3 w-3 mr-1" />
+                Current
+              </Badge>
+            )}
+            {isSelected && (
+              <CheckCircle className="h-5 w-5 text-purple-600" />
+            )}
+          </div>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {tierConfiguration.master_pricing_tiers?.description}
+        </p>
+      </CardHeader>
       
-      <Button
-        variant={isSelected ? "default" : "outline"}
-        className="w-full"
-        onClick={onSelect}
-      >
-        {isSelected ? (
-          <>
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Selected
-          </>
-        ) : (
-          <>
-            Select {config.pricing_tier_name}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </>
+      <CardContent className="space-y-4">
+        {/* Core Features */}
+        <div className="p-3 border rounded-lg bg-blue-50">
+          <h4 className="font-semibold text-blue-800 mb-3">Tier Features</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Monthly Challenges:</span>
+              <span className="font-medium">
+                {tierConfiguration.monthly_challenge_limit === null 
+                  ? 'Unlimited' 
+                  : tierConfiguration.monthly_challenge_limit}
+              </span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span>Solutions per Challenge:</span>
+              <span className="font-medium">
+                {tierConfiguration.solutions_per_challenge || 1}
+              </span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span>Overage Allowed:</span>
+              <Badge variant={tierConfiguration.allows_overage ? "default" : "secondary"}>
+                {tierConfiguration.allows_overage ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Pricing Information */}
+        <div className="p-3 border rounded-lg bg-gray-50">
+          <h4 className="font-semibold text-gray-800 mb-3">Pricing Details</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Fixed Charge per Challenge:</span>
+              <span className="font-medium">
+                {formatCurrency(
+                  tierConfiguration.fixed_charge_per_challenge || 0, 
+                  tierConfiguration.master_currencies?.code
+                )}
+              </span>
+            </div>
+            
+            {isMember && (
+              <div className="flex justify-between text-green-700">
+                <span>Member Benefits:</span>
+                <span className="font-medium">Applied</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Support & Analytics */}
+        <div className="p-3 border rounded-lg bg-purple-50">
+          <h4 className="font-semibold text-purple-800 mb-3">Support & Analytics</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Support Level:</span>
+              <Badge variant="outline">
+                {tierConfiguration.support_type_id ? 'Premium' : 'Standard'}
+              </Badge>
+            </div>
+            
+            <div className="flex justify-between">
+              <span>Analytics Access:</span>
+              <Badge variant="outline">
+                {tierConfiguration.analytics_access_id ? 'Advanced' : 'Basic'}
+              </Badge>
+            </div>
+            
+            <div className="flex justify-between">
+              <span>Workflow Templates:</span>
+              <Badge variant="outline">
+                {tierConfiguration.workflow_template_id ? 'Custom' : 'Standard'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Member Benefits */}
+        {isMember && (
+          <div className="p-3 bg-green-100 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2 text-green-800 mb-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="font-medium">Member Benefits Active</span>
+            </div>
+            <div className="text-xs text-green-700 space-y-1">
+              <div>• Discounted pricing on all features</div>
+              <div>• Priority customer support</div>
+              <div>• Advanced analytics access</div>
+              <div>• Custom workflow templates</div>
+            </div>
+          </div>
         )}
-      </Button>
-    </div>
+
+        {/* Tier Level Indicator */}
+        <div className="pt-2 border-t">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Tier Level:</span>
+            <Badge variant="outline">
+              Level {tierConfiguration.master_pricing_tiers?.level_order || 1}
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

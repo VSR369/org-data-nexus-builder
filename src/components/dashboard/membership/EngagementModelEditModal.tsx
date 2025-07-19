@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Zap, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useEngagementModelPricing } from '@/hooks/useEngagementModelPricing';
-import { ConsolidatedMarketplaceCard } from './ConsolidatedMarketplaceCard';
-import { EngagementModelCard } from './EngagementModelCard';
+import { DetailedEngagementModelCard } from './DetailedEngagementModelCard';
 
 interface EngagementModelEditModalProps {
   isOpen: boolean;
@@ -124,35 +123,6 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
     );
   }
 
-  const renderEngagementModel = (model: any) => {
-    console.log('⚡ Rendering engagement model:', model);
-    
-    // Handle consolidated Marketplace with same logic as sign-up
-    if (model.name === 'Market Place' && model.subtypes) {
-      return (
-        <ConsolidatedMarketplaceCard
-          key={model.id}
-          model={model}
-          isSelected={isModelSelected('Market Place')}
-          onModelSelect={handleModelSelect}
-          membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
-        />
-      );
-    }
-    
-    // Handle other models with same detailed pricing as sign-up
-    return (
-      <EngagementModelCard
-        key={model.id}
-        model={model}
-        isSelected={isModelSelected(model.displayName || model.name)}
-        onModelSelect={handleModelSelect}
-        membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
-        showCurrentBadge={isModelCurrent(model.displayName || model.name)}
-      />
-    );
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -198,9 +168,14 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {engagementModels.map(renderEngagementModel)}
-            </div>
+            {/* Use the same DetailedEngagementModelCard as sign-in */}
+            <DetailedEngagementModelCard
+              selectedTier={selectedTier}
+              selectedModel={selectedModel}
+              onModelSelect={handleModelSelect}
+              profile={profileContext}
+              membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
+            />
             
             {selectedModel && (
               <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -209,9 +184,17 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
                   <span className="font-medium">
                     {selectedModel} engagement model selected
                   </span>
+                  {isModelCurrent(selectedModel) && (
+                    <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
+                      Current Model
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-green-700 mt-1">
-                  Your membership configuration will be updated with this engagement model and pricing structure.
+                  {isModelCurrent(selectedModel) 
+                    ? "This is your current engagement model."
+                    : "Your membership configuration will be updated with this engagement model and pricing structure."
+                  }
                 </p>
               </div>
             )}
@@ -228,7 +211,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
             disabled={!selectedModel || isModelCurrent(selectedModel)}
           >
             <CheckCircle className="h-4 w-4 mr-2" />
-            Confirm Change
+            {isModelCurrent(selectedModel) ? 'No Change Needed' : 'Confirm Change'}
           </Button>
         </div>
       </DialogContent>
