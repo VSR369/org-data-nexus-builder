@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +53,26 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       initializeComponent();
     }
   }, [userId, profile]);
+
+  // Helper function to map frontend membership status to database values
+  const mapMembershipStatusForDB = (status: 'active' | 'inactive' | null): string => {
+    if (status === 'active') return 'Active';
+    if (status === 'inactive') return 'Not Active';
+    return 'Not Active';
+  };
+
+  // Helper function to map frontend workflow steps to database values
+  const mapWorkflowStepForDB = (step: string): string => {
+    const stepMapping: Record<string, string> = {
+      'membership_decision': 'membership_decision',
+      'payment': 'payment',
+      'tier_selection': 'tier_selection',
+      'engagement_model_selection': 'engagement_model',
+      'terms_acceptance': 'preview_confirmation',
+      'completed': 'activation_complete'
+    };
+    return stepMapping[step] || step;
+  };
 
   const constructProfileContext = async (savedData: any = null) => {
     try {
@@ -163,9 +182,17 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         const workflowStep = savedData.workflow_step || 'membership_decision';
         let mappedStep = workflowStep;
         
-        if (workflowStep === 'activation_complete') {
-          mappedStep = 'completed';
-        }
+        // Map database workflow steps back to frontend steps
+        const frontendStepMapping: Record<string, string> = {
+          'membership_decision': 'membership_decision',
+          'payment': 'payment',
+          'tier_selection': 'tier_selection',
+          'engagement_model': 'engagement_model_selection',
+          'preview_confirmation': 'terms_acceptance',
+          'activation_complete': 'completed'
+        };
+        
+        mappedStep = frontendStepMapping[workflowStep] || workflowStep;
         
         // Restore all saved state to maintain selections
         setCurrentStep(mappedStep);
@@ -238,32 +265,45 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     }
   };
 
-  const saveCurrentState = async (updateData: any) => {
+  const saveCurrentState = async (updateData: any = {}) => {
     try {
       setSaving(true);
       
+      // Prepare the base data with proper database-compatible values
+      const baseData = {
+        user_id: userId,
+        membership_status: mapMembershipStatusForDB(membershipStatus),
+        pricing_tier: selectedTier,
+        engagement_model: selectedEngagementModel,
+        terms_accepted: termsAccepted,
+        workflow_step: mapWorkflowStepForDB(currentStep),
+        country: profileContext?.country,
+        organization_type: profileContext?.organization_type,
+        updated_at: new Date().toISOString(),
+        ...updateData
+      };
+
+      console.log('💾 Saving state with data:', baseData);
+
       const { error } = await supabase
         .from('engagement_activations')
-        .upsert({
-          user_id: userId,
-          membership_status: membershipStatus === 'active' ? 'Active' : 'Not Active',
-          pricing_tier: selectedTier,
-          engagement_model: selectedEngagementModel,
-          terms_accepted: termsAccepted,
-          workflow_step: currentStep,
-          country: profileContext?.country,
-          organization_type: profileContext?.organization_type,
-          updated_at: new Date().toISOString(),
-          ...updateData
-        }, {
+        .upsert(baseData, {
           onConflict: 'user_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database save error:', error);
+        throw error;
+      }
       
-      console.log('✅ Saved state:', { currentStep, membershipStatus, selectedTier, selectedEngagementModel });
+      console.log('✅ Saved state successfully');
     } catch (error) {
       console.error('❌ Error saving state:', error);
+      toast({
+        title: "Save Error",
+        description: `Failed to save progress: ${error.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setSaving(false);
@@ -281,7 +321,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         setCurrentStep(nextStep);
         await saveCurrentState({
           membership_status: 'Active',
-          workflow_step: nextStep
+          workflow_step: mapWorkflowStepForDB(nextStep)
         });
       } else {
         // For inactive, proceed to tier selection
@@ -289,7 +329,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         setCurrentStep(nextStep);
         await saveCurrentState({
           membership_status: 'Not Active',
-          workflow_step: nextStep
+          workflow_step: mapWorkflowStepForDB(nextStep)
         });
       }
 
@@ -298,6 +338,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: `You have chosen to ${status === 'active' ? 'activate' : 'proceed without'} membership.`,
       });
     } catch (error) {
+      console.error('❌ Error in handleMembershipDecision:', error);
       toast({
         title: "Error",
         description: "Failed to save membership decision.",
@@ -314,7 +355,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       await saveCurrentState({
         membership_status: 'Active',
-        workflow_step: nextStep,
+        workflow_step: mapWorkflowStepForDB(nextStep),
         mem_payment_status: 'paid'
       });
 
@@ -323,6 +364,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: "Your membership has been activated. Please select your pricing tier.",
       });
     } catch (error) {
+      console.error('❌ Error in handlePaymentSuccess:', error);
       toast({
         title: "Error",
         description: "Failed to update membership status after payment.",
@@ -340,7 +382,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       await saveCurrentState({
         pricing_tier: tierName,
-        workflow_step: nextStep
+        workflow_step: mapWorkflowStepForDB(nextStep)
       });
 
       toast({
@@ -348,6 +390,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: `You have selected the ${tierName} tier.`,
       });
     } catch (error) {
+      console.error('❌ Error in handleTierSelection:', error);
       toast({
         title: "Error",
         description: "Failed to save tier selection.",
@@ -365,7 +408,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       await saveCurrentState({
         engagement_model: modelName,
-        workflow_step: nextStep
+        workflow_step: mapWorkflowStepForDB(nextStep)
       });
 
       toast({
@@ -373,6 +416,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: `You have selected the ${modelName} model.`,
       });
     } catch (error) {
+      console.error('❌ Error in handleEngagementModelSelection:', error);
       toast({
         title: "Error",
         description: "Failed to save engagement model selection.",
@@ -389,7 +433,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       
       await saveCurrentState({
         terms_accepted: true,
-        workflow_step: 'activation_complete'
+        workflow_step: mapWorkflowStepForDB(nextStep),
+        workflow_completed: true
       });
 
       toast({
@@ -397,6 +442,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         description: "Your membership and engagement model setup is complete!",
       });
     } catch (error) {
+      console.error('❌ Error in handleTermsAcceptance:', error);
       toast({
         title: "Error",
         description: "Failed to complete setup.",
