@@ -18,7 +18,7 @@ interface EngagementModelEditModalProps {
   selectedTier: string | null;
   userId: string;
   membershipStatus: string;
-  profile: any;
+  profileContext: any; // Already normalized profile context
   onModelChange: (model: string) => void;
 }
 
@@ -29,7 +29,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   selectedTier,
   userId,
   membershipStatus,
-  profile,
+  profileContext,
   onModelChange
 }) => {
   const [selectedModel, setSelectedModel] = useState<string | null>(currentModel);
@@ -39,14 +39,14 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   const [complexityPricing, setComplexityPricing] = useState<any>({});
   const [validationResult, setValidationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [profileContext, setProfileContext] = useState<any>(null);
+  const [savedSelections, setSavedSelections] = useState<any>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && profileContext) {
       initializeModal();
       setSelectedModel(currentModel);
     }
-  }, [isOpen, currentModel, selectedTier]);
+  }, [isOpen, currentModel, selectedTier, profileContext]);
 
   useEffect(() => {
     if (selectedModel && selectedModel !== currentModel) {
@@ -56,24 +56,42 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
   const initializeModal = async () => {
     try {
-      // Get normalized profile context
-      const normalizedContext = await DataSynchronizationService.getNormalizedProfileContext(profile);
-      setProfileContext(normalizedContext);
-      console.log('🔄 Modal initialized with profile context:', normalizedContext);
+      setLoading(true);
+      console.log('🔄 Modal initialized with profile context:', profileContext);
       
+      // First, load saved selections to use as single source of truth
+      await loadSavedSelections();
+      
+      // Then load available models
       await loadAvailableModels();
     } catch (error) {
       console.error('❌ Error initializing modal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load engagement model data.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSavedSelections = async () => {
+    try {
+      const selections = await DataSynchronizationService.getCurrentSelections(userId);
+      setSavedSelections(selections);
+      console.log('✅ Loaded saved selections:', selections);
+    } catch (error) {
+      console.error('❌ Error loading saved selections:', error);
     }
   };
 
   const loadAvailableModels = async () => {
     try {
-      setLoading(true);
-      console.log('🔄 Loading available models for tier:', selectedTier);
+      console.log('🔄 Loading available models for tier:', selectedTier, 'with context:', profileContext);
       
-      if (!selectedTier) {
-        console.log('❌ No selected tier provided');
+      if (!selectedTier || !profileContext) {
+        console.log('❌ Missing required data - tier:', selectedTier, 'context:', profileContext);
         return;
       }
 
@@ -81,7 +99,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       const { data: tierData, error: tierError } = await supabase
         .from('master_pricing_tiers')
         .select('id')
-        .ilike('name', selectedTier)
+        .ilike('name', DataSynchronizationService.normalizeName(selectedTier))
         .single();
 
       if (tierError) {
@@ -127,15 +145,13 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
         description: "Failed to load available engagement models.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const loadModelDetails = async (models: any[]) => {
     try {
-      if (!profileContext) {
-        console.error('❌ No profile context available for model details');
+      if (!profileContext?.country) {
+        console.error('❌ No country in profile context for model details');
         return;
       }
 
@@ -152,7 +168,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 
       const detailedModels = await Promise.all(detailsPromises);
       setModelDetails(detailedModels.filter(Boolean));
-      console.log('✅ Loaded model details with profile context');
+      console.log('✅ Loaded model details');
     } catch (error) {
       console.error('❌ Error loading model details:', error);
     }
@@ -165,7 +181,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
         return;
       }
 
-      // Load standard pricing using normalized profile context
+      // Load standard pricing using profile context
       const { data: pricingData, error } = await supabase
         .rpc('get_pricing_configuration', {
           p_country_name: profileContext.country,
@@ -181,7 +197,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       }
 
       setModelPricing(pricingData || []);
-      console.log('✅ Loaded pricing with normalized context');
+      console.log('✅ Loaded pricing with profile context');
 
       // Load complexity pricing for marketplace models
       const complexityData = {};
@@ -212,13 +228,13 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
       const { data: tierData } = await supabase
         .from('master_pricing_tiers')
         .select('id')
-        .ilike('name', selectedTier)
+        .ilike('name', DataSynchronizationService.normalizeName(selectedTier))
         .single();
 
       const { data: modelData } = await supabase
         .from('master_engagement_models')
         .select('id')
-        .ilike('name', selectedModel)
+        .ilike('name', DataSynchronizationService.normalizeName(selectedModel))
         .single();
 
       if (!tierData || !modelData) return;
@@ -237,7 +253,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   };
 
   const handleConfirm = async () => {
-    if (!selectedModel || selectedModel === currentModel) {
+    if (!selectedModel || isModelCurrent(selectedModel)) {
       onClose();
       return;
     }
@@ -366,6 +382,30 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
     );
   };
 
+  // Show error state if profile context is missing
+  if (isOpen && !profileContext) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Configuration Error
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Unable to load engagement model data. Profile context is missing.
+            </p>
+            <div className="flex justify-end">
+              <Button onClick={onClose}>Close</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -376,6 +416,11 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
           </DialogTitle>
           <DialogDescription>
             Select a new engagement model. Your current model is <strong>{currentModel}</strong>.
+            {savedSelections && (
+              <div className="text-xs text-gray-500 mt-1">
+                Last saved: {savedSelections.engagement_model} (selected {new Date(savedSelections.engagement_model_selected_at || savedSelections.updated_at).toLocaleDateString()})
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
 
