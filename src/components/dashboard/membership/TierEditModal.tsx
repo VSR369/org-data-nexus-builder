@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Crown, X, AlertTriangle, DollarSign, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MembershipDataService } from '@/services/MembershipDataService';
-import { DataSynchronizationService } from '@/services/DataSynchronizationService';
 
 interface TierEditModalProps {
   isOpen: boolean;
@@ -15,7 +14,7 @@ interface TierEditModalProps {
   currentTier: string | null;
   userId: string;
   membershipStatus: string;
-  profileContext: any; // Already normalized profile context
+  profileContext: any;
   onTierChange: (tier: string) => void;
 }
 
@@ -30,112 +29,73 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
 }) => {
   const [selectedTier, setSelectedTier] = useState<string | null>(currentTier);
   const [tierConfigurations, setTierConfigurations] = useState<any[]>([]);
-  const [membershipFees, setMembershipFees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [savedSelections, setSavedSelections] = useState<any>(null);
-  const [tierDetails, setTierDetails] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen && profileContext) {
-      initializeModal();
+      loadAvailableTiers();
       setSelectedTier(currentTier);
     }
   }, [isOpen, currentTier, profileContext]);
 
-  const initializeModal = async () => {
+  const loadAvailableTiers = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Tier modal initialized with profile context:', profileContext);
-      
-      // Load saved selections first
-      await loadSavedSelections();
-      
-      // Then load available tiers
-      await loadAvailableTiers();
+      console.log('🔄 Loading tiers for profile context:', profileContext);
+
+      // Get country ID
+      const { data: countryData } = await supabase
+        .from('master_countries')
+        .select('id')
+        .eq('name', profileContext.country)
+        .single();
+
+      if (!countryData) {
+        console.error('❌ Country not found:', profileContext.country);
+        return;
+      }
+
+      // Load tier configurations
+      const { data: tierConfigs } = await supabase
+        .from('master_tier_configurations')
+        .select(`
+          *,
+          master_pricing_tiers (
+            name,
+            level_order,
+            description
+          ),
+          master_currencies (
+            code,
+            symbol
+          )
+        `)
+        .eq('country_id', countryData.id)
+        .eq('is_active', true)
+        .order('master_pricing_tiers(level_order)');
+
+      setTierConfigurations(tierConfigs || []);
+      console.log('✅ Loaded tier configurations:', tierConfigs?.length);
     } catch (error) {
-      console.error('❌ Error initializing tier modal:', error);
+      console.error('❌ Error loading tiers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load available tiers.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const loadSavedSelections = async () => {
-    try {
-      const selections = await DataSynchronizationService.getCurrentSelections(userId);
-      setSavedSelections(selections);
-      console.log('✅ Loaded saved tier selections:', selections);
-    } catch (error) {
-      console.error('❌ Error loading saved tier selections:', error);
-    }
-  };
-
-  const loadAvailableTiers = async () => {
-    try {
-      if (!profileContext?.country) {
-        console.error('❌ No country in profile context for tier loading');
-        return;
-      }
-
-      console.log('🔄 Loading tiers for country:', profileContext.country);
-      const configurations = await MembershipDataService.getMembershipFees(
-        profileContext.country,
-        profileContext.organization_type,
-        profileContext.entity_type
-      );
-      setTierConfigurations([configurations]);
-      console.log('✅ Loaded tier configurations:', configurations ? 1 : 0);
-
-      // Load membership fees for all tiers
-      await loadMembershipFees();
-      
-      // Load detailed tier information
-      await loadTierDetails([configurations]);
-    } catch (error) {
-      console.error('❌ Error loading available tiers:', error);
-    }
-  };
-
-  const loadMembershipFees = async () => {
-    try {
-      if (!profileContext?.country || !profileContext?.organization_type || !profileContext?.entity_type) {
-        console.error('❌ Incomplete profile context for membership fees');
-        return;
-      }
-
-      const fees = await MembershipDataService.getMembershipFees(
-        profileContext.country,
-        profileContext.organization_type,
-        profileContext.entity_type
-      );
-      setMembershipFees(fees);
-      console.log('✅ Loaded membership fees with normalized context');
-    } catch (error) {
-      console.error('❌ Error loading membership fees:', error);
-    }
-  };
-
-  const loadTierDetails = async (tiers: any[]) => {
-    try {
-      // Set tier details directly from configurations
-      setTierDetails(tiers);
-      console.log('✅ Loaded tier details with profile context');
-    } catch (error) {
-      console.error('❌ Error loading tier details:', error);
-    }
-  };
-
   const handleConfirm = () => {
-    if (!selectedTier || selectedTier === currentTier) {
-      onClose();
-      return;
+    if (selectedTier && selectedTier !== currentTier) {
+      onTierChange(selectedTier);
     }
-
-    onTierChange(selectedTier);
     onClose();
   };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    // Handle null, undefined, or empty currency codes
     const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
     
     return new Intl.NumberFormat('en-US', {
@@ -143,19 +103,18 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
       currency: validCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const isCurrentTier = (tierName: string) => {
-    return DataSynchronizationService.normalizeName(tierName) === DataSynchronizationService.normalizeName(currentTier || '');
+    return tierName?.toLowerCase() === currentTier?.toLowerCase();
   };
 
   const isSelectedTier = (tierName: string) => {
-    return DataSynchronizationService.normalizeName(tierName) === DataSynchronizationService.normalizeName(selectedTier || '');
+    return tierName?.toLowerCase() === selectedTier?.toLowerCase();
   };
 
-  // Show error state if profile context is missing
-  if (isOpen && !profileContext) {
+  if (!profileContext) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
@@ -188,11 +147,6 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
           </DialogTitle>
           <DialogDescription>
             Select a new pricing tier. Your current tier is <strong>{currentTier}</strong>.
-            {savedSelections && (
-              <div className="text-xs text-gray-500 mt-1">
-                Last saved: {savedSelections.pricing_tier} (selected {new Date(savedSelections.tier_selected_at || savedSelections.updated_at).toLocaleDateString()})
-              </div>
-            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -202,26 +156,34 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
               <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
+        ) : tierConfigurations.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <Crown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Tiers Available</h3>
+            <p className="text-gray-600">
+              No pricing tiers are configured for your location: {profileContext.country}.
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tierDetails.map((tier) => {
-              const isCurrent = isCurrentTier(tier.tier_name);
-              const isSelected = isSelectedTier(tier.tier_name);
-              const fee = membershipFees.find(f => f.tier_name === tier.tier_name);
+            {tierConfigurations.map((tierConfig) => {
+              const tierName = tierConfig.master_pricing_tiers?.name;
+              const isCurrent = isCurrentTier(tierName);
+              const isSelected = isSelectedTier(tierName);
 
               return (
                 <Card
-                  key={tier.id}
+                  key={tierConfig.id}
                   className={`cursor-pointer transition-all ${
                     isSelected
                       ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
                       : 'hover:border-gray-300'
                   }`}
-                  onClick={() => setSelectedTier(tier.tier_name)}
+                  onClick={() => setSelectedTier(tierName)}
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span>{tier.tier_name}</span>
+                      <span>{tierName}</span>
                       <div className="flex items-center gap-2">
                         {isCurrent && (
                           <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
@@ -233,49 +195,43 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
                         )}
                       </div>
                     </CardTitle>
-                    <CardDescription>{tier.detailed_info?.description}</CardDescription>
+                    <CardDescription>
+                      {tierConfig.master_pricing_tiers?.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Max Challenges:</span>
-                        <span className="font-medium">{tier.max_challenges}</span>
+                        <span>Monthly Challenges:</span>
+                        <span className="font-medium">
+                          {tierConfig.monthly_challenge_limit || 'Unlimited'}
+                        </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>Max Solutions:</span>
-                        <span className="font-medium">{tier.max_solutions}</span>
+                        <span>Fixed Charge:</span>
+                        <span className="font-medium">
+                          {formatCurrency(tierConfig.fixed_charge_per_challenge || 0, tierConfig.master_currencies?.code)}
+                        </span>
                       </div>
-                      {fee && (
-                        <div className="flex justify-between text-sm">
-                          <span>Membership Fee:</span>
-                          <span className="font-medium">
-                            {formatCurrency(fee.membership_fee, fee.currency_code)}
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex justify-between text-sm">
+                        <span>Solutions per Challenge:</span>
+                        <span className="font-medium">
+                          {tierConfig.solutions_per_challenge || 1}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Overage Allowed:</span>
+                        <Badge variant={tierConfig.allows_overage ? "default" : "secondary"}>
+                          {tierConfig.allows_overage ? 'Yes' : 'No'}
+                        </Badge>
+                      </div>
                     </div>
-                    {isSelected && fee && (
+                    
+                    {membershipStatus === 'active' && (
                       <div className="pt-2 border-t">
-                        <p className="text-sm font-medium mb-2">Fee Details:</p>
-                        <div className="text-sm">
-                          <div className="flex justify-between">
-                            <span>Setup Fee:</span>
-                            <span className="font-medium">
-                              {formatCurrency(fee.setup_fee, fee.currency_code)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Monthly Fee:</span>
-                            <span className="font-medium">
-                              {formatCurrency(fee.monthly_fee, fee.currency_code)}
-                            </span>
-                          </div>
-                          {membershipStatus === 'active' && fee.membership_discount > 0 && (
-                            <div className="text-green-600 text-xs mt-1">
-                              <TrendingUp className="h-3 w-3 inline mr-1" />
-                              {fee.membership_discount}% member discount applied
-                            </div>
-                          )}
+                        <div className="bg-green-100 p-2 rounded text-green-800 text-xs flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          Member discount applies to this tier
                         </div>
                       </div>
                     )}
@@ -291,7 +247,10 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
             <X className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={!selectedTier || isCurrentTier(selectedTier)}>
+          <Button 
+            onClick={handleConfirm}
+            disabled={!selectedTier || isCurrentTier(selectedTier)}
+          >
             <CheckCircle className="h-4 w-4 mr-2" />
             Confirm Change
           </Button>
