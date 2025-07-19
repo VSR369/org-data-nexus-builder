@@ -25,6 +25,7 @@ const DomainGroupsConfig: React.FC = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [showHierarchyManager, setShowHierarchyManager] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dataStats, setDataStats] = useState({ domainGroups: 0, categories: 0, subCategories: 0 });
   const { toast } = useToast();
   
   // Ref for scrolling to data entry section
@@ -230,8 +231,6 @@ const DomainGroupsConfig: React.FC = () => {
       </div>
     );
   }
-
-  const [dataStats, setDataStats] = useState({ domainGroups: 0, categories: 0, subCategories: 0 });
 
   // Update data stats when data changes
   useEffect(() => {
