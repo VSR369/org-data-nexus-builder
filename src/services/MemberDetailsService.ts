@@ -99,8 +99,8 @@ export class MemberDetailsService {
         totalPaymentsMade: activationData.total_payments_made,
         discountPercentage: activationData.discount_percentage,
         finalCalculatedPrice: activationData.final_calculated_price,
-        frequencyPayments: activationData.frequency_payments || [],
-        frequencyChangeHistory: activationData.frequency_change_history || [],
+        frequencyPayments: Array.isArray(activationData.frequency_payments) ? activationData.frequency_payments : [],
+        frequencyChangeHistory: Array.isArray(activationData.frequency_change_history) ? activationData.frequency_change_history : [],
       };
 
       const engagementData = engagementModelDetails ? {
