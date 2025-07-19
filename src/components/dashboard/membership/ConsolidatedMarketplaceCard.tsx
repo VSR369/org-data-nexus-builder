@@ -1,171 +1,129 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, DollarSign, ArrowRight, Tag, Users, Zap } from 'lucide-react';
+import { CheckCircle, Users, Building, Zap } from 'lucide-react';
 
 interface ConsolidatedMarketplaceCardProps {
   model: any;
   isSelected: boolean;
   onModelSelect: (modelName: string) => void;
-  membershipStatus?: 'active' | 'inactive';
+  membershipStatus: 'active' | 'inactive';
 }
 
 export const ConsolidatedMarketplaceCard: React.FC<ConsolidatedMarketplaceCardProps> = ({
   model,
   isSelected,
   onModelSelect,
-  membershipStatus = 'inactive'
+  membershipStatus
 }) => {
-  const handleSelection = () => {
-    onModelSelect('Marketplace');
+  console.log('⚡ ConsolidatedMarketplaceCard props:', { 
+    modelName: model.name, 
+    isSelected, 
+    membershipStatus,
+    subtypes: model.subtypes?.length || 0
+  });
+
+  const handleCardClick = () => {
+    console.log('⚡ ConsolidatedMarketplaceCard clicked, selecting:', model.name);
+    onModelSelect(model.name);
   };
 
-  const renderPricingSection = (title: string, subtype: 'general' | 'programManaged', icon: React.ReactNode, bgColor: string) => {
-    const subtypeData = model.subtypes?.[subtype];
-    if (!subtypeData) return null;
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: validCurrency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
-    const { formula, complexityPricing } = subtypeData;
-
-    return (
-      <div className={`${bgColor} rounded-lg p-4 space-y-3`}>
-        <div className="flex items-center gap-2 mb-3">
-          {icon}
-          <span className="font-semibold text-gray-800">{title}</span>
-          {membershipStatus === 'active' && (
-            <Badge className="bg-green-100 text-green-800 ml-auto">
-              <Tag className="h-3 w-3 mr-1" />
-              Member Rate
-            </Badge>
-          )}
-        </div>
-
-        {/* Platform Fee */}
-        <div className="bg-white rounded p-3 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Platform Usage Fee</span>
-            <span className="text-lg font-bold text-blue-600">
-              {formula.platform_usage_fee_percentage}%
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Applied to total challenge value</p>
-        </div>
-
-        {/* Complexity Pricing Grid */}
-        <div className="grid grid-cols-2 gap-2">
-          {complexityPricing.map((complexity: any) => (
-            <div key={complexity.complexity} className="bg-white rounded p-3 border border-gray-200">
-              <div className="font-medium text-sm text-gray-700 mb-1">
-                {complexity.complexity}
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm">
-                  <span className="text-xs text-gray-500">Mgmt:</span>
-                  <span className="font-semibold text-gray-900 ml-1">
-                    {model.currency} {complexity.management_fee.toLocaleString()}
-                  </span>
-                </div>
-                {complexity.consulting_fee > 0 && (
-                  <div className="text-sm">
-                    <span className="text-xs text-gray-500">Consulting:</span>
-                    <span className="font-semibold text-gray-900 ml-1">
-                      {model.currency} {complexity.consulting_fee.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Advance Payment */}
-        <div className="bg-white rounded p-2 border border-gray-200">
-          <div className="text-xs text-gray-600">
-            <strong>Advance Payment:</strong> {formula.advance_payment_percentage}% of total fees
-          </div>
-        </div>
-      </div>
-    );
+  const getSubtypeIcon = (subtypeName: string) => {
+    switch (subtypeName?.toLowerCase()) {
+      case 'freelancer':
+        return <Users className="h-4 w-4" />;
+      case 'agency':
+        return <Building className="h-4 w-4" />;
+      default:
+        return <Zap className="h-4 w-4" />;
+    }
   };
 
   return (
-    <div
-      className={`relative rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+    <Card 
+      className={`cursor-pointer transition-all hover:shadow-lg ${
         isSelected
-          ? 'border-primary bg-primary/5 shadow-lg'
-          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+          ? 'border-purple-500 ring-2 ring-purple-200 bg-purple-50'
+          : 'hover:border-gray-300'
       }`}
+      onClick={handleCardClick}
     >
-      <div className="p-6 space-y-4">
-        {/* Header */}
-        <div className="text-center">
-          <h3 className="text-xl font-bold mb-2">{model.displayName}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Complete marketplace access with flexible engagement options
-          </p>
-          {membershipStatus === 'active' && (
-            <Badge className="bg-green-100 text-green-800">
-              <Tag className="h-3 w-3 mr-1" />
-              Member Pricing Applied
-            </Badge>
-          )}
-        </div>
-
-        {/* Platform Fee Highlight */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <DollarSign className="h-5 w-5 text-blue-600" />
-            <span className="text-lg font-bold text-blue-900">
-              {model.subtypes?.general?.formula?.platform_usage_fee_percentage || 15}% Platform Fee
-            </span>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-purple-600" />
+            <span>{model.name}</span>
           </div>
-          <p className="text-sm text-blue-700">Applied to all challenge values</p>
-        </div>
-
-        {/* Pricing Sections */}
-        <div className="space-y-4">
-          {/* General Marketplace */}
-          {renderPricingSection(
-            'General Marketplace',
-            'general',
-            <Users className="h-4 w-4 text-blue-600" />,
-            'bg-blue-50'
+          {isSelected && (
+            <CheckCircle className="h-5 w-5 text-purple-600" />
           )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {model.description || 'Connect with skilled professionals for your projects'}
+        </p>
+        
+        {/* Subtypes */}
+        {model.subtypes && model.subtypes.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Available Options:</h4>
+            <div className="space-y-2">
+              {model.subtypes.map((subtype: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center gap-2">
+                    {getSubtypeIcon(subtype.name)}
+                    <span className="text-sm font-medium">{subtype.name}</span>
+                  </div>
+                  <Badge variant="outline">{subtype.category || 'Professional'}</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {/* Program Managed */}
-          {renderPricingSection(
-            'Program Managed',
-            'programManaged',
-            <Zap className="h-4 w-4 text-green-600" />,
-            'bg-green-50'
-          )}
+        {/* Pricing Information */}
+        {model.pricing && model.pricing.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Pricing:</h4>
+            {model.pricing.map((pricing: any, index: number) => (
+              <div key={index} className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{pricing.config_name}:</span>
+                <span className="font-medium">
+                  {formatCurrency(pricing.calculated_value, pricing.currency_code)}
+                </span>
+              </div>
+            ))}
+            {membershipStatus === 'active' && (
+              <div className="text-xs text-green-600 mt-1">
+                ✓ Member pricing applied
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Features */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Key Features:</h4>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>• Access to verified professionals</li>
+            <li>• Secure payment processing</li>
+            <li>• Project management tools</li>
+            <li>• Quality assurance</li>
+          </ul>
         </div>
-
-        {/* Selection Button */}
-        <Button
-          variant={isSelected ? "default" : "outline"}
-          className="w-full"
-          onClick={handleSelection}
-        >
-          {isSelected ? (
-            <>
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Selected: Marketplace
-            </>
-          ) : (
-            <>
-              Select Marketplace
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
-
-        {/* Info Note */}
-        <div className="text-center text-xs text-gray-500 mt-2">
-          Choose between General and Program Managed when creating challenges
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

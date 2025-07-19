@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from 'lucide-react';
-import InactiveMemberEditView from '@/components/master-data/solution-seekers/components/InactiveMemberEditView';
+import SimpleMembershipUpgrade from './SimpleMembershipUpgrade';
 
 interface MembershipEditModalProps {
   isOpen: boolean;
@@ -27,11 +27,11 @@ export const MembershipEditModal: React.FC<MembershipEditModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">
-              Activate Membership
+              Activate Premium Membership
             </DialogTitle>
             <Button
               variant="ghost"
@@ -45,11 +45,10 @@ export const MembershipEditModal: React.FC<MembershipEditModalProps> = ({
         </DialogHeader>
         
         <div className="mt-4">
-          <InactiveMemberEditView
+          <SimpleMembershipUpgrade
             userId={userId}
             organizationData={organizationData}
             onPaymentSuccess={handlePaymentSuccess}
-            isMobile={false}
           />
         </div>
       </DialogContent>

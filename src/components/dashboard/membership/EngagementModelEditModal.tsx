@@ -32,6 +32,15 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
 }) => {
   const [selectedModel, setSelectedModel] = useState<string | null>(currentModel);
   
+  console.log('⚡ EngagementModelEditModal props:', {
+    isOpen,
+    currentModel,
+    selectedTier,
+    userId,
+    membershipStatus,
+    profileContext: profileContext ? 'Available' : 'Missing'
+  });
+
   // Use the same hook as sign-up process for consistency
   const { engagementModels, loading, error } = useEngagementModelPricing(
     selectedTier, 
@@ -52,12 +61,36 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
     }
   }, [isOpen, currentModel, selectedTier, profileContext, engagementModels]);
 
-  const handleConfirm = () => {
+  const handleModelSelect = (modelName: string) => {
+    console.log('⚡ Model selected in edit modal:', modelName);
+    setSelectedModel(modelName);
+  };
+
+  const handleConfirm = async () => {
     if (selectedModel && selectedModel !== currentModel) {
       console.log('⚡ Confirming model change:', currentModel, '->', selectedModel);
-      onModelChange(selectedModel);
+      
+      try {
+        // Call the parent's onModelChange handler
+        await onModelChange(selectedModel);
+        
+        toast({
+          title: "Engagement Model Updated",
+          description: `Your engagement model has been changed to ${selectedModel}`,
+        });
+        
+        onClose();
+      } catch (error) {
+        console.error('❌ Error updating engagement model:', error);
+        toast({
+          title: "Update Failed",
+          description: "Failed to update engagement model. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      onClose();
     }
-    onClose();
   };
 
   const isModelSelected = (modelName: string) => {
@@ -92,6 +125,8 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
   }
 
   const renderEngagementModel = (model: any) => {
+    console.log('⚡ Rendering engagement model:', model);
+    
     // Handle consolidated Marketplace with same logic as sign-up
     if (model.name === 'Market Place' && model.subtypes) {
       return (
@@ -99,10 +134,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
           key={model.id}
           model={model}
           isSelected={isModelSelected('Market Place')}
-          onModelSelect={(modelName) => {
-            console.log('⚡ Selecting model from consolidated card:', modelName);
-            setSelectedModel(modelName);
-          }}
+          onModelSelect={handleModelSelect}
           membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
         />
       );
@@ -114,10 +146,7 @@ export const EngagementModelEditModal: React.FC<EngagementModelEditModalProps> =
         key={model.id}
         model={model}
         isSelected={isModelSelected(model.displayName || model.name)}
-        onModelSelect={(modelName) => {
-          console.log('⚡ Selecting model:', modelName);
-          setSelectedModel(modelName);
-        }}
+        onModelSelect={handleModelSelect}
         membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
         showCurrentBadge={isModelCurrent(model.displayName || model.name)}
       />
