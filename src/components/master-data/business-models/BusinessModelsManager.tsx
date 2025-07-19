@@ -48,7 +48,7 @@ export const BusinessModelsManager: React.FC = () => {
           return level_order || 999; // fallback
         };
         
-        return getOrder(a.level_order || 0) - getOrder(b.level_order || 0);
+        return getOrder((a as any).level_order || 0) - getOrder((b as any).level_order || 0);
       });
 
       setBusinessModels(consolidatedModels);

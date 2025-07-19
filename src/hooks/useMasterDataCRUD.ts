@@ -88,7 +88,7 @@ export function useOrganizationTypes() {
       setLoading(true);
       const { data, error } = await supabase
         .from('master_organization_types')
-        .insert([item])
+        .insert([item] as any)
         .select()
         .single();
       
@@ -188,6 +188,34 @@ export function usePricingTiers() {
   return useMasterDataCRUD('master_pricing_tiers');
 }
 
+export function useEntityTypes() {
+  return useMasterDataCRUD('master_entity_types');
+}
+
+export function useIndustrySegments() {
+  return useMasterDataCRUD('master_industry_segments');
+}
+
+export function useDepartments() {
+  return useMasterDataCRUD('master_departments');
+}
+
+export function useCommunicationTypes() {
+  return useMasterDataCRUD('master_communication_types');
+}
+
+export function useRewardTypes() {
+  return useMasterDataCRUD('master_reward_types');
+}
+
+export function useOrganizationCategories() {
+  return useMasterDataCRUD('master_organization_categories');
+}
+
+export function useSystemConfigurations() {
+  return useMasterDataCRUD('master_system_configurations');
+}
+
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -207,13 +235,13 @@ export function useMasterDataCRUD(tableName: TableName) {
           country_name:master_countries(name),
           currency_name:master_currencies(name),
           currency_symbol:master_currencies(symbol)
-        `);
+        `) as any;
       } else if (tableName === 'master_tier_engagement_model_access') {
         query = supabase.from(tableName).select(`
           *,
           pricing_tier_name:master_pricing_tiers(name),
           engagement_model_name:master_engagement_models(name)
-        `);
+        `) as any;
       } else if (tableName === 'master_tier_configurations') {
         query = supabase.from(tableName).select(`
           *,
@@ -221,7 +249,7 @@ export function useMasterDataCRUD(tableName: TableName) {
           country_name:master_countries(name),
           currency_name:master_currencies(name),
           currency_symbol:master_currencies(symbol)
-        `);
+        `) as any;
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -264,7 +292,7 @@ export function useMasterDataCRUD(tableName: TableName) {
         
         const { error } = await supabase
           .from('master_entity_types')
-          .insert(defaultEntityTypes);
+          .insert(defaultEntityTypes as any);
           
         if (error) throw error;
         console.log('✅ Default entity types inserted successfully');
@@ -285,7 +313,7 @@ export function useMasterDataCRUD(tableName: TableName) {
       setLoading(true);
       const { data, error } = await supabase
         .from(tableName)
-        .insert([item])
+        .insert([item] as any)
         .select()
         .single();
       
