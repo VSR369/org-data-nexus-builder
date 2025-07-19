@@ -181,6 +181,7 @@ export interface AdminCreationData {
   contact_number?: string;
   admin_password_hash?: string;
   organization_id: string;
+  organization_name?: string;
 }
 
 export interface ExistingAdmin {
@@ -265,6 +266,26 @@ export class OrganizationDataService {
    */
   static async createOrganizationAdmin(adminData: AdminCreationData): Promise<string> {
     try {
+      // First, check if current user is a platform admin
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check if user is platform admin using the new function
+      const { data: isPlatformAdmin, error: checkError } = await supabase
+        .rpc('is_platform_admin');
+
+      if (checkError) {
+        console.error('Error checking platform admin status:', checkError);
+        throw new Error('Failed to verify admin permissions');
+      }
+
+      if (!isPlatformAdmin) {
+        throw new Error('Only platform administrators can create organization admins');
+      }
+
+      // Create organization administrator
       const { data, error } = await supabase
         .from('organization_administrators')
         .insert({
@@ -274,12 +295,36 @@ export class OrganizationDataService {
           contact_number: adminData.contact_number,
           admin_password_hash: adminData.admin_password_hash,
           role_type: 'organization_admin',
-          is_active: true
+          is_active: true,
+          created_by: currentUser.user.id
         })
         .select('id')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating organization admin:', error);
+        throw new Error(`Failed to create organization admin: ${error.message}`);
+      }
+
+      // Log the admin creation in audit table
+      try {
+        await supabase
+          .from('admin_creation_audit')
+          .insert({
+            organization_id: adminData.organization_id,
+            organization_name: adminData.organization_name || 'Unknown',
+            admin_name: adminData.admin_name,
+            admin_email: adminData.admin_email,
+            created_admin_id: data.id,
+            created_by: currentUser.user.id,
+            action_type: 'created',
+            notes: 'Organization administrator created via platform'
+          });
+      } catch (auditError) {
+        console.warn('Failed to log admin creation audit:', auditError);
+        // Don't fail the whole operation if audit logging fails
+      }
+
       return data.id;
     } catch (error) {
       console.error('Error creating organization admin:', error);

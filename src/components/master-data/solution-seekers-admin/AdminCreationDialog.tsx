@@ -134,7 +134,8 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
         admin_name: formData.admin_name,
         admin_email: formData.admin_email,
         contact_number: formData.contact_number || undefined,
-        admin_password_hash: hashedPassword
+        admin_password_hash: hashedPassword,
+        organization_name: seeker.organization_name
       });
 
       toast({
