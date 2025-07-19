@@ -1,156 +1,312 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Database, 
-  Settings, 
-  Users, 
-  Globe, 
-  Building, 
-  Factory, 
-  Crown,
-  Calculator,
-  Target,
-  MessageCircle,
-  FileText,
-  Layers,
-  BarChart3
-} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import DataCleanupButton from "@/components/admin/DataCleanupButton";
+import { EnhancedMembershipFlowCard } from "@/components/dashboard/membership/EnhancedMembershipFlowCard";
 
 const OrganizationDashboard = () => {
-  const navigate = useNavigate();
-
-  const masterDataSections = [
-    { id: 'countries', title: 'Countries', description: 'Manage global country data', icon: Globe, count: '195+' },
-    { id: 'currencies', title: 'Currencies', description: 'Currency configurations', icon: BarChart3, count: '180+' },
-    { id: 'organization-types', title: 'Organization Types', description: 'MSME, Enterprise, etc.', icon: Building, count: '8' },
-    { id: 'entity-types', title: 'Entity Types', description: 'Legal entity classifications', icon: FileText, count: '12' },
-    { id: 'industry-segments', title: 'Industry Segments', description: 'Business sector categories', icon: Factory, count: '25+' },
-    { id: 'engagement-models', title: 'Engagement Models', description: 'Platform engagement types', icon: Target, count: '4' },
-    { id: 'pricing-tiers', title: 'Pricing Tiers', description: 'Subscription level management', icon: Crown, count: '6' },
-    { id: 'platform-fee-formulas', title: 'Fee Formulas', description: 'Complex calculation rules', icon: Calculator, count: '15+' },
-    { id: 'tier-configurations', title: 'Tier Configurations', description: 'Advanced tier settings', icon: Settings, count: '50+' },
-    { id: 'domain-groups', title: 'Domain Groups', description: 'Business domain categories', icon: Layers, count: '30+' },
-    { id: 'departments', title: 'Departments', description: 'Organizational departments', icon: Users, count: '20+' },
-    { id: 'communication-types', title: 'Communication', description: 'Contact methods & channels', icon: MessageCircle, count: '10+' }
-  ];
-
-  const handleCardClick = (sectionId: string) => {
-    navigate(`/master-data/${sectionId}`);
+  const { user, profile, signOut, loading } = useSupabaseAuth();
+  
+  const handleSignOut = async () => {
+    await signOut();
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
+        <div className="text-lg">Loading your organization dashboard...</div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Organization Not Found</CardTitle>
+            <CardDescription>
+              No organization profile found for your account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/">
+              <Button className="w-full">
+                <Home className="mr-2 h-4 w-4" />
+                Return to Home
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">Organization Dashboard</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Manage your platform's master data configurations, pricing models, and business rules
-          </p>
-          <Badge variant="secondary" className="text-sm">
-            <Database className="w-4 h-4 mr-1" />
-            Master Data Management System
-          </Badge>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Database className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">12</p>
-                  <p className="text-sm text-muted-foreground">Active Modules</p>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 overflow-x-hidden">
+      {/* Header */}
+      <header className="bg-white border-b shadow-sm w-full">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-sm">C</span>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Settings className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">500+</p>
-                  <p className="text-sm text-muted-foreground">Configurations</p>
+              <h1 className="text-xl font-bold text-gray-900">CoInnovator Platform</h1>
+              <span className="text-sm text-gray-500">| Organization Dashboard</span>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Link to="/">
+                <Button variant="outline" size="sm" className="text-gray-600 border-gray-300 hover:bg-gray-100">
+                  <Home className="h-4 w-4 mr-1" />
+                  Home
+                </Button>
+              </Link>
+              <div className="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                <User className="h-4 w-4 text-green-600" />
+                <div className="text-sm">
+                  <div className="font-medium text-green-800">
+                    {profile.contact_person_name}
+                  </div>
+                  <div className="text-green-600 text-xs">
+                    {profile.organization_name}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Crown className="h-8 w-8 text-purple-500" />
-                <div>
-                  <p className="text-2xl font-bold">6</p>
-                  <p className="text-sm text-muted-foreground">Pricing Tiers</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Calculator className="h-8 w-8 text-orange-500" />
-                <div>
-                  <p className="text-2xl font-bold">15+</p>
-                  <p className="text-sm text-muted-foreground">Fee Formulas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Master Data Sections */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Master Data Modules</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {masterDataSections.map((section) => {
-              const Icon = section.icon;
-              return (
-                <Card 
-                  key={section.id} 
-                  className="cursor-pointer hover:shadow-lg transition-shadow duration-200 border-2 hover:border-primary/50"
-                  onClick={() => handleCardClick(section.id)}
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-700 border-green-300 hover:bg-green-100"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Icon className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{section.title}</CardTitle>
-                        </div>
-                      </div>
-                      <Badge variant="outline">{section.count}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-sm mb-4">
-                      {section.description}
-                    </CardDescription>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(section.id);
-                      }}
-                    >
-                      Manage {section.title}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Sign Out
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Main Dashboard Content */}
+      <main className="max-w-7xl mx-auto px-4 py-12 space-y-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {profile.contact_person_name}!
+          </h1>
+          <p className="text-lg text-gray-600">
+            Organization Dashboard for {profile.organization_name}
+          </p>
+        </div>
+
+        {/* Organization Information Grid - Horizontal Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Organization Details Card */}
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-blue-600" />
+                Organization Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Organization Name</label>
+                <p className="text-base font-medium">{profile.organization_name}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Organization ID</label>
+                <p className="text-sm font-mono bg-gray-50 px-2 py-1 rounded">{profile.custom_user_id}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Organization Type</label>
+                <p className="text-base">{profile.organization_type}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Entity Type</label>
+                <p className="text-base">{profile.entity_type}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Country</label>
+                <p className="text-base">{profile.country}</p>
+              </div>
+              {profile.industry_segment && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Industry Segment</label>
+                  <p className="text-base">{profile.industry_segment}</p>
+                </div>
+              )}
+              <div className="pt-4">
+                <Button variant="outline" className="w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Information Card */}
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-green-600" />
+                Contact Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Contact Person</label>
+                <p className="text-base font-medium">{profile.contact_person_name}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Email</label>
+                <p className="text-base">{user?.email}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">User ID</label>
+                <p className="text-base font-mono text-sm">{profile.custom_user_id}</p>
+              </div>
+              {profile.phone_number && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Phone</label>
+                  <p className="text-base">{profile.phone_number}</p>
+                </div>
+              )}
+              {profile.website && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Website</label>
+                  <p className="text-base">
+                    <a href={profile.website} target="_blank" rel="noopener noreferrer" 
+                       className="text-blue-600 hover:underline">
+                      {profile.website}
+                    </a>
+                  </p>
+                </div>
+              )}
+              {profile.address && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Address</label>
+                  <p className="text-base">{profile.address}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Account Status Card */}
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-purple-600" />
+                Account Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Account Status</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <p className="text-base text-green-700 font-medium">Active</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Registration Date</label>
+                <p className="text-base">Recently registered</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Last Updated</label>
+                <p className="text-base">Recently updated</p>
+              </div>
+              <div className="pt-4 space-y-2">
+                <Button variant="outline" className="w-full" size="sm">
+                  Download Data
+                </Button>
+                <Button variant="outline" className="w-full" size="sm">
+                  Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Membership Workflow Section - Full Width */}
+        <div className="mb-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Membership & Engagement Setup</h2>
+            <p className="text-gray-600">
+              Complete your membership activation to unlock full platform capabilities
+            </p>
+          </div>
+          <EnhancedMembershipFlowCard profile={profile} userId={user?.id || ''} />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-lg">Post a Challenge</CardTitle>
+              <CardDescription>
+                Create new innovation challenges for contributors
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                Create Challenge
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-lg">View Solutions</CardTitle>
+              <CardDescription>
+                Review submitted solutions and proposals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">
+                <Eye className="mr-2 h-4 w-4" />
+                Browse Solutions
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Link to="/master-data-portal">
+            <Card className="hover:shadow-lg transition-shadow h-full">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Database className="h-5 w-5 text-green-600" />
+                  Master Data Portal
+                </CardTitle>
+                <CardDescription>
+                  Access platform configuration and data management
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-green-600 hover:bg-green-700">
+                  Access Portal
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-lg text-red-600">Testing Tools</CardTitle>
+              <CardDescription>
+                Clear all data for fresh testing (enables email reuse)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataCleanupButton />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 };

@@ -1,216 +1,212 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Trash2, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2, Edit2, Check, X, RefreshCw, Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+interface EntityType {
+  id?: string;
+  name: string;
+}
 
-const EntityTypeConfigSupabase: React.FC = () => {
+const defaultEntityTypes = ['Commercial', 'Non-Profit Organization', 'Society', 'Trust'];
+
+const EntityTypeConfigSupabase = () => {
+  const [entityTypes, setEntityTypes] = useState<EntityType[]>([]);
   const [newEntityType, setNewEntityType] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: entityTypes = [], isLoading, refetch } = useQuery({
-    queryKey: ['entity-types'],
-    queryFn: async () => {
+  // Load data on component mount
+  useEffect(() => {
+    fetchEntityTypes();
+  }, []);
+
+  const fetchEntityTypes = async () => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('master_entity_types')
         .select('*')
         .order('name');
-      if (error) throw error;
-      return data || [];
-    }
-  });
 
-  const addMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const { data, error } = await supabase
+      if (error) throw error;
+      console.log('✅ CRUD TEST - Entity Types loaded from Supabase:', data);
+      setEntityTypes(data || []);
+      
+      // If no data exists, insert default data
+      if (!data || data.length === 0) {
+        await insertDefaultData();
+      }
+    } catch (error) {
+      console.error('Error fetching entity types:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load entity types.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const insertDefaultData = async () => {
+    try {
+      const { error } = await supabase
         .from('master_entity_types')
-        .insert([{ name: name.trim() }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entity-types'] });
-      setNewEntityType('');
-      setIsAdding(false);
-      toast({ title: "Success", description: "Entity type added successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to add entity type", variant: "destructive" });
-    }
-  });
+        .insert(defaultEntityTypes.map(name => ({ name })));
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { data, error } = await supabase
+      if (error) throw error;
+      
+      fetchEntityTypes();
+    } catch (error) {
+      console.error('Error inserting default entity types:', error);
+    }
+  };
+
+  const saveEntityType = async (newEntityType: string) => {
+    try {
+      // Check for duplicates
+      const duplicate = entityTypes.find(et => 
+        et.name.toLowerCase() === newEntityType.trim().toLowerCase()
+      );
+      
+      if (duplicate) {
+        toast({
+          title: "Duplicate Entry",
+          description: "This entity type already exists.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
         .from('master_entity_types')
-        .update({ name: name.trim() })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entity-types'] });
-      setEditingId(null);
-      setEditingValue('');
-      toast({ title: "Success", description: "Entity type updated successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to update entity type", variant: "destructive" });
-    }
-  });
+        .insert([{ name: newEntityType.trim() }]);
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+      if (error) throw error;
+
+      fetchEntityTypes();
+      toast({
+        title: "Success",
+        description: "Entity type saved successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error saving entity type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save entity type.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteEntityType = async (entityType: EntityType) => {
+    try {
       const { error } = await supabase
         .from('master_entity_types')
         .delete()
-        .eq('id', id);
+        .eq('id', entityType.id);
+
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entity-types'] });
-      toast({ title: "Success", description: "Entity type deleted successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to delete entity type", variant: "destructive" });
-    }
-  });
 
-  const handleAdd = () => {
-    if (newEntityType.trim()) {
-      addMutation.mutate(newEntityType);
-    }
-  };
-
-  const handleEdit = (id: string, name: string) => {
-    setEditingId(id);
-    setEditingValue(name);
-  };
-
-  const handleSaveEdit = () => {
-    if (editingId && editingValue.trim()) {
-      updateMutation.mutate({ id: editingId, name: editingValue });
+      fetchEntityTypes();
+      toast({
+        title: "Success",
+        description: "Entity type deleted successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error deleting entity type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete entity type.",
+        variant: "destructive",
+      });
     }
   };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this entity type?')) {
-      deleteMutation.mutate(id);
+  
+  const addEntityType = async () => {
+    if (newEntityType.trim() !== '') {
+      await saveEntityType(newEntityType.trim());
+      setNewEntityType('');
+    } else {
+      toast({
+        title: "Input Required",
+        description: "Please enter an entity type.",
+        variant: "destructive",
+      });
     }
   };
+
+  const removeEntityType = async (entityType: EntityType) => {
+    console.log("Removing entity type:", entityType.name);
+    await deleteEntityType(entityType);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addEntityType();
+  };
+
+  if (loading) {
+    return <div>Loading entity types...</div>;
+  }
 
   return (
     <div className="space-y-6">
+      <div className="text-left">
+        <h2 className="text-3xl font-bold text-foreground mb-2">Entity Types Configuration</h2>
+        <p className="text-lg text-muted-foreground">
+          Manage entity types for organizations and legal entities
+        </p>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Entity Types Configuration</CardTitle>
+          <CardTitle>Add New Entity Type</CardTitle>
+          <CardDescription>Add a new entity type to the list.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+          <form onSubmit={handleSubmit} className="flex items-center space-x-4">
+            <Input
+              type="text"
+              placeholder="Enter entity type"
+              value={newEntityType}
+              onChange={(e) => setNewEntityType(e.target.value)}
+            />
+            <Button type="submit" variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Add
             </Button>
-            <Button onClick={() => setIsAdding(true)} disabled={isAdding || isLoading}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Entity Type
-            </Button>
-          </div>
+          </form>
+        </CardContent>
+      </Card>
 
-          {isAdding && (
-            <div className="flex items-center gap-2 mb-4 p-3 border rounded-lg bg-muted">
-              <Input
-                value={newEntityType}
-                onChange={(e) => setNewEntityType(e.target.value)}
-                placeholder="Enter entity type name"
-                className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAdd();
-                  else if (e.key === 'Escape') {
-                    setIsAdding(false);
-                    setNewEntityType('');
-                  }
-                }}
-                autoFocus
-              />
-              <Button onClick={handleAdd} size="sm" disabled={addMutation.isPending}>
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button onClick={() => { setIsAdding(false); setNewEntityType(''); }} size="sm" variant="outline">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
-          {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">Loading...</p>
-          ) : entityTypes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No entity types configured. Add some entity types to get started.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {entityTypes.map((type) => (
-                <div key={type.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  {editingId === type.id ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <Input
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit();
-                          else if (e.key === 'Escape') {
-                            setEditingId(null);
-                            setEditingValue('');
-                          }
-                        }}
-                        autoFocus
-                      />
-                      <Button onClick={handleSaveEdit} size="sm" variant="outline" disabled={updateMutation.isPending}>
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button onClick={() => { setEditingId(null); setEditingValue(''); }} size="sm" variant="outline">
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="font-medium">{type.name}</span>
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={() => handleEdit(type.id, type.name)} 
-                          size="sm" 
-                          variant="outline"
-                          disabled={isLoading}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          onClick={() => handleDelete(type.id)} 
-                          size="sm" 
-                          variant="outline"
-                          disabled={isLoading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Entity Types ({entityTypes.length})</CardTitle>
+          <CardDescription>Manage existing entity types.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="list-none space-y-2">
+            {entityTypes.map((entityType, index) => (
+              <li key={entityType.id} className="flex items-center justify-between py-2 border-b border-gray-200">
+                <span>{entityType.name}</span>
+                <Button variant="destructive" size="icon" onClick={() => removeEntityType(entityType)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+          
+          {entityTypes.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No entity types configured.</p>
+              <p className="text-sm">Add entity types using the form above.</p>
             </div>
           )}
         </CardContent>

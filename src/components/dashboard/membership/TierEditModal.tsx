@@ -255,10 +255,10 @@ export const TierEditModal: React.FC<TierEditModalProps> = ({
               return (
                 <DetailedTierCard
                   key={tierConfig.id}
-                  config={tierConfig}
+                  tierConfiguration={tierConfig}
                   isSelected={isSelectedTier(tierName)}
                   isCurrent={isCurrentTier(tierName)}
-                  onSelect={() => setSelectedTier(tierName)}
+                  onTierSelect={setSelectedTier}
                   membershipStatus={membershipStatus === 'Active' ? 'active' : 'inactive'}
                 />
               );

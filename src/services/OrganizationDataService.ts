@@ -1,396 +1,261 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export interface SolutionSeekerData {
-  id: string;
+export interface OrganizationComprehensiveData {
+  organization_pk_id: string;
   organization_id: string;
+  user_id: string;
   organization_name: string;
   contact_person_name: string;
   email: string;
-  phone_number?: string;
-  country_code?: string;
-  address?: string;
-  website?: string;
-  user_id?: string;
-  created_at: string;
-  updated_at: string;
-  
-  // Organization classification
-  organization_type?: string;
-  entity_type?: string;
-  country?: string;
-  industry_segment?: string;
-  
-  // Membership and status information
+  phone_number: string;
+  address: string;
+  website: string;
+  country_name: string;
+  country_code: string;
+  organization_type_name: string;
+  entity_type_name: string;
+  industry_segment_name: string;
   membership_status: string;
-  activation_status: string;
-  pricing_tier?: string;
-  engagement_model?: string;
-  payment_simulation_status?: string;
-  workflow_step?: string;
-  workflow_completed?: boolean;
-  
-  // Payment details
-  mem_payment_amount?: number;
-  mem_payment_currency?: string;
-  mem_payment_date?: string;
-  mem_receipt_number?: string;
-  mem_payment_method?: string;
-  mem_payment_status?: string;
-  selected_frequency?: string;
-  current_frequency?: string;
-  frequency_payments?: any;
-  frequency_change_history?: any;
-  total_payments_made?: number;
-  last_payment_date?: string;
-  
-  // Tier and engagement details
-  tier_features?: any;
-  engagement_model_details?: any;
-  pricing_locked?: boolean;
-  engagement_locked?: boolean;
-  platform_fee_percentage?: number;
-  updated_platform_fee_percentage?: number;
-  discount_percentage?: number;
-  final_calculated_price?: number;
-  
-  // Terms acceptance
-  mem_terms?: boolean;
-  enm_terms?: boolean;
-  terms_accepted?: boolean;
-  
-  // Workflow and timing
-  tier_selected_at?: string;
-  engagement_model_selected_at?: string;
-  lock_date?: string;
-  
-  // Administrative flags
-  has_user_account: boolean;
-  has_engagement_record: boolean;
-  overall_status: string;
-  last_activity: string;
-}
-
-export interface ComprehensiveOrganizationData {
-  organization: SolutionSeekerData;
-  membership_fees: MembershipFee[];
-  tier_configuration: TierConfiguration;
-  engagement_model_details: EngagementModelDetails;
-  pricing_configurations: PricingConfiguration[];
-}
-
-export interface MembershipFee {
-  id: string;
-  country: string;
-  organization_type: string;
-  entity_type: string;
-  monthly_amount?: number;
-  monthly_currency?: string;
-  quarterly_amount?: number;
-  quarterly_currency?: string;
-  half_yearly_amount?: number;
-  half_yearly_currency?: string;
-  annual_amount?: number;
-  annual_currency?: string;
-  description?: string;
-}
-
-export interface TierConfiguration {
-  tier_info: {
-    name: string;
-    description: string;
-    level_order: number;
-  };
-  configurations: TierConfigDetail[];
-}
-
-export interface TierConfigDetail {
-  country: string;
-  currency: string;
-  monthly_challenge_limit?: number;
-  solutions_per_challenge: number;
-  allows_overage: boolean;
-  fixed_charge_per_challenge: number;
-  support_type: string;
-  support_level: string;
-  support_availability: string;
-  support_response_time: string;
-  analytics_access: string;
-  analytics_features: any[];
-  analytics_dashboard_access: boolean;
-  onboarding_type: string;
-  onboarding_service_type: string;
-  onboarding_resources: any[];
-  workflow_template: string;
-  workflow_customization_level: string;
-  workflow_template_count: number;
-}
-
-export interface EngagementModelDetails {
-  model_info: {
-    name: string;
-    description: string;
-  };
-  complexity_levels: ComplexityLevel[];
-  platform_fee_formulas: PlatformFeeFormula[];
-  subtypes: EngagementModelSubtype[];
-}
-
-export interface ComplexityLevel {
-  name: string;
-  description: string;
-  level_order: number;
-  consulting_fee_multiplier: number;
-  management_fee_multiplier: number;
-}
-
-export interface PlatformFeeFormula {
-  formula_name: string;
-  description: string;
-  formula_expression: string;
-  base_consulting_fee: number;
-  base_management_fee: number;
-  platform_usage_fee_percentage: number;
-  advance_payment_percentage: number;
-  membership_discount_percentage: number;
-  country: string;
-  currency: string;
-}
-
-export interface EngagementModelSubtype {
-  name: string;
-  description: string;
-  required_fields: any[];
-  optional_fields: any[];
-}
-
-export interface PricingConfiguration {
-  config_name: string;
-  base_value: number;
-  calculated_value: number;
-  unit_symbol: string;
-  currency_code: string;
-  membership_discount: number;
-  billing_frequency: string;
-  effective_from: string;
-  effective_to: string;
-}
-
-export interface AdminCreationData {
-  admin_name: string;
-  admin_email: string;
-  contact_number?: string;
-  admin_password_hash?: string;
-  organization_id: string;
-  organization_name?: string;
-}
-
-export interface ExistingAdmin {
-  id: string;
-  admin_name: string;
-  admin_email: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface OrganizationSummary {
-  organization: SolutionSeekerData;
-  existing_admin?: ExistingAdmin;
-  can_create_admin: boolean;
+  pricing_tier: string;
+  engagement_model: string;
+  payment_amount: number;
+  payment_currency: string;
+  payment_status: string;
+  selected_frequency: string;
+  final_calculated_price: number;
+  discount_percentage: number;
+  registration_date: string;
+  last_updated: string;
 }
 
 export class OrganizationDataService {
-  /**
-   * Get all solution seekers with comprehensive data
-   */
-  static async getAllSolutionSeekers(): Promise<SolutionSeekerData[]> {
-    try {
-      const { data, error } = await supabase
-        .from('solution_seekers_comprehensive_view')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching solution seekers:', error);
-      throw error;
-    }
-  }
+  private static cache = new Map<string, { data: OrganizationComprehensiveData; timestamp: number }>();
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   /**
-   * Get a specific solution seeker for admin creation preview
+   * Retrieves comprehensive organization data by organization ID or user ID
+   * Uses optimized queries and caching for performance
    */
-  static async getSeekerForAdminCreation(organizationId: string): Promise<OrganizationSummary> {
+  static async getComprehensiveData(identifier: string): Promise<OrganizationComprehensiveData | null> {
     try {
-      const { data, error } = await supabase
-        .rpc('get_organization_admin_summary', { org_id: organizationId });
-
-      if (error) throw error;
-      
-      // Type assertion for the RPC response
-      const result = data as any;
-      if (result?.error) {
-        throw new Error(result.error);
+      // Check cache first
+      const cached = this.cache.get(identifier);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+        return cached.data;
       }
 
-      return result as OrganizationSummary;
-    } catch (error) {
-      console.error('Error fetching organization summary:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get organization admin details
-   */
-  static async getOrganizationAdmin(organizationId: string): Promise<ExistingAdmin | null> {
-    try {
-      const { data, error } = await supabase
-        .from('organization_administrators')
-        .select('id, admin_name, admin_email, contact_number, is_active, created_at')
-        .eq('organization_id', organizationId)
-        .eq('is_active', true)
+      // Query organizations and engagement data with joins
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select(`
+          id,
+          organization_id,
+          user_id,
+          organization_name,
+          contact_person_name,
+          email,
+          phone_number,
+          address,
+          website,
+          master_countries!organizations_country_id_fkey(name, code),
+          master_organization_types!organizations_organization_type_id_fkey(name),
+          master_entity_types!organizations_entity_type_id_fkey(name),
+          master_industry_segments!organizations_industry_segment_id_fkey(name)
+        `)
+        .or(`organization_id.eq.${identifier},user_id.eq.${identifier}`)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No data found
-          return null;
-        }
-        throw error;
+      if (orgError || !orgData) {
+        console.error('Error fetching organization data:', orgError);
+        return null;
       }
 
-      return data as ExistingAdmin;
+      // Get engagement activation data
+      const { data: engagementData } = await supabase
+        .from('engagement_activations')
+        .select('*')
+        .eq('user_id', orgData.user_id)
+        .eq('membership_status', 'Active')
+        .single();
+
+      // Construct comprehensive data object
+      const organizationData: OrganizationComprehensiveData = {
+        organization_pk_id: orgData.id,
+        organization_id: orgData.organization_id,
+        user_id: orgData.user_id,
+        organization_name: orgData.organization_name || '',
+        contact_person_name: orgData.contact_person_name || '',
+        email: orgData.email || '',
+        phone_number: orgData.phone_number || '',
+        address: orgData.address || '',
+        website: orgData.website || '',
+        country_name: (orgData.master_countries as any)?.name || '',
+        country_code: (orgData.master_countries as any)?.code || '',
+        organization_type_name: (orgData.master_organization_types as any)?.name || '',
+        entity_type_name: (orgData.master_entity_types as any)?.name || '',
+        industry_segment_name: (orgData.master_industry_segments as any)?.name || '',
+        membership_status: engagementData?.membership_status || 'Inactive',
+        pricing_tier: engagementData?.pricing_tier || '',
+        engagement_model: engagementData?.engagement_model || '',
+        payment_amount: engagementData?.mem_payment_amount || 0,
+        payment_currency: engagementData?.mem_payment_currency || '',
+        payment_status: engagementData?.mem_payment_status || '',
+        selected_frequency: engagementData?.selected_frequency || '',
+        final_calculated_price: engagementData?.final_calculated_price || 0,
+        discount_percentage: engagementData?.discount_percentage || 0,
+        registration_date: engagementData?.created_at || '',
+        last_updated: engagementData?.updated_at || ''
+      };
+      
+      // Cache the result
+      this.cache.set(identifier, {
+        data: organizationData,
+        timestamp: Date.now()
+      });
+
+      return organizationData;
     } catch (error) {
-      console.error('Error fetching organization admin:', error);
-      throw error;
+      console.error('Error in getComprehensiveData:', error);
+      return null;
     }
   }
 
   /**
-   * Update an existing organization administrator
-   * No validation checks - direct save
+   * Retrieves organization data by user ID (authenticated user context)
    */
-  static async updateOrganizationAdmin(adminId: string, updates: Partial<AdminCreationData>): Promise<void> {
+  static async getByUserId(userId: string): Promise<OrganizationComprehensiveData | null> {
+    return this.getComprehensiveData(userId);
+  }
+
+  /**
+   * Retrieves organization data by organization ID
+   */
+  static async getByOrganizationId(orgId: string): Promise<OrganizationComprehensiveData | null> {
+    return this.getComprehensiveData(orgId);
+  }
+
+  /**
+   * Retrieves current user's organization data
+   */
+  static async getCurrentUserData(): Promise<OrganizationComprehensiveData | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      return this.getByUserId(user.id);
+    } catch (error) {
+      console.error('Error getting current user data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Updates organization basic information
+   */
+  static async updateOrganization(organizationId: string, updates: Partial<{
+    organization_name: string;
+    contact_person_name: string;
+    email: string;
+    phone_number: string;
+    address: string;
+    website: string;
+  }>): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('organization_administrators')
-        .update({
-          admin_name: updates.admin_name,
-          admin_email: updates.admin_email,
-          contact_number: updates.contact_number,
-          admin_password_hash: updates.admin_password_hash,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', adminId);
+        .from('organizations')
+        .update(updates)
+        .eq('organization_id', organizationId);
 
       if (error) {
-        console.error('Error updating organization admin:', error);
-        throw new Error(`Failed to update organization admin: ${error.message}`);
+        console.error('Error updating organization:', error);
+        return false;
       }
 
-      console.log('✅ Organization admin updated successfully');
-
-      // Try to log audit, but don't fail if it doesn't work
-      try {
-        await supabase
-          .from('admin_creation_audit')
-          .insert({
-            organization_id: updates.organization_id || '',
-            organization_name: updates.organization_name || 'Unknown',
-            admin_name: updates.admin_name || '',
-            admin_email: updates.admin_email || '',
-            created_admin_id: adminId,
-            created_by: null, // Allow null to avoid constraint issues
-            action_type: 'updated',
-            notes: 'Organization administrator updated via Master Data Portal - No validation mode'
-          });
-      } catch (auditError) {
-        console.warn('Audit logging failed (ignored):', auditError);
-      }
+      // Clear cache after update
+      this.clearCache(organizationId);
+      return true;
     } catch (error) {
-      console.error('Error updating organization admin:', error);
-      throw error;
+      console.error('Error in updateOrganization:', error);
+      return false;
     }
   }
 
   /**
-   * Get comprehensive organization data with all details
+   * Updates membership and engagement details
    */
-  static async getComprehensiveOrganizationData(organizationId: string): Promise<ComprehensiveOrganizationData> {
+  static async updateEngagementActivation(userId: string, updates: Partial<{
+    membership_status: string;
+    pricing_tier: string;
+    engagement_model: string;
+    mem_payment_amount: number;
+    mem_payment_currency: string;
+    mem_payment_status: string;
+    selected_frequency: string;
+    final_calculated_price: number;
+    discount_percentage: number;
+  }>): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .rpc('get_comprehensive_organization_data', { org_id: organizationId });
+      const { error } = await supabase
+        .from('engagement_activations')
+        .update(updates)
+        .eq('user_id', userId);
 
-      if (error) throw error;
-      
-      if (data && typeof data === 'object' && 'error' in data) {
-        throw new Error(data.error as string);
+      if (error) {
+        console.error('Error updating engagement activation:', error);
+        return false;
       }
 
-      return data as unknown as ComprehensiveOrganizationData;
+      // Clear cache after update
+      this.clearCacheByUserId(userId);
+      return true;
     } catch (error) {
-      console.error('Error fetching comprehensive organization data:', error);
-      throw error;
+      console.error('Error in updateEngagementActivation:', error);
+      return false;
     }
   }
 
   /**
-   * Create a new organization administrator
-   * No validation checks - direct save
+   * Clears cache for specific identifier
    */
-  static async createOrganizationAdmin(adminData: AdminCreationData): Promise<string> {
-    try {
-      console.log('🔧 Creating organization admin - No validation mode...');
-      
-      // Create organization administrator directly with minimal validation
-      const { data, error } = await supabase
-        .from('organization_administrators')
-        .insert({
-          organization_id: adminData.organization_id,
-          admin_name: adminData.admin_name || 'Test Admin',
-          admin_email: adminData.admin_email || 'test@example.com',
-          contact_number: adminData.contact_number,
-          admin_password_hash: adminData.admin_password_hash || 'password123',
-          role_type: 'organization_admin',
-          is_active: true,
-          created_by: null // Allow null to avoid foreign key constraint
-        })
-        .select('id')
-        .single();
+  static clearCache(identifier: string): void {
+    this.cache.delete(identifier);
+  }
 
-      if (error) {
-        console.error('Error creating organization admin:', error);
-        throw new Error(`Failed to create organization admin: ${error.message}`);
+  /**
+   * Clears cache by user ID (also tries to clear by org ID if available)
+   */
+  static clearCacheByUserId(userId: string): void {
+    // Clear by user ID
+    this.cache.delete(userId);
+    
+    // Also try to find and clear by organization ID
+    for (const [key, value] of this.cache.entries()) {
+      if (value.data.user_id === userId) {
+        this.cache.delete(key);
       }
-
-      console.log('✅ Organization admin created successfully:', data.id);
-
-      // Try to log audit, but don't fail if it doesn't work
-      try {
-        await supabase
-          .from('admin_creation_audit')
-          .insert({
-            organization_id: adminData.organization_id,
-            organization_name: adminData.organization_name || 'Unknown',
-            admin_name: adminData.admin_name || 'Test Admin',
-            admin_email: adminData.admin_email || 'test@example.com',
-            created_admin_id: data.id,
-            created_by: null, // Allow null to avoid constraint issues
-            action_type: 'created',
-            notes: 'Organization administrator created via Master Data Portal - No validation mode'
-          });
-          
-        console.log('✅ Admin creation audit logged successfully');
-      } catch (auditError) {
-        console.warn('⚠️ Audit logging failed (ignored):', auditError);
-        // Don't fail the whole operation if audit logging fails
-      }
-
-      return data.id;
-    } catch (error) {
-      console.error('❌ Error creating organization admin:', error);
-      throw error;
     }
+  }
+
+  /**
+   * Clears entire cache
+   */
+  static clearAllCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Validates organization ID format
+   */
+  static isValidOrganizationId(orgId: string): boolean {
+    return /^ORG-[A-Z0-9]{8}$/.test(orgId);
+  }
+
+  /**
+   * Validates membership status
+   */
+  static isValidMembershipStatus(status: string): boolean {
+    return ['Active', 'Inactive', 'Pending', 'Suspended'].includes(status);
   }
 }

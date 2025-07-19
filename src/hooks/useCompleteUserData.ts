@@ -1,46 +1,6 @@
 import { useState, useEffect } from 'react';
 import { userDataManager } from '@/utils/storage/UserDataManager';
-
-// Helper function to get industry segment name from ID
-const getIndustrySegmentDisplayName = (industrySegmentValue: any): string => {
-  if (!industrySegmentValue) return '';
-  
-  // If it's already a string name, return it directly
-  if (typeof industrySegmentValue === 'string' && !industrySegmentValue.startsWith('is_')) {
-    return industrySegmentValue;
-  }
-  
-  // Try to get from registration data first (most accurate)
-  try {
-    const orgData = JSON.parse(localStorage.getItem('solution_seeker_registration_data') || '{}');
-    if (orgData.industrySegment && typeof orgData.industrySegment === 'string') {
-      return orgData.industrySegment;
-    }
-  } catch (error) {
-    console.error('Error loading registration data for industry segment:', error);
-  }
-  
-  // Try to load industry segments from master data as fallback
-  try {
-    const savedData = localStorage.getItem('master_data_industry_segments');
-    if (savedData) {
-      const data = JSON.parse(savedData);
-      if (data && data.industrySegments && Array.isArray(data.industrySegments)) {
-        const segment = data.industrySegments.find((seg: any) => 
-          seg.id === industrySegmentValue || seg.industrySegment === industrySegmentValue
-        );
-        if (segment) {
-          return segment.industrySegment;
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error loading industry segments for display:', error);
-  }
-  
-  // Fallback: return the original value
-  return String(industrySegmentValue);
-};
+import { getIndustrySegmentDisplayName } from '@/components/master-data/solution-seekers/utils/viewDetailsHelpers';
 
 interface CompleteUserData {
   // Basic Info

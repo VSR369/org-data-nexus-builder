@@ -23,7 +23,6 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
   profile
 }) => {
   const [activating, setActivating] = useState(false);
-  const [showActivationPrompt, setShowActivationPrompt] = useState(false);
   const annualFee = membershipFees.find(fee => fee.annual_amount)?.annual_amount || 0;
   const currency = membershipFees.find(fee => fee.annual_currency)?.annual_currency || 'USD';
 
@@ -32,11 +31,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
     try {
       // Simulate activation process - in real implementation this would handle payment
       await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing time
-      
-      // Now actually proceed with membership activation
       onStatusChange('active');
-      setShowActivationPrompt(false);
-      
     } catch (error) {
       console.error('Activation error:', error);
     } finally {
@@ -45,17 +40,11 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
   };
 
   const handleRadioChange = (value: string) => {
-    console.log('Radio changed to:', value);
-    
     if (value === 'inactive') {
-      // For inactive, proceed immediately without payment
-      setShowActivationPrompt(false);
+      // For non-active, proceed immediately
       onStatusChange('inactive');
-    } else if (value === 'active') {
-      // For active, show the activation prompt but don't change status yet
-      setShowActivationPrompt(true);
-      // Don't call onStatusChange here - wait for activation confirmation
     }
+    // For active, we don't proceed immediately - wait for activation button
   };
 
   return (
@@ -68,7 +57,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
       </CardHeader>
       <CardContent className="space-y-4">
         <RadioGroup 
-          value={selectedStatus === 'active' || showActivationPrompt ? 'active' : selectedStatus || ''} 
+          value={selectedStatus || ''} 
           onValueChange={handleRadioChange}
         >
           {/* Active Member Option */}
@@ -125,7 +114,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
         </RadioGroup>
 
         {/* Show activation button when Active Member is selected */}
-        {showActivationPrompt && (
+        {selectedStatus === 'active' && (
           <div className="space-y-4">
             <Alert className="bg-green-50 border-green-200">
               <Crown className="h-4 w-4 text-green-600" />
@@ -137,42 +126,29 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
               </AlertDescription>
             </Alert>
             
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleActivateMembership}
-                disabled={activating}
-                className="flex-1"
-                size="lg"
-              >
-                {activating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Activating Membership...
-                  </>
-                ) : (
-                  <>
-                    <Crown className="h-4 w-4 mr-2" />
-                    Activate Membership ({formatCurrency(annualFee, currency)})
-                  </>
-                )}
-              </Button>
-              
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setShowActivationPrompt(false);
-                  // Reset to no selection
-                }}
-                disabled={activating}
-              >
-                Cancel
-              </Button>
-            </div>
+            <Button 
+              onClick={handleActivateMembership}
+              disabled={activating}
+              className="w-full"
+              size="lg"
+            >
+              {activating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Activating Membership...
+                </>
+              ) : (
+                <>
+                  <Crown className="h-4 w-4 mr-2" />
+                  Activate Membership ({formatCurrency(annualFee, currency)})
+                </>
+              )}
+            </Button>
           </div>
         )}
 
         {/* Promotional Message for Non-Active Selection */}
-        {selectedStatus === 'inactive' && !showActivationPrompt && (
+        {selectedStatus === 'inactive' && (
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>

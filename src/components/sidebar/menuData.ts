@@ -177,10 +177,10 @@ export const systemMenuItems = [
 
 export const validationMenuItems = [
   {
-    id: 'solution-seekers',
-    title: 'Solution Seekers Management',
+    id: 'solution-seekers-validation',
+    title: 'Solution Seekers Validation',
     icon: CheckCircle,
-    description: 'Comprehensive management of solution-seeking organizations and administrator creation'
+    description: 'Validate seeker registrations'
   }
 ];
 

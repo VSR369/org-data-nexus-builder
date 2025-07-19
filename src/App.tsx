@@ -1,51 +1,43 @@
 
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-
-// Import all pages
-import Dashboard from './pages/Dashboard';
-import OrganizationDashboard from './pages/OrganizationDashboard';
-import MasterDataPortal from './pages/MasterDataPortal';
-import NewSeekerPortal from './pages/NewSeekerPortal';
-import ContributionPortal from './pages/ContributionPortal';
-import AdminPortal from './pages/AdminPortal';
-import MasterDataContent from './components/MasterDataContent';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import '@/utils/localStorage/LocalStorageCleaner';
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useSupabaseAuth";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import ContributorAuth from "./pages/ContributorAuth";
+import MasterDataPortal from "./pages/MasterDataPortal";
+import OrganizationRegistration from "./pages/OrganizationRegistration";
+import OrganizationSignIn from "./pages/OrganizationSignIn";
+import OrganizationDashboard from "./pages/OrganizationDashboard";
 
 const queryClient = new QueryClient();
 
 function App() {
-  const [activeSection, setActiveSection] = useState('countries');
-
+  console.log('🚀 App component is rendering...');
+  
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            {/* Main Dashboard */}
-            <Route path="/" element={<Dashboard />} />
-            
-            {/* Portal Routes */}
-            <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
-            <Route path="/master-data-portal" element={<MasterDataPortal />} />
-            <Route path="/new-seeker" element={<NewSeekerPortal />} />
-            <Route path="/contribution-portal" element={<ContributionPortal />} />
-            <Route path="/admin-portal" element={<AdminPortal />} />
-            
-            {/* Master Data Section Routes */}
-            <Route path="/master-data/:section" element={<MasterDataContent activeSection={activeSection} setActiveSection={setActiveSection} />} />
-            
-            {/* Legacy compatibility routes */}
-            <Route path="/master-data" element={<MasterDataPortal />} />
-          </Routes>
-          
-          {/* Toast notifications */}
+      <AuthProvider>
+        <TooltipProvider>
           <Toaster />
-          <SonnerToaster />
-        </div>
-      </Router>
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/contributor-auth" element={<ContributorAuth />} />
+              <Route path="/master-data-portal" element={<MasterDataPortal />} />
+              <Route path="/organization-registration" element={<OrganizationRegistration />} />
+              <Route path="/organization-signin" element={<OrganizationSignIn />} />
+              <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

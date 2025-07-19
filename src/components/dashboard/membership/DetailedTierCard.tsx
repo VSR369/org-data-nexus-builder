@@ -5,23 +5,21 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Crown, TrendingUp, Star } from 'lucide-react';
 
 interface DetailedTierCardProps {
-  config: any;
+  tierConfiguration: any;
   isSelected: boolean;
   isCurrent: boolean;
-  isRecommended?: boolean;
-  onSelect: () => void;
-  membershipStatus?: 'active' | 'inactive';
+  onTierSelect: (tierName: string) => void;
+  membershipStatus: 'active' | 'inactive';
 }
 
 export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
-  config,
+  tierConfiguration,
   isSelected,
   isCurrent,
-  isRecommended,
-  onSelect,
-  membershipStatus = 'inactive'
+  onTierSelect,
+  membershipStatus
 }) => {
-  const tierName = config.master_pricing_tiers?.name;
+  const tierName = tierConfiguration.master_pricing_tiers?.name;
   const isMember = membershipStatus === 'active';
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
@@ -36,7 +34,9 @@ export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
   };
 
   const handleCardClick = () => {
-    onSelect();
+    if (tierName) {
+      onTierSelect(tierName);
+    }
   };
 
   return (
@@ -69,7 +69,7 @@ export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
           </div>
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          {config.master_pricing_tiers?.description}
+          {tierConfiguration.master_pricing_tiers?.description}
         </p>
       </CardHeader>
       
@@ -81,23 +81,23 @@ export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
             <div className="flex justify-between">
               <span>Monthly Challenges:</span>
               <span className="font-medium">
-                {config.monthly_challenge_limit === null 
+                {tierConfiguration.monthly_challenge_limit === null 
                   ? 'Unlimited' 
-                  : config.monthly_challenge_limit}
+                  : tierConfiguration.monthly_challenge_limit}
               </span>
             </div>
             
             <div className="flex justify-between">
               <span>Solutions per Challenge:</span>
               <span className="font-medium">
-                {config.solutions_per_challenge || 1}
+                {tierConfiguration.solutions_per_challenge || 1}
               </span>
             </div>
             
             <div className="flex justify-between">
               <span>Overage Allowed:</span>
-              <Badge variant={config.allows_overage ? "default" : "secondary"}>
-                {config.allows_overage ? 'Yes' : 'No'}
+              <Badge variant={tierConfiguration.allows_overage ? "default" : "secondary"}>
+                {tierConfiguration.allows_overage ? 'Yes' : 'No'}
               </Badge>
             </div>
           </div>
@@ -111,8 +111,8 @@ export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
               <span>Fixed Charge per Challenge:</span>
               <span className="font-medium">
                 {formatCurrency(
-                  config.fixed_charge_per_challenge || 0, 
-                  config.master_currencies?.code
+                  tierConfiguration.fixed_charge_per_challenge || 0, 
+                  tierConfiguration.master_currencies?.code
                 )}
               </span>
             </div>
@@ -133,21 +133,21 @@ export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
             <div className="flex justify-between">
               <span>Support Level:</span>
               <Badge variant="outline">
-                {config.support_type_id ? 'Premium' : 'Standard'}
+                {tierConfiguration.support_type_id ? 'Premium' : 'Standard'}
               </Badge>
             </div>
             
             <div className="flex justify-between">
               <span>Analytics Access:</span>
               <Badge variant="outline">
-                {config.analytics_access_id ? 'Advanced' : 'Basic'}
+                {tierConfiguration.analytics_access_id ? 'Advanced' : 'Basic'}
               </Badge>
             </div>
             
             <div className="flex justify-between">
               <span>Workflow Templates:</span>
               <Badge variant="outline">
-                {config.workflow_template_id ? 'Custom' : 'Standard'}
+                {tierConfiguration.workflow_template_id ? 'Custom' : 'Standard'}
               </Badge>
             </div>
           </div>
@@ -174,7 +174,7 @@ export const DetailedTierCard: React.FC<DetailedTierCardProps> = ({
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Tier Level:</span>
             <Badge variant="outline">
-              Level {config.master_pricing_tiers?.level_order || 1}
+              Level {tierConfiguration.master_pricing_tiers?.level_order || 1}
             </Badge>
           </div>
         </div>

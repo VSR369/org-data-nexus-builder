@@ -1,4 +1,3 @@
-
 export interface MasterDataItem {
   id: string;
   name: string;
@@ -13,7 +12,6 @@ export interface OrganizationFormData {
   industrySegmentId: string;
   companyProfileDocument: File | null;
   companyLogo: File | null;
-  registrationDocument: File | null;
   website: string;
   countryId: string;
   address: string;
@@ -32,5 +30,4 @@ export interface OrganizationFormErrors {
 export interface FileUploadProgress {
   companyProfileDocument?: number;
   companyLogo?: number;
-  registrationDocument?: number;
 }

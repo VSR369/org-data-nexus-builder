@@ -1,10 +1,12 @@
 
 import { FormData } from '@/types/seekerRegistration';
+import { useMembershipFeeDataSupabase } from '@/components/master-data/seeker-membership/useMembershipFeeDataSupabase';
 import { useSupabaseMasterData } from '@/hooks/useSupabaseMasterData';
+import { useOrganizationTypes, useEntityTypes } from '@/hooks/useMasterDataCRUD';
 
 export const useSeekerValidation = () => {
   // Access Supabase data for validation
-  const { countries } = useSupabaseMasterData();
+  const { membershipFees, countries, entityTypes } = useMembershipFeeDataSupabase();
 
   const validateForm = (formData: any): { [key: string]: string } => {
     const errors: { [key: string]: string } = {};

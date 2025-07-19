@@ -1,121 +1,154 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Edit2, Check, X, RefreshCw, Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface IndustrySegment {
+  id?: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 const IndustrySegmentsConfigSupabase: React.FC = () => {
+  const [industrySegments, setIndustrySegments] = useState<IndustrySegment[]>([]);
+  const [loading, setLoading] = useState(false);
   const [newSegment, setNewSegment] = useState({ name: '', description: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState({ name: '', description: '' });
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: segments = [], isLoading, refetch } = useQuery({
-    queryKey: ['industry-segments'],
-    queryFn: async () => {
+  useEffect(() => {
+    loadSegments();
+  }, []);
+
+  const loadSegments = async () => {
+    setLoading(true);
+    try {
       const { data, error } = await supabase
         .from('master_industry_segments')
         .select('*')
         .order('name');
+      
       if (error) throw error;
-      return data || [];
-    }
-  });
-
-  const addMutation = useMutation({
-    mutationFn: async (segment: { name: string; description: string }) => {
-      const { data, error } = await supabase
-        .from('master_industry_segments')
-        .insert([{ 
-          name: segment.name.trim(), 
-          description: segment.description.trim() || null 
-        }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['industry-segments'] });
-      setNewSegment({ name: '', description: '' });
-      setIsAdding(false);
-      toast({ title: "Success", description: "Industry segment added successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to add industry segment", variant: "destructive" });
-    }
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, segment }: { id: string; segment: { name: string; description: string } }) => {
-      const { data, error } = await supabase
-        .from('master_industry_segments')
-        .update({ 
-          name: segment.name.trim(), 
-          description: segment.description.trim() || null 
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['industry-segments'] });
-      setEditingId(null);
-      setEditingValue({ name: '', description: '' });
-      toast({ title: "Success", description: "Industry segment updated successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to update industry segment", variant: "destructive" });
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('master_industry_segments')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['industry-segments'] });
-      toast({ title: "Success", description: "Industry segment deleted successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to delete industry segment", variant: "destructive" });
-    }
-  });
-
-  const handleAdd = () => {
-    if (newSegment.name.trim()) {
-      addMutation.mutate(newSegment);
+      console.log('✅ CRUD TEST - Industry Segments loaded from Supabase:', data);
+      setIndustrySegments(data || []);
+    } catch (error) {
+      console.error('Error loading industry segments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load industry segments",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEdit = (id: string, name: string, description: string) => {
+  const handleAddSegment = async () => {
+    if (newSegment.name.trim()) {
+      try {
+        const { error } = await supabase
+          .from('master_industry_segments')
+          .insert({ 
+            name: newSegment.name.trim(),
+            description: newSegment.description.trim() || undefined
+          });
+
+        if (error) throw error;
+        
+        setNewSegment({ name: '', description: '' });
+        setIsAdding(false);
+        loadSegments();
+        toast({
+          title: "Success",
+          description: "Industry segment added successfully",
+        });
+      } catch (error) {
+        console.error('Error adding industry segment:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add industry segment",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleEditSegment = (id: string, name: string, description?: string) => {
     setEditingId(id);
     setEditingValue({ name, description: description || '' });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editingId && editingValue.name.trim()) {
-      updateMutation.mutate({ id: editingId, segment: editingValue });
+      try {
+        const { error } = await supabase
+          .from('master_industry_segments')
+          .update({ 
+            name: editingValue.name.trim(),
+            description: editingValue.description.trim() || undefined
+          })
+          .eq('id', editingId);
+
+        if (error) throw error;
+        
+        setEditingId(null);
+        setEditingValue({ name: '', description: '' });
+        loadSegments();
+        toast({
+          title: "Success",
+          description: "Industry segment updated successfully",
+        });
+      } catch (error) {
+        console.error('Error updating industry segment:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update industry segment",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this industry segment?')) {
-      deleteMutation.mutate(id);
+  const handleDeleteSegment = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('master_industry_segments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      loadSegments();
+      toast({
+        title: "Success",
+        description: "Industry segment deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting industry segment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete industry segment",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingValue({ name: '', description: '' });
+  };
+
+  const handleCancelAdd = () => {
+    setIsAdding(false);
+    setNewSegment({ name: '', description: '' });
   };
 
   return (
@@ -126,11 +159,11 @@ const IndustrySegmentsConfigSupabase: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 mb-4">
-            <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+            <Button onClick={loadSegments} variant="outline" size="sm" disabled={loading}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button onClick={() => setIsAdding(true)} disabled={isAdding || isLoading}>
+            <Button onClick={() => setIsAdding(true)} disabled={isAdding || loading}>
               <Plus className="h-4 w-4 mr-2" />
               Add Industry Segment
             </Button>
@@ -141,7 +174,14 @@ const IndustrySegmentsConfigSupabase: React.FC = () => {
               <Input
                 value={newSegment.name}
                 onChange={(e) => setNewSegment(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter segment name"
+                placeholder="Enter industry segment name"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddSegment();
+                  } else if (e.key === 'Escape') {
+                    handleCancelAdd();
+                  }
+                }}
                 autoFocus
               />
               <Textarea
@@ -150,12 +190,12 @@ const IndustrySegmentsConfigSupabase: React.FC = () => {
                 placeholder="Enter description (optional)"
                 rows={2}
               />
-              <div className="flex items-center gap-2">
-                <Button onClick={handleAdd} size="sm" disabled={addMutation.isPending}>
+              <div className="flex gap-2">
+                <Button onClick={handleAddSegment} size="sm" disabled={loading}>
                   <Check className="h-4 w-4 mr-2" />
                   Add
                 </Button>
-                <Button onClick={() => { setIsAdding(false); setNewSegment({ name: '', description: '' }); }} size="sm" variant="outline">
+                <Button onClick={handleCancelAdd} size="sm" variant="outline">
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
@@ -163,35 +203,41 @@ const IndustrySegmentsConfigSupabase: React.FC = () => {
             </div>
           )}
 
-          {isLoading ? (
+          {loading ? (
             <p className="text-muted-foreground text-center py-8">Loading...</p>
-          ) : segments.length === 0 ? (
+          ) : industrySegments.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              No industry segments configured. Add some segments to get started.
+              No industry segments configured. Add some industry segments to get started.
             </p>
           ) : (
-            <div className="space-y-3">
-              {segments.map((segment) => (
-                <div key={segment.id} className="p-4 border rounded-lg">
+            <div className="space-y-2">
+              {industrySegments.map((segment) => (
+                <div key={segment.id} className="p-3 border rounded-lg">
                   {editingId === segment.id ? (
                     <div className="space-y-3">
                       <Input
                         value={editingValue.name}
                         onChange={(e) => setEditingValue(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Segment name"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveEdit();
+                          } else if (e.key === 'Escape') {
+                            handleCancelEdit();
+                          }
+                        }}
                         autoFocus
                       />
                       <Textarea
                         value={editingValue.description}
                         onChange={(e) => setEditingValue(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Description (optional)"
+                        placeholder="Enter description (optional)"
                         rows={2}
                       />
-                      <div className="flex items-center gap-2">
-                        <Button onClick={handleSaveEdit} size="sm" disabled={updateMutation.isPending}>
+                      <div className="flex gap-2">
+                        <Button onClick={handleSaveEdit} size="sm" variant="outline" disabled={loading}>
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button onClick={() => { setEditingId(null); setEditingValue({ name: '', description: '' }); }} size="sm" variant="outline">
+                        <Button onClick={handleCancelEdit} size="sm" variant="outline">
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -206,18 +252,18 @@ const IndustrySegmentsConfigSupabase: React.FC = () => {
                       </div>
                       <div className="flex gap-2 ml-4">
                         <Button 
-                          onClick={() => handleEdit(segment.id, segment.name, segment.description || '')} 
+                          onClick={() => handleEditSegment(segment.id!, segment.name, segment.description)} 
                           size="sm" 
                           variant="outline"
-                          disabled={isLoading}
+                          disabled={loading}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button 
-                          onClick={() => handleDelete(segment.id)} 
+                          onClick={() => handleDeleteSegment(segment.id!)} 
                           size="sm" 
                           variant="outline"
-                          disabled={isLoading}
+                          disabled={loading}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

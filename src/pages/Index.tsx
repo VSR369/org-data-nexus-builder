@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Shield } from "lucide-react";
+import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
@@ -143,7 +144,7 @@ const Index = () => {
         </div>
 
         {/* Access Cards - Dynamic Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {/* Master Data Portal */}
           <Card className="hover:shadow-lg transition-shadow h-full">
             <CardHeader className="text-center pb-4">
@@ -234,35 +235,6 @@ const Index = () => {
                   </Link>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Administrator Login */}
-          <Card className="hover:shadow-lg transition-shadow h-full border-orange-200">
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-red-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
-                <Shield className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-xl">Administrator Login</CardTitle>
-              <CardDescription>
-                Sign in as a Seeking Organization Administrator to manage your organization
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center flex-1 flex flex-col">
-              <div className="space-y-2 text-sm text-gray-600 mb-6 flex-1">
-                <p>• Organization Management</p>
-                <p>• User Administration</p>
-                <p>• System Configuration</p>
-                <p>• Data Management Access</p>
-                <p>• Administrative Dashboard</p>
-              </div>
-              <Link to="/seeking-org-admin-login" className="w-full">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Administrator Login
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
             </CardContent>
           </Card>
 

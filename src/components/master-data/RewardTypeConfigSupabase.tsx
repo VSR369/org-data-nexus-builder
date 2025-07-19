@@ -1,261 +1,310 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Plus, Edit, DollarSign, Award } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Edit2, Check, X, RefreshCw, Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+interface RewardType {
+  id?: string;
+  name: string;
+  description?: string;
+  type?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-const RewardTypeConfigSupabase: React.FC = () => {
-  const [newReward, setNewReward] = useState({ name: '', description: '', type: 'monetary' });
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState({ name: '', description: '', type: 'monetary' });
-  const [isAdding, setIsAdding] = useState(false);
+const RewardTypeConfigSupabase = () => {
+  const [rewardTypes, setRewardTypes] = useState<RewardType[]>([]);
+  const [newRewardType, setNewRewardType] = useState({ 
+    type: 'non-monetary' as 'monetary' | 'non-monetary',
+    name: '', 
+    description: ''
+  });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: rewards = [], isLoading, refetch } = useQuery({
-    queryKey: ['reward-types'],
-    queryFn: async () => {
+  // Load data on component mount
+  useEffect(() => {
+    loadRewardTypes();
+  }, []);
+
+  const loadRewardTypes = async () => {
+    setLoading(true);
+    try {
       const { data, error } = await supabase
         .from('master_reward_types')
         .select('*')
         .order('name');
+      
       if (error) throw error;
-      return data || [];
+      console.log('✅ CRUD TEST - Reward Types loaded from Supabase:', data);
+      setRewardTypes(data || []);
+    } catch (error) {
+      console.error('Error loading reward types:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load reward types",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  const addMutation = useMutation({
-    mutationFn: async (reward: { name: string; description: string; type: string }) => {
-      const { data, error } = await supabase
-        .from('master_reward_types')
-        .insert([{ 
-          name: reward.name.trim(), 
-          description: reward.description.trim() || null,
-          type: reward.type
-        }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reward-types'] });
-      setNewReward({ name: '', description: '', type: 'monetary' });
-      setIsAdding(false);
-      toast({ title: "Success", description: "Reward type added successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to add reward type", variant: "destructive" });
+  const addRewardType = async () => {
+    if (newRewardType.type === 'monetary') {
+      if (newRewardType.name.trim()) {
+        try {
+          const { error } = await supabase
+            .from('master_reward_types')
+            .insert({
+              type: 'monetary',
+              name: newRewardType.name.trim()
+            });
+
+          if (error) throw error;
+          
+          setNewRewardType({ type: 'non-monetary', name: '', description: '' });
+          loadRewardTypes();
+          toast({
+            title: "Monetary Reward Type Added",
+            description: `Successfully added ${newRewardType.name}.`,
+          });
+        } catch (error) {
+          console.error('Error adding reward type:', error);
+          toast({
+            title: "Error",
+            description: "Failed to add reward type",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Please fill in the name field.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      if (newRewardType.name.trim()) {
+        try {
+          const { error } = await supabase
+            .from('master_reward_types')
+            .insert({
+              type: 'non-monetary',
+              name: newRewardType.name.trim(),
+              description: newRewardType.description.trim() || null
+            });
+
+          if (error) throw error;
+          
+          setNewRewardType({ type: 'non-monetary', name: '', description: '' });
+          loadRewardTypes();
+          toast({
+            title: "Non-Monetary Reward Type Added",
+            description: `Successfully added ${newRewardType.name}.`,
+          });
+        } catch (error) {
+          console.error('Error adding reward type:', error);
+          toast({
+            title: "Error",
+            description: "Failed to add reward type",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Please fill in the name field.",
+          variant: "destructive",
+        });
+      }
     }
-  });
+  };
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, reward }: { id: string; reward: { name: string; description: string; type: string } }) => {
-      const { data, error } = await supabase
-        .from('master_reward_types')
-        .update({ 
-          name: reward.name.trim(), 
-          description: reward.description.trim() || null,
-          type: reward.type
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reward-types'] });
-      setEditingId(null);
-      setEditingValue({ name: '', description: '', type: 'monetary' });
-      toast({ title: "Success", description: "Reward type updated successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to update reward type", variant: "destructive" });
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const removeRewardType = async (id: string) => {
+    try {
       const { error } = await supabase
         .from('master_reward_types')
         .delete()
         .eq('id', id);
+
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reward-types'] });
-      toast({ title: "Success", description: "Reward type deleted successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to delete reward type", variant: "destructive" });
-    }
-  });
-
-  const handleAdd = () => {
-    if (newReward.name.trim()) {
-      addMutation.mutate(newReward);
-    }
-  };
-
-  const handleEdit = (id: string, name: string, description: string, type: string) => {
-    setEditingId(id);
-    setEditingValue({ name, description: description || '', type: type || 'monetary' });
-  };
-
-  const handleSaveEdit = () => {
-    if (editingId && editingValue.name.trim()) {
-      updateMutation.mutate({ id: editingId, reward: editingValue });
+      
+      loadRewardTypes();
+      toast({
+        title: "Reward Type Removed",
+        description: "Successfully removed reward type.",
+      });
+    } catch (error) {
+      console.error('Error removing reward type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove reward type",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this reward type?')) {
-      deleteMutation.mutate(id);
+  const updateRewardType = async (id: string, updatedType: Partial<RewardType>) => {
+    try {
+      const { error } = await supabase
+        .from('master_reward_types')
+        .update(updatedType)
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      loadRewardTypes();
+      toast({
+        title: "Reward Type Updated",
+        description: "Successfully updated reward type.",
+      });
+    } catch (error) {
+      console.error('Error updating reward type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update reward type",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addRewardType();
+  };
+
+  const handleTypeChange = (value: 'monetary' | 'non-monetary') => {
+    setNewRewardType({ 
+      type: value, 
+      name: '', 
+      description: ''
+    });
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Reward Types Configuration</CardTitle>
+          <CardTitle>Add Reward Type</CardTitle>
+          <CardDescription>Add a new monetary or non-monetary reward type to the system.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button onClick={() => setIsAdding(true)} disabled={isAdding || isLoading}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Reward Type
-            </Button>
-          </div>
-
-          {isAdding && (
-            <div className="space-y-3 mb-4 p-3 border rounded-lg bg-muted">
-              <Input
-                value={newReward.name}
-                onChange={(e) => setNewReward(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter reward type name"
-                autoFocus
-              />
-              <Select value={newReward.type} onValueChange={(value) => setNewReward(prev => ({ ...prev, type: value }))}>
+          <form onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="type">Reward Type</Label>
+              <Select value={newRewardType.type} onValueChange={handleTypeChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Select reward type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="monetary">Monetary</SelectItem>
                   <SelectItem value="non-monetary">Non-Monetary</SelectItem>
                 </SelectContent>
               </Select>
-              <Textarea
-                value={newReward.description}
-                onChange={(e) => setNewReward(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter description (optional)"
-                rows={2}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={newRewardType.name}
+                onChange={(e) => setNewRewardType({ ...newRewardType, name: e.target.value })}
+                placeholder="Reward Type Name"
+                required
               />
-              <div className="flex items-center gap-2">
-                <Button onClick={handleAdd} size="sm" disabled={addMutation.isPending}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Add
-                </Button>
-                <Button onClick={() => { setIsAdding(false); setNewReward({ name: '', description: '', type: 'monetary' }); }} size="sm" variant="outline">
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
             </div>
-          )}
 
-          {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">Loading...</p>
-          ) : rewards.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No reward types configured. Add some reward types to get started.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {rewards.map((reward) => (
-                <div key={reward.id} className="p-4 border rounded-lg">
-                  {editingId === reward.id ? (
-                    <div className="space-y-3">
-                      <Input
-                        value={editingValue.name}
-                        onChange={(e) => setEditingValue(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Reward type name"
-                        autoFocus
-                      />
-                      <Select value={editingValue.type} onValueChange={(value) => setEditingValue(prev => ({ ...prev, type: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="monetary">Monetary</SelectItem>
-                          <SelectItem value="non-monetary">Non-Monetary</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Textarea
-                        value={editingValue.description}
-                        onChange={(e) => setEditingValue(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Description (optional)"
-                        rows={2}
-                      />
+            {newRewardType.type === 'non-monetary' && (
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Non-Monetary Reward Type Description"
+                  value={newRewardType.description}
+                  onChange={(e) => setNewRewardType({ ...newRewardType, description: e.target.value })}
+                />
+              </div>
+            )}
+            
+            <Button type="submit" className="w-fit" disabled={loading}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add {newRewardType.type === 'monetary' ? 'Monetary' : 'Non-Monetary'} Reward Type
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reward Types</CardTitle>
+          <CardDescription>Manage existing reward types.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            {loading ? (
+              <p className="text-muted-foreground text-center py-8">Loading...</p>
+            ) : rewardTypes.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No reward types configured. Add some reward types to get started.
+              </p>
+            ) : (
+              rewardTypes.map(type => (
+                <div key={type.id} className="flex items-center justify-between border rounded-md p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted">
+                      {type.type === 'monetary' ? (
+                        <DollarSign className="w-5 h-5" />
+                      ) : (
+                        <Award className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
                       <div className="flex items-center gap-2">
-                        <Button onClick={handleSaveEdit} size="sm" disabled={updateMutation.isPending}>
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button onClick={() => { setEditingId(null); setEditingValue({ name: '', description: '', type: 'monetary' }); }} size="sm" variant="outline">
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <h3 className="text-lg font-semibold">{type.name}</h3>
+                        <Badge variant={type.type === 'monetary' ? 'default' : 'secondary'}>
+                          {type.type === 'monetary' ? 'Monetary' : 'Non-Monetary'}
+                        </Badge>
                       </div>
+                      {type.type === 'non-monetary' && type.description && (
+                        <p className="text-sm text-muted-foreground">{type.description}</p>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{reward.name}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            reward.type === 'monetary' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {reward.type === 'monetary' ? 'Monetary' : 'Non-Monetary'}
-                          </span>
-                        </div>
-                        {reward.description && (
-                          <p className="text-sm text-muted-foreground">{reward.description}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        <Button 
-                          onClick={() => handleEdit(reward.id, reward.name, reward.description || '', reward.type || 'monetary')} 
-                          size="sm" 
-                          variant="outline"
-                          disabled={isLoading}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          onClick={() => handleDelete(reward.id)} 
-                          size="sm" 
-                          variant="outline"
-                          disabled={isLoading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const newName = prompt("Enter new name", type.name);
+                        if (newName && newName.trim()) {
+                          updateRewardType(type.id!, { name: newName.trim() });
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => removeRewardType(type.id!)}
+                      disabled={loading}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
