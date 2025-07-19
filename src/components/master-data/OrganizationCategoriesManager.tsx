@@ -1,41 +1,20 @@
 
 import React from 'react';
-import { Building } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const OrganizationCategoriesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'category_type',
-      header: 'Category Type',
-      cell: ({ row }: any) => (
-        <div className="text-sm font-medium">
-          {row.getValue('category_type')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'workflow_config',
-      header: 'Workflow Config',
-      cell: ({ row }: any) => {
-        const config = row.getValue('workflow_config');
-        return (
-          <div className="text-sm">
-            {config && typeof config === 'object' ? 'Configured' : 'None'}
-          </div>
-        );
-      },
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_organization_categories"
-      title="Organization Categories Manager"
-      description="Manage organization categories and workflow configurations"
-      icon={Building}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Organization Categories Manager</h2>
+        <p className="text-muted-foreground">Manage organization categories and workflow configurations</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Organization Categories management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

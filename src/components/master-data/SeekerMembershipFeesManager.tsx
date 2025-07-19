@@ -1,56 +1,20 @@
 
 import React from 'react';
-import { CreditCard } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const SeekerMembershipFeesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'country',
-      header: 'Country',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('country')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'organization_type',
-      header: 'Organization Type',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('organization_type')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'entity_type',
-      header: 'Entity Type',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('entity_type')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'monthly_amount',
-      header: 'Monthly Amount',
-      cell: ({ row }: any) => (
-        <div className="text-sm font-mono">
-          {row.getValue('monthly_currency')} {row.getValue('monthly_amount')}
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_seeker_membership_fees"
-      title="Seeker Membership Fees Manager"
-      description="Manage membership fees for solution seeking organizations"
-      icon={CreditCard}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Seeker Membership Fees Manager</h2>
+        <p className="text-muted-foreground">Manage membership fees for solution seeking organizations</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Seeker Membership Fees management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

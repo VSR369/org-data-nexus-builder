@@ -1,41 +1,20 @@
 
 import React from 'react';
-import { UserCheck } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const OnboardingTypesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'service_type',
-      header: 'Service Type',
-      cell: ({ row }: any) => (
-        <div className="text-sm font-medium">
-          {row.getValue('service_type')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'resources_included',
-      header: 'Resources',
-      cell: ({ row }: any) => {
-        const resources = row.getValue('resources_included') || [];
-        return (
-          <div className="text-sm">
-            {Array.isArray(resources) ? resources.length : 0} resources
-          </div>
-        );
-      },
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_onboarding_types"
-      title="Onboarding Types Manager"
-      description="Manage onboarding service types and configurations"
-      icon={UserCheck}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Onboarding Types Manager</h2>
+        <p className="text-muted-foreground">Manage onboarding service types and configurations</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Onboarding Types management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

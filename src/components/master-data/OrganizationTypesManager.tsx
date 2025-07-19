@@ -1,16 +1,20 @@
 
 import React from 'react';
-import { Building2 } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const OrganizationTypesManager: React.FC = () => {
   return (
-    <StandardDataManager
-      tableName="master_organization_types"
-      title="Organization Types Manager"
-      description="Manage organization types and business classifications"
-      icon={Building2}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Organization Types Manager</h2>
+        <p className="text-muted-foreground">Manage organization types and business classifications</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Organization Types management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

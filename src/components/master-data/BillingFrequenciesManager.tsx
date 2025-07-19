@@ -1,29 +1,20 @@
 
 import React from 'react';
-import { Calendar } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const BillingFrequenciesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'months',
-      header: 'Months',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('months') || 'N/A'} months
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_billing_frequencies"
-      title="Billing Frequencies Manager"
-      description="Manage billing frequency options and cycles"
-      icon={Calendar}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Billing Frequencies Manager</h2>
+        <p className="text-muted-foreground">Manage billing frequency options and cycles</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Billing Frequencies management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

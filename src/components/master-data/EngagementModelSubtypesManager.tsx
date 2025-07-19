@@ -1,44 +1,20 @@
 
 import React from 'react';
-import { GitBranch } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const EngagementModelSubtypesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'required_fields',
-      header: 'Required Fields',
-      cell: ({ row }: any) => {
-        const fields = row.getValue('required_fields') || [];
-        return (
-          <div className="text-sm">
-            {Array.isArray(fields) ? fields.length : 0} fields
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'optional_fields',
-      header: 'Optional Fields',
-      cell: ({ row }: any) => {
-        const fields = row.getValue('optional_fields') || [];
-        return (
-          <div className="text-sm">
-            {Array.isArray(fields) ? fields.length : 0} fields
-          </div>
-        );
-      },
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_engagement_model_subtypes"
-      title="Engagement Model Subtypes Manager"
-      description="Manage engagement model subtypes and their field configurations"
-      icon={GitBranch}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Engagement Model Subtypes Manager</h2>
+        <p className="text-muted-foreground">Manage engagement model subtypes and their field configurations</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Engagement Model Subtypes management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -1,16 +1,20 @@
 
 import React from 'react';
-import { FolderTree } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DomainGroupsManager: React.FC = () => {
   return (
-    <StandardDataManager
-      tableName="master_domain_groups"
-      title="Domain Groups Manager"
-      description="Manage domain groups for categorizing business areas and expertise"
-      icon={FolderTree}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Domain Groups Manager</h2>
+        <p className="text-muted-foreground">Manage domain groups for categorizing business areas and expertise</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Domain Groups management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

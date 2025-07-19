@@ -1,38 +1,20 @@
 
 import React from 'react';
-import { Calculator } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FeeComponentsManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'component_type',
-      header: 'Component Type',
-      cell: ({ row }: any) => (
-        <div className="text-sm font-medium">
-          {row.getValue('component_type') || 'N/A'}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'default_rate_type',
-      header: 'Rate Type',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('default_rate_type') || 'currency'}
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_fee_components"
-      title="Fee Components Manager"
-      description="Manage fee components for pricing calculations"
-      icon={Calculator}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Fee Components Manager</h2>
+        <p className="text-muted-foreground">Manage fee components for pricing calculations</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Fee Components management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

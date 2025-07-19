@@ -1,16 +1,20 @@
 
 import React from 'react';
-import { Workflow } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const WorkflowTemplatesManager: React.FC = () => {
   return (
-    <StandardDataManager
-      tableName="master_workflow_templates"
-      title="Workflow Templates Manager"
-      description="Manage workflow templates and process configurations"
-      icon={Workflow}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Workflow Templates Manager</h2>
+        <p className="text-muted-foreground">Manage workflow templates and process configurations</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Workflow Templates management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

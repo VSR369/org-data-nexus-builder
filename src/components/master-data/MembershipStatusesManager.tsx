@@ -1,16 +1,20 @@
 
 import React from 'react';
-import { UserCheck } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const MembershipStatusesManager: React.FC = () => {
   return (
-    <StandardDataManager
-      tableName="master_membership_statuses"
-      title="Membership Statuses Manager"
-      description="Manage membership status types and user classifications"
-      icon={UserCheck}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Membership Statuses Manager</h2>
+        <p className="text-muted-foreground">Manage membership status types and user classifications</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Membership Statuses management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

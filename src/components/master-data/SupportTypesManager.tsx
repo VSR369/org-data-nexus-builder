@@ -1,47 +1,20 @@
 
 import React from 'react';
-import { HelpCircle } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const SupportTypesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'service_level',
-      header: 'Service Level',
-      cell: ({ row }: any) => (
-        <div className="text-sm font-medium">
-          {row.getValue('service_level')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'response_time',
-      header: 'Response Time',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('response_time') || 'N/A'}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'availability',
-      header: 'Availability',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('availability') || 'N/A'}
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_support_types"
-      title="Support Types Manager"
-      description="Manage support service types and service levels"
-      icon={HelpCircle}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Support Types Manager</h2>
+        <p className="text-muted-foreground">Manage support service types and service levels</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Support Types management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

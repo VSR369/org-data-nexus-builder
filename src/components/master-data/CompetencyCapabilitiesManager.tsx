@@ -1,29 +1,20 @@
 
 import React from 'react';
-import { Brain } from 'lucide-react';
-import { StandardDataManager } from './StandardDataManager';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const CompetencyCapabilitiesManager: React.FC = () => {
-  const additionalColumns = [
-    {
-      accessorKey: 'category',
-      header: 'Category',
-      cell: ({ row }: any) => (
-        <div className="text-sm">
-          {row.getValue('category') || 'N/A'}
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <StandardDataManager
-      tableName="master_competency_capabilities"
-      title="Competency Capabilities Manager"
-      description="Manage competency capabilities and skill assessments"
-      icon={Brain}
-      additionalColumns={additionalColumns}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Competency Capabilities Manager</h2>
+        <p className="text-muted-foreground">Manage competency capabilities and skill assessments</p>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">Competency Capabilities management interface will be implemented here.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
