@@ -8,6 +8,8 @@ import { toast } from '@/hooks/use-toast';
 import { MembershipDataService } from '@/services/MembershipDataService';
 import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
+import { MembershipViewModal } from './MembershipViewModal';
+import { MembershipEditModal } from './MembershipEditModal';
 
 interface EnhancedMembershipFlowCardProps {
   profile: any;
@@ -37,6 +39,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Modal state
   const [showTierModal, setShowTierModal] = useState(false);
   const [showModelModal, setShowModelModal] = useState(false);
+  const [showMembershipModal, setShowMembershipModal] = useState(false);
 
   // Enhanced profile context with fallback data
   const [profileContext, setProfileContext] = useState<any>(null);
@@ -375,6 +378,15 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     });
   };
 
+  const handleMembershipUpdate = async () => {
+    // Refresh component data after membership update
+    await initializeComponent();
+    toast({
+      title: "Membership Updated",
+      description: "Your membership status has been updated successfully.",
+    });
+  };
+
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -382,6 +394,10 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount || 0);
+  };
+
+  const isMembershipActive = () => {
+    return membershipStatus === 'active';
   };
 
   if (loading) {
@@ -649,7 +665,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               <div className="p-4 bg-white rounded-lg border border-green-200">
                 <h4 className="font-medium mb-3">Your Current Configuration:</h4>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-green-600" />
                       <span className="font-medium">Membership: </span>
@@ -657,6 +673,18 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
                         {membershipStatus === 'active' ? 'Active Member' : 'Non-Member'}
                       </Badge>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('👤 Opening membership modal with status:', membershipStatus);
+                        setShowMembershipModal(true);
+                      }}
+                      className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      {isMembershipActive() ? 'View' : 'Edit'}
+                    </Button>
                   </div>
 
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
@@ -730,6 +758,37 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           profileContext={profileContext}
           onModelChange={handleModelEdit}
         />
+
+        {/* Membership Modal - View or Edit based on status */}
+        {isMembershipActive() ? (
+          <MembershipViewModal
+            isOpen={showMembershipModal}
+            onClose={() => setShowMembershipModal(false)}
+            membershipData={{
+              status: membershipStatus,
+              type: 'Premium',
+              createdAt: new Date().toISOString(),
+              pricingTier: selectedTier,
+              paymentAmount: membershipFees[0]?.annual_amount,
+              paymentCurrency: membershipFees[0]?.annual_currency,
+              paymentStatus: 'paid'
+            }}
+            engagementData={{
+              model: selectedEngagementModel,
+              features: ['Premium Support', 'Analytics Access', 'Priority Processing'],
+              supportLevel: 'Premium',
+              analyticsAccess: true
+            }}
+          />
+        ) : (
+          <MembershipEditModal
+            isOpen={showMembershipModal}
+            onClose={() => setShowMembershipModal(false)}
+            userId={userId}
+            organizationData={profileContext}
+            onPaymentSuccess={handleMembershipUpdate}
+          />
+        )}
       </>
     );
   }
