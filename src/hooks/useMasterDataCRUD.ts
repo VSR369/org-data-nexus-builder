@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface MasterDataItem {
   id?: string;
@@ -95,7 +95,7 @@ type TableName =
 export function useMasterDataCRUD(tableName: TableName) {
   const [items, setItems] = useState<MasterDataItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  
 
   const loadItems = async () => {
     try {
@@ -222,11 +222,7 @@ export function useMasterDataCRUD(tableName: TableName) {
       }
     } catch (error) {
       console.error(`Error loading ${tableName}:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to load ${tableName}`,
-        variant: "destructive",
-      });
+      toast.error(`Failed to load ${tableName}`);
     } finally {
       setLoading(false);
     }
@@ -243,18 +239,11 @@ export function useMasterDataCRUD(tableName: TableName) {
       
       if (error) throw error;
       setItems(prev => [...prev, data as MasterDataItem]);
-      toast({
-        title: "Success",
-        description: `${item.name || item.config_key || 'Item'} added successfully`,
-      });
+      toast.success(`${item.name || item.config_key || 'Item'} added successfully`);
       return true;
     } catch (error) {
       console.error(`Error adding to ${tableName}:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to add ${item.name || item.config_key || 'item'}`,
-        variant: "destructive",
-      });
+      toast.error(`Failed to add ${item.name || item.config_key || 'item'}`);
       return false;
     } finally {
       setLoading(false);
@@ -273,18 +262,11 @@ export function useMasterDataCRUD(tableName: TableName) {
       
       if (error) throw error;
       setItems(prev => prev.map(item => item.id === id ? data as MasterDataItem : item));
-      toast({
-        title: "Success",
-        description: "Item updated successfully",
-      });
+      toast.success("Item updated successfully");
       return true;
     } catch (error) {
       console.error(`Error updating ${tableName}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to update item",
-        variant: "destructive",
-      });
+      toast.error("Failed to update item");
       return false;
     } finally {
       setLoading(false);
@@ -301,18 +283,11 @@ export function useMasterDataCRUD(tableName: TableName) {
       
       if (error) throw error;
       setItems(prev => prev.filter(item => item.id !== id));
-      toast({
-        title: "Success",
-        description: "Item deleted successfully",
-      });
+      toast.success("Item deleted successfully");
       return true;
     } catch (error) {
       console.error(`Error deleting from ${tableName}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to delete item",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete item");
       return false;
     } finally {
       setLoading(false);
