@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarMenuGroup } from './sidebar/SidebarMenuGroup';
-import { MasterDataSummary } from './MasterDataSummary';
 import {
   foundationMenuItems,
   organizationMenuItems,
@@ -53,12 +52,6 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
     <Sidebar collapsible="offcanvas" className="border-r border-border">
       <AppSidebarHeader />
       <SidebarContent className="gap-0 px-2 md:px-3">
-        {/* Show data summary only on master data portal */}
-        {isOnMasterDataPortal && (
-          <div className="p-2 md:p-3">
-            <MasterDataSummary />
-          </div>
-        )}
         <SidebarMenuGroup
           title="🎯 Custom Data Management"
           items={customDataMenuItems}
