@@ -188,7 +188,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           'membership_decision': 'membership_decision',
           'tier_selection': 'tier_selection',
           'engagement_model_selection': 'engagement_model_selection',
-          'preview_confirmation': 'terms_acceptance',
+          'preview_confirmation': 'preview_confirmation',
           'activation_complete': 'completed'
         };
         
@@ -466,6 +466,10 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         variant: "destructive"
       });
     }
+  };
+
+  const handleBackToTerms = () => {
+    setCurrentStep('terms_acceptance');
   };
 
   const handlePreviewConfirmation = async () => {
