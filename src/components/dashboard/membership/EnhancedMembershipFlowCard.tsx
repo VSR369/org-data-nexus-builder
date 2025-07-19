@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { MembershipDataService } from '@/services/MembershipDataService';
 import { OrganizationDataService } from '@/services/OrganizationDataService';
 import { DetailedTierCard } from './DetailedTierCard';
-import { EnhancedEngagementModelCard } from './EnhancedEngagementModelCard';
+import { DetailedEngagementModelCard } from './DetailedEngagementModelCard';
 import { EnhancedMembershipCard } from './EnhancedMembershipCard';
 import { TierEditModal } from './TierEditModal';
 import { EngagementModelEditModal } from './EngagementModelEditModal';
@@ -24,21 +24,20 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   profile,
   userId
 }) => {
-  // Core state
+  // Core state - maintain selections persistently
   const [currentStep, setCurrentStep] = useState<string>('membership_decision');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Selection state
+  // Selection state - these should persist across steps
   const [membershipStatus, setMembershipStatus] = useState<'active' | 'inactive' | null>(null);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedEngagementModel, setSelectedEngagementModel] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Master data
+  // Data from database
   const [membershipFees, setMembershipFees] = useState<any[]>([]);
   const [availableTiers, setAvailableTiers] = useState<any[]>([]);
-  const [availableModels, setAvailableModels] = useState<any[]>([]);
 
   // Modal state
   const [showTierModal, setShowTierModal] = useState(false);
@@ -166,11 +165,19 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           mappedStep = 'completed';
         }
         
+        // Restore all saved state to maintain selections
         setCurrentStep(mappedStep);
         setMembershipStatus(savedData.membership_status === 'active' ? 'active' : 'inactive');
         setSelectedTier(savedData.pricing_tier);
         setSelectedEngagementModel(savedData.engagement_model);
         setTermsAccepted(savedData.terms_accepted || false);
+        
+        console.log('🔄 State restored from saved data:', {
+          step: mappedStep,
+          membership: savedData.membership_status,
+          tier: savedData.pricing_tier,
+          model: savedData.engagement_model
+        });
         
         return savedData;
       } else {
@@ -210,7 +217,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
           .select(`
             *,
             master_pricing_tiers!inner(name, level_order, description),
-            master_currencies(code, symbol)
+            master_currencies(code, symbol),
+            master_analytics_access_types(name, description, dashboard_access, features_included),
+            master_support_types(name, description, service_level, response_time, availability),
+            master_onboarding_types(name, description, service_type, resources_included),
+            master_workflow_templates(name, description, template_type, customization_level, template_count)
           `)
           .eq('country_id', countryData.id)
           .eq('is_active', true)
@@ -219,15 +230,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         setAvailableTiers(tierConfigs || []);
         console.log('✅ Loaded tiers:', tierConfigs?.length);
       }
-
-      // Load available engagement models
-      const { data: models } = await supabase
-        .from('master_engagement_models')
-        .select('*')
-        .order('name');
-
-      setAvailableModels(models || []);
-      console.log('✅ Loaded models:', models?.length);
 
     } catch (error) {
       console.error('❌ Error loading master data:', error);
@@ -268,6 +270,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleMembershipDecision = async (status: 'active' | 'inactive') => {
     try {
+      console.log('🎯 Membership decision:', status);
       setMembershipStatus(status);
       const nextStep = 'tier_selection';
       setCurrentStep(nextStep);
@@ -292,6 +295,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleTierSelection = async (tierName: string) => {
     try {
+      console.log('🎯 Tier selection:', tierName);
       setSelectedTier(tierName);
       const nextStep = 'engagement_model_selection';
       setCurrentStep(nextStep);
@@ -316,6 +320,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
 
   const handleEngagementModelSelection = async (modelName: string) => {
     try {
+      console.log('🎯 Model selection:', modelName);
       setSelectedEngagementModel(modelName);
       const nextStep = 'terms_acceptance';
       setCurrentStep(nextStep);
@@ -391,15 +396,6 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     });
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
   const isMembershipActive = () => {
     return membershipStatus === 'active';
   };
@@ -440,13 +436,35 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
   // Step 1: Membership Decision
   if (currentStep === 'membership_decision') {
     return (
-      <EnhancedMembershipCard
-        membershipStatus={membershipStatus || 'inactive'}
-        membershipFees={membershipFees[0] || null}
-        onJoinMembership={() => handleMembershipDecision('active')}
-        onManageMembership={() => handleMembershipDecision('inactive')}
-        loading={false}
-      />
+      <div className="space-y-4">
+        {/* Show current selections if any exist */}
+        {(membershipStatus || selectedTier || selectedEngagementModel) && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <h4 className="font-medium mb-2">Current Selections:</h4>
+              <div className="text-sm space-y-1">
+                {membershipStatus && (
+                  <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+                )}
+                {selectedTier && (
+                  <div>Tier: <span className="font-medium">{selectedTier}</span></div>
+                )}
+                {selectedEngagementModel && (
+                  <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        <EnhancedMembershipCard
+          membershipStatus={membershipStatus || 'inactive'}
+          membershipFees={membershipFees[0] || null}
+          onJoinMembership={() => handleMembershipDecision('active')}
+          onManageMembership={() => handleMembershipDecision('inactive')}
+          loading={false}
+        />
+      </div>
     );
   }
 
@@ -458,129 +476,176 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       pricing_tier_name: tierConfig.master_pricing_tiers?.name || 'Unknown',
       currency_symbol: tierConfig.master_currencies?.symbol || '$',
       currency_code: tierConfig.master_currencies?.code || 'USD',
-      // Add default analytics access data
-      analytics_access_name: 'Standard Analytics',
-      analytics_access_description: 'Basic analytics and reporting features',
-      analytics_dashboard_access: true,
-      analytics_features_included: ['Basic Reports', 'Challenge Metrics'],
-      // Add default support data
-      support_type_name: 'Standard Support',
-      support_type_description: 'Standard customer support services',
-      support_service_level: 'Standard',
-      support_response_time: '24-48 hours',
-      support_availability: 'Business Hours',
-      // Add default onboarding data
-      onboarding_type_name: 'Standard Onboarding',
-      onboarding_type_description: 'Standard onboarding process',
-      onboarding_service_type: 'Self-Service',
-      onboarding_resources_included: ['Documentation', 'Video Tutorials'],
-      // Add default workflow data
-      workflow_template_name: 'Standard Templates',
-      workflow_template_description: 'Standard workflow templates',
-      workflow_template_type: 'Standard',
-      workflow_customization_level: 'Basic',
-      workflow_template_count: 5
+      // Add analytics access data
+      analytics_access_name: tierConfig.master_analytics_access_types?.name || 'Standard Analytics',
+      analytics_access_description: tierConfig.master_analytics_access_types?.description || 'Basic analytics and reporting features',
+      analytics_dashboard_access: tierConfig.master_analytics_access_types?.dashboard_access || true,
+      analytics_features_included: tierConfig.master_analytics_access_types?.features_included || ['Basic Reports', 'Challenge Metrics'],
+      // Add support data
+      support_type_name: tierConfig.master_support_types?.name || 'Standard Support',
+      support_type_description: tierConfig.master_support_types?.description || 'Standard customer support services',
+      support_service_level: tierConfig.master_support_types?.service_level || 'Standard',
+      support_response_time: tierConfig.master_support_types?.response_time || '24-48 hours',
+      support_availability: tierConfig.master_support_types?.availability || 'Business Hours',
+      // Add onboarding data
+      onboarding_type_name: tierConfig.master_onboarding_types?.name || 'Standard Onboarding',
+      onboarding_type_description: tierConfig.master_onboarding_types?.description || 'Standard onboarding process',
+      onboarding_service_type: tierConfig.master_onboarding_types?.service_type || 'Self-Service',
+      onboarding_resources_included: tierConfig.master_onboarding_types?.resources_included || ['Documentation', 'Video Tutorials'],
+      // Add workflow data
+      workflow_template_name: tierConfig.master_workflow_templates?.name || 'Standard Templates',
+      workflow_template_description: tierConfig.master_workflow_templates?.description || 'Standard workflow templates',
+      workflow_template_type: tierConfig.master_workflow_templates?.template_type || 'Standard',
+      workflow_customization_level: tierConfig.master_workflow_templates?.customization_level || 'Basic',
+      workflow_template_count: tierConfig.master_workflow_templates?.template_count || 5
     }));
 
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-purple-600" />
-            Select Your Pricing Tier
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tierCardConfigs.map((config, index) => (
-              <DetailedTierCard
-                key={config.id}
-                config={config}
-                isSelected={selectedTier === config.pricing_tier_name}
-                isCurrent={false}
-                isRecommended={index === 1} // Recommend the second tier (usually Standard)
-                onSelect={() => handleTierSelection(config.pricing_tier_name)}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {/* Show current selections */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <h4 className="font-medium mb-2">Current Selections:</h4>
+            <div className="text-sm space-y-1">
+              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+              {selectedTier && (
+                <div>Tier: <span className="font-medium">{selectedTier}</span></div>
+              )}
+              {selectedEngagementModel && (
+                <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-purple-600" />
+              Select Your Pricing Tier
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tierCardConfigs.map((config, index) => (
+                <DetailedTierCard
+                  key={config.id}
+                  config={config}
+                  isSelected={selectedTier === config.pricing_tier_name}
+                  isCurrent={false}
+                  isRecommended={index === 1} // Recommend the second tier (usually Standard)
+                  onSelect={() => handleTierSelection(config.pricing_tier_name)}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Step 3: Engagement Model Selection
   if (currentStep === 'engagement_model_selection') {
     return (
-      <EnhancedEngagementModelCard
-        selectedModel={selectedEngagementModel}
-        onModelSelect={(modelName, modelDetails) => {
-          handleEngagementModelSelection(modelName);
-        }}
-        selectedTier={selectedTier}
-        countryName={profileContext?.country}
-      />
+      <div className="space-y-4">
+        {/* Show current selections */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <h4 className="font-medium mb-2">Current Selections:</h4>
+            <div className="text-sm space-y-1">
+              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+              <div>Tier: <span className="font-medium">{selectedTier}</span></div>
+              {selectedEngagementModel && (
+                <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <DetailedEngagementModelCard
+          selectedTier={selectedTier}
+          selectedModel={selectedEngagementModel}
+          onModelSelect={handleEngagementModelSelection}
+          profile={profileContext}
+          membershipStatus={membershipStatus}
+        />
+      </div>
     );
   }
 
   // Step 4: Terms Acceptance
   if (currentStep === 'terms_acceptance') {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Review and Accept Terms</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium mb-2">Your Configuration Summary:</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Membership Status:</span>
-                  <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>
-                    {membershipStatus === 'active' ? 'Active Member' : 'Non-Member'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span>Pricing Tier:</span>
-                  <span className="font-medium">{selectedTier}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Engagement Model:</span>
-                  <span className="font-medium">{selectedEngagementModel}</span>
+      <div className="space-y-4">
+        {/* Show current selections */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <h4 className="font-medium mb-2">Current Selections:</h4>
+            <div className="text-sm space-y-1">
+              <div>Membership: <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>{membershipStatus === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+              <div>Tier: <span className="font-medium">{selectedTier}</span></div>
+              <div>Model: <span className="font-medium">{selectedEngagementModel}</span></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Review and Accept Terms</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium mb-2">Your Configuration Summary:</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Membership Status:</span>
+                    <Badge variant={membershipStatus === 'active' ? "default" : "outline"}>
+                      {membershipStatus === 'active' ? 'Active Member' : 'Non-Member'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pricing Tier:</span>
+                    <span className="font-medium">{selectedTier}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Engagement Model:</span>
+                    <span className="font-medium">{selectedEngagementModel}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <label htmlFor="terms" className="text-sm">
-              I accept the terms and conditions for this configuration
-            </label>
-          </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="terms" className="text-sm">
+                I accept the terms and conditions for this configuration
+              </label>
+            </div>
 
-          <Button 
-            onClick={handleTermsAcceptance}
-            disabled={!termsAccepted || saving}
-            className="w-full"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Completing Setup...
-              </>
-            ) : (
-              'Complete Setup'
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+            <Button 
+              onClick={handleTermsAcceptance}
+              disabled={!termsAccepted || saving}
+              className="w-full"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Completing Setup...
+                </>
+              ) : (
+                'Complete Setup'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

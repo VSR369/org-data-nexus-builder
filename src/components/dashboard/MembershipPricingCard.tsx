@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MembershipFlowCard } from './membership/MembershipFlowCard';
+import { EnhancedMembershipFlowCard } from './membership/EnhancedMembershipFlowCard';
 
 interface MembershipPricingCardProps {
   profile: any;
@@ -21,5 +21,5 @@ export const MembershipPricingCard: React.FC<MembershipPricingCardProps> = ({ pr
     );
   }
 
-  return <MembershipFlowCard profile={profile} userId={userId} />;
+  return <EnhancedMembershipFlowCard profile={profile} userId={userId} />;
 };
