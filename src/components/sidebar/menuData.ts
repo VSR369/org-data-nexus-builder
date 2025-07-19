@@ -176,12 +176,7 @@ export const systemMenuItems = [
 ];
 
 export const validationMenuItems = [
-  {
-    id: 'solution-seekers-validation',
-    title: 'Solution Seekers Validation',
-    icon: CheckCircle,
-    description: 'Validate seeker registrations'
-  }
+  // Solution Seekers Validation has been removed - dashboard was deleted
 ];
 
 export const pricingConfigurationMenuItems = [
