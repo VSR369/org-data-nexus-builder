@@ -121,6 +121,13 @@ const MasterDataPortal = () => {
             });
           }
         }
+
+        // Clear validation dashboard specific localStorage data
+        console.log('🗑️ Cleaning up validation dashboard localStorage data...');
+        localStorage.removeItem('seeker_approvals');
+        localStorage.removeItem('created_administrators');
+        localStorage.removeItem('seeker_documents');
+        
       } catch (error) {
         console.error('❌ Initialization failed:', error);
         toast({

@@ -1,219 +1,210 @@
-import React from "react";
-import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
-import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
-import CurrencyConfigSupabase from "./master-data/CurrencyConfigSupabase";
-import DomainGroupsConfigSupabase from "./masterData/DomainGroupsConfigSupabase";
-import IndustrySegmentsConfigSupabase from "./master-data/IndustrySegmentsConfigSupabase";
-import DepartmentConfigSupabase from "./master-data/DepartmentConfigSupabase";
-import OrganizationTypeConfigSupabase from "./master-data/OrganizationTypeConfigSupabase";
-import EntityTypeConfigSupabase from "./master-data/EntityTypeConfigSupabase";
-import { OrganizationCategoryConfigSupabase } from "./OrganizationCategoryConfigSupabase";
-
-import CapabilityLevelsConfig from "./master-data/CapabilityLevelsConfig";
-import CommunicationTypeConfigSupabase from "./master-data/CommunicationTypeConfigSupabase";
-import RewardTypeConfigSupabase from "./master-data/RewardTypeConfigSupabase";
-import SeekerMembershipFeeConfig from "./master-data/SeekerMembershipFeeConfig";
-import EngagementModelsConfig from "./master-data/EngagementModelsConfig";
-import EngagementPricingManager from "./master-data/engagement-pricing/EngagementPricingManager";
-import EventsCalendarConfig from "./master-data/EventsCalendarConfig";
-import BillingFrequenciesConfig from "./master-data/BillingFrequenciesConfig";
-import MembershipStatusesConfig from "./master-data/MembershipStatusesConfig";
-import UnitsOfMeasureConfig from "./master-data/UnitsOfMeasureConfig";
-import GlobalCacheManager from "./master-data/GlobalCacheManager";
-import AdminCreationDiagnostic from "./master-data/AdminCreationDiagnostic";
-import LocalStorageDebugPanel from "./debug/LocalStorageDebugPanel";
-import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
-import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
-import MigrationTester from "./MigrationTester";
-import MasterDataTableTester from "./master-data/MasterDataTableTester";
-
-// Tier-based pricing master data components
-import { SupportTypesManager } from "./master-data/support-types/SupportTypesManager";
-import { AnalyticsAccessTypesManager } from "./master-data/analytics-access-types/AnalyticsAccessTypesManager";
-import { WorkflowTemplatesManager } from "./master-data/workflow-templates/WorkflowTemplatesManager";
-import { OnboardingTypesManager } from "./master-data/onboarding-types/OnboardingTypesManager";
-import { TierConfigurationsManager } from "./master-data/tier-configurations/TierConfigurationsManager";
-import { TierEngagementAccessManager } from "./master-data/tier-engagement-access/TierEngagementAccessManager";
-import { ChallengeOverageFeesManager } from "./master-data/challenge-overage-fees/ChallengeOverageFeesManager";
-import { SystemFeatureAccessManager } from "./master-data/system-feature-access/SystemFeatureAccessManager";
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DomainGroupsManager from './master-data/DomainGroupsManager';
+import CategoriesManager from './master-data/CategoriesManager';
+import SubCategoriesManager from './master-data/SubCategoriesManager';
+import CountriesManager from './master-data/CountriesManager';
+import CurrenciesManager from './master-data/CurrenciesManager';
+import OrganizationTypesManager from './master-data/OrganizationTypesManager';
+import EntityTypesManager from './master-data/EntityTypesManager';
+import IndustrySegmentsManager from './master-data/IndustrySegmentsManager';
+import DepartmentsManager from './master-data/DepartmentsManager';
+import SubDepartmentsManager from './master-data/SubDepartmentsManager';
+import TeamUnitsManager from './master-data/TeamUnitsManager';
+import BillingFrequenciesManager from './master-data/BillingFrequenciesManager';
+import MembershipStatusesManager from './master-data/MembershipStatusesManager';
+import UnitsOfMeasureManager from './master-data/UnitsOfMeasureManager';
+import EngagementModelsManager from './master-data/EngagementModelsManager';
+import EngagementModelSubtypesManager from './master-data/EngagementModelSubtypesManager';
+import FeeComponentsManager from './master-data/FeeComponentsManager';
+import PricingParametersManager from './master-data/PricingParametersManager';
+import PlatformFeeFormulasManager from './master-data/PlatformFeeFormulasManager';
+import PricingTiersManager from './master-data/PricingTiersManager';
+import TierConfigurationsManager from './master-data/TierConfigurationsManager';
+import TierEngagementModelAccessManager from './master-data/TierEngagementModelAccessManager';
+import SeekerMembershipFeesManager from './master-data/SeekerMembershipFeesManager';
+import ChallengeComplexityManager from './master-data/ChallengeComplexityManager';
+import ChallengeOverageFeesManager from './master-data/ChallengeOverageFeesManager';
+import AdvancePaymentTypesManager from './master-data/AdvancePaymentTypesManager';
+import AnalyticsAccessTypesManager from './master-data/AnalyticsAccessTypesManager';
+import SupportTypesManager from './master-data/SupportTypesManager';
+import OnboardingTypesManager from './master-data/OnboardingTypesManager';
+import WorkflowTemplatesManager from './master-data/WorkflowTemplatesManager';
+import SystemFeatureAccessManager from './master-data/SystemFeatureAccessManager';
+import SystemConfigurationsManager from './master-data/SystemConfigurationsManager';
+import CapabilityLevelsManager from './master-data/CapabilityLevelsManager';
+import CompetencyCapabilitiesManager from './master-data/CompetencyCapabilitiesManager';
+import CommunicationTypesManager from './master-data/CommunicationTypesManager';
+import RewardTypesManager from './master-data/RewardTypesManager';
+import OrganizationCategoriesManager from './master-data/OrganizationCategoriesManager';
+import PricingConfigurationsManager from './master-data/PricingConfigurationsManager';
 
 interface MasterDataContentProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
 }
 
-const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) => {
-  console.log('MasterDataContent - activeSection:', activeSection);
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'table-tester':
-        return <MasterDataTableTester />;
-      case 'migration-tester':
-        return <MigrationTester />;
-      case 'custom-data-manager':
-        return <MasterDataDiagnostics />;
-      case 'countries':
-        return <CountryConfigSupabase />;
-      case 'currencies':
-        return <CurrencyConfigSupabase />;
-      case 'domain-groups':
-        return <DomainGroupsConfigSupabase />;
-      case 'industry-segments':
-        return <IndustrySegmentsConfigSupabase />;
-      case 'organization-types':
-        return <OrganizationTypeConfigSupabase />;
-      case 'organization-categories':
-        return <OrganizationCategoryConfigSupabase />;
-      case 'entity-types':
-        return <EntityTypeConfigSupabase />;
-      case 'departments':
-        return <DepartmentConfigSupabase />;
-      case 'capability-levels':
-        return <CapabilityLevelsConfig />;
-      case 'communication-types':
-        return <CommunicationTypeConfigSupabase />;
-      case 'reward-types':
-        return <RewardTypeConfigSupabase />;
-      case 'seeker-membership-fee':
-        return <SeekerMembershipFeeConfig />;
-      case 'engagement-models':
-        return <EngagementModelsConfig />;
-      case 'billing-frequencies':
-        return <BillingFrequenciesConfig />;
-      case 'membership-statuses':
-        return <MembershipStatusesConfig />;
-      case 'units-of-measure':
-        return <UnitsOfMeasureConfig />;
-      case 'pricing':
-        return <EngagementPricingManager />;
-      case 'pricing-configurations':
-        return <EngagementPricingManager />;
-      case 'events-calendar':
-        return <EventsCalendarConfig />;
-      case 'global-cache-manager':
-        return <GlobalCacheManager />;
-      case 'localstorage-debug':
-        return <LocalStorageDebugPanel />;
-      case 'master-data-diagnostics':
-        return <MasterDataDiagnostics />;
-      case 'admin-creation':
-        return <AdminCreationDiagnostic />;
-      case 'solution-seekers-validation':
-        return <SeekingOrgValidationDashboard />;
-      case 'pricing-tiers':
-        const PricingTiersManager = React.lazy(() => 
-          import('./master-data/pricing-tiers/PricingTiersManager').then(m => ({ default: m.PricingTiersManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <PricingTiersManager />
-          </React.Suspense>
-        );
-      case 'system-configurations':
-        const SystemConfigurationsManager = React.lazy(() => 
-          import('./master-data/system-configurations/SystemConfigurationsManager').then(m => ({ default: m.SystemConfigurationsManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <SystemConfigurationsManager />
-          </React.Suspense>
-        );
-      case 'engagement-model-subtypes':
-        const EngagementModelSubtypesManager = React.lazy(() => 
-          import('./master-data/engagement-model-subtypes/EngagementModelSubtypesManager').then(m => ({ default: m.EngagementModelSubtypesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <EngagementModelSubtypesManager />
-          </React.Suspense>
-        );
-      case 'fee-components':
-        const FeeComponentsManager = React.lazy(() => 
-          import('./master-data/fee-components/FeeComponentsManager').then(module => ({ 
-            default: module.FeeComponentsManager 
-          }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <FeeComponentsManager />
-          </React.Suspense>
-        );
-      case 'platform-fee-formulas':
-        const PlatformFeeFormulasManager = React.lazy(() => 
-          import('./master-data/platform-fee-formulas/PlatformFeeFormulasManager').then(m => ({ default: m.PlatformFeeFormulasManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <PlatformFeeFormulasManager />
-          </React.Suspense>
-        );
-      case 'advance-payment-types':
-        const AdvancePaymentTypesManager = React.lazy(() => 
-          import('./master-data/advance-payment-types/AdvancePaymentTypesManager').then(m => ({ default: m.AdvancePaymentTypesManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <AdvancePaymentTypesManager />
-          </React.Suspense>
-        );
-      case 'tier-engagement-restrictions':
-        const TierEngagementModelRestrictionsManager = React.lazy(() => 
-          import('./master-data/tier-engagement-restrictions/TierEngagementModelRestrictionsManager').then(m => ({ default: m.TierEngagementModelRestrictionsManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <TierEngagementModelRestrictionsManager />
-          </React.Suspense>
-        );
-      case 'challenge-complexity':
-        const ChallengeComplexityManager = React.lazy(() => 
-          import('./master-data/challenge-complexity/ChallengeComplexityManager').then(m => ({ default: m.ChallengeComplexityManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <ChallengeComplexityManager />
-          </React.Suspense>
-        );
-      case 'support-types':
-        return <SupportTypesManager />;
-      case 'analytics-access-types':
-        return <AnalyticsAccessTypesManager />;
-      case 'workflow-templates':
-        return <WorkflowTemplatesManager />;
-      case 'onboarding-types':
-        return <OnboardingTypesManager />;
-      case 'tier-configurations':
-        return <TierConfigurationsManager />;
-      case 'tier-engagement-access':
-        return <TierEngagementAccessManager />;
-      case 'challenge-overage-fees':
-        return <ChallengeOverageFeesManager />;
-      case 'system-feature-access':
-        return <SystemFeatureAccessManager />;
-      case 'business-models':
-        const BusinessModelsManager = React.lazy(() => 
-          import('./master-data/business-models/BusinessModelsManager').then(m => ({ default: m.BusinessModelsManager }))
-        );
-        return (
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <BusinessModelsManager />
-          </React.Suspense>
-        );
-      default:
-        return <MasterDataDiagnostics />;
-    }
-  };
-
+const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection, setActiveSection }) => {
   return (
-    <ResponsiveDashboardWrapper
-      layout="stack"
-      padding="md"
-      showBackground={true}
-      className="min-h-screen"
-    >
-      {renderContent()}
-    </ResponsiveDashboardWrapper>
+    <div className="container mx-auto p-4 space-y-6">
+      <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1 h-auto p-1">
+          <TabsTrigger value="domain-groups" className="text-xs p-2">Domain Groups</TabsTrigger>
+          <TabsTrigger value="categories" className="text-xs p-2">Categories</TabsTrigger>
+          <TabsTrigger value="sub-categories" className="text-xs p-2">Sub-Categories</TabsTrigger>
+          <TabsTrigger value="countries" className="text-xs p-2">Countries</TabsTrigger>
+          <TabsTrigger value="currencies" className="text-xs p-2">Currencies</TabsTrigger>
+          <TabsTrigger value="organization-types" className="text-xs p-2">Org Types</TabsTrigger>
+          <TabsTrigger value="entity-types" className="text-xs p-2">Entity Types</TabsTrigger>
+          <TabsTrigger value="industry-segments" className="text-xs p-2">Industries</TabsTrigger>
+          <TabsTrigger value="departments" className="text-xs p-2">Departments</TabsTrigger>
+          <TabsTrigger value="sub-departments" className="text-xs p-2">Sub-Depts</TabsTrigger>
+          <TabsTrigger value="team-units" className="text-xs p-2">Team Units</TabsTrigger>
+          <TabsTrigger value="billing-frequencies" className="text-xs p-2">Billing Freq</TabsTrigger>
+          <TabsTrigger value="membership-statuses" className="text-xs p-2">Membership</TabsTrigger>
+          <TabsTrigger value="units-of-measure" className="text-xs p-2">Units</TabsTrigger>
+          <TabsTrigger value="engagement-models" className="text-xs p-2">Engagement</TabsTrigger>
+          <TabsTrigger value="engagement-model-subtypes" className="text-xs p-2">Subtypes</TabsTrigger>
+          <TabsTrigger value="fee-components" className="text-xs p-2">Fee Components</TabsTrigger>
+          <TabsTrigger value="pricing-parameters" className="text-xs p-2">Pricing Params</TabsTrigger>
+          <TabsTrigger value="platform-fee-formulas" className="text-xs p-2">Fee Formulas</TabsTrigger>
+          <TabsTrigger value="pricing-tiers" className="text-xs p-2">Pricing Tiers</TabsTrigger>
+          <TabsTrigger value="tier-configurations" className="text-xs p-2">Tier Configs</TabsTrigger>
+          <TabsTrigger value="tier-engagement-model-access" className="text-xs p-2">Tier Access</TabsTrigger>
+          <TabsTrigger value="seeker-membership-fees" className="text-xs p-2">Seeker Fees</TabsTrigger>
+          <TabsTrigger value="challenge-complexity" className="text-xs p-2">Complexity</TabsTrigger>
+          <TabsTrigger value="challenge-overage-fees" className="text-xs p-2">Overage Fees</TabsTrigger>
+          <TabsTrigger value="advance-payment-types" className="text-xs p-2">Advance Pay</TabsTrigger>
+          <TabsTrigger value="analytics-access-types" className="text-xs p-2">Analytics</TabsTrigger>
+          <TabsTrigger value="support-types" className="text-xs p-2">Support</TabsTrigger>
+          <TabsTrigger value="onboarding-types" className="text-xs p-2">Onboarding</TabsTrigger>
+          <TabsTrigger value="workflow-templates" className="text-xs p-2">Workflows</TabsTrigger>
+          <TabsTrigger value="system-feature-access" className="text-xs p-2">Features</TabsTrigger>
+          <TabsTrigger value="system-configurations" className="text-xs p-2">System Config</TabsTrigger>
+          <TabsTrigger value="capability-levels" className="text-xs p-2">Capabilities</TabsTrigger>
+          <TabsTrigger value="competency-capabilities" className="text-xs p-2">Competencies</TabsTrigger>
+          <TabsTrigger value="communication-types" className="text-xs p-2">Communication</TabsTrigger>
+          <TabsTrigger value="reward-types" className="text-xs p-2">Rewards</TabsTrigger>
+          <TabsTrigger value="organization-categories" className="text-xs p-2">Org Categories</TabsTrigger>
+          <TabsTrigger value="pricing-configurations" className="text-xs p-2">Price Configs</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="domain-groups">
+          <DomainGroupsManager />
+        </TabsContent>
+        <TabsContent value="categories">
+          <CategoriesManager />
+        </TabsContent>
+        <TabsContent value="sub-categories">
+          <SubCategoriesManager />
+        </TabsContent>
+        <TabsContent value="countries">
+          <CountriesManager />
+        </TabsContent>
+        <TabsContent value="currencies">
+          <CurrenciesManager />
+        </TabsContent>
+        <TabsContent value="organization-types">
+          <OrganizationTypesManager />
+        </TabsContent>
+        <TabsContent value="entity-types">
+          <EntityTypesManager />
+        </TabsContent>
+        <TabsContent value="industry-segments">
+          <IndustrySegmentsManager />
+        </TabsContent>
+        <TabsContent value="departments">
+          <DepartmentsManager />
+        </TabsContent>
+        <TabsContent value="sub-departments">
+          <SubDepartmentsManager />
+        </TabsContent>
+        <TabsContent value="team-units">
+          <TeamUnitsManager />
+        </TabsContent>
+        <TabsContent value="billing-frequencies">
+          <BillingFrequenciesManager />
+        </TabsContent>
+        <TabsContent value="membership-statuses">
+          <MembershipStatusesManager />
+        </TabsContent>
+        <TabsContent value="units-of-measure">
+          <UnitsOfMeasureManager />
+        </TabsContent>
+        <TabsContent value="engagement-models">
+          <EngagementModelsManager />
+        </TabsContent>
+        <TabsContent value="engagement-model-subtypes">
+          <EngagementModelSubtypesManager />
+        </TabsContent>
+        <TabsContent value="fee-components">
+          <FeeComponentsManager />
+        </TabsContent>
+        <TabsContent value="pricing-parameters">
+          <PricingParametersManager />
+        </TabsContent>
+        <TabsContent value="platform-fee-formulas">
+          <PlatformFeeFormulasManager />
+        </TabsContent>
+        <TabsContent value="pricing-tiers">
+          <PricingTiersManager />
+        </TabsContent>
+        <TabsContent value="tier-configurations">
+          <TierConfigurationsManager />
+        </TabsContent>
+        <TabsContent value="tier-engagement-model-access">
+          <TierEngagementModelAccessManager />
+        </TabsContent>
+        <TabsContent value="seeker-membership-fees">
+          <SeekerMembershipFeesManager />
+        </TabsContent>
+        <TabsContent value="challenge-complexity">
+          <ChallengeComplexityManager />
+        </TabsContent>
+        <TabsContent value="challenge-overage-fees">
+          <ChallengeOverageFeesManager />
+        </TabsContent>
+        <TabsContent value="advance-payment-types">
+          <AdvancePaymentTypesManager />
+        </TabsContent>
+        <TabsContent value="analytics-access-types">
+          <AnalyticsAccessTypesManager />
+        </TabsContent>
+        <TabsContent value="support-types">
+          <SupportTypesManager />
+        </TabsContent>
+        <TabsContent value="onboarding-types">
+          <OnboardingTypesManager />
+        </TabsContent>
+        <TabsContent value="workflow-templates">
+          <WorkflowTemplatesManager />
+        </TabsContent>
+        <TabsContent value="system-feature-access">
+          <SystemFeatureAccessManager />
+        </TabsContent>
+        <TabsContent value="system-configurations">
+          <SystemConfigurationsManager />
+        </TabsContent>
+        <TabsContent value="capability-levels">
+          <CapabilityLevelsManager />
+        </TabsContent>
+        <TabsContent value="competency-capabilities">
+          <CompetencyCapabilitiesManager />
+        </TabsContent>
+        <TabsContent value="communication-types">
+          <CommunicationTypesManager />
+        </TabsContent>
+        <TabsContent value="reward-types">
+          <RewardTypesManager />
+        </TabsContent>
+        <TabsContent value="organization-categories">
+          <OrganizationCategoriesManager />
+        </TabsContent>
+        <TabsContent value="pricing-configurations">
+          <PricingConfigurationsManager />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
