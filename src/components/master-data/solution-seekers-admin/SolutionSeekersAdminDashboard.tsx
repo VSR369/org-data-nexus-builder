@@ -6,19 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, RefreshCw, Users, Building2, AlertCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { OrganizationDataService, type SolutionSeekerData } from '@/services/OrganizationDataService';
+import { OrganizationDataService, type SolutionSeekerData, type ExistingAdmin } from '@/services/OrganizationDataService';
 import OrganizationPreviewCard from './OrganizationPreviewCard';
 import AdminCreationDialog from './AdminCreationDialog';
+import AdminEditDialog from './AdminEditDialog';
 import ComprehensiveDataView from './ComprehensiveDataView';
 
+interface SeekerWithAdmin extends SolutionSeekerData {
+  existingAdmin?: ExistingAdmin | null;
+}
+
 const SolutionSeekersAdminDashboard: React.FC = () => {
-  const [seekers, setSeekers] = useState<SolutionSeekerData[]>([]);
-  const [filteredSeekers, setFilteredSeekers] = useState<SolutionSeekerData[]>([]);
+  const [seekers, setSeekers] = useState<SeekerWithAdmin[]>([]);
+  const [filteredSeekers, setFilteredSeekers] = useState<SeekerWithAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedSeeker, setSelectedSeeker] = useState<SolutionSeekerData | null>(null);
   const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDataView, setShowDataView] = useState(false);
   const { toast } = useToast();
 
@@ -34,8 +40,22 @@ const SolutionSeekersAdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       const data = await OrganizationDataService.getAllSolutionSeekers();
-      setSeekers(data);
-      console.log('✅ Loaded solution seekers:', data.length);
+      
+      // Fetch admin data for each organization
+      const seekersWithAdmins = await Promise.all(
+        data.map(async (seeker) => {
+          try {
+            const adminData = await OrganizationDataService.getOrganizationAdmin(seeker.organization_id);
+            return { ...seeker, existingAdmin: adminData };
+          } catch (error) {
+            console.warn(`Failed to fetch admin for ${seeker.organization_id}:`, error);
+            return { ...seeker, existingAdmin: null };
+          }
+        })
+      );
+      
+      setSeekers(seekersWithAdmins);
+      console.log('✅ Loaded solution seekers with admin data:', seekersWithAdmins.length);
     } catch (error) {
       console.error('❌ Error loading solution seekers:', error);
       toast({
@@ -73,6 +93,11 @@ const SolutionSeekersAdminDashboard: React.FC = () => {
     setShowAdminDialog(true);
   };
 
+  const handleEditAdmin = (seeker: SolutionSeekerData) => {
+    setSelectedSeeker(seeker);
+    setShowEditDialog(true);
+  };
+
   const handleViewDetails = (seeker: SolutionSeekerData) => {
     setSelectedSeeker(seeker);
     setShowDataView(true);
@@ -84,7 +109,16 @@ const SolutionSeekersAdminDashboard: React.FC = () => {
       title: "✅ Administrator Created",
       description: "Organization administrator has been successfully created",
     });
-    loadSolutionSeekers(); // Refresh data
+    loadSolutionSeekers(); // Refresh data to show updated admin status
+  };
+
+  const handleAdminUpdated = () => {
+    setShowEditDialog(false);
+    toast({
+      title: "✅ Administrator Updated",
+      description: "Organization administrator has been successfully updated",
+    });
+    loadSolutionSeekers(); // Refresh data to show updated admin info
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -166,11 +200,11 @@ const SolutionSeekersAdminDashboard: React.FC = () => {
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Active Member">Active Members</SelectItem>
+                  <SelectItem value="Pending Activation">Pending Activation</SelectItem>
+                  <SelectItem value="Registered - No Engagement">Registered Only</SelectItem>
+                  <SelectItem value="Registration Only">Registration Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -197,7 +231,9 @@ const SolutionSeekersAdminDashboard: React.FC = () => {
             <OrganizationPreviewCard
               key={seeker.id}
               seeker={seeker}
+              existingAdmin={seeker.existingAdmin}
               onCreateAdmin={() => handleCreateAdmin(seeker)}
+              onEditAdmin={() => handleEditAdmin(seeker)}
               onViewDetails={() => handleViewDetails(seeker)}
             />
           ))}
@@ -211,6 +247,17 @@ const SolutionSeekersAdminDashboard: React.FC = () => {
           onClose={() => setShowAdminDialog(false)}
           seeker={selectedSeeker}
           onAdminCreated={handleAdminCreated}
+        />
+      )}
+
+      {/* Admin Edit Dialog */}
+      {showEditDialog && selectedSeeker && (
+        <AdminEditDialog
+          isOpen={showEditDialog}
+          onClose={() => setShowEditDialog(false)}
+          seeker={selectedSeeker}
+          existingAdmin={seekers.find(s => s.id === selectedSeeker.id)?.existingAdmin!}
+          onAdminUpdated={handleAdminUpdated}
         />
       )}
 

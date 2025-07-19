@@ -241,6 +241,95 @@ export class OrganizationDataService {
   }
 
   /**
+   * Get organization admin details
+   */
+  static async getOrganizationAdmin(organizationId: string): Promise<ExistingAdmin | null> {
+    try {
+      const { data, error } = await supabase
+        .from('organization_administrators')
+        .select('id, admin_name, admin_email, contact_number, is_active, created_at')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No data found
+          return null;
+        }
+        throw error;
+      }
+
+      return data as ExistingAdmin;
+    } catch (error) {
+      console.error('Error fetching organization admin:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing organization administrator
+   */
+  static async updateOrganizationAdmin(adminId: string, updates: Partial<AdminCreationData>): Promise<void> {
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check if user is platform admin
+      const { data: isPlatformAdmin, error: checkError } = await supabase
+        .rpc('is_platform_admin');
+
+      if (checkError) {
+        console.error('Error checking platform admin status:', checkError);
+        throw new Error('Failed to verify admin permissions');
+      }
+
+      if (!isPlatformAdmin) {
+        throw new Error('Only platform administrators can update organization admins');
+      }
+
+      const { error } = await supabase
+        .from('organization_administrators')
+        .update({
+          admin_name: updates.admin_name,
+          admin_email: updates.admin_email,
+          contact_number: updates.contact_number,
+          admin_password_hash: updates.admin_password_hash,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', adminId);
+
+      if (error) {
+        console.error('Error updating organization admin:', error);
+        throw new Error(`Failed to update organization admin: ${error.message}`);
+      }
+
+      // Log the admin update in audit table
+      try {
+        await supabase
+          .from('admin_creation_audit')
+          .insert({
+            organization_id: updates.organization_id || '',
+            organization_name: updates.organization_name || 'Unknown',
+            admin_name: updates.admin_name || '',
+            admin_email: updates.admin_email || '',
+            created_admin_id: adminId,
+            created_by: currentUser.user.id,
+            action_type: 'updated',
+            notes: 'Organization administrator updated via platform'
+          });
+      } catch (auditError) {
+        console.warn('Failed to log admin update audit:', auditError);
+      }
+    } catch (error) {
+      console.error('Error updating organization admin:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get comprehensive organization data with all details
    */
   static async getComprehensiveOrganizationData(organizationId: string): Promise<ComprehensiveOrganizationData> {

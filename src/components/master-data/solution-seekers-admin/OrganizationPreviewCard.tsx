@@ -1,20 +1,25 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Mail, Phone, MapPin, Globe, User, Calendar, Eye, UserPlus } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Globe, User, Calendar, Eye, UserPlus, Edit, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import type { SolutionSeekerData } from '@/services/OrganizationDataService';
+import type { SolutionSeekerData, ExistingAdmin } from '@/services/OrganizationDataService';
 
 interface OrganizationPreviewCardProps {
   seeker: SolutionSeekerData;
+  existingAdmin?: ExistingAdmin | null;
   onCreateAdmin: () => void;
+  onEditAdmin?: () => void;
   onViewDetails: () => void;
 }
 
 const OrganizationPreviewCard: React.FC<OrganizationPreviewCardProps> = ({
   seeker,
+  existingAdmin,
   onCreateAdmin,
+  onEditAdmin,
   onViewDetails
 }) => {
   const getStatusBadgeVariant = (status: string) => {
@@ -29,6 +34,8 @@ const OrganizationPreviewCard: React.FC<OrganizationPreviewCardProps> = ({
         return 'destructive';
     }
   };
+
+  const hasAdmin = existingAdmin && existingAdmin.is_active;
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -45,6 +52,26 @@ const OrganizationPreviewCard: React.FC<OrganizationPreviewCardProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* Administrator Status */}
+        {hasAdmin && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-semibold text-green-800">Administrator Active</span>
+            </div>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Name:</span>
+                <span className="font-medium">{existingAdmin.admin_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-medium truncate">{existingAdmin.admin_email}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Basic Info */}
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
@@ -151,15 +178,27 @@ const OrganizationPreviewCard: React.FC<OrganizationPreviewCardProps> = ({
             View
           </Button>
           
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onCreateAdmin}
-            className="flex-1"
-          >
-            <UserPlus className="h-4 w-4 mr-1" />
-            Admin
-          </Button>
+          {hasAdmin ? (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onEditAdmin}
+              className="flex-1"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Edit Admin
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onCreateAdmin}
+              className="flex-1"
+            >
+              <UserPlus className="h-4 w-4 mr-1" />
+              Create Admin
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
