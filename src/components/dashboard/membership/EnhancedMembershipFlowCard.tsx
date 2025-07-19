@@ -316,7 +316,8 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
       const nextStep = 'tier_selection';
       setCurrentStep(nextStep);
       
-      const updateData = {
+      // Prepare base update data
+      const updateData: any = {
         membership_status: mapMembershipStatusForDB(status),
         workflow_step: mapWorkflowStepForDB(nextStep)
       };
@@ -326,6 +327,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
         const annualFee = membershipFees.find(fee => fee.annual_amount)?.annual_amount || 0;
         const currency = membershipFees.find(fee => fee.annual_currency)?.annual_currency || 'USD';
         
+        // Add payment fields to update data
         updateData.mem_payment_status = 'paid';
         updateData.mem_payment_amount = annualFee;
         updateData.mem_payment_currency = currency;
@@ -535,7 +537,7 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
     );
   }
 
-  // Step 2: Tier Selection (simplified - no payment step)
+  // Step 2: Tier Selection
   if (currentStep === 'tier_selection') {
     // Transform available tiers to detailed tier card format
     const tierCardConfigs = availableTiers.map(tierConfig => ({

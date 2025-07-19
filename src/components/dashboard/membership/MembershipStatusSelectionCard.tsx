@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CreditCard, Crown, Info } from 'lucide-react';
+import { CreditCard, Crown, Info, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatting';
 
 interface MembershipStatusSelectionCardProps {
@@ -21,8 +22,30 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
   onStatusChange,
   profile
 }) => {
+  const [activating, setActivating] = useState(false);
   const annualFee = membershipFees.find(fee => fee.annual_amount)?.annual_amount || 0;
   const currency = membershipFees.find(fee => fee.annual_currency)?.annual_currency || 'USD';
+
+  const handleActivateMembership = async () => {
+    setActivating(true);
+    try {
+      // Simulate activation process - in real implementation this would handle payment
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing time
+      onStatusChange('active');
+    } catch (error) {
+      console.error('Activation error:', error);
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  const handleRadioChange = (value: string) => {
+    if (value === 'inactive') {
+      // For non-active, proceed immediately
+      onStatusChange('inactive');
+    }
+    // For active, we don't proceed immediately - wait for activation button
+  };
 
   return (
     <Card>
@@ -35,7 +58,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
       <CardContent className="space-y-4">
         <RadioGroup 
           value={selectedStatus || ''} 
-          onValueChange={(value) => onStatusChange(value as 'active' | 'inactive')}
+          onValueChange={handleRadioChange}
         >
           {/* Active Member Option */}
           <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
@@ -61,7 +84,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
                       {formatCurrency(annualFee, currency)}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Annual Fee (Auto-activated)</p>
+                  <p className="text-xs text-muted-foreground">Annual Fee</p>
                 </div>
               </div>
             </Label>
@@ -90,6 +113,40 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
           </div>
         </RadioGroup>
 
+        {/* Show activation button when Active Member is selected */}
+        {selectedStatus === 'active' && (
+          <div className="space-y-4">
+            <Alert className="bg-green-50 border-green-200">
+              <Crown className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                <strong>Ready to activate your membership?</strong>
+                <p className="mt-1 text-sm">
+                  Annual fee: {formatCurrency(annualFee, currency)} - Your membership will be activated immediately.
+                </p>
+              </AlertDescription>
+            </Alert>
+            
+            <Button 
+              onClick={handleActivateMembership}
+              disabled={activating}
+              className="w-full"
+              size="lg"
+            >
+              {activating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Activating Membership...
+                </>
+              ) : (
+                <>
+                  <Crown className="h-4 w-4 mr-2" />
+                  Activate Membership ({formatCurrency(annualFee, currency)})
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
         {/* Promotional Message for Non-Active Selection */}
         {selectedStatus === 'inactive' && (
           <Alert>
@@ -102,20 +159,6 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
                 <li>Early access to new features</li>
                 <li>Advanced analytics and reporting</li>
               </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Simple activation message for Active selection */}
-        {selectedStatus === 'active' && (
-          <Alert className="bg-green-50 border-green-200">
-            <Crown className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              <strong>Membership will be automatically activated!</strong>
-              <p className="mt-1 text-sm">
-                Your membership will be activated and marked as paid when you proceed. 
-                You'll immediately access all member benefits and discounts.
-              </p>
             </AlertDescription>
           </Alert>
         )}
