@@ -106,11 +106,11 @@ export const EditTierModal: React.FC<EditTierModalProps> = ({
               {sortedTiers.map((config) => (
                 <DetailedTierCard
                   key={config.id}
-                  config={config}
+                  tierConfiguration={config}
                   isSelected={selectedTier === config.pricing_tier_name}
                   isCurrent={currentTier === config.pricing_tier_name}
-                  isRecommended={recommendedTier?.id === config.id}
-                  onSelect={() => setSelectedTier(config.pricing_tier_name)}
+                  onTierSelect={(tierName) => setSelectedTier(tierName)}
+                  membershipStatus="inactive"
                 />
               ))}
             </div>

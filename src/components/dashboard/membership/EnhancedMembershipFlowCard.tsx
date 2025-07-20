@@ -685,11 +685,11 @@ export const EnhancedMembershipFlowCard: React.FC<EnhancedMembershipFlowCardProp
               {tierCardConfigs.map((config, index) => (
                 <DetailedTierCard
                   key={config.id}
-                  config={config}
+                  tierConfiguration={config}
                   isSelected={selectedTier === config.pricing_tier_name}
                   isCurrent={false}
-                  isRecommended={index === 1} // Recommend the second tier (usually Standard)
-                  onSelect={() => handleTierSelection(config.pricing_tier_name)}
+                  onTierSelect={(tierName) => handleTierSelection(tierName)}
+                  membershipStatus="inactive"
                 />
               ))}
             </div>
