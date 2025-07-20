@@ -23,6 +23,8 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
   profile
 }) => {
   const [activating, setActivating] = useState(false);
+  const [internalSelection, setInternalSelection] = useState<'active' | 'inactive' | null>(selectedStatus);
+  
   const annualFee = membershipFees.find(fee => fee.annual_amount)?.annual_amount || 0;
   const currency = membershipFees.find(fee => fee.annual_currency)?.annual_currency || 'USD';
 
@@ -40,12 +42,18 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
   };
 
   const handleRadioChange = (value: string) => {
-    if (value === 'inactive') {
-      // For non-active, proceed immediately
+    const status = value as 'active' | 'inactive';
+    setInternalSelection(status);
+    
+    if (status === 'inactive') {
+      // For inactive, proceed immediately with full activation
       onStatusChange('inactive');
     }
-    // For active, we don't proceed immediately - wait for activation button
+    // For active, just update the selection - don't activate until button is clicked
   };
+
+  // Use internal selection for radio group display, but respect selectedStatus from parent
+  const displayStatus = selectedStatus || internalSelection;
 
   return (
     <Card>
@@ -57,7 +65,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
       </CardHeader>
       <CardContent className="space-y-4">
         <RadioGroup 
-          value={selectedStatus || ''} 
+          value={displayStatus || ''} 
           onValueChange={handleRadioChange}
         >
           {/* Active Member Option */}
@@ -113,8 +121,8 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
           </div>
         </RadioGroup>
 
-        {/* Show activation button when Active Member is selected */}
-        {selectedStatus === 'active' && (
+        {/* Show activation button when Active Member is selected but not yet activated */}
+        {internalSelection === 'active' && selectedStatus !== 'active' && (
           <div className="space-y-4">
             <Alert className="bg-green-50 border-green-200">
               <Crown className="h-4 w-4 text-green-600" />
@@ -148,7 +156,7 @@ export const MembershipStatusSelectionCard: React.FC<MembershipStatusSelectionCa
         )}
 
         {/* Promotional Message for Non-Active Selection */}
-        {selectedStatus === 'inactive' && (
+        {displayStatus === 'inactive' && (
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
