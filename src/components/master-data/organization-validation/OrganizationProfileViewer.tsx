@@ -103,8 +103,7 @@ const OrganizationProfileViewer: React.FC<OrganizationProfileViewerProps> = ({
   };
 
   // Check if organization is non-commercial (requires document validation)
-  const isNonCommercial = organization.entity_type?.toLowerCase().includes('non') || 
-                          organization.entity_type?.toLowerCase().includes('profit');
+  const isNonCommercial = ['Non-Profit Organization', 'Society', 'Trust'].includes(organization.entity_type || '');
 
   return (
     <div className="space-y-6">
