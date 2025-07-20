@@ -26,6 +26,7 @@ import MasterDataDiagnostics from "./master-data/MasterDataDiagnostics";
 import SeekingOrgValidationDashboard from "./master-data/solution-seekers/SeekingOrgValidationDashboard";
 import MigrationTester from "./MigrationTester";
 import MasterDataTableTester from "./master-data/MasterDataTableTester";
+import OrganizationValidationViewer from "./master-data/organization-validation/OrganizationValidationViewer";
 
 // Tier-based pricing master data components
 import { SupportTypesManager } from "./master-data/support-types/SupportTypesManager";
@@ -101,6 +102,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         return <AdminCreationDiagnostic />;
       case 'solution-seekers-validation':
         return <SeekingOrgValidationDashboard />;
+      case 'seeking-organization-validation':
+        return <OrganizationValidationViewer />;
       case 'pricing-tiers':
         const PricingTiersManager = React.lazy(() => 
           import('./master-data/pricing-tiers/PricingTiersManager').then(m => ({ default: m.PricingTiersManager }))

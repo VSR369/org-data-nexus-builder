@@ -1,4 +1,3 @@
-
 import { 
   Database, 
   Globe, 
@@ -181,6 +180,12 @@ export const validationMenuItems = [
     title: 'Solution Seekers Validation',
     icon: CheckCircle,
     description: 'Validate seeker registrations'
+  },
+  {
+    id: 'seeking-organization-validation',
+    title: 'Seeking Organization Validation',
+    icon: Building2,
+    description: 'View and monitor solution seeker organizations'
   }
 ];
 
