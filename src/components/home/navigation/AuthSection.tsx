@@ -75,7 +75,7 @@ export const AuthSection = () => {
       )}
 
       {/* Master Data Portal Link - Separate from authentication */}
-      <Link to="/master-data" className="hidden sm:block">
+      <Link to="/master-data-portal" className="hidden sm:block">
         <Button 
           className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
         >
