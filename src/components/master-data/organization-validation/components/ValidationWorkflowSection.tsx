@@ -18,6 +18,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useValidationWorkflow } from '../hooks/useValidationWorkflow';
+import AdminCredentialsDisplay from './AdminCredentialsDisplay';
 
 interface ValidationWorkflowSectionProps {
   organizationId: string;
@@ -33,9 +34,11 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
   const { 
     loading, 
     validationStatus, 
+    adminCredentials,
     fetchValidationStatus, 
     updateValidationStatus,
-    createAdministrator 
+    createAdministrator,
+    clearAdminCredentials
   } = useValidationWorkflow(organizationId);
 
   const [actionReason, setActionReason] = useState('');
@@ -135,6 +138,14 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Admin Credentials Display - Show at the top when available */}
+      {adminCredentials && (
+        <AdminCredentialsDisplay 
+          credentials={adminCredentials}
+          onClose={clearAdminCredentials}
+        />
+      )}
+
       {/* Payment Validation Section */}
       <Card>
         <CardHeader>

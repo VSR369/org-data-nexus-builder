@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,9 +18,26 @@ export interface ValidationAction {
   reason?: string;
 }
 
+export interface AdminCredentials {
+  email: string;
+  password: string;
+  userId: string;
+}
+
+// Simple password generator for dev/testing
+const generateSimplePassword = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let password = '';
+  for (let i = 0; i < 8; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
+
 export const useValidationWorkflow = (organizationId: string) => {
   const [loading, setLoading] = useState(false);
   const [validationStatus, setValidationStatus] = useState<ValidationStatus | null>(null);
+  const [adminCredentials, setAdminCredentials] = useState<AdminCredentials | null>(null);
 
   const fetchValidationStatus = async () => {
     try {
@@ -91,32 +109,90 @@ export const useValidationWorkflow = (organizationId: string) => {
         return false;
       }
 
-      // First authorize the admin creation
+      // Generate simple password for dev/testing
+      const tempPassword = generateSimplePassword();
+      
+      console.log('🔐 Creating Supabase Auth user for admin:', adminData.admin_email);
+      
+      // Create Supabase Auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: adminData.admin_email,
+        password: tempPassword,
+        email_confirm: true, // Skip email confirmation for dev mode
+        user_metadata: {
+          admin_name: adminData.admin_name,
+          organization_id: organizationId
+        }
+      });
+
+      if (authError) {
+        console.error('❌ Error creating auth user:', authError);
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to create auth user - no user data returned');
+      }
+
+      console.log('✅ Auth user created:', authData.user.id);
+
+      // Insert administrator record into database
+      const { error: dbError } = await supabase
+        .from('organization_administrators')
+        .insert({
+          organization_id: organizationId,
+          user_id: authData.user.id,
+          admin_name: adminData.admin_name,
+          admin_email: adminData.admin_email,
+          role_type: 'admin',
+          is_active: true,
+          created_by: user.id
+        });
+
+      if (dbError) {
+        console.error('❌ Error inserting admin record:', dbError);
+        throw dbError;
+      }
+
+      console.log('✅ Administrator record created in database');
+
+      // Update validation status to authorized
       await updateValidationStatus({
         type: 'admin_authorization',
         status: 'authorized',
-        reason: `Administrator account creation authorized for ${adminData.admin_name}`
+        reason: `Administrator account created for ${adminData.admin_name}`
       });
 
-      // Create admin account - this would typically involve calling an edge function
-      // For now, we'll just update the validation status
-      toast.success('Administrator account created successfully');
+      // Store credentials for display
+      setAdminCredentials({
+        email: adminData.admin_email,
+        password: tempPassword,
+        userId: authData.user.id
+      });
+
+      toast.success('Administrator account created successfully! Check credentials below.');
       
       return true;
     } catch (error: any) {
-      console.error('Error creating administrator:', error);
-      toast.error('Failed to create administrator account');
+      console.error('❌ Error creating administrator:', error);
+      toast.error(`Failed to create administrator account: ${error.message}`);
       return false;
     } finally {
       setLoading(false);
     }
   };
 
+  const clearAdminCredentials = () => {
+    setAdminCredentials(null);
+  };
+
   return {
     loading,
     validationStatus,
+    adminCredentials,
     fetchValidationStatus,
     updateValidationStatus,
-    createAdministrator
+    createAdministrator,
+    clearAdminCredentials
   };
 };
