@@ -2274,6 +2274,39 @@ export type Database = {
         }
         Relationships: []
       }
+      member_status_change_alerts: {
+        Row: {
+          alert_processed: boolean
+          change_detected_at: string
+          id: string
+          metadata: Json | null
+          new_status: string
+          organization_id: string
+          previous_status: string
+          processed_at: string | null
+        }
+        Insert: {
+          alert_processed?: boolean
+          change_detected_at?: string
+          id?: string
+          metadata?: Json | null
+          new_status: string
+          organization_id: string
+          previous_status: string
+          processed_at?: string | null
+        }
+        Update: {
+          alert_processed?: boolean
+          change_detected_at?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string
+          organization_id?: string
+          previous_status?: string
+          processed_at?: string | null
+        }
+        Relationships: []
+      }
       organization_administrators: {
         Row: {
           account_locked_until: string | null
@@ -2404,6 +2437,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization_validation_tracking: {
+        Row: {
+          admin_authorization_status: string
+          admin_authorized_at: string | null
+          admin_authorized_by: string | null
+          created_at: string
+          document_validated_at: string | null
+          document_validated_by: string | null
+          document_validation_reason: string | null
+          document_validation_status: string
+          id: string
+          organization_id: string
+          payment_validated_at: string | null
+          payment_validated_by: string | null
+          payment_validation_reason: string | null
+          payment_validation_status: string
+          updated_at: string
+          workflow_completed: boolean
+        }
+        Insert: {
+          admin_authorization_status?: string
+          admin_authorized_at?: string | null
+          admin_authorized_by?: string | null
+          created_at?: string
+          document_validated_at?: string | null
+          document_validated_by?: string | null
+          document_validation_reason?: string | null
+          document_validation_status?: string
+          id?: string
+          organization_id: string
+          payment_validated_at?: string | null
+          payment_validated_by?: string | null
+          payment_validation_reason?: string | null
+          payment_validation_status?: string
+          updated_at?: string
+          workflow_completed?: boolean
+        }
+        Update: {
+          admin_authorization_status?: string
+          admin_authorized_at?: string | null
+          admin_authorized_by?: string | null
+          created_at?: string
+          document_validated_at?: string | null
+          document_validated_by?: string | null
+          document_validation_reason?: string | null
+          document_validation_status?: string
+          id?: string
+          organization_id?: string
+          payment_validated_at?: string | null
+          payment_validated_by?: string | null
+          payment_validation_reason?: string | null
+          payment_validation_status?: string
+          updated_at?: string
+          workflow_completed?: boolean
+        }
+        Relationships: []
       }
       organizations: {
         Row: {
@@ -2911,6 +3001,48 @@ export type Database = {
           },
         ]
       }
+      validation_audit_log: {
+        Row: {
+          action_type: string
+          comments: string | null
+          id: string
+          metadata: Json | null
+          new_status: string
+          organization_id: string
+          performed_at: string
+          performed_by: string | null
+          previous_status: string | null
+          reason: string | null
+          validation_type: string
+        }
+        Insert: {
+          action_type: string
+          comments?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status: string
+          organization_id: string
+          performed_at?: string
+          performed_by?: string | null
+          previous_status?: string | null
+          reason?: string | null
+          validation_type: string
+        }
+        Update: {
+          action_type?: string
+          comments?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string
+          organization_id?: string
+          performed_at?: string
+          performed_by?: string | null
+          previous_status?: string | null
+          reason?: string | null
+          validation_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       organization_context: {
@@ -3139,6 +3271,10 @@ export type Database = {
         Args: { component_id: string }
         Returns: Json
       }
+      check_validation_prerequisites: {
+        Args: { org_id: string }
+        Returns: Json
+      }
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3188,12 +3324,26 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      initialize_organization_validation: {
+        Args: { org_id: string; entity_type: string }
+        Returns: string
+      }
       is_platform_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       safe_delete_fee_component: {
         Args: { component_id: string; cascade_delete?: boolean }
+        Returns: Json
+      }
+      update_validation_status: {
+        Args: {
+          org_id: string
+          validation_type: string
+          new_status: string
+          reason?: string
+          user_id?: string
+        }
         Returns: Json
       }
       validate_engagement_model_switch: {

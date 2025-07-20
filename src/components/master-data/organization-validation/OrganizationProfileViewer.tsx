@@ -21,6 +21,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { format } from 'date-fns';
+import ValidationWorkflowSection from './components/ValidationWorkflowSection';
 
 interface Organization {
   id: string;
@@ -101,8 +102,21 @@ const OrganizationProfileViewer: React.FC<OrganizationProfileViewerProps> = ({
     }
   };
 
+  // Check if organization is non-commercial (requires document validation)
+  const isNonCommercial = organization.entity_type?.toLowerCase().includes('non') || 
+                          organization.entity_type?.toLowerCase().includes('profit');
+
   return (
     <div className="space-y-6">
+      {/* Validation Workflow Section - NEW ADDITION */}
+      <ValidationWorkflowSection 
+        organizationId={organization.organization_id || organizationId}
+        organization={organization}
+        isNonCommercial={isNonCommercial}
+      />
+      
+      <Separator />
+      
       {/* Organization Overview */}
       <Card>
         <CardHeader>
