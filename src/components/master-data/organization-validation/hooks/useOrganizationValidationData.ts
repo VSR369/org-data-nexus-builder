@@ -56,10 +56,12 @@ export const useOrganizationValidationData = () => {
 
       if (queryError) {
         console.error('❌ Error fetching organizations:', queryError);
+        console.error('❌ Error details:', JSON.stringify(queryError, null, 2));
         throw queryError;
       }
 
       console.log('✅ Successfully fetched organizations:', data?.length || 0);
+      console.log('🔍 Sample organization data:', data?.[0]);
       setOrganizations(data || []);
       
     } catch (err: any) {
