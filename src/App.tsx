@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import '@/utils/localStorage/LocalStorageCleaner';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useSupabaseAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -32,6 +32,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/contributor-auth" element={<ContributorAuth />} />
               <Route path="/super-admin-auth" element={<SuperAdminAuth />} />
+              <Route path="/master-data" element={<Navigate to="/master-data-portal" replace />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />
               <Route path="/organization-registration" element={<OrganizationRegistration />} />
               <Route path="/organization-signin" element={<OrganizationSignIn />} />

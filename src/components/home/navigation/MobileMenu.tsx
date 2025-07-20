@@ -77,7 +77,7 @@ export const MobileMenu = ({
       
       {/* Master Data Portal link in mobile - Only for master data management */}
       <Link
-        to="/master-data"
+        to="/master-data-portal"
         className="block py-2 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded font-medium border-t pt-4 mt-4"
         onClick={() => setIsMenuOpen(false)}
       >
