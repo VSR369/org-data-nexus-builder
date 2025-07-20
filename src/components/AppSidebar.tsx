@@ -26,7 +26,7 @@ interface AppSidebarProps {
 export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isOnRegistrationPage = location.pathname === '/register';
+  const isOnRegistrationPage = location.pathname === '/register' || location.pathname === '/organization-registration';
   const isOnMasterDataPortal = location.pathname === '/master-data-portal';
 
   console.log('AppSidebar render:', { activeSection, isOnMasterDataPortal, pathname: location.pathname });
@@ -37,14 +37,16 @@ export function AppSidebar({ activeSection, setActiveSection }: AppSidebarProps)
     console.log('🖱️ Current state - isOnMasterDataPortal:', isOnMasterDataPortal);
     
     if (isOnRegistrationPage) {
-      console.log('🔄 Navigating to:', `/?section=${sectionId}`);
-      navigate(`/?section=${sectionId}`);
+      console.log('🔄 Navigating to master data portal with section:', sectionId);
+      navigate(`/master-data-portal`);
+      setTimeout(() => setActiveSection(sectionId), 100);
     } else if (isOnMasterDataPortal) {
       console.log('🔄 Setting active section to:', sectionId);
       setActiveSection(sectionId);
     } else {
-      console.log('🔄 Default: Setting active section to:', sectionId);
-      setActiveSection(sectionId);
+      console.log('🔄 Navigating to master data portal with section:', sectionId);
+      navigate(`/master-data-portal`);
+      setTimeout(() => setActiveSection(sectionId), 100);
     }
   };
 
