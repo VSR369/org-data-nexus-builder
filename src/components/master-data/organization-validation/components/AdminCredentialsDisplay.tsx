@@ -16,8 +16,9 @@ import {
 
 interface AdminCredentials {
   email: string;
-  password: string;
-  userId: string;
+  temporaryPassword: string;
+  adminId: string;
+  organizationName: string;
 }
 
 interface AdminCredentialsDisplayProps {
@@ -44,9 +45,10 @@ const AdminCredentialsDisplay: React.FC<AdminCredentialsDisplayProps> = ({
 
   const copyAllCredentials = async () => {
     const credentialsText = `Administrator Login Credentials:
+Organization: ${credentials.organizationName}
 Email: ${credentials.email}
-Password: ${credentials.password}
-User ID: ${credentials.userId}
+Password: ${credentials.temporaryPassword}
+Admin ID: ${credentials.adminId}
 
 Login URL: ${window.location.origin}/auth`;
     
@@ -106,7 +108,7 @@ Login URL: ${window.location.origin}/auth`;
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Password</p>
               <div className="flex items-center gap-2">
                 <p className="font-mono text-sm">
-                  {showPassword ? credentials.password : '••••••••'}
+                  {showPassword ? credentials.temporaryPassword : '••••••••'}
                 </p>
                 <Button
                   variant="ghost"
@@ -122,7 +124,7 @@ Login URL: ${window.location.origin}/auth`;
           <Button
             variant="outline"
             size="sm"
-            onClick={() => copyToClipboard(credentials.password, 'password')}
+            onClick={() => copyToClipboard(credentials.temporaryPassword, 'password')}
             className="flex items-center gap-2"
           >
             {copied === 'password' ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -130,23 +132,24 @@ Login URL: ${window.location.origin}/auth`;
           </Button>
         </div>
 
-        {/* User ID */}
+        {/* Organization & Admin ID */}
         <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
           <div className="flex items-center gap-3">
             <User className="h-5 w-5 text-purple-600" />
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">User ID</p>
-              <p className="font-mono text-xs text-gray-600">{credentials.userId}</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Organization & Admin ID</p>
+              <p className="text-sm font-medium">{credentials.organizationName}</p>
+              <p className="font-mono text-xs text-gray-600">{credentials.adminId}</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => copyToClipboard(credentials.userId, 'userId')}
+            onClick={() => copyToClipboard(credentials.adminId, 'adminId')}
             className="flex items-center gap-2"
           >
-            {copied === 'userId' ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied === 'userId' ? 'Copied!' : 'Copy'}
+            {copied === 'adminId' ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied === 'adminId' ? 'Copied!' : 'Copy'}
           </Button>
         </div>
 

@@ -3209,6 +3209,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      get_organization_admin_info: {
+        Args: { p_organization_id: string }
+        Returns: Json
+      }
       get_organization_admin_summary: {
         Args: { org_id: string }
         Returns: Json

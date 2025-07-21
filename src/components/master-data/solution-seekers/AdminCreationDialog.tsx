@@ -12,8 +12,9 @@ import { toast } from 'sonner';
 
 interface AdminCredentials {
   email: string;
-  password: string;
-  userId: string;
+  temporaryPassword: string;
+  adminId: string;
+  organizationName: string;
 }
 
 interface AdminCreationDialogProps {
@@ -222,7 +223,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
                     <div className="flex items-center gap-2">
                       <Input 
                         type={showPassword ? 'text' : 'password'}
-                        value={credentials.password} 
+                        value={credentials.temporaryPassword} 
                         readOnly 
                         className="bg-gray-50 font-mono"
                       />
@@ -236,7 +237,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={() => copyToClipboard(credentials.password, 'Password')}
+                        onClick={() => copyToClipboard(credentials.temporaryPassword, 'Password')}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -278,7 +279,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
               </Button>
               <Button 
                 onClick={() => {
-                  const credentialsText = `Organization: ${seeker.organizationName}\nAdmin Name: ${adminName}\nEmail: ${credentials.email}\nPassword: ${credentials.password}`;
+                  const credentialsText = `Organization: ${seeker.organizationName}\nAdmin Name: ${adminName}\nEmail: ${credentials.email}\nPassword: ${credentials.temporaryPassword}`;
                   copyToClipboard(credentialsText, 'All credentials');
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
