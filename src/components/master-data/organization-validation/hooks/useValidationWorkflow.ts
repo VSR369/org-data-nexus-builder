@@ -24,14 +24,28 @@ export interface AdminCredentials {
   userId: string;
 }
 
-// Simple password generator for dev/testing
-const generateSimplePassword = (): string => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+// Generate strong password that meets Supabase requirements
+const generateStrongPassword = (): string => {
+  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijkmnpqrstuvwxyz';
+  const numbers = '23456789';
+  const symbols = '!@#$%&*';
+  
   let password = '';
-  for (let i = 0; i < 8; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  // Ensure at least one of each type
+  password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+  password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+  
+  // Fill remaining characters
+  const allChars = uppercase + lowercase + numbers + symbols;
+  for (let i = 4; i < 12; i++) {
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
   }
-  return password;
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
 };
 
 export const useValidationWorkflow = (organizationId: string) => {
@@ -102,19 +116,22 @@ export const useValidationWorkflow = (organizationId: string) => {
     try {
       setLoading(true);
       
-      // Get current user
+      // Get current user (platform admin)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Authentication required');
+        toast.error('Platform admin authentication required');
         return false;
       }
 
-      // Generate simple password for dev/testing
-      const tempPassword = generateSimplePassword();
+      console.log('🔐 Starting admin creation for:', adminData.admin_email);
+
+      // Generate strong password that meets Supabase requirements
+      const tempPassword = generateStrongPassword();
       
       console.log('🔐 Creating Supabase Auth user for admin:', adminData.admin_email);
+      console.log('🔧 Using password length:', tempPassword.length);
       
-      // Create Supabase Auth user using signUp for dev/testing
+      // Create Supabase Auth user with proper configuration for development
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: adminData.admin_email,
         password: tempPassword,
@@ -122,21 +139,22 @@ export const useValidationWorkflow = (organizationId: string) => {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             admin_name: adminData.admin_name,
-            organization_id: organizationId
+            organization_id: organizationId,
+            created_by_platform_admin: user.id
           }
         }
       });
 
       if (authError) {
         console.error('❌ Error creating auth user:', authError);
-        throw authError;
+        throw new Error(`Failed to create auth user: ${authError.message}`);
       }
 
-      if (!authData.user) {
+      if (!authData?.user) {
         throw new Error('Failed to create auth user - no user data returned');
       }
 
-      console.log('✅ Auth user created:', authData.user.id);
+      console.log('✅ Auth user created successfully:', authData.user.id);
 
       // Insert administrator record into database
       const { error: dbError } = await supabase
