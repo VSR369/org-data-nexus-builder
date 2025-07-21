@@ -13,23 +13,7 @@ interface OrgAdmin {
 }
 
 interface OrganizationData {
-  organization_pk_id: string;
-  organization_id: string;
-  organization_name: string;
-  contact_person_name: string;
-  email: string;
-  phone_number: string;
-  address: string;
-  website: string;
-  country_name: string;
-  organization_type_name: string;
-  entity_type_name: string;
-  industry_segment_name: string;
-  membership_status: string;
-  pricing_tier: string;
-  engagement_model: string;
-  payment_status: string;
-  registration_date: string;
+  [key: string]: any; // Allow all properties from the comprehensive view
 }
 
 interface UseOrgAdminAuthReturn {

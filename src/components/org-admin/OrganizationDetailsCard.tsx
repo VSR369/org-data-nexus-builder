@@ -4,22 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, MapPin, Globe, Phone, Mail, User } from 'lucide-react';
 
-interface OrganizationData {
-  organization_name: string;
-  contact_person_name: string;
-  email: string;
-  phone_number: string;
-  address: string;
-  website: string;
-  country_name: string;
-  organization_type_name: string;
-  entity_type_name: string;
-  industry_segment_name: string;
-  registration_date: string;
-}
-
 interface OrganizationDetailsCardProps {
-  data: OrganizationData;
+  data: any;
 }
 
 const OrganizationDetailsCard: React.FC<OrganizationDetailsCardProps> = ({ data }) => {
@@ -49,13 +35,13 @@ const OrganizationDetailsCard: React.FC<OrganizationDetailsCardProps> = ({ data 
           
           <div className="flex gap-2 flex-wrap">
             <Badge variant="secondary">
-              {data.organization_type_name}
+              {data.organization_type || data.organization_type_name}
             </Badge>
             <Badge variant="outline">
-              {data.entity_type_name}
+              {data.entity_type || data.entity_type_name}
             </Badge>
             <Badge variant="outline">
-              {data.industry_segment_name}
+              {data.industry_segment || data.industry_segment_name}
             </Badge>
           </div>
         </div>
@@ -96,7 +82,7 @@ const OrganizationDetailsCard: React.FC<OrganizationDetailsCardProps> = ({ data 
               <div>
                 <div className="text-sm font-medium">Location</div>
                 <div className="text-sm text-muted-foreground">
-                  {data.address && `${data.address}, `}{data.country_name}
+                  {data.address && `${data.address}, `}{data.country || data.country_name}
                 </div>
               </div>
             </div>
@@ -121,10 +107,12 @@ const OrganizationDetailsCard: React.FC<OrganizationDetailsCardProps> = ({ data 
         </div>
 
         {/* Registration Date */}
-        <div>
-          <div className="text-sm font-medium text-muted-foreground">Registration Date</div>
-          <div className="text-sm">{formatDate(data.registration_date)}</div>
-        </div>
+        {(data.registration_date || data.created_at) && (
+          <div>
+            <div className="text-sm font-medium text-muted-foreground">Registration Date</div>
+            <div className="text-sm">{formatDate(data.registration_date || data.created_at)}</div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
