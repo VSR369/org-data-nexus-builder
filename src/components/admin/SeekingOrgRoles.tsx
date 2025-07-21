@@ -8,13 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Users, Phone, Mail, User, Building2, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Phone, Mail, User, Building2, ChevronRight, Search, Filter, X, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SeekingOrgRole {
   id: string;
   role_name: string;
+  person_name?: string;
   mobile_number: string;
   email_id: string;
   user_id: string;
@@ -71,8 +73,20 @@ export const SeekingOrgRoles: React.FC = () => {
   const [editingRole, setEditingRole] = useState<SeekingOrgRole | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Search and Filter State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    roleNames: [] as string[],
+    domainGroups: [] as string[],
+    categories: [] as string[],
+    departments: [] as string[],
+    status: ""
+  });
+  
   const [formData, setFormData] = useState({
     role_name: "",
+    person_name: "",
     mobile_number: "",
     email_id: "",
     user_id: "",
@@ -211,6 +225,7 @@ export const SeekingOrgRoles: React.FC = () => {
   const resetForm = () => {
     setFormData({
       role_name: "",
+      person_name: "",
       mobile_number: "",
       email_id: "",
       user_id: "",
@@ -238,6 +253,7 @@ export const SeekingOrgRoles: React.FC = () => {
     setEditingRole(role);
     setFormData({
       role_name: role.role_name,
+      person_name: role.person_name || "",
       mobile_number: role.mobile_number,
       email_id: role.email_id,
       user_id: role.user_id,
@@ -253,8 +269,8 @@ export const SeekingOrgRoles: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.role_name || !formData.mobile_number || !formData.email_id || !formData.user_id || !formData.password) {
-      toast.error('Please fill in all required fields');
+    if (!formData.role_name || !formData.person_name || !formData.mobile_number || !formData.email_id || !formData.user_id || !formData.password) {
+      toast.error('Please fill in all required fields including person name');
       return;
     }
 
@@ -265,6 +281,7 @@ export const SeekingOrgRoles: React.FC = () => {
           .from('seeking_organization_roles')
           .update({
             role_name: formData.role_name,
+            person_name: formData.person_name,
             mobile_number: formData.mobile_number,
             email_id: formData.email_id,
             user_id: formData.user_id,
@@ -288,6 +305,7 @@ export const SeekingOrgRoles: React.FC = () => {
           .from('seeking_organization_roles')
           .insert({
             role_name: formData.role_name,
+            person_name: formData.person_name,
             mobile_number: formData.mobile_number,
             email_id: formData.email_id,
             user_id: formData.user_id,
@@ -382,6 +400,18 @@ export const SeekingOrgRoles: React.FC = () => {
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-primary">Basic Information</h4>
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="person_name" className="text-sm font-medium">
+                Person Name *
+              </Label>
+              <Input
+                id="person_name"
+                value={formData.person_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, person_name: e.target.value }))}
+                placeholder="Enter person's full name"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="role_name" className="text-sm font-medium">
                 Role Name *
@@ -648,6 +678,16 @@ export const SeekingOrgRoles: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* Person Name - Main Identifier */}
+              {role.person_name && (
+                <div className="bg-primary/10 p-3 rounded-md">
+                  <div className="flex items-center gap-2 text-primary">
+                    <User className="h-4 w-4" />
+                    <span className="font-semibold text-lg">{role.person_name}</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
