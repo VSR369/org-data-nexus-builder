@@ -298,7 +298,7 @@ export const pricingConfigurationMenuItems = [
 export const administrationMenuItems = [
   {
     id: 'role-management',
-    title: 'Role Management',
+    title: 'Role Types',
     icon: UserCog,
     description: 'Manage platform roles and permissions'
   },
