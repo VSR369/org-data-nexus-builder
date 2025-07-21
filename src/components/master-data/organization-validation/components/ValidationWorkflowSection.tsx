@@ -5,17 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   CheckCircle, 
   XCircle, 
   Clock, 
   Shield, 
-  FileText, 
   DollarSign,
   AlertTriangle,
-  UserPlus,
-  Eye
+  UserPlus
 } from 'lucide-react';
 import { useValidationWorkflow } from '../hooks/useValidationWorkflow';
 import AdminCredentialsDisplay from './AdminCredentialsDisplay';
@@ -51,19 +48,15 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
     fetchValidationStatus();
   }, [organizationId]);
 
-  const handleValidationAction = async (
-    type: 'payment' | 'document' | 'admin_authorization',
-    status: string
-  ) => {
-    if (!actionReason.trim() && (status === 'declined' || status === 'invalid')) {
-      alert('Please provide a reason for declining/marking invalid');
+  const handleValidationAction = async (action: string) => {
+    if (!actionReason.trim() && (action === 'rejected' || action === 'declined')) {
+      alert('Please provide a reason for declining/rejecting');
       return;
     }
 
     const success = await updateValidationStatus({
-      type,
-      status,
-      reason: actionReason.trim() || undefined
+      action,
+      notes: actionReason.trim() || undefined
     });
 
     if (success) {
@@ -85,16 +78,13 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'completed':
       case 'approved':
-      case 'valid':
-      case 'authorized':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'rejected':
       case 'declined':
-      case 'invalid':
         return <XCircle className="h-4 w-4 text-red-600" />;
       case 'pending':
-      case 'not_ready':
-      case 'ready':
         return <Clock className="h-4 w-4 text-yellow-600" />;
       default:
         return <AlertTriangle className="h-4 w-4 text-gray-400" />;
@@ -103,18 +93,14 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'completed':
       case 'approved':
-      case 'valid':
-      case 'authorized':
         return 'bg-green-100 text-green-800';
+      case 'rejected':
       case 'declined':
-      case 'invalid':
         return 'bg-red-100 text-red-800';
       case 'pending':
-      case 'ready':
         return 'bg-yellow-100 text-yellow-800';
-      case 'not_ready':
-        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -146,206 +132,97 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
         />
       )}
 
-      {/* Payment Validation Section */}
+      {/* Organization Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            Payment Validation
+            Organization Validation
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {getStatusIcon(validationStatus.validation_status?.payment_validation_status)}
-              <span className="font-medium">Payment Status</span>
-              <Badge className={getStatusColor(validationStatus.validation_status?.payment_validation_status)}>
-                {validationStatus.validation_status?.payment_validation_status || 'pending'}
+              {getStatusIcon(validationStatus.status)}
+              <span className="font-medium">Status</span>
+              <Badge className={getStatusColor(validationStatus.status)}>
+                {validationStatus.status}
               </Badge>
             </div>
           </div>
 
-          {/* Display payment information */}
-          {organization.mem_payment_amount && (
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <p><strong>Amount:</strong> {organization.mem_payment_currency} {organization.mem_payment_amount}</p>
-              <p><strong>Date:</strong> {organization.mem_payment_date || 'N/A'}</p>
-              <p><strong>Method:</strong> {organization.mem_payment_method || 'N/A'}</p>
-              <p><strong>Receipt:</strong> {organization.mem_receipt_number || 'N/A'}</p>
-            </div>
-          )}
+          {/* Organization details */}
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <p><strong>Organization:</strong> {validationStatus.organization_name}</p>
+            <p><strong>Organization ID:</strong> {validationStatus.organization_id}</p>
+            <p><strong>Admin Exists:</strong> {validationStatus.has_admin ? 'Yes' : 'No'}</p>
+            {organization.mem_payment_amount && (
+              <>
+                <p><strong>Payment Amount:</strong> {organization.mem_payment_currency} {organization.mem_payment_amount}</p>
+                <p><strong>Payment Date:</strong> {organization.mem_payment_date || 'N/A'}</p>
+              </>
+            )}
+          </div>
 
-          {/* Payment validation actions */}
-          {validationStatus.validation_status?.payment_validation_status === 'pending' && (
+          {/* Validation actions */}
+          {validationStatus.status === 'pending' && (
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="payment-reason">Reason (required for decline)</Label>
+                <Label htmlFor="validation-reason">Validation Notes</Label>
                 <Textarea
-                  id="payment-reason"
-                  placeholder="Enter reason for approval/decline..."
+                  id="validation-reason"
+                  placeholder="Enter reason for approval/rejection..."
                   value={actionReason}
                   onChange={(e) => setActionReason(e.target.value)}
                 />
               </div>
               <div className="flex gap-2">
                 <Button 
-                  onClick={() => handleValidationAction('payment', 'approved')}
+                  onClick={() => handleValidationAction('approved')}
                   disabled={loading}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Approve Payment
+                  Approve Organization
                 </Button>
                 <Button 
-                  onClick={() => handleValidationAction('payment', 'declined')}
+                  onClick={() => handleValidationAction('rejected')}
                   disabled={loading || !actionReason.trim()}
                   variant="destructive"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
-                  Decline Payment
+                  Reject Organization
                 </Button>
               </div>
-            </div>
-          )}
-
-          {/* Show validation reason if exists */}
-          {validationStatus.validation_status?.payment_validation_reason && (
-            <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-              <p className="text-sm">
-                <strong>Validation Reason:</strong> {validationStatus.validation_status.payment_validation_reason}
-              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Document Validation Section (Non-commercial only) */}
-      {isNonCommercial && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Document Validation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {getStatusIcon(validationStatus.validation_status?.document_validation_status)}
-                <span className="font-medium">Document Status</span>
-                <Badge className={getStatusColor(validationStatus.validation_status?.document_validation_status)}>
-                  {validationStatus.validation_status?.document_validation_status || 'pending'}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Document validation actions */}
-            {validationStatus.validation_status?.document_validation_status === 'pending' && (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="document-reason">Validation Comments</Label>
-                  <Textarea
-                    id="document-reason"
-                    placeholder="Enter comments about document validation..."
-                    value={actionReason}
-                    onChange={(e) => setActionReason(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handleValidationAction('document', 'valid')}
-                    disabled={loading}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Mark Valid
-                  </Button>
-                  <Button 
-                    onClick={() => handleValidationAction('document', 'invalid')}
-                    disabled={loading || !actionReason.trim()}
-                    variant="destructive"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Mark Invalid
-                  </Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Documents
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Organization Documents</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          Document viewing functionality would be implemented here.
-                        </p>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            )}
-
-            {/* Show validation reason if exists */}
-            {validationStatus.validation_status?.document_validation_reason && (
-              <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-                <p className="text-sm">
-                  <strong>Validation Comments:</strong> {validationStatus.validation_status.document_validation_reason}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Administrator Authorization Section */}
+      {/* Administrator Creation Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Administrator Authorization
+            Administrator Creation
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {getStatusIcon(validationStatus.validation_status?.admin_authorization_status)}
-              <span className="font-medium">Authorization Status</span>
-              <Badge className={getStatusColor(validationStatus.validation_status?.admin_authorization_status)}>
-                {validationStatus.validation_status?.admin_authorization_status || 'not_ready'}
+              {validationStatus.has_admin ? 
+                <CheckCircle className="h-4 w-4 text-green-600" /> : 
+                <Clock className="h-4 w-4 text-yellow-600" />
+              }
+              <span className="font-medium">Administrator Status</span>
+              <Badge className={validationStatus.has_admin ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                {validationStatus.has_admin ? 'Created' : 'Pending'}
               </Badge>
             </div>
           </div>
 
-          {/* Prerequisites check */}
-          <div className="bg-muted p-4 rounded-lg space-y-2">
-            <p className="font-medium text-sm">Prerequisites:</p>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm">
-                {validationStatus.payment_approved ? 
-                  <CheckCircle className="h-4 w-4 text-green-600" /> : 
-                  <XCircle className="h-4 w-4 text-red-600" />
-                }
-                Payment Validation
-              </div>
-              {isNonCommercial && (
-                <div className="flex items-center gap-2 text-sm">
-                  {validationStatus.document_validated ? 
-                    <CheckCircle className="h-4 w-4 text-green-600" /> : 
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  }
-                  Document Validation
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Admin creation form */}
-          {validationStatus.can_authorize_admin && validationStatus.validation_status?.admin_authorization_status === 'ready' && (
+          {!validationStatus.has_admin && (
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="admin-name">Administrator Name</Label>
@@ -378,18 +255,10 @@ const ValidationWorkflowSection: React.FC<ValidationWorkflowSectionProps> = ({
           )}
 
           {/* Status messages */}
-          {!validationStatus.can_authorize_admin && (
-            <div className="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
-              <p className="text-sm">
-                Administrator authorization is not available until payment{isNonCommercial ? ' and document' : ''} validation is completed.
-              </p>
-            </div>
-          )}
-
-          {validationStatus.validation_status?.admin_authorization_status === 'authorized' && (
+          {validationStatus.has_admin && (
             <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-400">
               <p className="text-sm">
-                <strong>Administrator Authorized:</strong> Administrator account has been successfully created and authorized.
+                <strong>Administrator Created:</strong> Administrator account has been successfully created and is ready for use.
               </p>
             </div>
           )}

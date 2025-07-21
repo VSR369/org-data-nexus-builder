@@ -8,7 +8,7 @@ interface OrgAdmin {
   admin_name: string;
   admin_email: string;
   organization_id: string;
-  is_active: boolean;
+  user_id: string;
   created_at: string;
 }
 
@@ -35,12 +35,11 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
 
   const fetchOrgAdminData = async (userId: string) => {
     try {
-      // Get organization administrator record
+      // Get organization administrator record from simplified org_admins table
       const { data: adminData, error: adminError } = await supabase
-        .from('organization_administrators')
+        .from('org_admins')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_active', true)
         .single();
 
       if (adminError || !adminData) {

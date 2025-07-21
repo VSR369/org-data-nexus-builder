@@ -17,7 +17,7 @@ import {
 
 interface AdminCredentials {
   email: string;
-  temporaryPassword: string;
+  temporaryPassword?: string;
   adminId: string;
   organizationName: string;
   isNewUser: boolean;

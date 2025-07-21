@@ -129,9 +129,8 @@ const SeekingOrgValidationDashboard: React.FC = () => {
       
       // Use the validation workflow to update document validation status
       const success = await validationWorkflow.updateValidationStatus({
-        type: 'document',
-        status: status,
-        reason: reason
+        action: status,
+        notes: reason
       });
 
       if (success) {
