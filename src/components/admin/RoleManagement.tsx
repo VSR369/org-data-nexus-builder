@@ -145,15 +145,15 @@ export function RoleManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Role Management</h2>
-          <p className="text-muted-foreground">Manage platform roles and permissions</p>
+          <h2 className="text-2xl font-bold">Role Types</h2>
+          <p className="text-muted-foreground">Manage platform role types and their descriptions</p>
         </div>
         <Button 
           onClick={() => setShowAddForm(true)}
           disabled={showAddForm || editingRole !== null}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add New Role
+          Add New Role Type
         </Button>
       </div>
 
@@ -161,15 +161,15 @@ export function RoleManagement() {
       {showAddForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Role</CardTitle>
+            <CardTitle>Add New Role Type</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Role Name</label>
+              <label className="text-sm font-medium">Role Type Name</label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter role name"
+                placeholder="Enter role type name"
               />
             </div>
             <div>
@@ -177,14 +177,14 @@ export function RoleManagement() {
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Enter role description"
+                placeholder="Enter role type description"
                 rows={3}
               />
             </div>
             <div className="flex gap-2">
               <Button onClick={() => handleSaveRole()}>
                 <Save className="mr-2 h-4 w-4" />
-                Save Role
+                Save Role Type
               </Button>
               <Button variant="outline" onClick={handleCancelEdit}>
                 <X className="mr-2 h-4 w-4" />
@@ -204,11 +204,11 @@ export function RoleManagement() {
                 /* Edit Form */
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium">Role Name</label>
+                    <label className="text-sm font-medium">Role Type Name</label>
                     <Input
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Enter role name"
+                      placeholder="Enter role type name"
                     />
                   </div>
                   <div>
@@ -216,7 +216,7 @@ export function RoleManagement() {
                     <Textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Enter role description"
+                      placeholder="Enter role type description"
                       rows={3}
                     />
                   </div>
@@ -277,7 +277,7 @@ export function RoleManagement() {
       {roles.length === 0 && (
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">No roles found. Click "Add New Role" to get started.</p>
+            <p className="text-muted-foreground">No role types found. Click "Add New Role Type" to get started.</p>
           </CardContent>
         </Card>
       )}
