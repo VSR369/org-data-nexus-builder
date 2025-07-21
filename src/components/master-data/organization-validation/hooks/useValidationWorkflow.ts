@@ -116,12 +116,6 @@ export const useValidationWorkflow = (organizationId: string) => {
     try {
       setLoading(true);
       
-      // Get current user (platform admin)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Platform admin authentication required');
-        return false;
-      }
 
       console.log('🔐 Starting admin creation for:', adminData.admin_email);
 
@@ -140,7 +134,7 @@ export const useValidationWorkflow = (organizationId: string) => {
           data: {
             admin_name: adminData.admin_name,
             organization_id: organizationId,
-            created_by_platform_admin: user.id
+            
           }
         }
       });
@@ -156,25 +150,23 @@ export const useValidationWorkflow = (organizationId: string) => {
 
       console.log('✅ Auth user created successfully:', authData.user.id);
 
-      // Insert administrator record into database
-      const { error: dbError } = await supabase
-        .from('organization_administrators')
-        .insert({
-          organization_id: organizationId,
-          user_id: authData.user.id,
-          admin_name: adminData.admin_name,
-          admin_email: adminData.admin_email,
-          role_type: 'admin',
-          is_active: true,
-          created_by: user.id
+      // Call the database function to create admin record
+      const { data, error } = await supabase
+        .rpc('create_organization_admin', {
+          p_organization_id: organizationId,
+          p_admin_name: adminData.admin_name,
+          p_admin_email: adminData.admin_email,
+          p_user_id: authData.user.id
         });
 
-      if (dbError) {
-        console.error('❌ Error inserting admin record:', dbError);
-        throw dbError;
+      if (error || !(data as any)?.success) {
+        console.error('❌ Error creating admin in database:', error);
+        // Clean up auth user if database creation fails
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw new Error((data as any)?.message || 'Failed to create admin record');
       }
 
-      console.log('✅ Administrator record created in database');
+      console.log('✅ Administrator record created in database:', (data as any).admin_id);
 
       // Update validation status to authorized
       await updateValidationStatus({

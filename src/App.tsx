@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useSupabaseAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ContributorAuth from "./pages/ContributorAuth";
-import SuperAdminAuth from "./pages/SuperAdminAuth";
+
 import MasterDataPortal from "./pages/MasterDataPortal";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
 import OrganizationSignIn from "./pages/OrganizationSignIn";
@@ -32,7 +32,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/contributor-auth" element={<ContributorAuth />} />
-              <Route path="/super-admin-auth" element={<SuperAdminAuth />} />
+              
               <Route path="/master-data" element={<Navigate to="/master-data-portal" replace />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />
               <Route path="/organization-registration" element={<OrganizationRegistration />} />

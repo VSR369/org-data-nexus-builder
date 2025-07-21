@@ -8,7 +8,7 @@ export interface Administrator {
   adminEmail: string;
   adminName: string;
   permissions: string[];
-  role: 'super_admin' | 'organization_admin' | 'system_admin';
+  role: 'organization_admin' | 'system_admin';
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;

@@ -22,11 +22,11 @@ export type Database = {
           created_admin_id: string
           created_at: string | null
           created_by: string
+          created_by_email: string | null
           id: string
           notes: string | null
           organization_id: string
           organization_name: string
-          platform_admin_id: string | null
         }
         Insert: {
           action_type: string
@@ -35,11 +35,11 @@ export type Database = {
           created_admin_id: string
           created_at?: string | null
           created_by: string
+          created_by_email?: string | null
           id?: string
           notes?: string | null
           organization_id: string
           organization_name: string
-          platform_admin_id?: string | null
         }
         Update: {
           action_type?: string
@@ -48,11 +48,11 @@ export type Database = {
           created_admin_id?: string
           created_at?: string | null
           created_by?: string
+          created_by_email?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
           organization_name?: string
-          platform_admin_id?: string | null
         }
         Relationships: [
           {
@@ -62,44 +62,7 @@ export type Database = {
             referencedRelation: "organization_administrators"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "admin_creation_audit_platform_admin_id_fkey"
-            columns: ["platform_admin_id"]
-            isOneToOne: false
-            referencedRelation: "platform_administrators"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      admin_roles: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean | null
-          permissions: Json | null
-          role_name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          permissions?: Json | null
-          role_name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          permissions?: Json | null
-          role_name?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       engagement_activations: {
         Row: {
@@ -2315,7 +2278,6 @@ export type Database = {
           admin_password_hash: string | null
           contact_number: string | null
           created_at: string | null
-          created_by: string | null
           id: string
           is_active: boolean | null
           last_login_at: string | null
@@ -2332,7 +2294,6 @@ export type Database = {
           admin_password_hash?: string | null
           contact_number?: string | null
           created_at?: string | null
-          created_by?: string | null
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
@@ -2349,7 +2310,6 @@ export type Database = {
           admin_password_hash?: string | null
           contact_number?: string | null
           created_at?: string | null
-          created_by?: string | null
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
@@ -2622,53 +2582,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organization_context"
             referencedColumns: ["organization_type_id"]
-          },
-        ]
-      }
-      platform_administrators: {
-        Row: {
-          admin_email: string
-          admin_name: string
-          contact_number: string | null
-          created_at: string
-          id: string
-          is_active: boolean | null
-          last_login_at: string | null
-          role_id: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          admin_email: string
-          admin_name: string
-          contact_number?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_login_at?: string | null
-          role_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          admin_email?: string
-          admin_name?: string
-          contact_number?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_login_at?: string | null
-          role_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "platform_administrators_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "admin_roles"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -3275,6 +3188,15 @@ export type Database = {
         Args: { org_id: string }
         Returns: Json
       }
+      create_organization_admin: {
+        Args: {
+          p_organization_id: string
+          p_admin_name: string
+          p_admin_email: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       generate_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3327,10 +3249,6 @@ export type Database = {
       initialize_organization_validation: {
         Args: { org_id: string; entity_type: string }
         Returns: string
-      }
-      is_platform_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
       }
       safe_delete_fee_component: {
         Args: { component_id: string; cascade_delete?: boolean }

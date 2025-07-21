@@ -136,7 +136,7 @@ export default function OrgAdminLogin() {
                 </p>
                 <p className="text-orange-700">
                   This login is for organization administrators created during the validation process. 
-                  If you need access, contact the platform administrator.
+                  If you need access, contact your organization.
                 </p>
               </div>
             </div>

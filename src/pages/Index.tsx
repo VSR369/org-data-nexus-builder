@@ -144,33 +144,6 @@ const Index = () => {
 
         {/* Access Cards - Updated Grid Layout for 5 cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {/* Super Admin Portal */}
-          <Card className="hover:shadow-lg transition-shadow h-full border-slate-200">
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
-                <Settings className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-xl">Super Admin Portal</CardTitle>
-              <CardDescription>
-                Administrative access to platform configuration and master data management
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center flex-1 flex flex-col">
-              <div className="space-y-2 text-sm text-gray-600 mb-6 flex-1">
-                <p>• Complete System Control</p>
-                <p>• Master Data Management</p>
-                <p>• User Administration</p>
-                <p>• Platform Configuration</p>
-                <p>• Admin-Only Features</p>
-              </div>
-              <Link to="/super-admin-auth" className="w-full">
-                <Button className="w-full bg-slate-700 hover:bg-slate-800">
-                  Super Admin Login
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
 
           {/* Master Data Portal */}
           <Card className="hover:shadow-lg transition-shadow h-full">
@@ -291,7 +264,7 @@ const Index = () => {
                 </p>
                 <p className="text-xs text-orange-600 mt-1">
                   This login is for administrators created during organization validation. 
-                  Contact platform admin if you need access.
+                  Contact your organization if you need access.
                 </p>
               </div>
               

@@ -24,7 +24,7 @@ const AdminRegistrationForm: React.FC<AdminRegistrationFormProps> = ({
     organizationName: '',
     adminEmail: '',
     adminName: '',
-    role: 'organization_admin' as 'super_admin' | 'organization_admin' | 'system_admin'
+    role: 'organization_admin' as 'organization_admin' | 'system_admin'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -80,9 +80,7 @@ const AdminRegistrationForm: React.FC<AdminRegistrationFormProps> = ({
     setIsLoading(true);
 
     try {
-      const permissions = formData.role === 'super_admin' 
-        ? ['all_permissions', 'manage_admins', 'system_config', 'user_management']
-        : ['manage_membership', 'view_dashboard', 'organization_config'];
+      const permissions = ['manage_membership', 'view_dashboard', 'organization_config'];
 
       const adminData = {
         adminId: formData.adminId.trim(),
@@ -224,7 +222,6 @@ const AdminRegistrationForm: React.FC<AdminRegistrationFormProps> = ({
               <SelectContent>
                 <SelectItem value="organization_admin">Organization Admin</SelectItem>
                 <SelectItem value="system_admin">System Admin</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
