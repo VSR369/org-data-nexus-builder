@@ -128,7 +128,10 @@ const SeekingOrgValidationDashboard: React.FC = () => {
   // Admin creation handler with credentials return
   const handleAdminCreation = async (seekerId: string, adminName: string, adminEmail: string) => {
     try {
-      const result = await handleCreateAdmin(seekerId, adminName, adminEmail);
+      const seeker = seekers.find(s => s.id === seekerId);
+      if (!seeker) throw new Error('Seeker not found');
+      
+      const result = await handleCreateAdmin(seeker);
       // Return mock credentials for now - this should come from the actual API
       return {
         email: adminEmail,
@@ -280,7 +283,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           onOpenChange={setDocumentValidationOpen}
           seeker={selectedSeekerForAction}
           onValidate={handleDocumentValidation}
-          processing={processing}
+          processing={!!processing.processingApproval}
         />
       )}
 
@@ -291,7 +294,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           onOpenChange={setAdminCreationOpen}
           seeker={selectedSeekerForAction}
           onCreateAdmin={handleAdminCreation}
-          processing={processing}
+          processing={!!processing.processingAdmin}
         />
       )}
 
