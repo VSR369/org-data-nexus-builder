@@ -1,5 +1,6 @@
+
 import React from "react";
-import { RolesDisplay } from "./RolesDisplay";
+import { RoleManagement } from "./admin/RoleManagement";
 import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
 import CurrencyConfigSupabase from "./master-data/CurrencyConfigSupabase";
@@ -205,9 +206,7 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
           </React.Suspense>
         );
       case 'role-management':
-        return <RolesDisplay />;
-      case 'platform-roles':
-        return <RolesDisplay />;
+        return <RoleManagement />;
       default:
         return <MasterDataDiagnostics />;
     }
