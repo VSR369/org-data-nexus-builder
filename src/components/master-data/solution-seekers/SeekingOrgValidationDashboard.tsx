@@ -146,7 +146,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           s.id === seekerId 
             ? { 
                 ...s, 
-                approvalStatus: status === 'approved' ? 'approved' : 'rejected',
+                approvalStatus: (status === 'approved' ? 'approved' : 'rejected') as 'approved' | 'rejected',
                 validationNotes: reason 
               }
             : s
