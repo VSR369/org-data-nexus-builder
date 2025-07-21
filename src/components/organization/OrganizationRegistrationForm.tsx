@@ -122,6 +122,14 @@ export const OrganizationRegistrationForm = () => {
                   <p className="font-semibold mb-2">✅ Ready to Sign In</p>
                   <p>You can now sign in to your organization account using your email and password.</p>
                 </div>
+                <div className="mt-6">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => window.location.href = '/organization-signin'}
+                  >
+                    Sign In to Organization Account
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

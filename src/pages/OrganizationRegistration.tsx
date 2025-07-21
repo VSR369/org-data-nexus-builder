@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { AppSidebar } from '../components/AppSidebar';
 import { OrganizationRegistrationForm } from '../components/organization/OrganizationRegistrationForm';
 
@@ -13,6 +14,15 @@ const OrganizationRegistration = () => {
         <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         <main className="flex-1 p-6 bg-background">
           <div className="max-w-4xl mx-auto">
+            <div className="mb-4">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/'}
+                className="mb-4"
+              >
+                ← Back to Coinnovator
+              </Button>
+            </div>
             <div className="flex items-center gap-4 mb-8">
               <SidebarTrigger />
               <div>
