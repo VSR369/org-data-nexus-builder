@@ -207,6 +207,15 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
         );
       case 'role-management':
         return <RoleManagement />;
+      case 'seeking-org-roles':
+        const SeekingOrgRoles = React.lazy(() => 
+          import('./admin/SeekingOrgRoles').then(m => ({ default: m.SeekingOrgRoles }))
+        );
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SeekingOrgRoles />
+          </React.Suspense>
+        );
       default:
         return <MasterDataDiagnostics />;
     }

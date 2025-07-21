@@ -2736,6 +2736,109 @@ export type Database = {
         }
         Relationships: []
       }
+      seeking_organization_roles: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          domain_group_id: string | null
+          email_id: string
+          id: string
+          is_active: boolean
+          mobile_number: string
+          password: string
+          role_name: string
+          sub_department_id: string | null
+          subcategory_id: string | null
+          team_unit_id: string | null
+          updated_at: string
+          user_id: string
+          version: number | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          domain_group_id?: string | null
+          email_id: string
+          id?: string
+          is_active?: boolean
+          mobile_number: string
+          password: string
+          role_name: string
+          sub_department_id?: string | null
+          subcategory_id?: string | null
+          team_unit_id?: string | null
+          updated_at?: string
+          user_id: string
+          version?: number | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          domain_group_id?: string | null
+          email_id?: string
+          id?: string
+          is_active?: boolean
+          mobile_number?: string
+          password?: string
+          role_name?: string
+          sub_department_id?: string | null
+          subcategory_id?: string | null
+          team_unit_id?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seeking_organization_roles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "master_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seeking_organization_roles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "master_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seeking_organization_roles_domain_group_id_fkey"
+            columns: ["domain_group_id"]
+            isOneToOne: false
+            referencedRelation: "master_domain_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seeking_organization_roles_sub_department_id_fkey"
+            columns: ["sub_department_id"]
+            isOneToOne: false
+            referencedRelation: "master_sub_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seeking_organization_roles_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "master_sub_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seeking_organization_roles_team_unit_id_fkey"
+            columns: ["team_unit_id"]
+            isOneToOne: false
+            referencedRelation: "master_team_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tier_engagement_model_restrictions: {
         Row: {
           created_at: string

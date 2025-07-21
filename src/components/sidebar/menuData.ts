@@ -303,6 +303,12 @@ export const administrationMenuItems = [
     description: 'Manage platform roles and permissions'
   },
   {
+    id: 'seeking-org-roles',
+    title: 'Seeking Org Roles',
+    icon: Users,
+    description: 'Manage user roles for Challenge Creator, Challenge Curator, Innovation Director, and Expert Reviewer'
+  },
+  {
     id: 'master-data-diagnostics',
     title: 'Master Data Diagnostics',
     icon: Database,
