@@ -1,4 +1,5 @@
 import React from "react";
+import { RolesDisplay } from "./RolesDisplay";
 import ResponsiveDashboardWrapper from "./layout/ResponsiveDashboardWrapper";
 import CountryConfigSupabase from "./master-data/CountryConfigSupabase";
 import CurrencyConfigSupabase from "./master-data/CurrencyConfigSupabase";
@@ -203,6 +204,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
             <BusinessModelsManager />
           </React.Suspense>
         );
+      case 'platform-roles':
+        return <RolesDisplay />;
       default:
         return <MasterDataDiagnostics />;
     }

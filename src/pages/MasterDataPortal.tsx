@@ -4,8 +4,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import MasterDataContent from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Database, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowLeft, Database, RefreshCw, Users, Shield } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { MasterDataSeeder } from "@/utils/masterDataSeeder";
 import { MasterDataRestorer } from "@/utils/masterDataRestorer";
 import { EntityTypesRestorer } from "@/utils/entityTypesRestorer";
@@ -15,6 +15,7 @@ const MasterDataPortal = () => {
   const [activeSection, setActiveSection] = useState('domain-groups');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignInComplete = () => {
     setIsLoggedIn(true);
@@ -175,6 +176,16 @@ const MasterDataPortal = () => {
                   </div>
                   
                   <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/org-admin-dashboard')}
+                      size="sm"
+                      className="flex items-center gap-2 px-2 lg:px-3 bg-orange-50 hover:bg-orange-100 border-orange-200"
+                    >
+                      <Users className="h-3 w-3 lg:h-4 lg:w-4 text-orange-600" />
+                      <span className="hidden lg:inline text-xs lg:text-sm text-orange-700">Role Management</span>
+                      <span className="lg:hidden text-xs text-orange-700">Roles</span>
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={handleRestoreEntityTypes}
