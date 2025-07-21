@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { RoleManagement } from '@/components/admin/RoleManagement';
+import { SeekingOrgRoles } from '@/components/admin/SeekingOrgRoles';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -155,6 +156,8 @@ export default function OrgAdminDashboard() {
         );
       case 'role-management':
         return <RoleManagement />;
+      case 'seeking-org-roles':
+        return <SeekingOrgRoles />;
       default:
         return (
           <div className="text-center py-12">

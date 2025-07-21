@@ -7,7 +7,8 @@ import {
 import { AdminSidebarHeader } from './AdminSidebarHeader';
 import { AdminSidebarMenuGroup } from './AdminSidebarMenuGroup';
 import {
-  dashboardMenuItems
+  dashboardMenuItems,
+  administrationMenuItems
 } from './adminMenuData';
 
 interface AdminSidebarProps {
@@ -30,6 +31,12 @@ export function AdminSidebar({ activeSection, setActiveSection }: AdminSidebarPr
         <AdminSidebarMenuGroup
           title="Dashboard"
           items={dashboardMenuItems}
+          activeSection={activeSection}
+          onItemClick={handleMenuClick}
+        />
+        <AdminSidebarMenuGroup
+          title="Administration"
+          items={administrationMenuItems}
           activeSection={activeSection}
           onItemClick={handleMenuClick}
         />

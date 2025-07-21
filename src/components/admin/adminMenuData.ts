@@ -21,3 +21,12 @@ export const dashboardMenuItems = [
     description: 'Dashboard overview'
   }
 ];
+
+export const administrationMenuItems = [
+  {
+    id: 'seeking-org-roles',
+    title: 'Seeking Org Roles',
+    icon: UserCog,
+    description: 'Manage organization roles and assignments'
+  }
+];
