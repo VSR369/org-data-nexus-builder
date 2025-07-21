@@ -204,6 +204,8 @@ const MasterDataContent: React.FC<MasterDataContentProps> = ({ activeSection }) 
             <BusinessModelsManager />
           </React.Suspense>
         );
+      case 'role-management':
+        return <RolesDisplay />;
       case 'platform-roles':
         return <RolesDisplay />;
       default:

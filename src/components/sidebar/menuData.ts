@@ -13,6 +13,7 @@ import {
   Award,
   FileText,
   UserCheck,
+  UserCog,
   Key,
   Download,
   Table,
@@ -295,6 +296,12 @@ export const pricingConfigurationMenuItems = [
 ];
 
 export const administrationMenuItems = [
+  {
+    id: 'role-management',
+    title: 'Role Management',
+    icon: UserCog,
+    description: 'Manage platform roles and permissions'
+  },
   {
     id: 'master-data-diagnostics',
     title: 'Master Data Diagnostics',
