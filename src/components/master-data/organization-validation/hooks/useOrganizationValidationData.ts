@@ -135,14 +135,14 @@ export const useOrganizationValidationData = () => {
     }
   };
 
-  // Set up auto-refresh every 30 seconds
+  // Set up auto-refresh every 90 seconds
   useEffect(() => {
     fetchOrganizations();
 
     const interval = setInterval(() => {
       console.log('🔄 Auto-refreshing organization data...');
       fetchOrganizations();
-    }, 30000); // 30 seconds
+    }, 90000); // 90 seconds
 
     return () => clearInterval(interval);
   }, []);
