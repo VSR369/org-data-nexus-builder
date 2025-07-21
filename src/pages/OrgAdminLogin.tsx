@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Shield, ArrowLeft, Mail, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useOrgAdminAuth } from '@/hooks/useOrgAdminAuth';
+import { toast } from 'sonner';
 
 export default function OrgAdminLogin() {
   const [email, setEmail] = useState('');
@@ -27,9 +28,28 @@ export default function OrgAdminLogin() {
       return;
     }
 
-    const success = await loginOrgAdmin(email, password);
-    if (success) {
-      navigate('/org-admin-dashboard');
+    console.log('🔐 Attempting org admin login for:', email);
+    
+    try {
+      const success = await loginOrgAdmin(email, password);
+      console.log('🔐 Login result:', success);
+      
+      if (success) {
+        console.log('✅ Login successful, navigating to dashboard...');
+        toast.success('Successfully signed in! Redirecting to dashboard...');
+        
+        // Small delay to ensure auth state is fully updated
+        setTimeout(() => {
+          navigate('/org-admin-dashboard');
+        }, 500);
+      } else {
+        console.log('❌ Login failed');
+        setError('Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      setError('An unexpected error occurred during login');
+      toast.error('Login failed. Please try again.');
     }
   };
 

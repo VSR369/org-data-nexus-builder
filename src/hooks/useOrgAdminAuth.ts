@@ -35,6 +35,8 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
 
   const fetchOrgAdminData = async (userId: string) => {
     try {
+      console.log('🔍 Fetching org admin data for user:', userId);
+      
       // Get organization administrator record from simplified org_admins table
       const { data: adminData, error: adminError } = await supabase
         .from('org_admins')
@@ -43,10 +45,11 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         .single();
 
       if (adminError || !adminData) {
-        console.error('Error fetching admin data:', adminError);
+        console.error('❌ Error fetching admin data:', adminError);
         return null;
       }
 
+      console.log('✅ Admin data fetched successfully:', adminData);
       setOrgAdmin(adminData);
 
       // Get organization comprehensive data
@@ -57,14 +60,16 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         .single();
 
       if (orgError) {
-        console.error('Error fetching organization data:', orgError);
+        console.error('❌ Error fetching organization data:', orgError);
+        toast.error('Failed to load organization details');
       } else if (orgData) {
+        console.log('✅ Organization data fetched successfully:', orgData);
         setOrganizationData(orgData);
       }
 
       return adminData;
     } catch (error) {
-      console.error('Error in fetchOrgAdminData:', error);
+      console.error('❌ Error in fetchOrgAdminData:', error);
       return null;
     }
   };
@@ -72,6 +77,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
   const loginOrgAdmin = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
+      console.log('🔐 Starting org admin login process...');
       
       // Sign in with Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -80,28 +86,32 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
       });
 
       if (error) {
-        console.error('Login error:', error);
+        console.error('❌ Auth login error:', error);
         toast.error('Invalid email or password');
         return false;
       }
 
       if (data.user) {
+        console.log('✅ Auth login successful, user ID:', data.user.id);
+        
         // Verify this user is an organization administrator
         const adminData = await fetchOrgAdminData(data.user.id);
         
         if (!adminData) {
+          console.error('❌ User is not an org admin, signing out...');
           await supabase.auth.signOut();
           toast.error('This account is not authorized as an organization administrator');
           return false;
         }
 
+        console.log('✅ Org admin verification successful');
         toast.success('Successfully signed in!');
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       toast.error('An unexpected error occurred during login');
       return false;
     } finally {
@@ -111,12 +121,13 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
 
   const logoutOrgAdmin = async () => {
     try {
+      console.log('🚪 Logging out org admin...');
       await supabase.auth.signOut();
       setOrgAdmin(null);
       setOrganizationData(null);
       toast.success('Successfully signed out');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
       toast.error('Error signing out');
     }
   };
@@ -124,25 +135,36 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
   const getCurrentOrgAdmin = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Checking for existing org admin session...');
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        console.log('✅ Found existing user session:', user.id);
         await fetchOrgAdminData(user.id);
+      } else {
+        console.log('ℹ️ No existing user session found');
       }
     } catch (error) {
-      console.error('Error getting current admin:', error);
+      console.error('❌ Error getting current admin:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('🚀 Setting up org admin auth state listener...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state change:', event, session?.user?.id);
+        
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('✅ User signed in, fetching admin data...');
           await fetchOrgAdminData(session.user.id);
         } else if (event === 'SIGNED_OUT') {
+          console.log('🚪 User signed out, clearing admin data...');
           setOrgAdmin(null);
           setOrganizationData(null);
         }
@@ -153,7 +175,10 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
     // Check for existing session
     getCurrentOrgAdmin();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🧹 Cleaning up org admin auth subscription...');
+      subscription.unsubscribe();
+    };
   }, []);
 
   return {
