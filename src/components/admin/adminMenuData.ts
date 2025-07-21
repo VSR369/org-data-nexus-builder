@@ -9,7 +9,8 @@ import {
   BarChart3,
   FileText,
   Shield,
-  UserCheck
+  UserCheck,
+  UserCog
 } from 'lucide-react';
 
 export const dashboardMenuItems = [
@@ -45,6 +46,12 @@ export const organizationMenuItems = [
     title: 'User Management',
     icon: Users,
     description: 'Manage organization users'
+  },
+  {
+    id: 'role-management',
+    title: 'Role Management',
+    icon: UserCog,
+    description: 'Manage platform roles and permissions'
   }
 ];
 
