@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye } from "lucide-react";
+import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
@@ -143,8 +142,8 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Access Cards - Dynamic Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        {/* Access Cards - Updated Grid Layout for 5 cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {/* Super Admin Portal */}
           <Card className="hover:shadow-lg transition-shadow h-full border-slate-200">
             <CardHeader className="text-center pb-4">
@@ -263,6 +262,45 @@ const Index = () => {
                   </Link>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* NEW: Organization Administrator Access */}
+          <Card className="hover:shadow-lg transition-shadow h-full border-orange-200">
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-amber-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
+                <Shield className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl">Organization Administrator</CardTitle>
+              <CardDescription>
+                Login as an organization administrator created during the validation process
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center flex-1 flex flex-col">
+              <div className="space-y-2 text-sm text-gray-600 mb-6 flex-1">
+                <p>• Organization Management</p>
+                <p>• Validation Oversight</p>
+                <p>• Member Administration</p>
+                <p>• Organizational Settings</p>
+                <p>• Admin-Level Access</p>
+              </div>
+              
+              <div className="bg-orange-50 p-3 rounded-lg border border-orange-200 mb-4">
+                <p className="text-xs text-orange-700 font-medium">
+                  ⚠️ Administrator Access Only
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  This login is for administrators created during organization validation. 
+                  Contact platform admin if you need access.
+                </p>
+              </div>
+              
+              <Link to="/org-admin-login" className="w-full">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                  Administrator Login
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 

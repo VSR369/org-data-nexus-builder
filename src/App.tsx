@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import '@/utils/localStorage/LocalStorageCleaner';
@@ -14,6 +13,8 @@ import MasterDataPortal from "./pages/MasterDataPortal";
 import OrganizationRegistration from "./pages/OrganizationRegistration";
 import OrganizationSignIn from "./pages/OrganizationSignIn";
 import OrganizationDashboard from "./pages/OrganizationDashboard";
+import OrgAdminLogin from "./pages/OrgAdminLogin";
+import OrgAdminDashboard from "./pages/OrgAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,8 @@ function App() {
               <Route path="/organization-registration" element={<OrganizationRegistration />} />
               <Route path="/organization-signin" element={<OrganizationSignIn />} />
               <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
+              <Route path="/org-admin-login" element={<OrgAdminLogin />} />
+              <Route path="/org-admin-dashboard" element={<OrgAdminDashboard />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
