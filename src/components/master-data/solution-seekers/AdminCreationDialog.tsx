@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Copy, CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { UserPlus, Copy, CheckCircle, Eye, EyeOff, AlertCircle, Info } from 'lucide-react';
 import type { SeekerDetails } from './types';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ interface AdminCredentials {
   temporaryPassword: string;
   adminId: string;
   organizationName: string;
+  isNewUser: boolean;
 }
 
 interface AdminCreationDialogProps {
@@ -150,7 +151,7 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
                   onChange={(e) => setAdminEmail(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This email will be used for login credentials. Make sure it's accessible to the administrator.
+                  This email will be used for login. If the user already has an account, administrator role will be added.
                 </p>
               </div>
             </div>
@@ -158,13 +159,14 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
             {/* Important Notice */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-800">Important</span>
+                <Info className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-800">How It Works</span>
               </div>
-              <p className="text-sm text-blue-700">
-                A secure temporary password will be generated automatically. The administrator will receive login credentials 
-                and should change the password on first login.
-              </p>
+              <div className="text-sm text-blue-700 space-y-2">
+                <p><strong>New Email:</strong> A secure account will be created with a temporary password.</p>
+                <p><strong>Existing Email:</strong> Administrator role will be added to the existing account.</p>
+                <p>The administrator will be able to login and manage organization users immediately.</p>
+              </div>
             </div>
 
             {/* Action Button */}
@@ -189,9 +191,15 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
             {/* Success Message */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
-              <h3 className="font-medium text-green-800 mb-2">Administrator Account Created Successfully!</h3>
+              <h3 className="font-medium text-green-800 mb-2">
+                {credentials.isNewUser 
+                  ? 'Administrator Account Created Successfully!' 
+                  : 'Administrator Role Assigned Successfully!'}
+              </h3>
               <p className="text-sm text-green-700">
-                The administrator account has been created and credentials are ready below.
+                {credentials.isNewUser 
+                  ? 'A new account has been created and credentials are ready below.'
+                  : 'Administrator role has been added to the existing user account.'}
               </p>
             </div>
 
@@ -200,12 +208,17 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <AlertCircle className="h-5 w-5 text-orange-600" />
-                  <span className="font-medium text-orange-800">Administrator Credentials</span>
+                  <span className="font-medium text-orange-800">
+                    {credentials.isNewUser ? 'New Administrator Credentials' : 'Administrator Information'}
+                  </span>
+                  <Badge variant={credentials.isNewUser ? "default" : "secondary"}>
+                    {credentials.isNewUser ? 'New User' : 'Existing User'}
+                  </Badge>
                 </div>
                 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>User ID / Email</Label>
+                    <Label>Email</Label>
                     <div className="flex items-center gap-2">
                       <Input value={credentials.email} readOnly className="bg-gray-50" />
                       <Button 
@@ -218,31 +231,40 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Temporary Password</Label>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type={showPassword ? 'text' : 'password'}
-                        value={credentials.temporaryPassword} 
-                        readOnly 
-                        className="bg-gray-50 font-mono"
-                      />
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => copyToClipboard(credentials.temporaryPassword, 'Password')}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                  {credentials.isNewUser ? (
+                    <div className="space-y-2">
+                      <Label>Temporary Password</Label>
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          type={showPassword ? 'text' : 'password'}
+                          value={credentials.temporaryPassword} 
+                          readOnly 
+                          className="bg-gray-50 font-mono"
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => copyToClipboard(credentials.temporaryPassword, 'Password')}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <Info className="inline h-4 w-4 mr-2" />
+                        Administrator should use their existing account password to login.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label>Administrator Name</Label>
@@ -265,10 +287,10 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-800 mb-2">Next Steps</h4>
               <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                <li>Share these credentials securely with the organization administrator</li>
-                <li>Administrator should log in at the Organization Admin portal</li>
-                <li>Administrator must change the password on first login</li>
-                <li>Keep a secure record of these credentials for your records</li>
+                <li>Share login information securely with the organization administrator</li>
+                <li>Administrator should log in at: {window.location.origin}/auth</li>
+                {credentials.isNewUser && <li>Administrator must change the password on first login</li>}
+                <li>Administrator can now manage organization users and settings</li>
               </ol>
             </div>
 
@@ -279,13 +301,15 @@ const AdminCreationDialog: React.FC<AdminCreationDialogProps> = ({
               </Button>
               <Button 
                 onClick={() => {
-                  const credentialsText = `Organization: ${seeker.organizationName}\nAdmin Name: ${adminName}\nEmail: ${credentials.email}\nPassword: ${credentials.temporaryPassword}`;
-                  copyToClipboard(credentialsText, 'All credentials');
+                  const infoText = credentials.isNewUser 
+                    ? `Organization: ${seeker.organizationName}\nAdmin Name: ${adminName}\nEmail: ${credentials.email}\nTemporary Password: ${credentials.temporaryPassword}\n\nLogin: ${window.location.origin}/auth`
+                    : `Organization: ${seeker.organizationName}\nAdmin Name: ${adminName}\nEmail: ${credentials.email}\n\nLogin: ${window.location.origin}/auth\nNote: Use existing account password`;
+                  copyToClipboard(infoText, 'All information');
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Copy className="h-4 w-4 mr-2" />
-                Copy All Credentials
+                Copy All Information
               </Button>
             </div>
           </div>

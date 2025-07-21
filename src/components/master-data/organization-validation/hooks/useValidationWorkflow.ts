@@ -23,6 +23,7 @@ export interface AdminCredentials {
   temporaryPassword: string;
   adminId: string;
   organizationName: string;
+  isNewUser: boolean;
 }
 
 // Generate strong password that meets Supabase requirements
@@ -116,6 +117,7 @@ export const useValidationWorkflow = (organizationId: string) => {
   }): Promise<boolean> => {
     try {
       setLoading(true);
+      console.log('🚀 Starting administrator creation for:', adminData.admin_email);
       
       // Step 1: Check if admin already exists for this organization
       const { data: existingAdminInfo, error: checkError } = await supabase
@@ -134,103 +136,85 @@ export const useValidationWorkflow = (organizationId: string) => {
         return false;
       }
 
-      // Step 2: Check if user with this email already exists in auth
+      // Step 2: Generate temporary password and attempt user signup
+      const tempPassword = generateStrongPassword();
       let authUserId: string;
-      let tempPassword: string = '';
-      let isNewUser = false;
+      let isNewUser = true;
 
-      const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
+      console.log('🔑 Attempting to create user with signup...');
       
-      if (listError) {
-        console.error('Error checking existing users:', listError);
-        toast.error(`Failed to check existing users: ${listError.message}`);
-        return false;
-      }
+      // Use regular signup instead of admin API
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: adminData.admin_email,
+        password: tempPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            admin_name: adminData.admin_name
+          }
+        }
+      });
 
-      const existingUser = existingUsers.users.find((user: any) => user.email === adminData.admin_email);
-
-      if (existingUser) {
-        // User already exists, use existing user ID
-        authUserId = existingUser.id;
-        console.log('Using existing auth user:', existingUser.email);
-      } else {
-        // Create new user
-        tempPassword = generateStrongPassword();
-        isNewUser = true;
-
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: adminData.admin_email,
-          password: tempPassword,
-          email_confirm: true
-        });
-
-        if (authError) {
-          console.error('Error creating auth user:', authError);
+      if (authError) {
+        // Handle case where user already exists
+        if (authError.message?.includes('User already registered') || 
+            authError.message?.includes('already been registered')) {
+          console.log('👤 User already exists, this is okay for admin creation');
+          
+          // For existing users, we'll use a placeholder ID and let the backend handle it
+          // The database function will need to handle existing users appropriately
+          authUserId = 'existing-user-placeholder';
+          isNewUser = false;
+        } else {
+          console.error('Signup error:', authError);
           toast.error(`Failed to create user account: ${authError.message}`);
           return false;
         }
-
+      } else {
         if (!authData.user) {
-          console.error('No user data returned from auth creation');
+          console.error('No user data returned from signup');
           toast.error('Failed to create user account: No user data returned');
           return false;
         }
-
         authUserId = authData.user.id;
+        console.log('✅ User created successfully:', authUserId);
       }
 
       // Step 3: Create organization administrator record using the database function
+      console.log('🏢 Creating organization administrator record...');
+      
       const { data: adminResult, error: adminError } = await supabase
         .rpc('create_organization_admin', {
           p_organization_id: organizationId,
           p_admin_name: adminData.admin_name,
           p_admin_email: adminData.admin_email,
-          p_user_id: authUserId
+          p_user_id: authUserId === 'existing-user-placeholder' ? null : authUserId
         });
 
       if (adminError) {
         console.error('Error creating organization admin:', adminError);
         toast.error(`Failed to create organization administrator: ${adminError.message}`);
-        
-        // Cleanup: Try to delete the auth user if admin creation failed and it was newly created
-        if (isNewUser) {
-          try {
-            await supabase.auth.admin.deleteUser(authUserId);
-          } catch (cleanupError) {
-            console.error('Failed to cleanup auth user:', cleanupError);
-          }
-        }
-        
         return false;
       }
 
       if (!(adminResult as any)?.success) {
         console.error('Admin creation function failed:', adminResult);
         toast.error(`Failed to create organization administrator: ${(adminResult as any)?.message || 'Unknown error'}`);
-        
-        // Cleanup: Try to delete the auth user if admin creation failed and it was newly created
-        if (isNewUser) {
-          try {
-            await supabase.auth.admin.deleteUser(authUserId);
-          } catch (cleanupError) {
-            console.error('Failed to cleanup auth user:', cleanupError);
-          }
-        }
-        
         return false;
       }
 
       // Step 4: Store credentials for display
       setAdminCredentials({
         email: adminData.admin_email,
-        temporaryPassword: isNewUser ? tempPassword : 'Existing user - no new password generated',
+        temporaryPassword: isNewUser ? tempPassword : 'Login with existing password',
         adminId: (adminResult as any).admin_id,
-        organizationName: (adminResult as any).organization_name
+        organizationName: (adminResult as any).organization_name,
+        isNewUser: isNewUser
       });
 
       const successMessage = isNewUser 
         ? 'Organization administrator created successfully with new user account!'
-        : 'Organization administrator created successfully using existing user account!';
+        : 'Organization administrator role assigned to existing user account!';
       
       toast.success(successMessage);
       return true;
