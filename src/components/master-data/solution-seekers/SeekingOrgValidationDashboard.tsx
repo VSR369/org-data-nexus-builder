@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,7 @@ import AdminCreationDialog from './AdminCreationDialog';
 import SeekerCard from './SeekerCard';
 import type { SeekerDetails } from './types';
 import { useSeekerValidation } from './hooks/useSeekerValidation';
+import { useValidationWorkflow } from '../organization-validation/hooks/useValidationWorkflow';
 
 const SeekingOrgValidationDashboard: React.FC = () => {
   const isMobile = useIsMobile();
@@ -48,6 +48,9 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     downloadSeekersData,
     getUpdatedSeeker
   } = useSeekerValidation();
+
+  // Validation workflow hook for proper document validation
+  const validationWorkflow = useValidationWorkflow(selectedSeekerForAction?.organizationId || '');
 
   // Handle seeker updates from the dialog
   const handleSeekerUpdate = (updatedSeeker: SeekerDetails) => {
@@ -114,14 +117,54 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     setDialogOpen(true);
   };
 
-  // Document validation handler
+  // Document validation handler using proper validation workflow
   const handleDocumentValidation = async (seekerId: string, status: 'approved' | 'rejected', reason: string) => {
     try {
-      await handleApproval(seekerId, status, reason);
-      setDocumentValidationOpen(false);
-      setSelectedSeekerForAction(null);
+      const seeker = seekers.find(s => s.id === seekerId);
+      if (!seeker) {
+        throw new Error('Seeker not found');
+      }
+
+      console.log('🔍 Starting document validation for:', seeker.organizationId, 'status:', status);
+      
+      // Map frontend status to validation system action types
+      const validationStatus = status === 'approved' ? 'valid' : 'invalid';
+      const actionType = status === 'approved' ? 'marked_valid' : 'marked_invalid';
+      
+      // Use the validation workflow to update document validation status
+      const success = await validationWorkflow.updateValidationStatus({
+        type: 'document',
+        status: validationStatus,
+        reason: reason
+      });
+
+      if (success) {
+        console.log('✅ Document validation successful');
+        
+        // Update local seeker data to reflect the validation
+        const updatedSeekers = seekers.map(s => 
+          s.id === seekerId 
+            ? { 
+                ...s, 
+                approvalStatus: status === 'approved' ? 'approved' : 'rejected',
+                validationNotes: reason 
+              }
+            : s
+        );
+        setSeekers(updatedSeekers);
+        
+        // Close the dialog
+        setDocumentValidationOpen(false);
+        setSelectedSeekerForAction(null);
+        
+        // Refresh data to get latest status
+        refreshSeekers();
+      } else {
+        throw new Error('Document validation failed');
+      }
     } catch (error) {
-      console.error('Error in document validation:', error);
+      console.error('❌ Error in document validation:', error);
+      throw error; // Let the dialog handle the error display
     }
   };
 
@@ -131,15 +174,28 @@ const SeekingOrgValidationDashboard: React.FC = () => {
       const seeker = seekers.find(s => s.id === seekerId);
       if (!seeker) throw new Error('Seeker not found');
       
-      const result = await handleCreateAdmin(seeker);
-      // Return mock credentials for now - this should come from the actual API
-      return {
-        email: adminEmail,
-        password: 'TempPass123!', // This should come from the API
-        userId: 'admin-' + Date.now() // This should come from the API
-      };
+      console.log('🔐 Starting admin creation for:', seeker.organizationId);
+      
+      // Use validation workflow to create administrator
+      const success = await validationWorkflow.createAdministrator({
+        admin_name: adminName,
+        admin_email: adminEmail
+      });
+      
+      if (success && validationWorkflow.adminCredentials) {
+        console.log('✅ Admin creation successful');
+        
+        // Close dialog and refresh data
+        setAdminCreationOpen(false);
+        setSelectedSeekerForAction(null);
+        refreshSeekers();
+        
+        return validationWorkflow.adminCredentials;
+      } else {
+        throw new Error('Admin creation failed');
+      }
     } catch (error) {
-      console.error('Error creating admin:', error);
+      console.error('❌ Error creating admin:', error);
       return null;
     }
   };
@@ -283,7 +339,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           onOpenChange={setDocumentValidationOpen}
           seeker={selectedSeekerForAction}
           onValidate={handleDocumentValidation}
-          processing={!!processing.processingApproval}
+          processing={validationWorkflow.loading}
         />
       )}
 
@@ -294,7 +350,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           onOpenChange={setAdminCreationOpen}
           seeker={selectedSeekerForAction}
           onCreateAdmin={handleAdminCreation}
-          processing={!!processing.processingAdmin}
+          processing={validationWorkflow.loading}
         />
       )}
 

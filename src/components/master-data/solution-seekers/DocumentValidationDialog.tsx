@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, FileText, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { SeekerDetails } from './types';
 
 interface DocumentValidationDialogProps {
@@ -24,23 +25,31 @@ const DocumentValidationDialog: React.FC<DocumentValidationDialogProps> = ({
   processing
 }) => {
   const [validationComments, setValidationComments] = useState('');
-  const [validationAction, setValidationAction] = useState<'approved' | 'rejected' | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleValidation = async (action: 'approved' | 'rejected') => {
     if (action === 'rejected' && !validationComments.trim()) {
-      alert('Please provide comments when rejecting documents');
+      toast.error('Please provide comments when rejecting documents');
       return;
     }
 
-    await onValidate(
-      seeker.id, 
-      action, 
-      validationComments.trim() || `Documents ${action} for ${seeker.organizationName}`
-    );
-    
-    setValidationComments('');
-    setValidationAction(null);
-    onOpenChange(false);
+    setIsSubmitting(true);
+    try {
+      await onValidate(
+        seeker.id, 
+        action, 
+        validationComments.trim() || `Documents ${action} for ${seeker.organizationName}`
+      );
+      
+      toast.success(`Documents ${action} successfully`);
+      setValidationComments('');
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Document validation error:', error);
+      toast.error(`Failed to ${action} documents: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isNonCommercial = ['Non-Profit Organization', 'Society', 'Trust'].includes(seeker.entityType);
@@ -127,6 +136,7 @@ const DocumentValidationDialog: React.FC<DocumentValidationDialogProps> = ({
               value={validationComments}
               onChange={(e) => setValidationComments(e.target.value)}
               rows={4}
+              disabled={processing || isSubmitting}
             />
             <p className="text-xs text-muted-foreground">
               These comments will be recorded in the audit log and may be shared with the organization.
@@ -137,20 +147,28 @@ const DocumentValidationDialog: React.FC<DocumentValidationDialogProps> = ({
           <div className="flex gap-3 pt-4 border-t">
             <Button 
               onClick={() => handleValidation('approved')}
-              disabled={processing}
+              disabled={processing || isSubmitting}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Approve Documents
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              {isSubmitting ? 'Processing...' : 'Mark Valid'}
             </Button>
             <Button 
               onClick={() => handleValidation('rejected')}
-              disabled={processing || !validationComments.trim()}
+              disabled={processing || isSubmitting || !validationComments.trim()}
               variant="destructive"
               className="flex-1"
             >
-              <XCircle className="h-4 w-4 mr-2" />
-              Reject Documents
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              {isSubmitting ? 'Processing...' : 'Mark Invalid'}
             </Button>
           </div>
 
