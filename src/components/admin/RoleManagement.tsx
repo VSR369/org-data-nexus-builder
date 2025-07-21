@@ -254,7 +254,6 @@ export function RoleManagement() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleEditRole(role)}
-                      disabled={editingRole !== null || showAddForm}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -262,7 +261,6 @@ export function RoleManagement() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleDeleteRole(role.id, role.name)}
-                      disabled={editingRole !== null || showAddForm}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
