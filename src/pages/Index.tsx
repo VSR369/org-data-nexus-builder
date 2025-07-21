@@ -1,16 +1,71 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Shield } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Shield, Mail, Lock, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   console.log('Index page is rendering...');
   const { isAuthenticated, user, profile, signOut, loading } = useSupabaseAuth();
+  const { toast } = useToast();
+  
+  // Login form state
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: ''
+  });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginForm.email,
+        password: loginForm.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in to your organization account.",
+        });
+        setShowLoginForm(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Sign In Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setLoginForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // If user is authenticated, redirect them to their dashboard
@@ -64,8 +119,30 @@ const Index = () => {
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Welcome back, {profile.contact_person_name}!
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-              You are signed in to {profile.organization_name}. Access your organization dashboard to manage your account and view all features.
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-3xl mx-auto mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-2">Organization Details</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Organization:</span> {profile.organization_name}</p>
+                    <p><span className="font-medium">Type:</span> {profile.organization_type}</p>
+                    <p><span className="font-medium">Entity:</span> {profile.entity_type}</p>
+                    <p><span className="font-medium">Industry:</span> {profile.industry_segment}</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-2">Contact Information</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Contact Person:</span> {profile.contact_person_name}</p>
+                    <p><span className="font-medium">Country:</span> {profile.country}</p>
+                    <p><span className="font-medium">Phone:</span> {profile.phone_number}</p>
+                    <p><span className="font-medium">Organization ID:</span> {profile.custom_user_id}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+              Access your organization dashboard to manage your account, post challenges, and view all available features.
             </p>
             <Link to="/organization-dashboard">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
@@ -222,17 +299,93 @@ const Index = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <Link to="/organization-registration" className="w-full block">
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                      Register Organization
-                    </Button>
-                  </Link>
-                  <Link to="/organization-signin" className="w-full block">
-                    <Button variant="outline" className="w-full">
-                      Sign In Organization
-                    </Button>
-                  </Link>
+                <div className="space-y-4">
+                  {!showLoginForm ? (
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={() => setShowLoginForm(true)}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Mail className="mr-2 h-4 w-4" />
+                        Sign In to Organization
+                      </Button>
+                      <Link to="/organization-registration" className="w-full block">
+                        <Button variant="outline" className="w-full">
+                          Register New Organization
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-blue-900 mb-3 text-center">
+                          Organization Sign In
+                        </h4>
+                        <form onSubmit={handleLoginSubmit} className="space-y-3">
+                          <div>
+                            <Label htmlFor="email" className="text-sm font-medium">
+                              Email Address
+                            </Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={loginForm.email}
+                              onChange={(e) => handleInputChange('email', e.target.value)}
+                              placeholder="Enter your email"
+                              required
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="password" className="text-sm font-medium">
+                              Password
+                            </Label>
+                            <Input
+                              id="password"
+                              type="password"
+                              value={loginForm.password}
+                              onChange={(e) => handleInputChange('password', e.target.value)}
+                              placeholder="Enter your password"
+                              required
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="flex space-x-2 pt-2">
+                            <Button
+                              type="submit"
+                              disabled={loginLoading}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                              {loginLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Signing In...
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="mr-2 h-4 w-4" />
+                                  Sign In
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setShowLoginForm(false)}
+                              className="px-4"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
+                      <Link to="/organization-registration" className="w-full block">
+                        <Button variant="outline" className="w-full text-sm">
+                          Don't have an account? Register Organization
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
