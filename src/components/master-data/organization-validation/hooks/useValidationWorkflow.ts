@@ -114,14 +114,16 @@ export const useValidationWorkflow = (organizationId: string) => {
       
       console.log('🔐 Creating Supabase Auth user for admin:', adminData.admin_email);
       
-      // Create Supabase Auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create Supabase Auth user using signUp for dev/testing
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: adminData.admin_email,
         password: tempPassword,
-        email_confirm: true, // Skip email confirmation for dev mode
-        user_metadata: {
-          admin_name: adminData.admin_name,
-          organization_id: organizationId
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            admin_name: adminData.admin_name,
+            organization_id: organizationId
+          }
         }
       });
 
