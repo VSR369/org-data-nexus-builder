@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,15 @@ export default function OrgAdminLogin() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   
-  const { loginOrgAdmin, loading } = useOrgAdminAuth();
+  const { loginOrgAdmin, loading, isAuthenticated, authInitialized } = useOrgAdminAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (authInitialized && isAuthenticated) {
+      console.log('✅ Already authenticated, redirecting to dashboard...');
+      navigate('/org-admin-dashboard');
+    }
+  }, [authInitialized, isAuthenticated, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +46,8 @@ export default function OrgAdminLogin() {
         console.log('✅ Login successful, navigating to dashboard...');
         toast.success('Successfully signed in! Redirecting to dashboard...');
         
-        // Small delay to ensure auth state is fully updated
-        setTimeout(() => {
-          navigate('/org-admin-dashboard');
-        }, 500);
+        // Navigate immediately since auth state will be updated
+        navigate('/org-admin-dashboard');
       } else {
         console.log('❌ Login failed');
         setError('Login failed. Please check your credentials.');

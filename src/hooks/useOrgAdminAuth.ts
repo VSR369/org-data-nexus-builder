@@ -21,6 +21,7 @@ interface UseOrgAdminAuthReturn {
   organizationData: OrganizationData | null;
   isAuthenticated: boolean;
   loading: boolean;
+  authInitialized: boolean;
   loginOrgAdmin: (email: string, password: string) => Promise<boolean>;
   logoutOrgAdmin: () => Promise<void>;
   getCurrentOrgAdmin: () => Promise<void>;
@@ -30,8 +31,9 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
   const [orgAdmin, setOrgAdmin] = useState<OrgAdmin | null>(null);
   const [organizationData, setOrganizationData] = useState<OrganizationData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-  const isAuthenticated = !!orgAdmin;
+  const isAuthenticated = !!orgAdmin && authInitialized;
 
   const fetchOrgAdminData = async (userId: string) => {
     try {
@@ -46,6 +48,8 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
 
       if (adminError || !adminData) {
         console.error('❌ Error fetching admin data:', adminError);
+        setOrgAdmin(null);
+        setOrganizationData(null);
         return null;
       }
 
@@ -62,6 +66,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
       if (orgError) {
         console.error('❌ Error fetching organization data:', orgError);
         toast.error('Failed to load organization details');
+        setOrganizationData(null);
       } else if (orgData) {
         console.log('✅ Organization data fetched successfully:', orgData);
         setOrganizationData(orgData);
@@ -70,6 +75,8 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
       return adminData;
     } catch (error) {
       console.error('❌ Error in fetchOrgAdminData:', error);
+      setOrgAdmin(null);
+      setOrganizationData(null);
       return null;
     }
   };
@@ -105,6 +112,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         }
 
         console.log('✅ Org admin verification successful');
+        setAuthInitialized(true);
         toast.success('Successfully signed in!');
         return true;
       }
@@ -125,6 +133,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
       await supabase.auth.signOut();
       setOrgAdmin(null);
       setOrganizationData(null);
+      setAuthInitialized(false);
       toast.success('Successfully signed out');
     } catch (error) {
       console.error('❌ Logout error:', error);
@@ -141,12 +150,17 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
       
       if (user) {
         console.log('✅ Found existing user session:', user.id);
-        await fetchOrgAdminData(user.id);
+        const adminData = await fetchOrgAdminData(user.id);
+        if (adminData) {
+          setAuthInitialized(true);
+        }
       } else {
         console.log('ℹ️ No existing user session found');
+        setAuthInitialized(true); // Mark as initialized even if no user
       }
     } catch (error) {
       console.error('❌ Error getting current admin:', error);
+      setAuthInitialized(true); // Mark as initialized even on error
     } finally {
       setLoading(false);
     }
@@ -162,11 +176,15 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('✅ User signed in, fetching admin data...');
-          await fetchOrgAdminData(session.user.id);
+          const adminData = await fetchOrgAdminData(session.user.id);
+          if (adminData) {
+            setAuthInitialized(true);
+          }
         } else if (event === 'SIGNED_OUT') {
           console.log('🚪 User signed out, clearing admin data...');
           setOrgAdmin(null);
           setOrganizationData(null);
+          setAuthInitialized(true);
         }
         setLoading(false);
       }
@@ -186,6 +204,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
     organizationData,
     isAuthenticated,
     loading,
+    authInitialized,
     loginOrgAdmin,
     logoutOrgAdmin,
     getCurrentOrgAdmin,

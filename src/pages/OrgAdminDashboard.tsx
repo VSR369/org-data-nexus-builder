@@ -11,19 +11,26 @@ import { toast } from 'sonner';
 
 export default function OrgAdminDashboard() {
   const navigate = useNavigate();
-  const { orgAdmin, organizationData, isAuthenticated, loading, logoutOrgAdmin } = useOrgAdminAuth();
+  const { orgAdmin, organizationData, isAuthenticated, loading, authInitialized, logoutOrgAdmin } = useOrgAdminAuth();
 
   useEffect(() => {
-    console.log('🔍 Dashboard useEffect - Auth state:', { isAuthenticated, loading, orgAdmin: !!orgAdmin, organizationData: !!organizationData });
+    console.log('🔍 Dashboard useEffect - Auth state:', { 
+      isAuthenticated, 
+      loading, 
+      authInitialized,
+      orgAdmin: !!orgAdmin, 
+      organizationData: !!organizationData 
+    });
     
-    if (!loading && !isAuthenticated) {
-      console.log('❌ Not authenticated, redirecting to login...');
+    // Only redirect if auth is initialized and user is not authenticated
+    if (authInitialized && !loading && !isAuthenticated) {
+      console.log('❌ Not authenticated after initialization, redirecting to login...');
       navigate('/org-admin-login');
     } else if (isAuthenticated && orgAdmin && organizationData) {
       console.log('✅ Authenticated and data loaded successfully');
       toast.success(`Welcome back, ${orgAdmin.admin_name}!`);
     }
-  }, [isAuthenticated, loading, navigate, orgAdmin, organizationData]);
+  }, [isAuthenticated, loading, authInitialized, navigate, orgAdmin, organizationData]);
 
   const handleSignOut = async () => {
     console.log('🚪 Signing out org admin...');
@@ -31,17 +38,21 @@ export default function OrgAdminDashboard() {
     navigate('/');
   };
 
-  if (loading) {
+  // Show loading while auth is initializing
+  if (!authInitialized || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-muted-foreground">
+            {!authInitialized ? 'Initializing authentication...' : 'Loading dashboard...'}
+          </p>
         </div>
       </div>
     );
   }
 
+  // Show access required if not authenticated after initialization
   if (!isAuthenticated || !orgAdmin || !organizationData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
