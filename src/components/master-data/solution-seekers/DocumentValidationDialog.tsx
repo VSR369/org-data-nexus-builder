@@ -13,7 +13,7 @@ interface DocumentValidationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   seeker: SeekerDetails;
-  onValidate: (seekerId: string, status: 'approved' | 'rejected', reason: string) => Promise<void>;
+  onValidate: (seekerId: string, status: 'valid' | 'invalid', reason: string) => Promise<void>;
   processing: boolean;
 }
 
@@ -35,9 +35,12 @@ const DocumentValidationDialog: React.FC<DocumentValidationDialogProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Map frontend action to database status
+      const validationStatus = action === 'approved' ? 'valid' : 'invalid';
+      
       await onValidate(
         seeker.id, 
-        action, 
+        validationStatus, 
         validationComments.trim() || `Documents ${action} for ${seeker.organizationName}`
       );
       

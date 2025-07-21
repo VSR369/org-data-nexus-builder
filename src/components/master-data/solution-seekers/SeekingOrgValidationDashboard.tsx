@@ -118,7 +118,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
   };
 
   // Document validation handler using proper validation workflow
-  const handleDocumentValidation = async (seekerId: string, status: 'approved' | 'rejected', reason: string) => {
+  const handleDocumentValidation = async (seekerId: string, status: 'valid' | 'invalid', reason: string) => {
     try {
       const seeker = seekers.find(s => s.id === seekerId);
       if (!seeker) {
@@ -127,14 +127,10 @@ const SeekingOrgValidationDashboard: React.FC = () => {
 
       console.log('🔍 Starting document validation for:', seeker.organizationId, 'status:', status);
       
-      // Map frontend status to validation system action types
-      const validationStatus = status === 'approved' ? 'valid' : 'invalid';
-      const actionType = status === 'approved' ? 'marked_valid' : 'marked_invalid';
-      
       // Use the validation workflow to update document validation status
       const success = await validationWorkflow.updateValidationStatus({
         type: 'document',
-        status: validationStatus,
+        status: status,
         reason: reason
       });
 
@@ -146,7 +142,7 @@ const SeekingOrgValidationDashboard: React.FC = () => {
           s.id === seekerId 
             ? { 
                 ...s, 
-                approvalStatus: (status === 'approved' ? 'approved' : 'rejected') as 'approved' | 'rejected',
+                approvalStatus: (status === 'valid' ? 'approved' : 'rejected') as 'approved' | 'rejected',
                 validationNotes: reason 
               }
             : s
