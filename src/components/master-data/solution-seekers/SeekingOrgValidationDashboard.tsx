@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +12,15 @@ import {
   DollarSign,
   Eye,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  CheckSquare
 } from 'lucide-react';
 import ViewDetailsDialog from './ViewDetailsDialog';
 import ComprehensiveOrgView from './components/ComprehensiveOrgView';
 import ValidationCenter from './components/ValidationCenter';
+import ValidationWorkflowTab from './ValidationWorkflowTab';
+import DocumentValidationDialog from './DocumentValidationDialog';
+import AdminCreationDialog from './AdminCreationDialog';
 import SeekerCard from './SeekerCard';
 import type { SeekerDetails } from './types';
 import { useSeekerValidation } from './hooks/useSeekerValidation';
@@ -25,6 +30,9 @@ const SeekingOrgValidationDashboard: React.FC = () => {
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [selectedSeeker, setSelectedSeeker] = useState<SeekerDetails | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [documentValidationOpen, setDocumentValidationOpen] = useState(false);
+  const [adminCreationOpen, setAdminCreationOpen] = useState(false);
+  const [selectedSeekerForAction, setSelectedSeekerForAction] = useState<SeekerDetails | null>(null);
   
   const {
     seekers,
@@ -67,7 +75,6 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     }
   }, [seekers, selectedSeeker, dialogOpen, getUpdatedSeeker]);
 
-
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [selectedSeekerForRejection, setSelectedSeekerForRejection] = useState<SeekerDetails | null>(null);
 
@@ -91,6 +98,48 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     setRejectionDialogOpen(true);
   };
 
+  // New handlers for validation workflow
+  const handleValidateDocuments = (seeker: SeekerDetails) => {
+    setSelectedSeekerForAction(seeker);
+    setDocumentValidationOpen(true);
+  };
+
+  const handleCreateAdminAction = (seeker: SeekerDetails) => {
+    setSelectedSeekerForAction(seeker);
+    setAdminCreationOpen(true);
+  };
+
+  const handleViewDetails = (seeker: SeekerDetails) => {
+    setSelectedSeeker(seeker);
+    setDialogOpen(true);
+  };
+
+  // Document validation handler
+  const handleDocumentValidation = async (seekerId: string, status: 'approved' | 'rejected', reason: string) => {
+    try {
+      await handleApproval(seekerId, status, reason);
+      setDocumentValidationOpen(false);
+      setSelectedSeekerForAction(null);
+    } catch (error) {
+      console.error('Error in document validation:', error);
+    }
+  };
+
+  // Admin creation handler with credentials return
+  const handleAdminCreation = async (seekerId: string, adminName: string, adminEmail: string) => {
+    try {
+      const result = await handleCreateAdmin(seekerId, adminName, adminEmail);
+      // Return mock credentials for now - this should come from the actual API
+      return {
+        email: adminEmail,
+        password: 'TempPass123!', // This should come from the API
+        userId: 'admin-' + Date.now() // This should come from the API
+      };
+    } catch (error) {
+      console.error('Error creating admin:', error);
+      return null;
+    }
+  };
 
   const approvalHandlers = {
     onApproval: handleApproval,
@@ -98,7 +147,6 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     onReapprove: handleReapprove,
     onCreateAdmin: handleCreateAdmin
   };
-
 
   if (loading) {
     return (
@@ -149,8 +197,12 @@ const SeekingOrgValidationDashboard: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="organizations" className="w-full">
-        <TabsList className={`grid w-full grid-cols-3 ${isMobile ? "text-xs" : ""}`}>
+      <Tabs defaultValue="validation-workflow" className="w-full">
+        <TabsList className={`grid w-full grid-cols-4 ${isMobile ? "text-xs" : ""}`}>
+          <TabsTrigger value="validation-workflow" className={isMobile ? "text-xs px-2" : ""}>
+            <CheckSquare className="h-4 w-4 mr-1" />
+            {isMobile ? "Workflow" : "Validation Workflow"}
+          </TabsTrigger>
           <TabsTrigger value="organizations" className={isMobile ? "text-xs px-2" : ""}>
             {isMobile ? "Orgs" : "Organizations"}
           </TabsTrigger>
@@ -158,9 +210,20 @@ const SeekingOrgValidationDashboard: React.FC = () => {
             {isMobile ? "Details" : "Comprehensive View"}
           </TabsTrigger>
           <TabsTrigger value="validation" className={isMobile ? "text-xs px-2" : ""}>
-            {isMobile ? "Validation" : "Validation Center"}
+            {isMobile ? "Stats" : "Validation Center"}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="validation-workflow" className="space-y-4">
+          <ValidationWorkflowTab
+            seekers={seekers}
+            onValidateDocuments={handleValidateDocuments}
+            onCreateAdmin={handleCreateAdminAction}
+            onViewDetails={handleViewDetails}
+            onRefresh={refreshSeekers}
+            isMobile={isMobile}
+          />
+        </TabsContent>
 
         <TabsContent value="organizations" className="space-y-4">
           <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6`}>
@@ -210,6 +273,28 @@ const SeekingOrgValidationDashboard: React.FC = () => {
         )}
       </Dialog>
 
+      {/* Document Validation Dialog */}
+      {selectedSeekerForAction && (
+        <DocumentValidationDialog
+          open={documentValidationOpen}
+          onOpenChange={setDocumentValidationOpen}
+          seeker={selectedSeekerForAction}
+          onValidate={handleDocumentValidation}
+          processing={processing}
+        />
+      )}
+
+      {/* Admin Creation Dialog */}
+      {selectedSeekerForAction && (
+        <AdminCreationDialog
+          open={adminCreationOpen}
+          onOpenChange={setAdminCreationOpen}
+          seeker={selectedSeekerForAction}
+          onCreateAdmin={handleAdminCreation}
+          processing={processing}
+        />
+      )}
+
       {/* Rejection Dialog */}
       {selectedSeekerForRejection && (
         <RejectionDialog
@@ -222,6 +307,5 @@ const SeekingOrgValidationDashboard: React.FC = () => {
     </div>
   );
 };
-
 
 export default SeekingOrgValidationDashboard;
