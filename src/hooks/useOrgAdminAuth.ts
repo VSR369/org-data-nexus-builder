@@ -36,45 +36,63 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
   const isAuthenticated = !!orgAdmin && authInitialized;
 
   const fetchOrgAdminData = async (userId: string) => {
+    let adminData = null;
+    
     try {
       console.log('🔍 Fetching org admin data for user:', userId);
       
-      // Get organization administrator record from simplified org_admins table
-      const { data: adminData, error: adminError } = await supabase
+      // Get organization administrator record with safer query method
+      const { data: adminQueryData, error: adminError } = await supabase
         .from('org_admins')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid exceptions
 
-      if (adminError || !adminData) {
+      if (adminError) {
         console.error('❌ Error fetching admin data:', adminError);
         setOrgAdmin(null);
         setOrganizationData(null);
         return null;
       }
 
-      console.log('✅ Admin data fetched successfully:', adminData);
+      if (!adminQueryData) {
+        console.log('ℹ️ No admin record found for user:', userId);
+        setOrgAdmin(null);
+        setOrganizationData(null);
+        return null;
+      }
+
+      console.log('✅ Admin data fetched successfully:', adminQueryData);
+      adminData = adminQueryData;
       setOrgAdmin(adminData);
 
-      // Get organization comprehensive data
-      const { data: orgData, error: orgError } = await supabase
-        .from('solution_seekers_comprehensive_view')
-        .select('*')
-        .eq('organization_id', adminData.organization_id)
-        .single();
+      // Get organization comprehensive data with safer query method
+      try {
+        const { data: orgData, error: orgError } = await supabase
+          .from('solution_seekers_comprehensive_view')
+          .select('*')
+          .eq('organization_id', adminData.organization_id)
+          .maybeSingle(); // Use maybeSingle instead of single
 
-      if (orgError) {
-        console.error('❌ Error fetching organization data:', orgError);
-        toast.error('Failed to load organization details');
+        if (orgError) {
+          console.error('❌ Error fetching organization data:', orgError);
+          toast.error('Failed to load organization details');
+          setOrganizationData(null);
+        } else if (orgData) {
+          console.log('✅ Organization data fetched successfully:', orgData);
+          setOrganizationData(orgData);
+        } else {
+          console.log('ℹ️ No organization data found for ID:', adminData.organization_id);
+          setOrganizationData(null);
+        }
+      } catch (orgError) {
+        console.error('❌ Exception fetching organization data:', orgError);
         setOrganizationData(null);
-      } else if (orgData) {
-        console.log('✅ Organization data fetched successfully:', orgData);
-        setOrganizationData(orgData);
       }
 
       return adminData;
     } catch (error) {
-      console.error('❌ Error in fetchOrgAdminData:', error);
+      console.error('❌ Exception in fetchOrgAdminData:', error);
       setOrgAdmin(null);
       setOrganizationData(null);
       return null;
@@ -98,26 +116,28 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         return false;
       }
 
-      if (data.user) {
-        console.log('✅ Auth login successful, user ID:', data.user.id);
-        
-        // Verify this user is an organization administrator
-        const adminData = await fetchOrgAdminData(data.user.id);
-        
-        if (!adminData) {
-          console.error('❌ User is not an org admin, signing out...');
-          await supabase.auth.signOut();
-          toast.error('This account is not authorized as an organization administrator');
-          return false;
-        }
-
-        console.log('✅ Org admin verification successful');
-        setAuthInitialized(true);
-        toast.success('Successfully signed in!');
-        return true;
+      if (!data.user) {
+        console.error('❌ No user data returned from auth');
+        toast.error('Authentication failed');
+        return false;
       }
 
-      return false;
+      console.log('✅ Auth login successful, user ID:', data.user.id);
+      
+      // Verify this user is an organization administrator
+      const adminData = await fetchOrgAdminData(data.user.id);
+      
+      if (!adminData) {
+        console.error('❌ User is not an org admin, signing out...');
+        await supabase.auth.signOut();
+        toast.error('This account is not authorized as an organization administrator');
+        return false;
+      }
+
+      console.log('✅ Org admin verification successful');
+      setAuthInitialized(true);
+      toast.success('Successfully signed in!');
+      return true;
     } catch (error) {
       console.error('❌ Login error:', error);
       toast.error('An unexpected error occurred during login');
@@ -225,7 +245,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         setAuthInitialized(true);
         setLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 10000); // 10 second timeout
 
     return () => {
       console.log('🧹 Cleaning up org admin auth subscription...');
