@@ -152,15 +152,19 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         console.log('✅ Found existing user session:', user.id);
         const adminData = await fetchOrgAdminData(user.id);
         if (adminData) {
+          console.log('✅ Admin verification successful, setting authInitialized to true');
+          setAuthInitialized(true);
+        } else {
+          console.log('❌ User is not an admin, setting authInitialized to true');
           setAuthInitialized(true);
         }
       } else {
-        console.log('ℹ️ No existing user session found');
-        setAuthInitialized(true); // Mark as initialized even if no user
+        console.log('ℹ️ No existing user session found, setting authInitialized to true');
+        setAuthInitialized(true);
       }
     } catch (error) {
       console.error('❌ Error getting current admin:', error);
-      setAuthInitialized(true); // Mark as initialized even on error
+      setAuthInitialized(true); // Always set to true even on error
     } finally {
       setLoading(false);
     }
@@ -169,33 +173,60 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
   useEffect(() => {
     console.log('🚀 Setting up org admin auth state listener...');
     
+    let mounted = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Auth state change:', event, session?.user?.id);
         
+        if (!mounted) return;
+        
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('✅ User signed in, fetching admin data...');
           const adminData = await fetchOrgAdminData(session.user.id);
-          if (adminData) {
-            setAuthInitialized(true);
+          if (mounted) {
+            if (adminData) {
+              console.log('✅ Setting authInitialized to true after successful admin fetch');
+              setAuthInitialized(true);
+            } else {
+              console.log('❌ Not an admin, but setting authInitialized to true');
+              setAuthInitialized(true);
+            }
+            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           console.log('🚪 User signed out, clearing admin data...');
-          setOrgAdmin(null);
-          setOrganizationData(null);
-          setAuthInitialized(true);
+          if (mounted) {
+            setOrgAdmin(null);
+            setOrganizationData(null);
+            setAuthInitialized(true);
+            setLoading(false);
+          }
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('🔄 Token refreshed');
+          // Don't change auth state for token refresh
         }
-        setLoading(false);
       }
     );
 
-    // Check for existing session
+    // Check for existing session after setting up listener
     getCurrentOrgAdmin();
+
+    // Add timeout fallback to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (mounted && !authInitialized) {
+        console.log('⏰ Auth initialization timeout, forcing initialization');
+        setAuthInitialized(true);
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
 
     return () => {
       console.log('🧹 Cleaning up org admin auth subscription...');
+      mounted = false;
       subscription.unsubscribe();
+      clearTimeout(timeoutId);
     };
   }, []);
 
