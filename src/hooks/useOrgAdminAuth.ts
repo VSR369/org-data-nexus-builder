@@ -123,6 +123,8 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
       toast.error('An unexpected error occurred during login');
       return false;
     } finally {
+      // Always reset loading state regardless of success or failure
+      console.log('🔄 Resetting loading state after login attempt');
       setLoading(false);
     }
   };
@@ -130,6 +132,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
   const logoutOrgAdmin = async () => {
     try {
       console.log('🚪 Logging out org admin...');
+      setLoading(true);
       await supabase.auth.signOut();
       setOrgAdmin(null);
       setOrganizationData(null);
@@ -138,6 +141,8 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
     } catch (error) {
       console.error('❌ Logout error:', error);
       toast.error('Error signing out');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,7 +188,7 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
         if (!mounted) return;
         
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('✅ User signed in, fetching admin data...');
+          console.log('✅ User signed in via auth state change, fetching admin data...');
           const adminData = await fetchOrgAdminData(session.user.id);
           if (mounted) {
             if (adminData) {
@@ -193,10 +198,10 @@ export const useOrgAdminAuth = (): UseOrgAdminAuthReturn => {
               console.log('❌ Not an admin, but setting authInitialized to true');
               setAuthInitialized(true);
             }
-            setLoading(false);
+            // Don't reset loading here as it's managed by login function
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log('🚪 User signed out, clearing admin data...');
+          console.log('🚪 User signed out via auth state change, clearing admin data...');
           if (mounted) {
             setOrgAdmin(null);
             setOrganizationData(null);
