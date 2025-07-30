@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import MasterDataContent from "@/components/MasterDataContent";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Database, RefreshCw } from "lucide-react";
+import { ArrowLeft, Database, RefreshCw, Download } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { MasterDataSeeder } from "@/utils/masterDataSeeder";
 import { MasterDataRestorer } from "@/utils/masterDataRestorer";
@@ -69,6 +69,48 @@ const MasterDataPortal = () => {
       
       // Show what's available
       console.log('📋 Available storage keys:', Object.keys(localStorage).filter(k => k.startsWith('master_data_')));
+    }
+  };
+
+  // Restore all master data from Supabase
+  const restoreAllMasterData = async () => {
+    try {
+      console.log('🔄 Starting comprehensive master data restoration from Supabase...');
+      
+      toast({
+        title: "Restoring Master Data",
+        description: "Fetching all master data from Supabase...",
+      });
+
+      // Import and run the enhanced restoration processor
+      const { MasterDataRestoreProcessor } = await import('@/utils/masterDataRestoreProcessor');
+      
+      // Restore all custom data
+      const restorationResult = await MasterDataRestoreProcessor.restoreAllCustomData();
+      
+      // Validate data integrity
+      const healthReport = await MasterDataRestoreProcessor.validateCustomDataIntegrity();
+      
+      console.log('✅ Master data restoration completed:', restorationResult);
+      console.log('📊 Data health report:', healthReport);
+      
+      toast({
+        title: "Restoration Complete",
+        description: "All master data has been restored from Supabase successfully.",
+      });
+      
+      // Refresh the page to ensure all components use the restored data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error) {
+      console.error('❌ Error during master data restoration:', error);
+      toast({
+        title: "Restoration Failed",
+        description: "Failed to restore master data from Supabase.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -195,6 +237,17 @@ const MasterDataPortal = () => {
                       <span className="hidden lg:inline text-xs lg:text-sm">Restore Custom Data</span>
                       <span className="hidden sm:inline lg:hidden text-xs">Restore Data</span>
                       <span className="sm:hidden text-xs">Restore</span>
+                    </Button>
+                    <Button
+                      onClick={restoreAllMasterData}
+                      variant="default" 
+                      size="sm" 
+                      className="flex items-center gap-1 sm:gap-2 px-2 lg:px-3"
+                    >
+                      <Download className="h-3 w-3 lg:h-4 lg:w-4" />
+                      <span className="hidden lg:inline text-xs lg:text-sm">Restore All Data</span>
+                      <span className="hidden sm:inline lg:hidden text-xs">Restore All</span>
+                      <span className="sm:hidden text-xs">All</span>
                     </Button>
                     {/* Mobile menu for first button */}
                     <Button
