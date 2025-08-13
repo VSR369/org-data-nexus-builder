@@ -15,7 +15,7 @@ import OrganizationSignIn from "./pages/OrganizationSignIn";
 import OrganizationDashboard from "./pages/OrganizationDashboard";
 import OrgAdminLogin from "./pages/OrgAdminLogin";
 import OrgAdminDashboard from "./pages/OrgAdminDashboard";
-
+import CogniblendEmbed from "./pages/CogniblendEmbed";
 const queryClient = new QueryClient();
 
 function App() {
@@ -32,6 +32,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/contributor-auth" element={<ContributorAuth />} />
+              <Route path="/cogniblend" element={<CogniblendEmbed />} />
               
               <Route path="/master-data" element={<Navigate to="/master-data-portal" replace />} />
               <Route path="/master-data-portal" element={<MasterDataPortal />} />

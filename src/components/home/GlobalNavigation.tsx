@@ -18,6 +18,7 @@ export const GlobalNavigation = () => {
     { label: "Solutions", href: "/solutions" },
     { label: "Events", href: "/events" },
     { label: "Community", href: "/community" },
+    { label: "Cogniblend", href: "/cogniblend" },
     { label: "Resources", href: "/resources" },
   ];
 
