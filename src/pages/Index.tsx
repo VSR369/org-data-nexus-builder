@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Shield, Mail, Lock, Loader2 } from "lucide-react";
+import { Database, Building, Users, ArrowRight, LogOut, User, Settings, Eye, Shield, Mail, Lock, Loader2, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import DataCleanupButton from "@/components/admin/DataCleanupButton";
@@ -460,6 +460,40 @@ const Index = () => {
                     Contributor Sign In
                   </Button>
                 </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Cogniblend Navigation */}
+          <Card className="hover:shadow-lg transition-shadow h-full">
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4 shrink-0">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl">Cogniblend</CardTitle>
+              <CardDescription>
+                Social collaboration platform for contributors and teams
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center flex-1 flex flex-col">
+              <div className="space-y-2 text-sm text-gray-600 mb-6 flex-1">
+                <p>• Feed and Posts</p>
+                <p>• Profiles and Follows</p>
+                <p>• Messages and Notifications</p>
+              </div>
+              <div className="space-y-2">
+                <Link to="/cogniblend" className="w-full block">
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                    Open Cogniblend
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <a href="https://congiblend.lovable.app/" target="_blank" rel="noopener noreferrer" className="w-full block">
+                  <Button variant="outline" className="w-full">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open in new tab
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>
